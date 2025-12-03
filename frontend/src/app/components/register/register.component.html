@@ -1,0 +1,134 @@
+<div class="register-container">
+  <div class="register-card">
+    <div class="logo-container">
+      <img
+        src="/nursehelper.png"
+        alt="NurseHelper Logo"
+        class="logo"
+      />
+    </div>
+
+    <h1 class="register-title">Crear Cuenta</h1>
+    <p class="register-subtitle">Únete a NurseHelper</p>
+
+    <form (ngSubmit)="onSubmit()" class="register-form">
+      <div class="form-row">
+        <div class="input-group">
+          <label for="firstName">Nombres</label>
+          <input
+            type="text"
+            id="firstName"
+            class="neuro-input"
+            placeholder="Juan"
+            [(ngModel)]="formData.firstName"
+            name="firstName"
+            required
+          />
+        </div>
+
+        <div class="input-group">
+          <label for="lastName">Apellidos</label>
+          <input
+            type="text"
+            id="lastName"
+            class="neuro-input"
+            placeholder="Pérez"
+            [(ngModel)]="formData.lastName"
+            name="lastName"
+            required
+          />
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label for="username">Nombre de Usuario</label>
+        <input
+          type="text"
+          id="username"
+          class="neuro-input"
+          placeholder="juanperez"
+          [(ngModel)]="formData.username"
+          name="username"
+          required
+        />
+      </div>
+
+      <div class="input-group">
+        <label for="email">Correo Electrónico</label>
+        <input
+          type="email"
+          id="email"
+          class="neuro-input"
+          placeholder="correo@ejemplo.com"
+          [(ngModel)]="formData.email"
+          name="email"
+          required
+        />
+      </div>
+
+      <div class="form-row">
+        <div class="input-group">
+          <label for="password">Contraseña</label>
+          <input
+            type="password"
+            id="password"
+            class="neuro-input"
+            placeholder="••••••••"
+            [(ngModel)]="formData.password"
+            name="password"
+            required
+          />
+        </div>
+
+        <div class="input-group">
+          <label for="confirmPassword">Confirmar Contraseña</label>
+          <input
+            type="password"
+            id="confirmPassword"
+            class="neuro-input"
+            placeholder="••••••••"
+            [(ngModel)]="confirmPassword"
+            name="confirmPassword"
+            required
+          />
+        </div>
+      </div>
+
+      <div class="checkbox-group">
+        <label class="neuro-checkbox">
+          <input
+            type="checkbox"
+            [(ngModel)]="acceptedTerms"
+            name="acceptedTerms"
+            required
+          />
+          <span class="checkmark"></span>
+          Acepto los
+          <a href="#" (click)="openTermsModal(); $event.preventDefault()" class="link"
+            >términos y condiciones</a
+          >
+        </label>
+      </div>
+
+      <div *ngIf="error" class="error-message">{{ error }}</div>
+
+      <button
+        type="submit"
+        class="neuro-btn"
+        [disabled]="loading"
+      >
+        {{ loading ? 'Registrando...' : 'Registrarse' }}
+      </button>
+    </form>
+
+    <div class="register-footer">
+      <p>
+        ¿Ya tienes cuenta?
+        <a routerLink="/login" class="link">Inicia sesión aquí</a>
+      </p>
+    </div>
+  </div>
+
+  <app-terms-modal #termsModal (accepted)="onTermsAccepted()"></app-terms-modal>
+</div>
+

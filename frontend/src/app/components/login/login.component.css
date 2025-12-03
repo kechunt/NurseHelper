@@ -1,0 +1,162 @@
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e0e5ec;
+  padding: 2rem;
+}
+
+.login-card {
+  background: #e0e5ec;
+  border-radius: 30px;
+  padding: 3rem;
+  max-width: 450px;
+  width: 100%;
+  box-shadow: 20px 20px 60px #bebebe, -20px -20px 60px #ffffff;
+}
+
+.logo-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.logo {
+  width: 120px;
+  height: 120px;
+  border-radius: 25px;
+  object-fit: cover;
+  box-shadow: 12px 12px 24px #bebebe, -12px -12px 24px #ffffff;
+}
+
+.login-title {
+  text-align: center;
+  color: #4a5568;
+  font-size: 2rem;
+  font-weight: 300;
+  margin-bottom: 0.5rem;
+  text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.8),
+    -2px -2px 4px rgba(174, 174, 192, 0.4);
+}
+
+.login-subtitle {
+  text-align: center;
+  color: #718096;
+  font-size: 1rem;
+  margin-bottom: 2rem;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.input-group label {
+  color: #4a5568;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.neuro-input {
+  padding: 14px 18px;
+  background: #e0e5ec;
+  border: none;
+  border-radius: 15px;
+  font-size: 16px;
+  color: #4a5568;
+  transition: all 0.2s ease;
+  box-shadow: inset 6px 6px 12px #bebebe, inset -6px -6px 12px #ffffff;
+  font-family: inherit;
+}
+
+.neuro-input:focus {
+  outline: none;
+  box-shadow: inset 8px 8px 16px #bebebe, inset -8px -8px 16px #ffffff;
+}
+
+.neuro-input::placeholder {
+  color: #a0aec0;
+}
+
+.neuro-btn {
+  background: #e0e5ec;
+  color: #4a5568;
+  border: none;
+  padding: 14px 24px;
+  border-radius: 50px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 8px 8px 16px #bebebe, -8px -8px 16px #ffffff;
+  margin-top: 0.5rem;
+}
+
+.neuro-btn:hover:not(:disabled) {
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+}
+
+.neuro-btn:active:not(:disabled),
+.neuro-btn.pressed {
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+}
+
+.neuro-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.error-message {
+  background: #fed7d7;
+  color: #c53030;
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 14px;
+  text-align: center;
+  box-shadow: inset 4px 4px 8px #feb2b2, inset -4px -4px 8px #ffffff;
+}
+
+.login-footer {
+  margin-top: 2rem;
+  text-align: center;
+}
+
+.login-footer p {
+  color: #718096;
+  font-size: 0.9rem;
+}
+
+.link {
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.link:hover {
+  color: #764ba2;
+}
+
+@media (max-width: 480px) {
+  .login-card {
+    padding: 2rem 1.5rem;
+  }
+
+  .logo {
+    width: 100px;
+    height: 100px;
+  }
+
+  .login-title {
+    font-size: 1.5rem;
+  }
+}
+

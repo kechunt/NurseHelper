@@ -1,0 +1,330 @@
+<div class="schedules-management">
+  <div class="section-header">
+    <h2 class="section-title">⏰ Gestión de Turnos</h2>
+  </div>
+
+  <!-- Turnos Definidos -->
+  <div class="shifts-section">
+    <h3 class="subsection-title">Turnos Disponibles</h3>
+    <div class="shifts-grid">
+      <div *ngFor="let shift of getEditableShifts()" class="shift-card">
+        <div class="shift-header">
+          <span class="shift-icon">{{ shift.icon }}</span>
+          <h4 class="shift-name">{{ shift.name }}</h4>
+          <button 
+            class="edit-shift-btn" 
+            (click)="openEditShiftModal(shift)" 
+            title="Editar horario">
+            ✏️
+          </button>
+        </div>
+        <div class="shift-time">
+          <span class="time-badge">{{ shift.startTime }}</span>
+          <span class="time-separator">→</span>
+          <span class="time-badge">{{ shift.endTime }}</span>
+        </div>
+        <div class="shift-duration">
+          <span class="duration-text">8 horas</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Programación Semanal -->
+  <div class="weekly-schedule-section">
+    <div class="schedule-header">
+      <h3 class="subsection-title">📅 Programación de Turnos</h3>
+      <div class="schedule-actions">
+        <button class="action-btn-neuro" (click)="saveAllSchedules()">
+          💾 Guardar Programación
+        </button>
+        <button class="action-btn-neuro secondary" (click)="clearAllSchedules()">
+          🗑️ Limpiar Todo
+        </button>
+      </div>
+    </div>
+
+    <!-- Filtros y Asignación Rápida -->
+    <div class="filters-quick-assign-section">
+      <!-- Grupo de Filtros -->
+      <div class="filters-group">
+        <div class="filter-group-tasks">
+          <label class="filter-label-tasks">🏥 Filtrar por Área:</label>
+          <select class="filter-select-small" [(ngModel)]="selectedAreaFilter" (change)="applyFilters()">
+            <option value="">Todas las áreas</option>
+            <option *ngFor="let area of areas" [value]="area.id">{{ area.name }}</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Grupo de Asignación Rápida -->
+      <div class="quick-assign-group">
+        <div class="quick-assign-header">
+          <h4 class="quick-assign-title">⚡ Asignación Rápida</h4>
+        </div>
+        <div class="quick-assign-controls">
+          <div class="filter-group-tasks">
+            <label class="filter-label-tasks">Turno a asignar:</label>
+            <select class="filter-select-small" [(ngModel)]="quickAssignShift">
+              <option value="">Seleccionar turno...</option>
+              <option *ngFor="let shift of shifts" [value]="shift.id">
+                {{ shift.icon }} {{ shift.name }}
+              </option>
+            </select>
+          </div>
+
+          <div class="selection-controls">
+            <div class="selection-info">
+              <span class="selection-count">{{ selectedNurses.size }} seleccionada(s)</span>
+            </div>
+            <div class="selection-buttons">
+              <button class="selection-btn" (click)="selectAllNurses()" *ngIf="filteredSchedules.length > 0">
+                ✅ Todas
+              </button>
+              <button class="selection-btn" (click)="clearSelection()" *ngIf="selectedNurses.size > 0">
+                ❌ Limpiar
+              </button>
+            </div>
+          </div>
+
+          <button class="apply-quick-btn" (click)="applyQuickAssignment()" [disabled]="!quickAssignShift || selectedNurses.size === 0">
+            ✅ Aplicar Turno
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="loading" class="loading-state">
+      <p>Cargando enfermeras...</p>
+    </div>
+
+    <!-- Tabla de Programación -->
+    <div *ngIf="!loading && filteredSchedules.length > 0" class="unified-table-container">
+      <table class="unified-tasks-table">
+        <thead>
+          <tr>
+            <th class="select-column">
+              <input 
+                type="checkbox" 
+                (change)="$event.target.checked ? selectAllNurses() : clearSelection()"
+                [checked]="selectedNurses.size > 0 && selectedNurses.size === filteredSchedules.length"
+                title="Seleccionar todas">
+            </th>
+            <th class="nurse-column">Enfermera / Área</th>
+            <th class="week-assign-column">Semana Completa</th>
+            <th *ngFor="let day of days" class="day-column">
+              {{ dayNames[day] }}
+            </th>
+            <th class="hours-column">Total Horas</th>
+            <th class="actions-column">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let schedule of filteredSchedules" class="nurse-row" [class.selected-row]="isNurseSelected(schedule.nurseId)">
+            <td class="select-cell">
+              <input 
+                type="checkbox" 
+                [checked]="isNurseSelected(schedule.nurseId)"
+                (change)="toggleNurseSelection(schedule.nurseId)">
+            </td>
+            <td class="nurse-cell">
+              <div class="nurse-info-cell">
+                <strong>{{ schedule.nurseName }}</strong>
+                <span class="nurse-area-badge" *ngIf="getNurseArea(schedule.nurseId)">
+                  {{ getNurseArea(schedule.nurseId).name }}
+                </span>
+              </div>
+            </td>
+            
+            <!-- Asignación Semanal -->
+            <td class="week-assign-cell">
+              <select 
+                class="week-shift-selector" 
+                (change)="assignWeekShift(schedule, $any($event.target).value)">
+                <option value="">Asignar L-D...</option>
+                <option *ngFor="let shift of shifts" [value]="shift.id">
+                  {{ shift.icon }} {{ shift.name }}
+                </option>
+              </select>
+            </td>
+
+            <!-- Días de la semana -->
+            <td *ngFor="let day of days" class="day-cell">
+              <select 
+                class="day-shift-selector" 
+                [(ngModel)]="$any(schedule)[day]"
+                (change)="assignShiftToDay(schedule, day, $any(schedule)[day])"
+                [style.background-color]="getShiftColor(getShiftForNurseDay(schedule.nurseId, day))">
+                <option value="">-</option>
+                <option *ngFor="let shift of shifts" [value]="shift.id">
+                  {{ shift.icon }} {{ shift.name }}
+                </option>
+              </select>
+            </td>
+
+            <!-- Total de horas -->
+            <td class="hours-cell">
+              <span class="hours-badge">{{ getTotalHoursForNurse(schedule.nurseId) }}h</span>
+            </td>
+
+            <!-- Acciones -->
+            <td class="actions-cell">
+              <button 
+                class="clear-nurse-btn" 
+                (click)="clearNurseSchedule(schedule.nurseId)"
+                title="Limpiar turnos de esta enfermera">
+                🗑️
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="!loading && filteredSchedules.length === 0" class="empty-state">
+      <div class="empty-icon">📋</div>
+      <p *ngIf="selectedAreaFilter">No hay enfermeras en el área seleccionada</p>
+      <p *ngIf="!selectedAreaFilter">No hay enfermeras disponibles para programar</p>
+    </div>
+  </div>
+
+  <!-- Resumen por Área y Turno -->
+  <div class="area-summary-section">
+    <h3 class="subsection-title">📊 Resumen por Área y Turno</h3>
+    
+    <div *ngIf="nursesByAreaAndShift.length === 0" class="empty-state">
+      <div class="empty-icon">📊</div>
+      <p>No hay enfermeras con áreas asignadas</p>
+      <p class="empty-hint">Asigna áreas a las enfermeras en la sección de Personal</p>
+    </div>
+    
+    <div class="areas-grid" *ngIf="nursesByAreaAndShift.length > 0">
+      <div *ngFor="let areaData of nursesByAreaAndShift" class="area-card">
+        <div class="area-header">
+          <h4 class="area-title">🏥 {{ areaData.areaName }}</h4>
+        </div>
+
+        <div class="shifts-breakdown">
+          <!-- Matutino -->
+          <div class="shift-group" *ngIf="areaData.shifts.morning.length > 0">
+            <div class="shift-group-header">
+              <span class="shift-badge morning">🌅 Matutino</span>
+              <span class="nurse-count">{{ areaData.shifts.morning.length }}</span>
+            </div>
+            <div class="nurses-list">
+              <div *ngFor="let nurse of areaData.shifts.morning" class="nurse-item">
+                <span class="nurse-name">{{ nurse.firstName }} {{ nurse.lastName }}</span>
+                <span class="nurse-stats">{{ nurse.daysCount }} días | {{ nurse.totalHours }}h</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Vespertino -->
+          <div class="shift-group" *ngIf="areaData.shifts.afternoon.length > 0">
+            <div class="shift-group-header">
+              <span class="shift-badge afternoon">🌆 Vespertino</span>
+              <span class="nurse-count">{{ areaData.shifts.afternoon.length }}</span>
+            </div>
+            <div class="nurses-list">
+              <div *ngFor="let nurse of areaData.shifts.afternoon" class="nurse-item">
+                <span class="nurse-name">{{ nurse.firstName }} {{ nurse.lastName }}</span>
+                <span class="nurse-stats">{{ nurse.daysCount }} días | {{ nurse.totalHours }}h</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Nocturno -->
+          <div class="shift-group" *ngIf="areaData.shifts.night.length > 0">
+            <div class="shift-group-header">
+              <span class="shift-badge night">🌙 Nocturno</span>
+              <span class="nurse-count">{{ areaData.shifts.night.length }}</span>
+            </div>
+            <div class="nurses-list">
+              <div *ngFor="let nurse of areaData.shifts.night" class="nurse-item">
+                <span class="nurse-name">{{ nurse.firstName }} {{ nurse.lastName }}</span>
+                <span class="nurse-stats">{{ nurse.daysCount }} días | {{ nurse.totalHours }}h</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Descanso -->
+          <div class="shift-group" *ngIf="areaData.shifts.off.length > 0">
+            <div class="shift-group-header">
+              <span class="shift-badge off">🏖️ Descanso</span>
+              <span class="nurse-count">{{ areaData.shifts.off.length }}</span>
+            </div>
+            <div class="nurses-list">
+              <div *ngFor="let nurse of areaData.shifts.off" class="nurse-item">
+                <span class="nurse-name">{{ nurse.firstName }} {{ nurse.lastName }}</span>
+                <span class="nurse-stats">{{ nurse.daysCount }} días de descanso</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sin turno asignado -->
+          <div class="shift-group" *ngIf="areaData.shifts.unassigned.length > 0">
+            <div class="shift-group-header">
+              <span class="shift-badge unassigned">⚠️ Sin Turno</span>
+              <span class="nurse-count">{{ areaData.shifts.unassigned.length }}</span>
+            </div>
+            <div class="nurses-list">
+              <div *ngFor="let nurse of areaData.shifts.unassigned" class="nurse-item">
+                <span class="nurse-name">{{ nurse.firstName }} {{ nurse.lastName }}</span>
+                <span class="nurse-stats" *ngIf="nurse.daysCount > 0">{{ nurse.daysCount }} días | {{ nurse.totalHours }}h</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Editar Horario de Turno -->
+<div class="modal-overlay" *ngIf="showEditShiftModal" (click)="closeEditShiftModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>✏️ Editar Turno: {{ selectedShift?.name }}</h3>
+      <button class="close-btn" (click)="closeEditShiftModal()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Nombre del Turno</label>
+        <input type="text" class="neuro-input" [(ngModel)]="selectedShift!.name" readonly>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="shift-start">Hora de Inicio *</label>
+          <input
+            type="time"
+            id="shift-start"
+            class="neuro-input"
+            [(ngModel)]="selectedShift!.startTime"
+          />
+        </div>
+        <div class="form-group">
+          <label for="shift-end">Hora de Fin *</label>
+          <input
+            type="time"
+            id="shift-end"
+            class="neuro-input"
+            [(ngModel)]="selectedShift!.endTime"
+          />
+        </div>
+      </div>
+
+      <div class="shift-preview">
+        <p>Horario: {{ selectedShift?.startTime }} - {{ selectedShift?.endTime }}</p>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-secondary-neuro" (click)="closeEditShiftModal()">Cancelar</button>
+      <button class="btn-primary-neuro" (click)="saveShiftTimes()">
+        💾 Guardar Horario
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,493 @@
+.users-management {
+  width: 100%;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.section-title {
+  color: #4a5568;
+  font-size: 1.75rem;
+  font-weight: 300;
+  margin: 0;
+  text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8),
+    -1px -1px 2px rgba(174, 174, 192, 0.4);
+}
+
+.loading-state {
+  text-align: center;
+  padding: 3rem;
+  color: #718096;
+}
+
+.filters-container {
+  background: #e0e5ec;
+  border-radius: 20px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  box-shadow: 10px 10px 20px #bebebe, -10px -10px 20px #ffffff;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 200px;
+}
+
+.filter-group.search-group {
+  flex: 2;
+  min-width: 300px;
+}
+
+.filter-group label {
+  color: #4a5568;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.search-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.search-input {
+  padding-right: 45px;
+}
+
+.search-icon {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #718096;
+  pointer-events: none;
+  font-size: 1.1rem;
+}
+
+.clear-filters-btn {
+  padding: 10px 20px;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.results-info {
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  background: #e0e5ec;
+  border-radius: 15px;
+  color: #718096;
+  font-size: 0.9rem;
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+}
+
+.results-info p {
+  margin: 0;
+  color: #718096;
+}
+
+.no-results {
+  text-align: center;
+  padding: 3rem;
+  color: #718096;
+  background: #e0e5ec;
+  border-radius: 20px;
+  margin-top: 1rem;
+  box-shadow: inset 6px 6px 12px #bebebe, inset -6px -6px 12px #ffffff;
+}
+
+.no-results p {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.table-container {
+  overflow-x: auto;
+  background: #e0e5ec;
+  border-radius: 15px;
+  padding: 1rem;
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+}
+
+.neuro-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.neuro-table thead {
+  background: #e0e5ec;
+}
+
+.neuro-table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: #4a5568;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding-bottom: 1.25rem;
+}
+
+.neuro-table th:first-child {
+  padding-left: 1.5rem;
+}
+
+.neuro-table td {
+  padding: 0.9rem;
+  color: #4a5568;
+  vertical-align: top;
+}
+
+.neuro-table td:first-child {
+  padding-left: 1.5rem;
+}
+
+.neuro-table td:last-child {
+  padding-right: 1.5rem;
+}
+
+.neuro-table tbody tr + tr td {
+  position: relative;
+}
+
+.neuro-table tbody tr + tr td::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(174, 174, 192, 0.1);
+}
+
+.neuro-table tbody tr + tr td:first-child::before {
+  left: 1.5rem;
+}
+
+.neuro-table tbody tr + tr td:last-child::before {
+  right: 1.5rem;
+}
+
+.neuro-table tbody tr {
+  transition: background 0.2s ease;
+}
+
+.neuro-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.neuro-table tbody tr.inactive {
+  opacity: 0.6;
+}
+
+.neuro-status {
+  padding: 6px 12px;
+  border-radius: 15px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+}
+
+.neuro-status.active {
+  background: #e0e5ec;
+  color: #38a169;
+}
+
+.neuro-status.inactive {
+  background: #e0e5ec;
+  color: #e53e3e;
+}
+
+.neuro-status.role-admin {
+  background: #e0e5ec;
+  color: #667eea;
+}
+
+.neuro-status.role-supervisor {
+  background: #e0e5ec;
+  color: #f5576c;
+}
+
+.neuro-status.role-nurse {
+  background: #e0e5ec;
+  color: #48bb78;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.neuro-btn-icon {
+  background: #e0e5ec;
+  border: none;
+  padding: 8px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #4a5568;
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.neuro-btn-icon:hover {
+  box-shadow: 2px 2px 4px #bebebe, -2px -2px 4px #ffffff;
+}
+
+.neuro-btn-icon:active {
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+}
+
+.neuro-btn-icon.delete-btn:hover {
+  background: rgba(245, 101, 101, 0.1);
+  box-shadow: 2px 2px 4px rgba(245, 101, 101, 0.3), -2px -2px 4px #ffffff;
+}
+
+.neuro-btn-icon.delete-btn:active {
+  background: rgba(245, 101, 101, 0.2);
+  box-shadow: inset 3px 3px 6px rgba(245, 101, 101, 0.3), inset -3px -3px 6px #ffffff;
+}
+
+.neuro-btn {
+  background: #e0e5ec;
+  color: #4a5568;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 50px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 8px 8px 16px #bebebe, -8px -8px 16px #ffffff;
+}
+
+.neuro-btn:hover {
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+}
+
+.neuro-btn:active {
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+}
+
+.neuro-btn.outlined {
+  background: transparent;
+  border: 2px solid #4a5568;
+  box-shadow: none;
+}
+
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 2rem;
+  backdrop-filter: blur(4px);
+}
+
+.modal-content {
+  background: #e0e5ec;
+  border-radius: 30px;
+  max-width: 500px;
+  width: 100%;
+  box-shadow: 30px 30px 60px rgba(0, 0, 0, 0.3),
+    -30px -30px 60px rgba(255, 255, 255, 0.1);
+}
+
+.modal-header {
+  padding: 2rem 2rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(174, 174, 192, 0.3);
+}
+
+.modal-header h3 {
+  color: #4a5568;
+  font-size: 1.5rem;
+  font-weight: 300;
+  margin: 0;
+}
+
+.close-btn {
+  background: #e0e5ec;
+  border: none;
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  font-size: 20px;
+  color: #4a5568;
+  cursor: pointer;
+  box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-btn:hover {
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+}
+
+.modal-body {
+  padding: 2rem;
+}
+
+.modal-body p {
+  color: #718096;
+  margin-bottom: 1rem;
+}
+
+.modal-body strong {
+  color: #4a5568;
+}
+
+.input-group {
+  margin-top: 1.5rem;
+}
+
+.input-group:first-child {
+  margin-top: 0;
+}
+
+.input-group label {
+  display: block;
+  color: #4a5568;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.neuro-input {
+  width: 100%;
+  padding: 14px 18px;
+  background: #e0e5ec;
+  border: none;
+  border-radius: 15px;
+  font-size: 16px;
+  color: #4a5568;
+  box-shadow: inset 6px 6px 12px #bebebe, inset -6px -6px 12px #ffffff;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.neuro-input:focus {
+  outline: none;
+  box-shadow: inset 8px 8px 16px #bebebe, inset -8px -8px 16px #ffffff;
+}
+
+.neuro-input::placeholder {
+  color: #a0aec0;
+}
+
+.form-grid {
+  display: grid;
+  gap: 0;
+}
+
+.checkbox-group {
+  margin-top: 1.5rem;
+}
+
+.checkbox-label {
+  display: flex !important;
+  align-items: center;
+  cursor: pointer;
+  margin: 0 !important;
+}
+
+.checkbox-label span {
+  margin-left: 0.5rem;
+  color: #4a5568;
+  font-weight: 400;
+}
+
+.neuro-checkbox {
+  width: 20px !important;
+  height: 20px !important;
+  cursor: pointer;
+  accent-color: #4a5568;
+  margin: 0 !important;
+  border-radius: 5px;
+}
+
+.neuro-select {
+  width: 100%;
+  padding: 14px 18px;
+  padding-right: 3rem;
+  background: #e0e5ec;
+  border: none;
+  border-radius: 15px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #4a5568;
+  box-shadow: inset 6px 6px 12px #bebebe, inset -6px -6px 12px #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%234a5568' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+}
+
+.neuro-select:focus {
+  outline: none;
+  box-shadow: inset 8px 8px 16px #bebebe, inset -8px -8px 16px #ffffff;
+}
+
+.neuro-select:hover {
+  box-shadow: inset 7px 7px 14px #bebebe, inset -7px -7px 14px #ffffff;
+}
+
+.neuro-select option {
+  background: #e0e5ec;
+  color: #4a5568;
+  padding: 10px;
+}
+
+.modal-footer {
+  padding: 1rem 2rem 2rem;
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  border-top: 1px solid rgba(174, 174, 192, 0.3);
+}
+
+@media (max-width: 768px) {
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .table-container {
+    font-size: 0.85rem;
+  }
+
+  .neuro-table th,
+  .neuro-table td {
+    padding: 12px 8px;
+  }
+}
+

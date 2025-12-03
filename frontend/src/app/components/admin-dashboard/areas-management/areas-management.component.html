@@ -1,0 +1,201 @@
+<div class="areas-management">
+  <div class="section-header">
+    <h2 class="section-title">Gestión de Áreas</h2>
+    <button class="neuro-btn" (click)="openModal()">➕ Crear Área</button>
+  </div>
+
+  <div *ngIf="loading" class="loading-state">
+    <p>Cargando áreas...</p>
+  </div>
+
+  <div *ngIf="!loading" class="areas-grid">
+    <div *ngFor="let area of areas" class="area-card">
+      <div class="card-header">
+        <h3>{{ area.name }}</h3>
+        <span class="neuro-status" [class.active]="area.isActive" [class.inactive]="!area.isActive">
+          {{ area.isActive ? 'Activa' : 'Inactiva' }}
+        </span>
+      </div>
+      <p class="area-description" *ngIf="area.description">{{ area.description }}</p>
+      <div class="area-stats">
+        <span class="stat">🛏️ {{ getBedsForArea(area.id).length }} camas</span>
+        <span class="stat">
+          👤 {{ getOccupiedBedsForArea(area.id) }} ocupadas
+        </span>
+      </div>
+      <div class="card-actions">
+        <button class="neuro-btn-icon" (click)="openModal(area)" title="Editar">✏️</button>
+        <button class="neuro-btn-icon" (click)="deleteArea(area)" title="Eliminar">🗑️</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para crear/editar área -->
+  <div *ngIf="showModal" class="modal-backdrop" (click)="closeModal()">
+    <div class="modal-content" [class.modal-large]="selectedArea && getBedsForArea(selectedArea.id).length > 0" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ selectedArea ? 'Editar Área' : 'Crear Área' }}</h3>
+        <button class="close-btn" (click)="closeModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="input-group">
+          <label for="area-name">Nombre del Área *</label>
+          <input type="text" id="area-name" class="neuro-input" [(ngModel)]="areaForm.name" />
+        </div>
+        <div class="input-group">
+          <label for="area-description">Descripción</label>
+          <textarea
+            id="area-description"
+            class="neuro-input"
+            rows="3"
+            [(ngModel)]="areaForm.description"
+          ></textarea>
+        </div>
+        <div class="input-group">
+          <label for="area-beds-count">
+            Cantidad total de camas {{ selectedArea ? '(actuales: ' + getBedsForArea(selectedArea.id).length + ')' : '' }}
+          </label>
+          <input
+            type="number"
+            id="area-beds-count"
+            class="neuro-input"
+            min="0"
+            [(ngModel)]="areaForm.bedsCount"
+            placeholder="0"
+          />
+          <small *ngIf="!selectedArea">Deja en 0 si no deseas asignar camas ahora</small>
+          <small *ngIf="selectedArea">Aumenta el número para agregar más camas</small>
+        </div>
+
+        <!-- Sección de gestión de camas cuando se edita un área -->
+        <div *ngIf="selectedArea && getBedsForArea(selectedArea.id).length > 0" class="beds-section">
+          <h4 class="beds-section-title">Camas Actuales</h4>
+          <div class="current-beds-grid">
+            <div *ngFor="let bed of getBedsForArea(selectedArea.id)" class="current-bed-item">
+              <span class="bed-number-display">{{ bed.bedNumber }}</span>
+              <span class="bed-status-badge" 
+                    [class.occupied]="bed.patientId && bed.isActive !== false" 
+                    [class.available]="!bed.patientId && bed.isActive !== false"
+                    [class.unavailable]="bed.isActive === false">
+                <span *ngIf="bed.isActive === false">❌ No Disponible</span>
+                <span *ngIf="bed.isActive !== false">{{ bed.patientId ? 'Ocupada' : 'Disponible' }}</span>
+              </span>
+              <div class="bed-item-actions">
+                <button class="edit-bed-btn" (click)="openEditBedModal(bed)" title="Editar cama">✏️</button>
+                <button class="remove-bed-btn" (click)="removeBedFromArea(bed)" title="Eliminar cama">✕</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label>
+            <input type="checkbox" [(ngModel)]="areaForm.isActive" />
+            Área Activa
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="neuro-btn outlined" (click)="closeModal()">Cancelar</button>
+        <button class="neuro-btn" (click)="saveArea()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para ingresar números de camas -->
+  <div *ngIf="showBedsSelectionModal" class="modal-backdrop" (click)="closeBedsSelectionModal()">
+    <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Ingresar Números de Camas</h3>
+        <button class="close-btn" (click)="closeBedsSelectionModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-description">
+          Ingresa los nombres o números de las camas que deseas crear. Puedes usar cualquier formato
+          (ej: Cama-1, SAL-001, 5, etc.)
+        </p>
+        <div class="beds-input-list">
+          <div *ngFor="let bedNumber of customBedNumbers; let i = index; trackBy: trackByIndex" class="bed-input-row">
+            <label class="bed-input-label">Cama {{ i + 1 }}:</label>
+            <input
+              type="text"
+              class="neuro-input bed-number-input"
+              [ngModel]="customBedNumbers[i]"
+              (ngModelChange)="onBedNumberChange(i, $event)"
+              [name]="'bed-' + i"
+              placeholder="Ej: SAL-001, Cama-1, etc."
+            />
+            <button
+              *ngIf="customBedNumbers.length > 1"
+              class="remove-bed-input-btn"
+              (click)="removeBedInput(i)"
+              title="Eliminar"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+        <div class="add-bed-container">
+          <button class="neuro-btn add-bed-btn" (click)="addBedInput()">
+            ➕ Agregar Otra Cama
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="neuro-btn outlined" (click)="closeBedsSelectionModal()">Cancelar</button>
+        <button
+          class="neuro-btn"
+          (click)="createSelectedBeds()"
+          [disabled]="!hasValidBedNumbers()"
+        >
+          Crear {{ getValidBedNumbersCount() }} Cama(s)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para editar cama existente -->
+  <div *ngIf="showEditBedModal" class="modal-backdrop" (click)="closeEditBedModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Editar Cama</h3>
+        <button class="close-btn" (click)="closeEditBedModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="input-group">
+          <label for="edit-bed-number">Número/Nombre de Cama *</label>
+          <input
+            type="text"
+            id="edit-bed-number"
+            class="neuro-input"
+            [(ngModel)]="editBedForm.bedNumber"
+            placeholder="Ej: SAL-001, Cama-1, etc."
+          />
+        </div>
+        <div class="input-group">
+          <label for="edit-bed-availability">Disponibilidad</label>
+          <select id="edit-bed-availability" class="neuro-select" [(ngModel)]="editBedForm.isActive">
+            <option [value]="true">Disponible</option>
+            <option [value]="false">No Disponible</option>
+          </select>
+          <small>Marca si la cama está disponible para uso o no</small>
+        </div>
+        <div class="input-group">
+          <label for="edit-bed-patient">Asignación de Paciente (Opcional)</label>
+          <select id="edit-bed-patient" class="neuro-select" [(ngModel)]="editBedForm.patientId">
+            <option [value]="null">Sin asignar</option>
+            <option *ngFor="let patient of getPatientsForBedSelection()" [value]="patient.id">
+              {{ patient.firstName }} {{ patient.lastName }}
+            </option>
+          </select>
+          <small>Asigna un paciente si la cama está ocupada</small>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="neuro-btn outlined" (click)="closeEditBedModal()">Cancelar</button>
+        <button class="neuro-btn" (click)="saveBedChanges()">Guardar Cambios</button>
+      </div>
+    </div>
+  </div>
+</div>
+

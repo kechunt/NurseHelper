@@ -1,0 +1,213 @@
+<div class="users-management">
+  <div class="section-header">
+    <h2 class="section-title">Gestión de Usuarios</h2>
+    <button class="neuro-btn" (click)="loadUsers()">🔄 Actualizar</button>
+  </div>
+
+  <!-- Filtros -->
+  <div class="filters-container">
+    <div class="filter-group">
+      <label for="role-filter">Filtrar por Rol:</label>
+      <select id="role-filter" class="neuro-select" [(ngModel)]="selectedRole" (change)="onRoleFilterChange()">
+        <option value="all">Todos los roles</option>
+        <option value="admin">Administrador</option>
+        <option value="nurse">Enfermera</option>
+        <option value="supervisor">Supervisor</option>
+      </select>
+    </div>
+
+    <div class="filter-group search-group">
+      <label for="search-input">Buscar Usuario:</label>
+      <div class="search-input-wrapper">
+        <input
+          type="text"
+          id="search-input"
+          class="neuro-input search-input"
+          [(ngModel)]="searchQuery"
+          (input)="onSearchChange()"
+          placeholder="Buscar por nombre, usuario o email..."
+        />
+        <span class="search-icon">🔍</span>
+      </div>
+    </div>
+
+    <div class="filter-group" *ngIf="selectedRole !== 'all' || searchQuery.trim()">
+      <button class="neuro-btn clear-filters-btn" (click)="clearFilters()">
+        🗑️ Limpiar Filtros
+      </button>
+    </div>
+  </div>
+
+  <div class="results-info" *ngIf="!loading">
+    <p>
+      Mostrando {{ filteredUsers.length }} de {{ users.length }} usuarios
+      <span *ngIf="selectedRole !== 'all'">(Rol: {{ getRoleLabel(selectedRole) }})</span>
+    </p>
+  </div>
+
+  <div *ngIf="loading" class="loading-state">
+    <p>Cargando usuarios...</p>
+  </div>
+
+  <div *ngIf="!loading" class="table-container">
+    <table class="neuro-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Usuario</th>
+          <th>Email</th>
+          <th>Nombre Completo</th>
+          <th>Rol</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let user of filteredUsers" [class.inactive]="!user.isActive">
+          <td>{{ user.id }}</td>
+          <td>{{ user.username }}</td>
+          <td>{{ user.email }}</td>
+          <td>{{ user.firstName }} {{ user.lastName }}</td>
+          <td>
+            <span class="neuro-status" [class.role-admin]="user.role === 'admin'"
+              [class.role-supervisor]="user.role === 'supervisor'"
+              [class.role-nurse]="user.role === 'nurse'">
+              {{ getRoleLabel(user.role) }}
+            </span>
+          </td>
+          <td>
+            <span class="neuro-status" [class.active]="user.isActive"
+              [class.inactive]="!user.isActive">
+              {{ user.isActive ? 'Activo' : 'Inactivo' }}
+            </span>
+          </td>
+          <td>
+            <div class="action-buttons">
+              <button class="neuro-btn-icon" (click)="openEditModal(user)" title="Editar">
+                ✏️
+              </button>
+              <button class="neuro-btn-icon" (click)="openRoleModal(user)" title="Cambiar Rol">
+                🔄
+              </button>
+              <button
+                class="neuro-btn-icon delete-btn"
+                (click)="deleteUser(user)"
+                title="Eliminar Permanentemente"
+              >
+                🗑️
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <div *ngIf="filteredUsers.length === 0 && !loading" class="no-results">
+      <p>No se encontraron usuarios que coincidan con los filtros seleccionados.</p>
+    </div>
+  </div>
+
+  <!-- Modal para editar usuario -->
+  <div *ngIf="showEditModal" class="modal-backdrop" (click)="closeEditModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Editar Usuario</h3>
+        <button class="close-btn" (click)="closeEditModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="input-group">
+            <label for="edit-username">Usuario *</label>
+            <input
+              type="text"
+              id="edit-username"
+              class="neuro-input"
+              [(ngModel)]="editForm.username"
+              placeholder="Ingrese el nombre de usuario"
+            />
+          </div>
+          <div class="input-group">
+            <label for="edit-email">Email *</label>
+            <input
+              type="email"
+              id="edit-email"
+              class="neuro-input"
+              [(ngModel)]="editForm.email"
+              placeholder="usuario@ejemplo.com"
+            />
+          </div>
+          <div class="input-group">
+            <label for="edit-firstName">Nombre *</label>
+            <input
+              type="text"
+              id="edit-firstName"
+              class="neuro-input"
+              [(ngModel)]="editForm.firstName"
+              placeholder="Ingrese el nombre"
+            />
+          </div>
+          <div class="input-group">
+            <label for="edit-lastName">Apellido *</label>
+            <input
+              type="text"
+              id="edit-lastName"
+              class="neuro-input"
+              [(ngModel)]="editForm.lastName"
+              placeholder="Ingrese el apellido"
+            />
+          </div>
+          <div class="input-group">
+            <label for="edit-role">Rol *</label>
+            <select id="edit-role" class="neuro-select" [(ngModel)]="editForm.role">
+              <option value="nurse">Enfermera</option>
+              <option value="supervisor">Supervisor</option>
+              <option value="admin">Administrador</option>
+            </select>
+          </div>
+          <div class="input-group checkbox-group">
+            <label class="checkbox-label">
+              <input
+                type="checkbox"
+                id="edit-isActive"
+                [(ngModel)]="editForm.isActive"
+                class="neuro-checkbox"
+              />
+              <span>Usuario Activo</span>
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="neuro-btn outlined" (click)="closeEditModal()">Cancelar</button>
+        <button class="neuro-btn" (click)="updateUser()">Guardar Cambios</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para cambiar rol -->
+  <div *ngIf="showRoleModal" class="modal-backdrop" (click)="closeRoleModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Cambiar Rol de Usuario</h3>
+        <button class="close-btn" (click)="closeRoleModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Usuario:</strong> {{ selectedUser?.username }}</p>
+        <p><strong>Nombre:</strong> {{ selectedUser?.firstName }} {{ selectedUser?.lastName }}</p>
+        <div class="input-group">
+          <label for="role">Nuevo Rol</label>
+          <select id="role" class="neuro-select" [(ngModel)]="newRole">
+            <option value="nurse">Enfermera</option>
+            <option value="supervisor">Supervisor</option>
+            <option value="admin">Administrador</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="neuro-btn outlined" (click)="closeRoleModal()">Cancelar</button>
+        <button class="neuro-btn" (click)="updateRole()">Guardar Cambios</button>
+      </div>
+    </div>
+  </div>
+</div>
+

@@ -1,0 +1,143 @@
+<div
+  class="modal-backdrop"
+  *ngIf="isOpen"
+  (click)="onBackdropClick($event)"
+>
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Términos y Condiciones</h2>
+      <button class="close-btn" (click)="close()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <h3>NurseHelper - Sistema de Gestión para Cuidado de Pacientes</h3>
+
+      <section>
+        <h4>1. Aceptación de Términos</h4>
+        <p>
+          Al acceder y utilizar NurseHelper, usted acepta cumplir con estos
+          términos y condiciones. Si no está de acuerdo con alguna parte de
+          estos términos, no debe utilizar nuestro servicio.
+        </p>
+      </section>
+
+      <section>
+        <h4>2. Descripción del Servicio</h4>
+        <p>
+          NurseHelper es una plataforma diseñada para enfermeras y personal de
+          salud que brindan servicios de cuidado a pacientes en asilos y
+          residencias. El sistema permite gestionar medicamentos, alertas,
+          horarios y seguimiento de pacientes.
+        </p>
+      </section>
+
+      <section>
+        <h4>3. Uso Responsable</h4>
+        <p>
+          Como usuario de NurseHelper, usted se compromete a:
+        </p>
+        <ul>
+          <li>
+            Proporcionar información precisa y veraz sobre los pacientes y
+            medicamentos
+          </li>
+          <li>
+            Mantener la confidencialidad de la información médica según las
+            normativas HIPAA
+          </li>
+          <li>
+            No compartir sus credenciales de acceso con terceros
+          </li>
+          <li>
+            Reportar cualquier problema técnico o seguridad inmediatamente
+          </li>
+          <li>
+            Usar el sistema exclusivamente para fines legítimos de cuidado de
+            salud
+          </li>
+        </ul>
+      </section>
+
+      <section>
+        <h4>4. Confidencialidad y Privacidad</h4>
+        <p>
+          La información médica es extremadamente sensible. Todos los usuarios
+          deben:
+        </p>
+        <ul>
+          <li>
+            Proteger la información de los pacientes con el más alto nivel de
+            seguridad
+          </li>
+          <li>
+            No acceder a información de pacientes que no estén bajo su cuidado
+          </li>
+          <li>
+            Seguir todas las regulaciones de privacidad médica aplicables
+          </li>
+          <li>
+            Notificar inmediatamente cualquier brecha de seguridad
+          </li>
+        </ul>
+      </section>
+
+      <section>
+        <h4>5. Tipos de Usuarios</h4>
+        <ul>
+          <li>
+            <strong>Enfermeras:</strong> Personal autorizado para registrar y
+            administrar medicamentos, crear alertas y gestionar el cuidado
+            diario de pacientes
+          </li>
+          <li>
+            <strong>Supervisores:</strong> Personal con acceso adicional para
+            revisar reportes, asignar tareas y supervisar operaciones
+          </li>
+          <li>
+            <strong>Administradores:</strong> Personal con acceso completo para
+            gestionar usuarios, configuraciones del sistema y reportes
+            administrativos
+          </li>
+        </ul>
+      </section>
+
+      <section>
+        <h4>6. Limitación de Responsabilidad</h4>
+        <p>
+          NurseHelper es una herramienta de apoyo, pero no reemplaza el
+          criterio médico profesional. Los usuarios son responsables de verificar
+          toda la información médica y seguir los protocolos establecidos por
+          sus instituciones.
+        </p>
+      </section>
+
+      <section>
+        <h4>7. Modificaciones</h4>
+        <p>
+          Nos reservamos el derecho de modificar estos términos en cualquier
+          momento. Los cambios serán notificados y el uso continuado del
+          servicio constituye aceptación de los nuevos términos.
+        </p>
+      </section>
+
+      <section>
+        <h4>8. Terminación</h4>
+        <p>
+          Podemos suspender o terminar su acceso al servicio en caso de
+          violación de estos términos, actividad fraudulenta, o por razones de
+          seguridad.
+        </p>
+      </section>
+    </div>
+
+    <div class="modal-footer">
+      <button class="neuro-btn outlined" (click)="close()">
+        Cancelar
+      </button>
+      <button class="neuro-btn" (click)="acceptTerms()">
+        Acepto los Términos
+      </button>
+    </div>
+  </div>
+</div>
+

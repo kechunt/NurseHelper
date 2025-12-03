@@ -1,0 +1,424 @@
+<div class="pharmacy-dashboard" id="pharmacy-top">
+  <!-- Header con Información de Usuario -->
+  <div class="dashboard-header">
+    <div class="header-content">
+      <div class="logo-section">
+        <img src="/nursehelper.png" alt="NurseHelper" class="header-logo" />
+        <h1 class="dashboard-title">Panel de Farmacia</h1>
+      </div>
+      <div class="user-section">
+        <div class="user-info">
+          <span class="user-name">{{ pharmacyUserName }}</span>
+          <span class="user-role">Farmacia</span>
+        </div>
+        <button class="neuro-btn-icon logout-btn" (click)="logout()" title="Cerrar Sesión">
+          🚪
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Stats -->
+  <div class="quick-stats-section">
+    <div class="quick-stats">
+      <div class="stat-card" [class.has-pending]="pendingRequestsCount > 0" (click)="changeSection('requests'); requestFilter = 'pending'; filterRequests()">
+        <div class="stat-icon">⏳</div>
+        <div class="stat-content">
+          <div class="stat-label">Solicitudes Pendientes</div>
+          <div class="stat-value">{{ pendingRequestsCount }}</div>
+        </div>
+      </div>
+      
+      <div class="stat-card" (click)="changeSection('requests'); requestFilter = 'in_preparation'; filterRequests()">
+        <div class="stat-icon">🔄</div>
+        <div class="stat-content">
+          <div class="stat-label">En Preparación</div>
+          <div class="stat-value">{{ inPreparationCount }}</div>
+        </div>
+      </div>
+      
+      <div class="stat-card" [class.ready]="readyForDeliveryCount > 0" (click)="changeSection('requests'); requestFilter = 'ready'; filterRequests()">
+        <div class="stat-icon">✅</div>
+        <div class="stat-content">
+          <div class="stat-label">Listas para Entregar</div>
+          <div class="stat-value">{{ readyForDeliveryCount }}</div>
+        </div>
+      </div>
+      
+      <div class="stat-card" (click)="changeSection('history')">
+        <div class="stat-icon">📦</div>
+        <div class="stat-content">
+          <div class="stat-label">Entregadas Hoy</div>
+          <div class="stat-value">{{ deliveredTodayCount }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navegación por Tabs -->
+  <div class="main-tabs">
+    <button class="main-tab-btn" [class.active]="activeSection === 'requests'" (click)="changeSection('requests')">
+      📝 Solicitudes
+    </button>
+    <button class="main-tab-btn" [class.active]="activeSection === 'history'" (click)="changeSection('history')">
+      📜 Historial de Entregas
+    </button>
+    <button class="main-tab-btn" [class.active]="activeSection === 'inventory'" (click)="changeSection('inventory')">
+      📊 Inventario
+    </button>
+  </div>
+
+  <!-- SECCIÓN: Solicitudes de Medicamentos -->
+  <div *ngIf="activeSection === 'requests'" class="section-container">
+    <div class="section-header">
+      <h2 class="section-title">📝 Solicitudes de Medicamentos</h2>
+      <div class="section-actions">
+        <input 
+          type="text" 
+          class="search-input" 
+          [(ngModel)]="searchTerm" 
+          placeholder="🔍 Buscar medicamento o enfermera..."
+          (input)="filterRequests()"
+        />
+        <select class="filter-select" [(ngModel)]="requestFilter" (change)="filterRequests()">
+          <option value="all">Todas</option>
+          <option value="pending">Pendientes</option>
+          <option value="in_preparation">En Preparación</option>
+          <option value="ready">Listas</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="unified-table-container">
+      <table class="unified-tasks-table">
+        <thead>
+          <tr>
+            <th>ID Solicitud</th>
+            <th>Solicitado por</th>
+            <th>Fecha/Hora</th>
+            <th>Medicamento</th>
+            <th>Cantidad</th>
+            <th>Área</th>
+            <th>Pacientes</th>
+            <th>Prioridad</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let request of filteredRequests" class="request-row" [class.urgent]="request.priority === 'urgent'">
+            <td>
+              <div class="request-id">{{ request.requestId }}</div>
+            </td>
+            <td>
+              <div class="nurse-name-compact">{{ request.requestedBy }}</div>
+              <div class="request-time-small">{{ request.requestedAt }}</div>
+            </td>
+            <td>
+              <div class="time-badge">{{ request.requestedAt.split(' ')[1] }}</div>
+            </td>
+            <td>
+              <div class="med-info-compact">
+                <div class="med-name-strong">{{ request.medication }}</div>
+                <div class="med-dosage-small">{{ request.dosage }}</div>
+                <div class="availability-indicator" [class.available]="isMedicationAvailable(request)" 
+                     [class.unavailable]="!isMedicationAvailable(request)">
+                  <span *ngIf="isMedicationAvailable(request)">✅ Disponible</span>
+                  <span *ngIf="!isMedicationAvailable(request)">⚠️ No disponible</span>
+                </div>
+              </div>
+            </td>
+            <td>
+              <span class="quantity-badge-large">{{ request.quantity }}</span>
+              <button class="availability-toggle-btn" 
+                      (click)="toggleMedicationAvailability(request)"
+                      [class.available]="isMedicationAvailable(request)"
+                      [class.unavailable]="!isMedicationAvailable(request)"
+                      title="Marcar como disponible/no disponible">
+                {{ isMedicationAvailable(request) ? '✅' : '⚠️' }}
+              </button>
+            </td>
+            <td>
+              <div class="area-badge">
+                <span *ngIf="request.patients && request.patients.length > 0">
+                  {{ request.patients[0].areaName || 'N/A' }}
+                </span>
+                <span *ngIf="!request.patients || request.patients.length === 0">
+                  N/A
+                </span>
+              </div>
+            </td>
+            <td>
+              <div class="patients-list-compact">
+                <div *ngFor="let patient of request.patients" class="patient-item-inline">
+                  <span class="patient-icon">👤</span>
+                  <span class="patient-name-inline">{{ patient.patientName }}</span>
+                  <span class="bed-badge-tiny">{{ patient.bedNumber }}</span>
+                </div>
+              </div>
+            </td>
+            <td>
+              <span class="priority-badge" [class.high]="request.priority === 'high' || request.priority === 'urgent'" 
+                    [class.urgent]="request.priority === 'urgent'">
+                {{ request.priority === 'urgent' ? '🚨 Urgente' : (request.priority === 'high' ? '⚡ Alta' : '📋 Normal') }}
+              </span>
+            </td>
+            <td>
+              <span class="status-badge" 
+                    [class.pending]="request.status === 'pending'"
+                    [class.preparing]="request.status === 'in_preparation'"
+                    [class.ready]="request.status === 'ready'"
+                    [class.delivered]="request.status === 'delivered'">
+                {{ getStatusLabel(request.status) }}
+              </span>
+            </td>
+            <td>
+              <div class="action-buttons-pharmacy">
+                <button class="action-btn-compact" 
+                        (click)="viewRequestDetails(request)" 
+                        title="Ver detalles">
+                  👁️
+                </button>
+                <button class="action-btn-compact" 
+                        (click)="changeRequestStatus(request, 'in_preparation')" 
+                        [disabled]="request.status !== 'pending'"
+                        title="Iniciar preparación">
+                  🔄
+                </button>
+                <button class="action-btn-compact" 
+                        (click)="changeRequestStatus(request, 'ready')" 
+                        [disabled]="request.status !== 'in_preparation'"
+                        title="Marcar como lista">
+                  ✅
+                </button>
+                <button class="action-btn-compact success" 
+                        (click)="openDeliveryModal(request)" 
+                        [disabled]="request.status !== 'ready'"
+                        title="Entregar">
+                  📦
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p *ngIf="filteredRequests.length === 0" class="empty-message">
+      No hay solicitudes que coincidan con los filtros seleccionados
+    </p>
+  </div>
+
+  <!-- SECCIÓN: Historial de Entregas -->
+  <div *ngIf="activeSection === 'history'" class="section-container">
+    <div class="section-header">
+      <h2 class="section-title">📜 Historial de Entregas</h2>
+      <div class="section-actions">
+        <input 
+          type="text" 
+          class="search-input" 
+          [(ngModel)]="historySearchTerm" 
+          placeholder="🔍 Buscar en historial..."
+          (input)="filterHistory()"
+        />
+        <button class="print-btn" (click)="printReport()">
+          🖨️ Imprimir Reporte
+        </button>
+      </div>
+    </div>
+
+    <div class="unified-table-container">
+      <table class="unified-tasks-table">
+        <thead>
+          <tr>
+            <th>ID Entrega</th>
+            <th>Fecha/Hora</th>
+            <th>Medicamento</th>
+            <th>Cantidad</th>
+            <th>Solicitado por</th>
+            <th>Pacientes</th>
+            <th>Entregado por</th>
+            <th>Notas</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of filteredHistory" class="history-row">
+            <td>
+              <div class="delivery-id">{{ item.deliveryId }}</div>
+            </td>
+            <td>
+              <div class="datetime-compact">{{ item.deliveredAt }}</div>
+            </td>
+            <td>
+              <div class="med-info-compact">
+                <div class="med-name-strong">{{ item.medication }}</div>
+                <div class="med-dosage-small">{{ item.dosage }}</div>
+              </div>
+            </td>
+            <td>
+              <span class="quantity-badge">{{ item.quantity }}</span>
+            </td>
+            <td>
+              <div class="nurse-name-compact">{{ item.requestedBy }}</div>
+            </td>
+            <td>
+              <div class="patients-tags">
+                <span *ngFor="let patient of item.patients" class="patient-tag-small">{{ patient }}</span>
+              </div>
+            </td>
+            <td>
+              <div class="pharmacist-name">{{ item.deliveredBy }}</div>
+            </td>
+            <td>
+              <div class="notes-compact">{{ item.notes }}</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p *ngIf="filteredHistory.length === 0" class="empty-message">
+      No hay entregas registradas
+    </p>
+  </div>
+
+  <!-- SECCIÓN: Inventario -->
+  <div *ngIf="activeSection === 'inventory'" class="section-container">
+    <div class="section-header">
+      <h2 class="section-title">📊 Inventario de Medicamentos</h2>
+      <div class="section-actions">
+        <input 
+          type="text" 
+          class="search-input" 
+          [(ngModel)]="inventorySearchTerm" 
+          placeholder="🔍 Buscar medicamento o ubicación..."
+          (input)="filterInventory()"
+        />
+      </div>
+    </div>
+
+    <div class="unified-table-container">
+      <table class="unified-tasks-table">
+        <thead>
+          <tr>
+            <th>Medicamento</th>
+            <th>Dosis</th>
+            <th>Stock Actual</th>
+            <th>Stock Mínimo</th>
+            <th>Ubicación</th>
+            <th>Fecha de Vencimiento</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of filteredInventory" class="inventory-row" 
+              [class.low-stock]="item.status === 'low_stock'"
+              [class.out-of-stock]="item.status === 'out_of_stock'">
+            <td>
+              <div class="med-name-strong">{{ item.medication }}</div>
+            </td>
+            <td>
+              <span class="dosage-badge">{{ item.dosage }}</span>
+            </td>
+            <td>
+              <span class="stock-value" [class.low]="item.stock < item.minStock" [class.out]="item.stock === 0">
+                {{ item.stock }}
+              </span>
+            </td>
+            <td>
+              <span class="minstock-value">{{ item.minStock }}</span>
+            </td>
+            <td>
+              <span class="location-badge">{{ item.location }}</span>
+            </td>
+            <td>
+              <div class="expiry-date">{{ item.expiryDate }}</div>
+            </td>
+            <td>
+              <span class="inventory-status" 
+                    [class.available]="item.status === 'available'"
+                    [class.low]="item.status === 'low_stock'"
+                    [class.out]="item.status === 'out_of_stock'">
+                {{ getInventoryStatusLabel(item.status) }}
+              </span>
+            </td>
+            <td>
+              <div class="action-buttons-pharmacy">
+                <button class="action-btn-compact" (click)="updateStock(item)" title="Actualizar stock">
+                  ✏️
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p *ngIf="filteredInventory.length === 0" class="empty-message">
+      No hay medicamentos en inventario
+    </p>
+  </div>
+
+  <!-- Modal de Entrega -->
+  <div *ngIf="showDeliveryModal" class="modal-backdrop" (click)="closeDeliveryModal()">
+    <div class="modal-content modal-delivery" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>📦 Confirmar Entrega</h3>
+        <button class="close-btn" (click)="closeDeliveryModal()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="delivery-summary">
+          <div class="summary-row">
+            <span class="summary-label">ID Solicitud:</span>
+            <span class="summary-value">{{ selectedRequest?.requestId }}</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Medicamento:</span>
+            <span class="summary-value">{{ selectedRequest?.medication }} {{ selectedRequest?.dosage }}</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Cantidad:</span>
+            <span class="summary-value">{{ selectedRequest?.quantity }}</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Solicitado por:</span>
+            <span class="summary-value">{{ selectedRequest?.requestedBy }}</span>
+          </div>
+        </div>
+
+        <div class="patients-delivery-info">
+          <h4>Pacientes que recibirán este medicamento:</h4>
+          <div *ngFor="let patient of selectedRequest?.patients" class="patient-delivery-card">
+            <div class="patient-header-delivery">
+              <span class="patient-name-delivery">{{ patient.patientName }}</span>
+              <span class="bed-badge-delivery">{{ patient.bedNumber }}</span>
+            </div>
+            <div class="doses-list">
+              <div *ngFor="let dose of patient.doses" class="dose-item">
+                <span class="dose-time">{{ dose.time }}</span>
+                <span class="dose-quantity">{{ dose.quantity }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Notas de Entrega</label>
+          <textarea class="neuro-input" [(ngModel)]="deliveryNotes" 
+                    placeholder="Observaciones sobre la entrega..." 
+                    rows="3"></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary-neuro" (click)="closeDeliveryModal()">Cancelar</button>
+        <button class="btn-primary-neuro" (click)="confirmDelivery()">
+          ✅ Confirmar Entrega
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+

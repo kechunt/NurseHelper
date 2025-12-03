@@ -1,0 +1,111 @@
+<div class="admin-dashboard">
+  <div class="dashboard-header">
+    <div class="header-content">
+      <div class="logo-section">
+        <img src="/nursehelper.png" alt="NurseHelper" class="header-logo" />
+        <h1 class="dashboard-title">Panel de Supervisión</h1>
+      </div>
+      <div class="user-section">
+        <div class="user-info">
+          <span class="user-name">{{ currentUser()?.firstName || '' }} {{ currentUser()?.lastName || '' }}</span>
+          <span class="user-role">Supervisor</span>
+        </div>
+        <button class="neuro-btn-icon logout-btn" (click)="logout()" title="Cerrar Sesión">
+          🚪
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="dashboard-body">
+    <nav class="dashboard-nav">
+      <button
+        class="nav-link"
+        [class.active]="activeTab === 'overview'"
+        (click)="setActiveTab('overview')"
+      >
+        📊 Resumen
+      </button>
+      <button
+        class="nav-link"
+        [class.active]="activeTab === 'users'"
+        (click)="setActiveTab('users')"
+      >
+        👥 Usuarios
+      </button>
+      <button
+        class="nav-link"
+        [class.active]="activeTab === 'staff'"
+        (click)="setActiveTab('staff')"
+      >
+        👩‍⚕️ Gestión de Personal
+      </button>
+      <button
+        class="nav-link"
+        [class.active]="activeTab === 'areas'"
+        (click)="setActiveTab('areas')"
+      >
+        🏥 Áreas
+      </button>
+      <button
+        class="nav-link"
+        [class.active]="activeTab === 'beds'"
+        (click)="setActiveTab('beds')"
+      >
+        🛏️ Camas
+      </button>
+      <button
+        class="nav-link"
+        [class.active]="activeTab === 'patients'"
+        (click)="setActiveTab('patients')"
+      >
+        👤 Pacientes
+      </button>
+      <button
+        class="nav-link"
+        [class.active]="activeTab === 'schedules'"
+        (click)="setActiveTab('schedules')"
+      >
+        📅 Horarios
+      </button>
+    </nav>
+
+    <div class="dashboard-content">
+      <!-- Resumen -->
+      <div *ngIf="activeTab === 'overview'" class="tab-content">
+        <app-overview [onNavigate]="setActiveTab.bind(this)"></app-overview>
+      </div>
+
+      <!-- Gestión de Usuarios -->
+      <div *ngIf="activeTab === 'users'" class="tab-content">
+        <app-users-management></app-users-management>
+      </div>
+
+      <!-- Gestión de Personal -->
+      <div *ngIf="activeTab === 'staff'" class="tab-content">
+        <app-staff-management></app-staff-management>
+      </div>
+
+      <!-- Gestión de Áreas -->
+      <div *ngIf="activeTab === 'areas'" class="tab-content">
+        <app-areas-management></app-areas-management>
+      </div>
+
+      <!-- Gestión de Camas -->
+      <div *ngIf="activeTab === 'beds'" class="tab-content">
+        <app-beds-management></app-beds-management>
+      </div>
+
+      <!-- Gestión de Pacientes -->
+      <div *ngIf="activeTab === 'patients'" class="tab-content">
+        <app-patients-management></app-patients-management>
+      </div>
+
+      <!-- Gestión de Horarios -->
+      <div *ngIf="activeTab === 'schedules'" class="tab-content">
+        <app-schedules-management></app-schedules-management>
+      </div>
+    </div>
+  </div>
+</div>
+

@@ -1,59 +1,51 @@
 # NurseHelper
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.2.1.
+Sistema de gestión hospitalaria para enfermeras, administradores y farmacia.
 
-## Development server
+## 🚀 Tecnologías
 
-To start a local development server, run:
+- **Frontend**: Angular
+- **Backend**: Node.js + Express + TypeORM
+- **Base de datos**: MySQL (Railway)
 
-```bash
-ng serve
-```
+## 📋 Requisitos Previos
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+- Node.js 18+
+- npm o yarn
+- MySQL
 
-## Code scaffolding
+## 🔧 Instalación
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+### Backend
 
 ```bash
-ng generate --help
+cd backend
+npm install
+cp .env.example .env  # Configurar variables de entorno
+npm run dev
 ```
 
-## Building
-
-To build the project run:
+### Frontend
 
 ```bash
-ng build
+cd frontend
+npm install
+npm start
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+## 🌐 Despliegue
 
-## Running unit tests
+### Backend (Railway)
+El backend está configurado para usar Railway con MySQL.
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+### Frontend (Vercel)
+El frontend puede desplegarse en Vercel.
 
-```bash
-ng test
-```
+## 📝 Variables de Entorno
 
-## Running end-to-end tests
+Ver archivo `.env` en el directorio `backend/` para configuración de base de datos.
 
-For end-to-end (e2e) testing, run:
+## 📄 Licencia
 
-```bash
-ng e2e
-```
+Proyecto privado
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.

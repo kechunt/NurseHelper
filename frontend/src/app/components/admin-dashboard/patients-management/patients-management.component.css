@@ -1,0 +1,916 @@
+.patients-management {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+}
+
+/* ========== FORMULARIO COMPACTO DE INGRESO ========== */
+.patient-form-section {
+  background: #e0e5ec;
+  border-radius: 20px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 10px 10px 20px #bebebe, -10px -10px 20px #ffffff;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.collapsible-header {
+  cursor: pointer;
+  user-select: none;
+  transition: opacity 0.2s ease;
+}
+
+.collapsible-header:hover {
+  opacity: 0.8;
+}
+
+.header-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.toggle-btn-neuro {
+  background: #e0e5ec;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #4a5568;
+  cursor: pointer;
+  box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #ffffff;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.toggle-btn-neuro:hover {
+  box-shadow: 3px 3px 6px #bebebe, -3px -3px 6px #ffffff;
+}
+
+.toggle-btn-neuro:active {
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+}
+
+.section-title {
+  color: #4a5568;
+  font-size: 1.75rem;
+  font-weight: 300;
+  margin: 0;
+  text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8),
+    -1px -1px 2px rgba(174, 174, 192, 0.4);
+}
+
+.compact-form-container {
+  background: #e0e5ec;
+}
+
+.form-section {
+  background: #e0e5ec;
+  border-radius: 15px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+}
+
+.form-section h3 {
+  color: #4a5568;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid rgba(66, 153, 225, 0.3);
+}
+
+.form-grid-compact {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.input-group label {
+  color: #4a5568;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.input-group small {
+  font-size: 0.8rem;
+  color: #718096;
+  margin-top: 0.25rem;
+}
+
+.neuro-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: #e0e5ec;
+  border: none;
+  border-radius: 12px;
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+  color: #4a5568;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+}
+
+.neuro-input:focus {
+  outline: none;
+  box-shadow: inset 6px 6px 12px #bebebe, inset -6px -6px 12px #ffffff;
+}
+
+.neuro-select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  padding-right: 2.5rem;
+  background: #e0e5ec;
+  border: none;
+  border-radius: 12px;
+  box-shadow: inset 6px 6px 12px #bebebe, inset -6px -6px 12px #ffffff;
+  color: #4a5568;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%234a5568' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+}
+
+.neuro-select:focus {
+  outline: none;
+  box-shadow: inset 8px 8px 16px #bebebe, inset -8px -8px 16px #ffffff;
+}
+
+.neuro-select:hover {
+  box-shadow: inset 7px 7px 14px #bebebe, inset -7px -7px 14px #ffffff;
+}
+
+.neuro-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Evitar movimiento al desplegar selects */
+.neuro-select {
+  position: relative;
+  z-index: 1;
+}
+
+.neuro-select:focus {
+  z-index: 10;
+  position: relative;
+}
+
+/* Asegurar que los selects no muevan el layout */
+select.neuro-select {
+  min-height: 45px;
+}
+
+.form-actions {
+  text-align: center;
+  margin-top: 2rem;
+}
+
+.neuro-btn,
+.neuro-btn-large {
+  background: #e0e5ec;
+  border: none;
+  padding: 0.75rem 2rem;
+  border-radius: 15px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #4a5568;
+  cursor: pointer;
+  box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
+  transition: all 0.3s ease;
+}
+
+.neuro-btn-large {
+  padding: 1rem 3rem;
+  font-size: 1.1rem;
+}
+
+.neuro-btn.success,
+.neuro-btn-large.success {
+  color: #48bb78;
+}
+
+.neuro-btn:hover,
+.neuro-btn-large:hover {
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+  transform: translateY(-2px);
+}
+
+.neuro-btn:active,
+.neuro-btn-large:active {
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+  transform: translateY(0);
+}
+
+/* ========== LISTADO DE PACIENTES ========== */
+.patients-list-section {
+  background: #e0e5ec;
+  padding: 2rem;
+  border-radius: 30px;
+  box-shadow: 10px 10px 20px #bebebe, -10px -10px 20px #ffffff;
+}
+
+.filters-container {
+  background: #e0e5ec;
+  border-radius: 15px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
+}
+
+.filter-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.filter-box label {
+  color: #4a5568;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.search-input {
+  width: 100%;
+}
+
+.clear-filters {
+  padding: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.loading-state {
+  text-align: center;
+  padding: 3rem;
+  color: #718096;
+}
+
+.table-container {
+  overflow-x: auto;
+  background: #e0e5ec;
+  border-radius: 15px;
+  padding: 1rem;
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+}
+
+.neuro-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.neuro-table thead {
+  background: #e0e5ec;
+}
+
+.neuro-table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: #4a5568;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding-bottom: 1.25rem;
+}
+
+.neuro-table th:first-child {
+  padding-left: 1.5rem;
+}
+
+.neuro-table td {
+  padding: 0.9rem;
+  color: #4a5568;
+  vertical-align: top;
+}
+
+.neuro-table td:first-child {
+  padding-left: 1.5rem;
+}
+
+.neuro-table td:last-child {
+  padding-right: 1.5rem;
+}
+
+.neuro-table tbody tr + tr td {
+  position: relative;
+}
+
+.neuro-table tbody tr + tr td::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(174, 174, 192, 0.1);
+}
+
+.neuro-table tbody tr + tr td:first-child::before {
+  left: 1.5rem;
+}
+
+.neuro-table tbody tr + tr td:last-child::before {
+  right: 1.5rem;
+}
+
+.neuro-table tbody tr {
+  transition: background 0.2s ease;
+}
+
+.neuro-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.neuro-table tbody tr.inactive {
+  opacity: 0.6;
+}
+
+.neuro-status {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.neuro-status.active {
+  background: rgba(72, 187, 120, 0.2);
+  color: #48bb78;
+}
+
+.neuro-status.inactive {
+  background: rgba(245, 101, 101, 0.2);
+  color: #f56565;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.neuro-btn-icon {
+  background: #e0e5ec;
+  border: none;
+  width: 35px;
+  height: 35px;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+  transition: all 0.2s ease;
+  font-size: 1rem;
+}
+
+.neuro-btn-icon:hover {
+  box-shadow: 2px 2px 4px #bebebe, -2px -2px 4px #ffffff;
+  transform: translateY(-1px);
+}
+
+.neuro-btn-icon:active {
+  box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
+  transform: translateY(0);
+}
+
+.neuro-btn-icon.delete-btn:hover {
+  background: rgba(245, 101, 101, 0.1);
+  box-shadow: 2px 2px 4px rgba(245, 101, 101, 0.3), -2px -2px 4px #ffffff;
+}
+
+.neuro-btn-icon.delete-btn:active {
+  background: rgba(245, 101, 101, 0.2);
+  box-shadow: inset 3px 3px 6px rgba(245, 101, 101, 0.3), inset -3px -3px 6px #ffffff;
+}
+
+.empty-message {
+  text-align: center;
+  padding: 2rem;
+  color: #a0aec0;
+  font-style: italic;
+}
+
+/* ========== MODAL DE EDICIÓN ========== */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.modal-content {
+  background: #e0e5ec;
+  border-radius: 20px;
+  box-shadow: 20px 20px 40px #bebebe, -20px -20px 40px #ffffff;
+  max-width: 600px;
+  width: 90%;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-content.modal-extra-large {
+  max-width: 1000px;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2rem;
+  border-bottom: 2px solid rgba(66, 153, 225, 0.2);
+}
+
+.modal-header h3 {
+  color: #4a5568;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.close-btn {
+  background: #e0e5ec;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+  font-size: 1.2rem;
+  color: #4a5568;
+  transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+  box-shadow: 2px 2px 4px #bebebe, -2px -2px 4px #ffffff;
+}
+
+.close-btn:active {
+  box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
+}
+
+.tabs-container {
+  display: flex;
+  gap: 0.5rem;
+  padding: 1rem 2rem 0;
+  border-bottom: 2px solid rgba(66, 153, 225, 0.2);
+  overflow-x: auto;
+}
+
+.tab {
+  background: #e0e5ec;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px 10px 0 0;
+  cursor: pointer;
+  color: #718096;
+  font-size: 0.9rem;
+  font-weight: 500;
+  box-shadow: inset 2px 2px 4px #bebebe, inset -2px -2px 4px #ffffff;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.tab.active {
+  color: #4299e1;
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+  font-weight: 600;
+}
+
+.modal-body {
+  padding: 2rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-body.scrollable {
+  max-height: 60vh;
+}
+
+.tab-content {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tab-content h4 {
+  color: #4a5568;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.input-group.full-width {
+  grid-column: 1 / -1;
+}
+
+textarea.neuro-input {
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
+}
+
+.section-header-small {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.neuro-btn-small {
+  background: #e0e5ec;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #4a5568;
+  cursor: pointer;
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+  transition: all 0.2s ease;
+}
+
+.neuro-btn-small:hover {
+  box-shadow: 2px 2px 4px #bebebe, -2px -2px 4px #ffffff;
+}
+
+.medications-list,
+.tasks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.medication-item,
+.task-item {
+  background: #e0e5ec;
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
+}
+
+.med-header,
+.task-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.med-header h5 {
+  color: #4a5568;
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.neuro-btn-icon-small {
+  background: #e0e5ec;
+  border: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 3px 3px 6px #bebebe, -3px -3px 6px #ffffff;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+}
+
+.neuro-btn-icon-small:hover {
+  box-shadow: 2px 2px 4px #bebebe, -2px -2px 4px #ffffff;
+}
+
+.treatment-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.timeline-item {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 1rem;
+}
+
+.timeline-date {
+  background: #e0e5ec;
+  border-radius: 10px;
+  padding: 0.75rem;
+  text-align: center;
+  color: #4a5568;
+  font-weight: 600;
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+  align-self: start;
+}
+
+.timeline-content {
+  background: #e0e5ec;
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
+}
+
+.timeline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.nurse-badge {
+  background: rgba(66, 153, 225, 0.2);
+  color: #4299e1;
+  padding: 0.25rem 0.75rem;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-left: 0.5rem;
+}
+
+.timeline-footer {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(174, 174, 192, 0.3);
+}
+
+.timeline-footer small {
+  color: #a0aec0;
+}
+
+.task-item.completed {
+  opacity: 0.6;
+}
+
+.checkbox-label-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.neuro-checkbox {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.task-title {
+  color: #4a5568;
+  font-weight: 600;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding: 2rem;
+  border-top: 2px solid rgba(66, 153, 225, 0.2);
+}
+
+.neuro-btn.outlined {
+  background: transparent;
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+}
+
+.neuro-btn.outlined:hover {
+  box-shadow: 2px 2px 4px #bebebe, -2px -2px 4px #ffffff;
+}
+
+.neuro-btn.outlined:active {
+  box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 1024px) {
+  .patients-management {
+    gap: 2rem;
+  }
+
+  .patient-form-section,
+  .patients-list-section {
+    padding: 1.5rem;
+  }
+
+  .form-grid-compact {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+
+  .filters-container {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .header-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .neuro-table {
+    min-width: 800px;
+  }
+
+  .modal-content {
+    width: 95%;
+    max-height: 95vh;
+  }
+
+  .modal-content.modal-extra-large {
+    max-width: 95%;
+  }
+
+  .tabs-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 1rem;
+  }
+
+  .tab {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .patients-management {
+    gap: 1.5rem;
+  }
+
+  .patient-form-section,
+  .patients-list-section {
+    padding: 1rem;
+    border-radius: 15px;
+  }
+
+  .section-title {
+    font-size: 1.4rem;
+  }
+
+  .form-grid-compact {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .filters-container {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .form-section {
+    padding: 1rem;
+  }
+
+  .form-section h3 {
+    font-size: 1rem;
+  }
+
+  .header-actions {
+    flex-direction: column;
+    width: 100%;
+    gap: 0.5rem;
+  }
+
+  .toggle-btn-neuro {
+    width: 100%;
+    text-align: center;
+  }
+
+  .neuro-table {
+    min-width: 600px;
+    font-size: 0.85rem;
+  }
+
+  .neuro-table th,
+  .neuro-table td {
+    padding: 0.75rem 0.5rem;
+  }
+
+  .action-buttons {
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+
+  .neuro-btn-icon {
+    width: 30px;
+    height: 30px;
+    font-size: 0.9rem;
+  }
+
+  .modal-content {
+    width: 98%;
+    border-radius: 15px;
+  }
+
+  .modal-header {
+    padding: 1.5rem;
+  }
+
+  .modal-header h3 {
+    font-size: 1.2rem;
+  }
+
+  .modal-body {
+    padding: 1.5rem;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-actions {
+    margin-top: 1.5rem;
+  }
+
+  .neuro-btn-large {
+    padding: 0.875rem 2rem;
+    font-size: 1rem;
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .section-title {
+    font-size: 1.2rem;
+  }
+
+  .neuro-input,
+  .neuro-select {
+    font-size: 0.9rem;
+    padding: 0.625rem 0.875rem;
+  }
+
+  .toggle-btn-neuro {
+    font-size: 0.8rem;
+    padding: 6px 12px;
+  }
+
+  .neuro-btn,
+  .neuro-btn-large {
+    font-size: 0.9rem;
+    padding: 0.625rem 1.5rem;
+  }
+
+  .table-container {
+    padding: 0.5rem;
+  }
+
+  .neuro-table {
+    min-width: 500px;
+    font-size: 0.8rem;
+  }
+
+  .neuro-table th,
+  .neuro-table td {
+    padding: 0.5rem 0.25rem;
+  }
+}

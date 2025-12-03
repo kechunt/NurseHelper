@@ -1,0 +1,65 @@
+<div class="overview-container">
+  <h2 class="section-title">Resumen General</h2>
+
+  <div *ngIf="loading" class="loading-state">
+    <p>Cargando estadísticas...</p>
+  </div>
+
+  <div *ngIf="!loading" class="stats-grid">
+    <div class="stat-card" (click)="navigate('users')">
+      <div class="stat-icon">👥</div>
+      <div class="stat-content">
+        <h3 class="stat-value">{{ stats.users }}</h3>
+        <p class="stat-label">Usuarios</p>
+      </div>
+    </div>
+
+    <div class="stat-card" (click)="navigate('areas')">
+      <div class="stat-icon">🏥</div>
+      <div class="stat-content">
+        <h3 class="stat-value">{{ stats.areas }}</h3>
+        <p class="stat-label">Áreas</p>
+      </div>
+    </div>
+
+    <div class="stat-card" (click)="navigate('beds')">
+      <div class="stat-icon">🛏️</div>
+      <div class="stat-content">
+        <h3 class="stat-value">{{ stats.beds }}</h3>
+        <p class="stat-label">Total de Camas</p>
+      </div>
+    </div>
+
+    <div class="stat-card" (click)="navigate('beds')">
+      <div class="stat-icon">✅</div>
+      <div class="stat-content">
+        <h3 class="stat-value">{{ stats.availableBeds }}</h3>
+        <p class="stat-label">Camas Disponibles</p>
+      </div>
+    </div>
+
+    <div class="stat-card" (click)="navigate('patients')">
+      <div class="stat-icon">👤</div>
+      <div class="stat-content">
+        <h3 class="stat-value">{{ stats.patients }}</h3>
+        <p class="stat-label">Pacientes</p>
+      </div>
+    </div>
+
+    <div class="stat-card" (click)="navigate('staff')">
+      <div class="stat-icon">👩‍⚕️</div>
+      <div class="stat-content">
+        <h3 class="stat-value">{{ stats.nurses }}</h3>
+        <p class="stat-label">Enfermeras Activas</p>
+      </div>
+    </div>
+
+    <div class="stat-card" (click)="navigate('schedules')">
+      <div class="stat-icon">📅</div>
+      <div class="stat-content">
+        <p class="stat-label">Turnos Semanales</p>
+      </div>
+    </div>
+  </div>
+</div>
+

@@ -1,0 +1,486 @@
+<div class="patients-management">
+  <!-- Sección de Ingreso de Nuevo Paciente - Formulario Compacto -->
+  <div class="patient-form-section">
+    <div class="section-header collapsible-header" (click)="showIngresoForm = !showIngresoForm">
+      <h2 class="section-title">📋 Ingreso de Nuevo Paciente</h2>
+      <div class="header-actions">
+        <button class="toggle-btn-neuro" (click)="resetForm(); $event.stopPropagation()">🔄 Limpiar</button>
+        <button class="toggle-btn-neuro">
+          {{ showIngresoForm ? '▼ Ocultar' : '▶ Mostrar' }}
+        </button>
+      </div>
+    </div>
+
+    <div class="compact-form-container" *ngIf="showIngresoForm">
+      <!-- Datos Personales -->
+      <div class="form-section">
+        <h3>👤 Datos Personales</h3>
+        <div class="form-grid-compact">
+          <div class="input-group">
+            <label for="w-firstName">Nombre *</label>
+            <input type="text" id="w-firstName" class="neuro-input" [(ngModel)]="wizardForm.firstName" placeholder="Nombre"/>
+          </div>
+          <div class="input-group">
+            <label for="w-lastName">Apellido *</label>
+            <input type="text" id="w-lastName" class="neuro-input" [(ngModel)]="wizardForm.lastName" placeholder="Apellido"/>
+          </div>
+          <div class="input-group">
+            <label for="w-identification">Cédula/ID *</label>
+            <input type="text" id="w-identification" class="neuro-input" [(ngModel)]="wizardForm.identificationNumber" placeholder="1234567890"/>
+          </div>
+          <div class="input-group">
+            <label for="w-birthdate">Fecha de Nacimiento *</label>
+            <input type="date" id="w-birthdate" class="neuro-input" [(ngModel)]="wizardForm.dateOfBirth"/>
+          </div>
+          <div class="input-group">
+            <label for="w-gender">Género</label>
+            <select id="w-gender" class="neuro-select" [(ngModel)]="wizardForm.gender">
+              <option value="">Seleccionar</option>
+              <option value="M">Masculino</option>
+              <option value="F">Femenino</option>
+              <option value="Otro">Otro</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label for="w-phone">Teléfono</label>
+            <input type="tel" id="w-phone" class="neuro-input" [(ngModel)]="wizardForm.phone" placeholder="+1234567890"/>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contacto de Emergencia -->
+      <div class="form-section">
+        <h3>🚨 Contacto de Emergencia</h3>
+        <div class="form-grid-compact">
+          <div class="input-group">
+            <label for="w-emergency-contact">Nombre del Contacto *</label>
+            <input type="text" id="w-emergency-contact" class="neuro-input" [(ngModel)]="wizardForm.emergencyContact" placeholder="Nombre completo"/>
+          </div>
+          <div class="input-group">
+            <label for="w-emergency-phone">Teléfono *</label>
+            <input type="tel" id="w-emergency-phone" class="neuro-input" [(ngModel)]="wizardForm.emergencyPhone" placeholder="+1234567890"/>
+          </div>
+          <div class="input-group">
+            <label for="w-emergency-relation">Parentesco</label>
+            <select id="w-emergency-relation" class="neuro-select" [(ngModel)]="wizardForm.emergencyRelation">
+              <option value="">Seleccionar</option>
+              <option value="Hijo/a">Hijo/a</option>
+              <option value="Esposo/a">Esposo/a</option>
+              <option value="Hermano/a">Hermano/a</option>
+              <option value="Padre/Madre">Padre/Madre</option>
+              <option value="Otro familiar">Otro familiar</option>
+              <option value="Amigo/a">Amigo/a</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ubicación -->
+      <div class="form-section">
+        <h3>🏥 Asignación de Ubicación</h3>
+        <div class="form-grid-compact">
+          <div class="input-group">
+            <label for="w-area">Área *</label>
+            <select id="w-area" class="neuro-select" [(ngModel)]="wizardForm.selectedAreaId" (change)="onAreaChangeForm()">
+              <option value="">Seleccionar Área</option>
+              <option *ngFor="let area of areas" [value]="area.id">
+                🏥 {{ area.name }} - {{ area.description }}
+              </option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label for="w-bed">Cama</label>
+            <select id="w-bed" class="neuro-select" [(ngModel)]="wizardForm.selectedBedId" [disabled]="!wizardForm.selectedAreaId || availableBeds.length === 0">
+              <option value="">Sin asignar (se asignará después)</option>
+              <option *ngFor="let bed of availableBeds" [value]="bed.id">
+                🛏️ {{ bed.bedNumber }} - Disponible
+              </option>
+            </select>
+            <small *ngIf="wizardForm.selectedAreaId && availableBeds.length === 0" style="color: #f56565;">
+              ⚠️ No hay camas disponibles en esta área
+            </small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Botón de Guardar -->
+      <div class="form-actions">
+        <button class="neuro-btn-large success" (click)="quickSavePatient()">
+          ✅ Ingresar Paciente
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sección de Listado de Pacientes -->
+  <div class="patients-list-section">
+    <div class="section-header collapsible-header" (click)="showPatientsList = !showPatientsList">
+      <h2 class="section-title">📊 Listado de Pacientes</h2>
+      <button class="toggle-btn-neuro">
+        {{ showPatientsList ? '▼ Ocultar' : '▶ Mostrar' }}
+      </button>
+    </div>
+
+    <div *ngIf="showPatientsList">
+
+    <!-- Filtros y Búsqueda -->
+    <div class="filters-container">
+      <div class="filter-box">
+        <label for="patient-search">Buscar Paciente:</label>
+        <input type="text" id="patient-search" class="neuro-input search-input" [(ngModel)]="searchTerm" placeholder="🔍 Buscar por nombre o cédula..." (input)="filterPatients()"/>
+      </div>
+      
+      <div class="filter-box">
+        <label for="area-filter">Filtrar por Área:</label>
+        <select id="area-filter" class="neuro-select" [(ngModel)]="selectedAreaFilter" (change)="filterPatients()">
+          <option value="">Todas las Áreas</option>
+          <option *ngFor="let area of areas" [value]="area.id">{{ area.name }}</option>
+        </select>
+      </div>
+
+      <div class="filter-box">
+        <label for="nurse-filter">Filtrar por Enfermera:</label>
+        <select id="nurse-filter" class="neuro-select" [(ngModel)]="selectedNurseFilter" (change)="filterPatients()">
+          <option value="">Todas las Enfermeras</option>
+          <option *ngFor="let nurse of nurses" [value]="nurse.id">{{ nurse.firstName }} {{ nurse.lastName }}</option>
+        </select>
+      </div>
+
+      <div class="filter-box">
+        <label for="status-filter">Estado del Paciente:</label>
+        <select id="status-filter" class="neuro-select" [(ngModel)]="selectedStatusFilter" (change)="filterPatients()">
+          <option value="">Todos</option>
+          <option value="active">Activos</option>
+          <option value="inactive">Inactivos</option>
+        </select>
+      </div>
+
+      <div class="filter-box">
+        <label for="bed-filter">Asignación de Cama:</label>
+        <select id="bed-filter" class="neuro-select" [(ngModel)]="selectedBedFilter" (change)="filterPatients()">
+          <option value="">Todos</option>
+          <option value="assigned">Con cama asignada</option>
+          <option value="unassigned">Sin cama asignada</option>
+        </select>
+      </div>
+
+      <div class="filter-box">
+        <button class="neuro-btn clear-filters" (click)="clearFilters()" *ngIf="hasActiveFilters()">
+          🔄 Limpiar Filtros
+        </button>
+      </div>
+    </div>
+
+    <div *ngIf="loading" class="loading-state">
+      <p>Cargando pacientes...</p>
+    </div>
+
+    <div *ngIf="!loading" class="table-container">
+      <table class="neuro-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre Completo</th>
+            <th>Cédula</th>
+            <th>Área</th>
+            <th>Cama</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let patient of filteredPatients" [class.inactive]="!patient.isActive">
+            <td>{{ patient.id }}</td>
+            <td>{{ patient.firstName }} {{ patient.lastName }}</td>
+            <td>{{ patient.identificationNumber || '-' }}</td>
+            <td>{{ patient.areaName || 'Sin asignar' }}</td>
+            <td>{{ patient.bedNumber || '-' }}</td>
+            <td>
+              <span class="neuro-status" [class.active]="patient.isActive" [class.inactive]="!patient.isActive">
+                {{ patient.isActive ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td>
+              <div class="action-buttons">
+                <button class="neuro-btn-icon" (click)="openEditModal(patient)" title="Ver/Editar Detalles">👁️</button>
+                <button class="neuro-btn-icon" (click)="toggleActive(patient)" title="{{ patient.isActive ? 'Desactivar' : 'Activar' }}">
+                  {{ patient.isActive ? '🔒' : '🔓' }}
+                </button>
+                <button class="neuro-btn-icon delete-btn" (click)="deletePatient(patient)" title="Eliminar Paciente">🗑️</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <p *ngIf="filteredPatients.length === 0" class="empty-message">No se encontraron pacientes</p>
+    </div>
+    </div>
+  </div>
+
+  <!-- Modal de Edición Detallada del Paciente -->
+  <div *ngIf="showEditModal" class="modal-backdrop" (click)="closeEditModal()">
+    <div class="modal-content modal-extra-large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>📋 {{ selectedPatient?.firstName }} {{ selectedPatient?.lastName }}</h3>
+        <button class="close-btn" (click)="closeEditModal()">✕</button>
+      </div>
+      
+      <!-- Tabs de Navegación -->
+      <div class="tabs-container">
+        <button class="tab" [class.active]="activeTab === 'personal'" (click)="activeTab = 'personal'">
+          👤 Datos Personales
+        </button>
+        <button class="tab" [class.active]="activeTab === 'medications'" (click)="activeTab = 'medications'">
+          💊 Medicamentos
+        </button>
+        <button class="tab" [class.active]="activeTab === 'medical'" (click)="activeTab = 'medical'">
+          🩺 Información Médica
+        </button>
+        <button class="tab" [class.active]="activeTab === 'history'" (click)="activeTab = 'history'">
+          📜 Historial de Tratamientos
+        </button>
+        <button class="tab" [class.active]="activeTab === 'tasks'" (click)="activeTab = 'tasks'">
+          📌 Tareas Pendientes
+        </button>
+      </div>
+
+      <div class="modal-body scrollable">
+        <!-- Tab: Datos Personales -->
+        <div *ngIf="activeTab === 'personal'" class="tab-content">
+          <h4>Información Personal</h4>
+          <div class="form-grid">
+            <div class="input-group">
+              <label>Nombre</label>
+              <input type="text" class="neuro-input" [(ngModel)]="editForm.firstName"/>
+            </div>
+            <div class="input-group">
+              <label>Apellido</label>
+              <input type="text" class="neuro-input" [(ngModel)]="editForm.lastName"/>
+            </div>
+            <div class="input-group">
+              <label>Cédula/ID</label>
+              <input type="text" class="neuro-input" [(ngModel)]="editForm.identificationNumber"/>
+            </div>
+            <div class="input-group">
+              <label>Fecha de Nacimiento</label>
+              <input type="date" class="neuro-input" [(ngModel)]="editForm.dateOfBirth"/>
+            </div>
+            <div class="input-group">
+              <label>Género</label>
+              <select class="neuro-select" [(ngModel)]="editForm.gender">
+                <option value="">Seleccionar</option>
+                <option value="M">Masculino</option>
+                <option value="F">Femenino</option>
+                <option value="Otro">Otro</option>
+              </select>
+            </div>
+            <div class="input-group">
+              <label>Teléfono</label>
+              <input type="tel" class="neuro-input" [(ngModel)]="editForm.phone"/>
+            </div>
+            <div class="input-group full-width">
+              <label>Dirección</label>
+              <input type="text" class="neuro-input" [(ngModel)]="editForm.address"/>
+            </div>
+          </div>
+
+          <h4 style="margin-top: 2rem;">Contacto de Emergencia</h4>
+          <div class="form-grid">
+            <div class="input-group">
+              <label>Nombre del Contacto</label>
+              <input type="text" class="neuro-input" [(ngModel)]="editForm.emergencyContact"/>
+            </div>
+            <div class="input-group">
+              <label>Teléfono de Emergencia</label>
+              <input type="tel" class="neuro-input" [(ngModel)]="editForm.emergencyPhone"/>
+            </div>
+            <div class="input-group">
+              <label>Parentesco</label>
+              <input type="text" class="neuro-input" [(ngModel)]="editForm.emergencyRelation"/>
+            </div>
+          </div>
+
+          <h4 style="margin-top: 2rem;">Ubicación Actual</h4>
+          <div class="form-grid">
+            <div class="input-group">
+              <label>Área</label>
+              <select class="neuro-select" [(ngModel)]="editForm.areaId" (change)="onAreaChange($event)">
+                <option value="">Sin asignar</option>
+                <option *ngFor="let area of areas" [value]="area.id">{{ area.name }}</option>
+              </select>
+            </div>
+            <div class="input-group">
+              <label>Cama</label>
+              <select class="neuro-select" [(ngModel)]="editForm.bedId" [disabled]="!editForm.areaId">
+                <option value="">Sin asignar</option>
+                <option *ngFor="let bed of availableBeds" [value]="bed.id">Cama {{ bed.bedNumber }}</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab: Medicamentos -->
+        <div *ngIf="activeTab === 'medications'" class="tab-content">
+          <div class="section-header-small">
+            <h4>💊 Medicamentos y Horarios</h4>
+            <button class="neuro-btn-small" (click)="addMedication()">➕ Agregar Medicamento</button>
+          </div>
+          
+          <div class="medications-list">
+            <div *ngFor="let med of editForm.medications; let i = index" class="medication-item">
+              <div class="med-header">
+                <h5>Medicamento #{{ i + 1 }}</h5>
+                <button class="neuro-btn-icon-small" (click)="removeMedication(i)">🗑️</button>
+              </div>
+              <div class="form-grid">
+                <div class="input-group">
+                  <label>Nombre del Medicamento</label>
+                  <input type="text" class="neuro-input" [(ngModel)]="med.name" placeholder="Ej: Ibuprofeno"/>
+                </div>
+                <div class="input-group">
+                  <label>Dosis</label>
+                  <input type="text" class="neuro-input" [(ngModel)]="med.dosage" placeholder="Ej: 400mg"/>
+                </div>
+                <div class="input-group">
+                  <label>Frecuencia</label>
+                  <input type="text" class="neuro-input" [(ngModel)]="med.frequency" placeholder="Ej: Cada 8 horas"/>
+                </div>
+                <div class="input-group">
+                  <label>Horarios</label>
+                  <input type="text" class="neuro-input" [(ngModel)]="med.schedules" placeholder="Ej: 8:00, 16:00, 00:00"/>
+                </div>
+                <div class="input-group full-width">
+                  <label>Notas</label>
+                  <textarea class="neuro-input" rows="2" [(ngModel)]="med.notes" placeholder="Indicaciones especiales..."></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p *ngIf="editForm.medications.length === 0" class="empty-message">No hay medicamentos registrados</p>
+        </div>
+
+        <!-- Tab: Información Médica -->
+        <div *ngIf="activeTab === 'medical'" class="tab-content">
+          <h4>🩺 Observaciones Médicas</h4>
+          <div class="input-group">
+            <label>Diagnóstico / Condiciones</label>
+            <textarea class="neuro-input" rows="3" [(ngModel)]="editForm.medicalObservations" placeholder="Ej: Alzheimer, Demencia senil, Diabetes tipo 2, etc."></textarea>
+          </div>
+
+          <h4 style="margin-top: 2rem;">♿ Necesidades Especiales</h4>
+          <div class="input-group">
+            <textarea class="neuro-input" rows="3" [(ngModel)]="editForm.specialNeeds" placeholder="Ej: Asistencia para caminar, dieta especial, ayuda para el baño, etc."></textarea>
+          </div>
+
+          <h4 style="margin-top: 2rem;">🩹 Alergias</h4>
+          <div class="input-group">
+            <textarea class="neuro-input" rows="3" [(ngModel)]="editForm.allergies" placeholder="Alergias conocidas..."></textarea>
+          </div>
+
+          <h4 style="margin-top: 2rem;">📋 Historial Médico</h4>
+          <div class="input-group">
+            <textarea class="neuro-input" rows="5" [(ngModel)]="editForm.medicalHistory" placeholder="Historial médico completo del paciente..."></textarea>
+          </div>
+
+          <h4 style="margin-top: 2rem;">📝 Observaciones Generales</h4>
+          <div class="input-group">
+            <textarea class="neuro-input" rows="4" [(ngModel)]="editForm.generalObservations" placeholder="Otras observaciones relevantes..."></textarea>
+          </div>
+        </div>
+
+        <!-- Tab: Historial de Tratamientos -->
+        <div *ngIf="activeTab === 'history'" class="tab-content">
+          <div class="section-header-small">
+            <h4>📜 Historial de Tratamientos</h4>
+            <button class="neuro-btn-small" (click)="addTreatmentRecord()">➕ Agregar Registro</button>
+          </div>
+
+          <div class="treatment-timeline">
+            <div *ngFor="let treatment of editForm.treatmentHistory; let i = index" class="timeline-item">
+              <div class="timeline-date">{{ treatment.date }}</div>
+              <div class="timeline-content">
+                <div class="timeline-header">
+                  <div>
+                    <strong>{{ treatment.type }}</strong>
+                    <span class="nurse-badge">👩‍⚕️ {{ treatment.nurseName }}</span>
+                  </div>
+                  <button class="neuro-btn-icon-small" (click)="removeTreatment(i)">🗑️</button>
+                </div>
+                <p>{{ treatment.description }}</p>
+                <div class="timeline-footer">
+                  <small>{{ treatment.time }}</small>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p *ngIf="editForm.treatmentHistory.length === 0" class="empty-message">No hay registros de tratamientos</p>
+        </div>
+
+        <!-- Tab: Tareas Pendientes -->
+        <div *ngIf="activeTab === 'tasks'" class="tab-content">
+          <div class="section-header-small">
+            <h4>📌 Tareas y Tratamientos Pendientes</h4>
+            <button class="neuro-btn-small" (click)="addPendingTask()">➕ Nueva Tarea</button>
+          </div>
+
+          <div class="tasks-list">
+            <div *ngFor="let task of editForm.pendingTasks; let i = index" class="task-item" [class.completed]="task.completed">
+              <div class="task-header">
+                <label class="checkbox-label-inline">
+                  <input type="checkbox" class="neuro-checkbox" [(ngModel)]="task.completed"/>
+                  <span class="task-title">{{ task.title }}</span>
+                </label>
+                <button class="neuro-btn-icon-small" (click)="removeTask(i)">🗑️</button>
+              </div>
+              <div class="form-grid">
+                <div class="input-group">
+                  <label>Tipo de Tarea</label>
+                  <select class="neuro-select" [(ngModel)]="task.type">
+                    <option value="treatment">Tratamiento</option>
+                    <option value="analysis">Análisis/Examen</option>
+                    <option value="medication">Medicación</option>
+                    <option value="checkup">Revisión</option>
+                    <option value="other">Otro</option>
+                  </select>
+                </div>
+                <div class="input-group">
+                  <label>Fecha y Hora</label>
+                  <input type="datetime-local" class="neuro-input" [(ngModel)]="task.scheduledDate"/>
+                </div>
+                <div class="input-group full-width">
+                  <label>Descripción</label>
+                  <textarea class="neuro-input" rows="2" [(ngModel)]="task.description" placeholder="Descripción detallada de la tarea..."></textarea>
+                </div>
+                <div class="input-group">
+                  <label>Asignado a</label>
+                  <select class="neuro-select" [(ngModel)]="task.assignedTo">
+                    <option value="">Seleccionar enfermera</option>
+                    <option *ngFor="let nurse of nurses" [value]="nurse.firstName + ' ' + nurse.lastName">
+                      {{ nurse.firstName }} {{ nurse.lastName }}
+                    </option>
+                  </select>
+                </div>
+                <div class="input-group">
+                  <label>Prioridad</label>
+                  <select class="neuro-select" [(ngModel)]="task.priority">
+                    <option value="low">Baja</option>
+                    <option value="medium">Media</option>
+                    <option value="high">Alta</option>
+                    <option value="urgent">Urgente</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p *ngIf="editForm.pendingTasks.length === 0" class="empty-message">No hay tareas pendientes</p>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="neuro-btn outlined" (click)="closeEditModal()">Cancelar</button>
+        <button class="neuro-btn" (click)="savePatientChanges()">💾 Guardar Cambios</button>
+      </div>
+    </div>
+  </div>
+</div>
+

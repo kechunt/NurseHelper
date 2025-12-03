@@ -1,0 +1,183 @@
+<div class="beds-management">
+  <div class="section-header">
+    <h2 class="section-title">Gestión de Camas</h2>
+  </div>
+
+  <div class="filters-container">
+    <div class="filter-group">
+      <label for="area-filter">Filtrar por Área:</label>
+      <select id="area-filter" class="neuro-select" [(ngModel)]="selectedAreaId">
+        <option [value]="null">Todas las áreas</option>
+        <option *ngFor="let area of areas" [value]="area.id">
+          {{ area.name }}
+        </option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label>Filtrar por Estado:</label>
+      <div class="filter-buttons">
+        <button
+          class="neuro-btn filter-btn"
+          [class.active]="filterStatus === 'all'"
+          (click)="filterStatus = 'all'"
+        >
+          Todas
+        </button>
+        <button
+          class="neuro-btn filter-btn"
+          [class.active]="filterStatus === 'occupied'"
+          (click)="filterStatus = 'occupied'"
+        >
+          Ocupadas
+        </button>
+        <button
+          class="neuro-btn filter-btn"
+          [class.active]="filterStatus === 'available'"
+          (click)="filterStatus = 'available'"
+        >
+          Disponibles
+        </button>
+        <button
+          class="neuro-btn filter-btn"
+          [class.active]="filterStatus === 'unavailable'"
+          (click)="filterStatus = 'unavailable'"
+        >
+          ❌ No Disponibles
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading-state">
+    <p>Cargando camas...</p>
+  </div>
+
+  <div *ngIf="!loading" class="beds-by-area">
+    <div *ngFor="let area of getUniqueAreas()" class="area-section">
+      <h3 class="area-section-title">
+        {{ area.name }}
+        <span class="area-beds-count">
+          ({{ getBedsByArea(area.id!).length }} camas)
+        </span>
+      </h3>
+      <div class="beds-grid">
+        <div
+          *ngFor="let bed of getBedsByArea(area.id!)"
+          class="bed-card"
+          [ngClass]="getBedClass(bed)"
+        >
+          <div class="bed-number">{{ bed.bedNumber }}</div>
+          <div class="bed-status">
+            <span 
+              class="status-badge" 
+              [ngClass]="getBedClass(bed)"
+            >
+              {{ getBedStatusLabel(bed) }}
+            </span>
+          </div>
+          <div *ngIf="bed.patientId && bed.patient" class="bed-patient">
+            👤 {{ bed.patient.firstName }} {{ bed.patient.lastName }}
+          </div>
+          <div class="bed-actions">
+            <button class="edit-bed-btn" (click)="openEditBedModal(bed)" title="Editar cama">✏️</button>
+            <button class="delete-bed-btn" (click)="deleteBed(bed)" title="Eliminar cama">🗑️</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="filteredBeds.length === 0" class="no-results">
+      <p>No hay camas que coincidan con los filtros seleccionados</p>
+    </div>
+  </div>
+
+  <!-- Modal para editar cama -->
+  <div *ngIf="showEditBedModal" class="modal-backdrop" (click)="closeEditBedModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Editar Cama</h3>
+        <button class="close-btn" (click)="closeEditBedModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="input-group">
+          <label for="edit-bed-number">Número/Nombre de Cama *</label>
+          <input
+            type="text"
+            id="edit-bed-number"
+            class="neuro-input"
+            [(ngModel)]="editBedForm.bedNumber"
+            placeholder="Ej: SAL-001, Cama-1, etc."
+          />
+        </div>
+        <div class="input-group">
+          <label for="edit-bed-availability">Estado de la Cama</label>
+          <select id="edit-bed-availability" class="neuro-select" [(ngModel)]="editBedForm.isActive">
+            <option [value]="true">✅ Disponible (puede recibir pacientes)</option>
+            <option [value]="false">❌ No Disponible (fuera de servicio)</option>
+          </select>
+          <small>
+            <span *ngIf="editBedForm.isActive" style="color: #48bb78;">
+              ✓ La cama está habilitada para uso
+            </span>
+            <span *ngIf="!editBedForm.isActive" style="color: #f56565;">
+              ⚠️ La cama está fuera de servicio (mantenimiento, reparación, etc.)
+            </span>
+          </small>
+        </div>
+        <div class="input-group">
+          <label for="edit-bed-patient">Asignación de Paciente</label>
+          
+          <!-- Botón para liberar cama -->
+          <div class="patient-actions" *ngIf="editBedForm.patientId">
+            <div class="current-patient">
+              <span class="patient-info">
+                👤 {{ getCurrentPatientName() }}
+              </span>
+              <button type="button" class="release-bed-btn" (click)="releaseBed()" title="Liberar cama">
+                🔓 Liberar Cama
+              </button>
+            </div>
+          </div>
+
+          <!-- Buscador de pacientes -->
+          <div class="patient-search" *ngIf="!editBedForm.patientId">
+            <input
+              type="text"
+              class="neuro-input search-input"
+              [(ngModel)]="patientSearchTerm"
+              (input)="filterPatients()"
+              placeholder="🔍 Buscar por nombre o cédula..."
+            />
+            
+            <div class="patients-list" *ngIf="patientSearchTerm && filteredPatients.length > 0">
+              <div 
+                *ngFor="let patient of filteredPatients.slice(0, 5)" 
+                class="patient-item"
+                (click)="selectPatient(patient)">
+                <div class="patient-item-info">
+                  <strong>{{ patient.firstName }} {{ patient.lastName }}</strong>
+                  <span class="patient-id" *ngIf="patient.identificationNumber">
+                    {{ patient.identificationNumber }}
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            <small *ngIf="patientSearchTerm && filteredPatients.length === 0" class="no-results-text">
+              No se encontraron pacientes
+            </small>
+            <small *ngIf="!patientSearchTerm">
+              Escribe para buscar pacientes sin cama asignada
+            </small>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="neuro-btn outlined" (click)="closeEditBedModal()">Cancelar</button>
+        <button class="neuro-btn" (click)="saveBedChanges()">Guardar Cambios</button>
+      </div>
+    </div>
+  </div>
+</div>
+

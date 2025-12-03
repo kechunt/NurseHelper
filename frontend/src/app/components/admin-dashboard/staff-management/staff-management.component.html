@@ -1,0 +1,230 @@
+<div class="staff-management">
+  <div class="section-header">
+    <h2 class="section-title">Gestión de Personal</h2>
+  </div>
+
+  <div class="filters-container">
+    <div class="filter-group">
+      <label for="shift-filter">Filtrar por Turno:</label>
+      <select id="shift-filter" class="neuro-select" [(ngModel)]="selectedShift" (change)="onShiftFilterChange()">
+        <option [value]="null">Todos los turnos</option>
+        <option *ngFor="let shift of getUniqueShifts()" [value]="shift">
+          {{ shift }}
+        </option>
+      </select>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading-state">
+    <p>Cargando personal...</p>
+  </div>
+
+  <div *ngIf="!loading">
+    <!-- Tarjetas de Enfermeras -->
+    <div class="nurses-grid">
+      <div *ngFor="let nurse of getFilteredNurses()" class="nurse-card">
+        <div class="nurse-card-header">
+          <div class="nurse-info">
+            <h3 class="nurse-name">{{ nurse.firstName }} {{ nurse.lastName }}</h3>
+            <p class="nurse-username">@{{ nurse.username }}</p>
+          </div>
+        </div>
+
+        <div class="nurse-settings">
+          <div class="setting-group">
+            <label for="max-patients-{{ nurse.id }}">Capacidad Máxima:</label>
+            <select
+              id="max-patients-{{ nurse.id }}"
+              class="neuro-select-small"
+              [(ngModel)]="nurse.maxPatients"
+              (ngModelChange)="updateMaxPatients(nurse.id!, $event)"
+            >
+              <option [ngValue]="0">0 pacientes</option>
+              <option [ngValue]="1">1 paciente</option>
+              <option [ngValue]="2">2 pacientes</option>
+              <option [ngValue]="3">3 pacientes</option>
+              <option [ngValue]="4">4 pacientes</option>
+              <option [ngValue]="5">5 pacientes</option>
+              <option [ngValue]="6">6 pacientes</option>
+              <option [ngValue]="7">7 pacientes</option>
+              <option [ngValue]="8">8 pacientes</option>
+              <option [ngValue]="9">9 pacientes</option>
+              <option [ngValue]="10">10 pacientes</option>
+              <option [ngValue]="15">15 pacientes</option>
+              <option [ngValue]="20">20 pacientes</option>
+            </select>
+          </div>
+
+          <div class="setting-group">
+            <label for="area-{{ nurse.id }}">Área Asignada:</label>
+            <select
+              id="area-{{ nurse.id }}"
+              class="neuro-select-small"
+              [(ngModel)]="nurse.assignedAreaId"
+              (ngModelChange)="updateNurseArea(nurse.id!, $event)"
+            >
+              <option [ngValue]="null">Sin área</option>
+              <option *ngFor="let area of areas" [ngValue]="area.id">
+                {{ area.name }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <div class="nurse-stats">
+          <div class="stat-item">
+            <span class="stat-label">Área:</span>
+            <span class="stat-value">{{ getAreaName(nurse.assignedAreaId) }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Pacientes:</span>
+            <span class="stat-value" [class.at-capacity]="getAssignedPatientsCount(nurse.id!) >= (nurse.maxPatients ?? 0) && (nurse.maxPatients ?? 0) > 0">
+              {{ getAssignedPatientsCount(nurse.id!) }} / {{ nurse.maxPatients ?? 0 }}
+            </span>
+          </div>
+          <div class="stat-item" *ngIf="getNurseAssignment(nurse.id!)?.shiftSchedule || (selectedShift && hasNurseInSelectedShift(nurse.id!))">
+            <span class="stat-label">Turno:</span>
+            <span class="stat-value">
+              {{ getNurseAssignment(nurse.id!)?.shiftSchedule ? getShiftFromSchedule(getNurseAssignment(nurse.id!)!.shiftSchedule!) : (selectedShift || 'Sin turno asignado') }}
+            </span>
+          </div>
+        </div>
+
+        <button class="edit-nurse-btn" (click)="openPatientAssignmentModal()" title="Asignar pacientes">
+          Asignar Pacientes
+        </button>
+      </div>
+
+      <div *ngIf="getFilteredNurses().length === 0" class="no-results">
+        <p>No hay enfermeras disponibles</p>
+      </div>
+    </div>
+
+    <!-- Pacientes Disponibles (Sin Asignar) -->
+    <div class="patients-section">
+      <h3 class="section-subtitle">Pacientes Disponibles</h3>
+      <div class="available-patients-container">
+        <div *ngIf="patients.length === 0" class="no-patients-message">
+          <p>No hay pacientes disponibles</p>
+        </div>
+        <div *ngIf="patients.length > 0" class="patients-grid">
+          <div *ngFor="let patient of patients" class="patient-card-available" (click)="openEditPatientAssignment(patient)">
+            <div class="patient-card-header">
+              <span class="patient-name">{{ patient.firstName }} {{ patient.lastName }}</span>
+              <button class="edit-patient-btn" (click)="openEditPatientAssignment(patient); $event.stopPropagation()" title="Asignar/Editar">
+                ✏️
+              </button>
+            </div>
+            <div class="patient-info">
+              <div class="info-item">
+                <span class="info-label">Cama:</span>
+                <span class="info-value">{{ getPatientBed(patient.id) }}</span>
+              </div>
+              <div class="info-item" *ngIf="getPatientBedArea(patient.id)">
+                <span class="info-label">Área:</span>
+                <span class="info-value">{{ getPatientBedArea(patient.id) }}</span>
+              </div>
+              <div class="info-item" *ngIf="getAssignedNurseForPatient(patient.id)">
+                <span class="info-label">Enfermera:</span>
+                <span class="info-value">
+                  {{ getAssignedNurseForPatient(patient.id)?.firstName }} {{ getAssignedNurseForPatient(patient.id)?.lastName }}
+                </span>
+              </div>
+              <div class="info-item" *ngIf="!getAssignedNurseForPatient(patient.id)">
+                <span class="info-label status-unassigned">Sin asignar</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para asignar pacientes -->
+  <div *ngIf="showPatientAssignmentModal" class="modal-backdrop" (click)="closePatientAssignmentModal()">
+    <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>
+          {{ selectedPatientForAssignment ? `Asignar Enfermera: ${selectedPatientForAssignment.firstName} ${selectedPatientForAssignment.lastName}` : 'Asignar Pacientes a Enfermeras' }}
+        </h3>
+        <button class="close-btn" (click)="closePatientAssignmentModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div *ngIf="selectedPatientForAssignment" class="patient-assignment-form">
+          <div class="patient-info-card">
+            <h4>Información del Paciente</h4>
+            <div class="info-grid">
+              <div class="info-item">
+                <span class="info-label">Nombre:</span>
+                <span class="info-value">{{ selectedPatientForAssignment.firstName }} {{ selectedPatientForAssignment.lastName }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Cama:</span>
+                <span class="info-value">{{ getPatientBed(selectedPatientForAssignment.id) }}</span>
+              </div>
+              <div class="info-item" *ngIf="getPatientBedArea(selectedPatientForAssignment.id)">
+                <span class="info-label">Área:</span>
+                <span class="info-value">{{ getPatientBedArea(selectedPatientForAssignment.id) }}</span>
+              </div>
+              <div class="info-item" *ngIf="getAssignedNurseForPatient(selectedPatientForAssignment.id)">
+                <span class="info-label">Enfermera Actual:</span>
+                <span class="info-value">
+                  {{ getAssignedNurseForPatient(selectedPatientForAssignment.id)?.firstName }} {{ getAssignedNurseForPatient(selectedPatientForAssignment.id)?.lastName }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label for="assign-nurse">Asignar a Enfermera</label>
+            <select 
+              id="assign-nurse" 
+              class="neuro-select" 
+              [value]="getAssignedNurseForPatient(selectedPatientForAssignment.id)?.id || null"
+              (change)="assignPatientToNurse(selectedPatientForAssignment, $any($event.target).value ? +$any($event.target).value : null)"
+            >
+              <option [value]="null">Sin asignar</option>
+              <option *ngFor="let nurse of nurses" [value]="nurse.id">
+                {{ nurse.firstName }} {{ nurse.lastName }} 
+                ({{ getAssignedPatientsCount(nurse.id!) }}/{{ getMaxPatients(nurse.id!) }})
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <div *ngIf="!selectedPatientForAssignment" class="patients-list-modal">
+          <div class="input-group">
+            <label>Pacientes Disponibles</label>
+            <div class="patients-selection-container">
+              <div
+                *ngFor="let patient of patients"
+                class="patient-selection-item"
+                (click)="openEditPatientAssignment(patient)"
+              >
+                <div class="patient-selection-info">
+                  <span class="patient-name">{{ patient.firstName }} {{ patient.lastName }}</span>
+                  <div class="patient-details">
+                    <span class="detail-item">🛏️ Cama: {{ getPatientBed(patient.id) }}</span>
+                    <span class="detail-item" *ngIf="getPatientBedArea(patient.id)">📍 {{ getPatientBedArea(patient.id) }}</span>
+                    <span class="detail-item" *ngIf="getAssignedNurseForPatient(patient.id)">
+                      👩‍⚕️ {{ getAssignedNurseForPatient(patient.id)?.firstName }} {{ getAssignedNurseForPatient(patient.id)?.lastName }}
+                    </span>
+                    <span class="detail-item status-unassigned" *ngIf="!getAssignedNurseForPatient(patient.id)">
+                      Sin asignar
+                    </span>
+                  </div>
+                </div>
+                <button class="edit-assignment-btn" (click)="openEditPatientAssignment(patient); $event.stopPropagation()" title="Editar asignación">
+                  ✏️
+                </button>
+              </div>
+              <div *ngIf="patients.length === 0" class="no-patients">
+                <p>No hay pacientes disponibles</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
