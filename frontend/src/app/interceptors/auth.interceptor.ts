@@ -26,8 +26,6 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         console.error('❌ Error de conexión:', 'No se puede conectar al servidor. Verifica la URL del backend.');
       } else if (error.status === 401) {
         console.warn('⚠️ No autorizado:', 'Token inválido o expirado');
-        // Opcional: logout automático si el token es inválido
-        // authService.logout();
       } else if (error.status === 403) {
         console.error('🚫 Acceso denegado:', error.message);
       } else if (error.status >= 500) {

@@ -16,6 +16,7 @@ import medicationsRoutes from './routes/medications.routes';
 import shiftsRoutes from './routes/shifts.routes';
 import pharmacyRoutes from './routes/pharmacy.routes';
 
+// Cargar variables de entorno al inicio
 loadEnv();
 
 const app = express();
