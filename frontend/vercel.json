@@ -1,0 +1,11 @@
+{
+  "buildCommand": "npm install && npm run build -- --configuration production",
+  "outputDirectory": "dist/NurseHelper/browser",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
+
