@@ -23,10 +23,43 @@ const PORT = process.env.PORT || 3000;
 
 // Middlewares de seguridad
 app.use(helmet());
+
+// Configuración de CORS mejorada para producción
+const allowedOrigins = process.env.CORS_ORIGIN 
+  ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
+  : ['http://localhost:4200'];
+
+// Permitir todos los dominios de Vercel si no se especifica CORS_ORIGIN en producción
+if (process.env.NODE_ENV === 'production' && !process.env.CORS_ORIGIN) {
+  allowedOrigins.push(/^https:\/\/.*\.vercel\.app$/);
+}
+
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:4200',
+    origin: (origin, callback) => {
+      // Permitir requests sin origin (mobile apps, Postman, etc.)
+      if (!origin) return callback(null, true);
+      
+      // Verificar si el origin está permitido
+      const isAllowed = allowedOrigins.some(allowedOrigin => {
+        if (typeof allowedOrigin === 'string') {
+          return origin === allowedOrigin;
+        } else if (allowedOrigin instanceof RegExp) {
+          return allowedOrigin.test(origin);
+        }
+        return false;
+      });
+      
+      if (isAllowed) {
+        callback(null, true);
+      } else {
+        console.warn(`⚠️ CORS bloqueado para origin: ${origin}`);
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );
 app.use(express.json());
