@@ -25,43 +25,43 @@ const PORT = process.env.PORT || 3000;
 app.use(helmet());
 
 // Configuración de CORS mejorada para producción
-const allowedOrigins = process.env.CORS_ORIGIN 
-  ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
-  : ['http://localhost:4200'];
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
+    // Permitir requests sin origin (mobile apps, Postman, etc.)
+    if (!origin) {
+      return callback(null, true);
+    }
 
-// Permitir todos los dominios de Vercel si no se especifica CORS_ORIGIN en producción
-if (process.env.NODE_ENV === 'production' && !process.env.CORS_ORIGIN) {
-  allowedOrigins.push(/^https:\/\/.*\.vercel\.app$/);
-}
+    // Obtener orígenes permitidos desde variables de entorno
+    const allowedOriginsEnv: string[] = process.env.CORS_ORIGIN 
+      ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
+      : [];
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // Permitir requests sin origin (mobile apps, Postman, etc.)
-      if (!origin) return callback(null, true);
-      
-      // Verificar si el origin está permitido
-      const isAllowed = allowedOrigins.some(allowedOrigin => {
-        if (typeof allowedOrigin === 'string') {
-          return origin === allowedOrigin;
-        } else if (allowedOrigin instanceof RegExp) {
-          return allowedOrigin.test(origin);
-        }
-        return false;
-      });
-      
-      if (isAllowed) {
-        callback(null, true);
-      } else {
-        console.warn(`⚠️ CORS bloqueado para origin: ${origin}`);
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  })
-);
+    // Orígenes permitidos por defecto
+    const defaultOrigins: string[] = ['http://localhost:4200'];
+    const allAllowedOrigins: string[] = [...defaultOrigins, ...allowedOriginsEnv];
+
+    // Patrón regex para dominios de Vercel
+    const vercelPattern = /^https:\/\/.*\.vercel\.app$/;
+
+    // Verificar si el origin está permitido
+    const isAllowed = 
+      allAllowedOrigins.includes(origin) || 
+      (process.env.NODE_ENV === 'production' && vercelPattern.test(origin));
+
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      console.warn(`⚠️ CORS bloqueado para origin: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
