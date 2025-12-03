@@ -1,5 +1,4 @@
 node_modules
-dist
 .angular
 *.log
 .env
@@ -9,11 +8,15 @@ dist
 
 # Frontend
 frontend/node_modules
-frontend/dist
 frontend/.angular
+# frontend/dist está permitido - se subirá a GitHub para Vercel
 
 # Backend
 backend/node_modules
 backend/dist
 backend/logs
 backend/.env
+
+# Dist - ignorar dist en raíz y backend, pero NO frontend/dist
+/dist
+/backend/dist
