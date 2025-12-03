@@ -1,7 +1,5 @@
 {
-  "buildCommand": "bash build.sh",
   "outputDirectory": "frontend/dist/NurseHelper/browser",
-  "installCommand": "npm install",
   "rewrites": [
     {
       "source": "/(.*)",
