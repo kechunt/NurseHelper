@@ -1,5 +1,7 @@
 {
+  "buildCommand": "cd frontend && npm install && npm run build -- --configuration production",
   "outputDirectory": "frontend/dist/NurseHelper/browser",
+  "installCommand": "cd frontend && npm install",
   "rewrites": [
     {
       "source": "/(.*)",
@@ -7,4 +9,3 @@
     }
   ]
 }
-
