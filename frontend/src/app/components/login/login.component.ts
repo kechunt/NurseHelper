@@ -50,8 +50,21 @@ export class LoginComponent {
       },
       error: (err) => {
         this.loading = false;
-        this.error = err.error?.message || 'Error al iniciar sesión';
         console.error('Login error:', err);
+        
+        // Mensajes de error más descriptivos
+        if (err.status === 0) {
+          // Error de red/CORS
+          this.error = 'No se puede conectar al servidor. Verifica que el backend esté funcionando y que CORS esté configurado correctamente.';
+        } else if (err.status === 401) {
+          this.error = err.error?.message || 'Usuario o contraseña incorrectos';
+        } else if (err.status === 404) {
+          this.error = 'Endpoint no encontrado. Verifica la URL del backend en environment.prod.ts';
+        } else if (err.status >= 500) {
+          this.error = 'Error del servidor. Por favor intenta más tarde.';
+        } else {
+          this.error = err.error?.message || 'Error al iniciar sesión. Revisa la consola para más detalles.';
+        }
       },
     });
   }

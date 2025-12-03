@@ -1,8 +1,5 @@
 {
-  "buildCommand": "npm run build",
   "outputDirectory": "dist/NurseHelper/browser",
-  "framework": null,
-  "installCommand": "npm install",
   "rewrites": [
     {
       "source": "/(.*)",

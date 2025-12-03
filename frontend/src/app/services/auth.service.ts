@@ -45,13 +45,18 @@ export class AuthService {
   }
 
   login(usernameOrEmail: string, password: string): Observable<LoginResponse> {
+    const loginUrl = `${this.apiUrl}/login`;
+    console.log('🔐 Intentando login en:', loginUrl);
+    console.log('📍 API URL base:', environment.apiUrl);
+    
     return this.http
-      .post<LoginResponse>(`${this.apiUrl}/login`, {
+      .post<LoginResponse>(loginUrl, {
         usernameOrEmail,
         password,
       })
       .pipe(
         tap((response) => {
+          console.log('✅ Login exitoso');
           this.setToken(response.token);
           this.setUser(response.user);
         })
