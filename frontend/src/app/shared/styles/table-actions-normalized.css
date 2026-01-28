@@ -1,0 +1,176 @@
+/* ========== ESTILOS NORMALIZADOS PARA BOTONES DE ACCIÓN EN TABLAS ========== */
+/* Este archivo asegura que todos los botones de acción estén en línea horizontal */
+
+/* Contenedor de botones de acción - NORMALIZADO - FORZADO A UNA SOLA LÍNEA */
+.action-buttons-table,
+.action-buttons,
+.action-buttons-pharmacy {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.15rem !important;
+  width: 100% !important;
+  height: 30px !important;
+  max-height: 30px !important;
+  min-height: 30px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+  overflow: visible !important;
+  white-space: nowrap !important;
+}
+
+/* Forzar que los hijos también estén en línea */
+.action-buttons-table > *,
+.action-buttons > *,
+.action-buttons-pharmacy > * {
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
+  display: inline-flex !important;
+  white-space: nowrap !important;
+}
+
+/* Botón de acción compacto - NORMALIZADO - FORZADO A TAMAÑO FIJO */
+.action-btn-compact,
+.neuro-btn-icon {
+  background: #e0e5ec !important;
+  border: none !important;
+  padding: 0 !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 2px 2px 4px #bebebe, -2px -2px 4px #ffffff !important;
+  font-size: 0.85rem !important;
+  color: #4a5568 !important;
+  font-weight: 600 !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
+  flex-basis: 28px !important;
+  min-width: 28px !important;
+  width: 28px !important;
+  height: 28px !important;
+  max-width: 28px !important;
+  max-height: 28px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  vertical-align: middle !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* Hover y estados */
+.action-btn-compact:hover:not(:disabled),
+.neuro-btn-icon:hover:not(:disabled) {
+  box-shadow: 1px 1px 2px #bebebe, -1px -1px 2px #ffffff !important;
+  transform: translateY(-1px);
+}
+
+.action-btn-compact:active:not(:disabled),
+.neuro-btn-icon:active:not(:disabled) {
+  box-shadow: inset 2px 2px 4px #bebebe, inset -2px -2px 4px #ffffff !important;
+  transform: translateY(0);
+}
+
+/* Estados especiales */
+.action-btn-compact.success,
+.neuro-btn-icon.success {
+  color: #22543d !important;
+}
+
+.action-btn-compact.danger,
+.neuro-btn-icon.danger {
+  color: #c53030 !important;
+}
+
+.action-btn-compact.info,
+.neuro-btn-icon.info {
+  color: #2c5282 !important;
+}
+
+.action-btn-compact.warning,
+.neuro-btn-icon.warning {
+  color: #744210 !important;
+}
+
+/* Celdas de tabla normalizadas - FORZADAS A UNA SOLA LÍNEA */
+.unified-tasks-table td,
+.neuro-table td,
+.shifts-table-neuro td,
+.patients-table td {
+  padding: 0.35rem 0.4rem !important;
+  vertical-align: middle !important;
+  line-height: 1 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  font-size: 0.8rem;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.unified-tasks-table td > div,
+.unified-tasks-table td > span,
+.neuro-table td > div,
+.neuro-table td > span,
+.shifts-table-neuro td > div,
+.shifts-table-neuro td > span,
+.patients-table td > div,
+.patients-table td > span {
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+  display: inline-block !important;
+  vertical-align: middle !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 100% !important;
+}
+
+/* Forzar que la columna de acciones tenga altura mínima y esté en una sola línea */
+.unified-tasks-table td:last-child,
+.neuro-table td:last-child,
+.shifts-table-neuro td:last-child,
+.patients-table td:last-child {
+  height: 30px !important;
+  min-height: 30px !important;
+  max-height: 30px !important;
+  padding: 0.2rem 0.3rem !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+}
+
+/* Asegurar que las filas de tabla no se expandan */
+.unified-tasks-table tr,
+.neuro-table tr,
+.shifts-table-neuro tr,
+.patients-table tr {
+  height: auto !important;
+  min-height: 0 !important;
+  line-height: 1 !important;
+}
+
+.unified-tasks-table tr td,
+.neuro-table tr td,
+.shifts-table-neuro tr td,
+.patients-table tr td {
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+/* Headers de tabla normalizados */
+.unified-tasks-table th,
+.neuro-table th,
+.shifts-table-neuro th,
+.patients-table th {
+  padding: 0.5rem 0.4rem !important;
+  line-height: 1 !important;
+  font-size: 0.8rem;
+}

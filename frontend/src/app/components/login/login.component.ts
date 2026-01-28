@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-login',
@@ -19,7 +20,8 @@ export class LoginComponent {
 
   constructor(
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private toastService: ToastService
   ) {}
 
   onSubmit(): void {
@@ -52,6 +54,19 @@ export class LoginComponent {
         this.loading = false;
         console.error('Login error:', err);
         
+        // Si requiere verificación de email
+        if (err.status === 403 && err.error?.requiresVerification) {
+          this.error = err.error?.message || 'Por favor verifica tu correo electrónico antes de iniciar sesión';
+          this.toastService.warning(this.error);
+          // Redirigir a página de verificación
+          setTimeout(() => {
+            this.router.navigate(['/verify-email'], {
+              queryParams: { email: err.error?.email }
+            });
+          }, 2000);
+          return;
+        }
+        
         // Mensajes de error más descriptivos
         if (err.status === 0) {
           // Error de red/CORS
@@ -65,6 +80,8 @@ export class LoginComponent {
         } else {
           this.error = err.error?.message || 'Error al iniciar sesión. Revisa la consola para más detalles.';
         }
+        
+        this.toastService.error(this.error);
       },
     });
   }

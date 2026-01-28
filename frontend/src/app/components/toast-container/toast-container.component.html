@@ -1,0 +1,11 @@
+<div 
+  class="toast-container"
+  role="region"
+  aria-label="Notificaciones"
+  aria-live="polite"
+  aria-atomic="false"
+>
+  @for (toast of toastService.toasts(); track toast.id) {
+    <app-toast [toast]="toast"></app-toast>
+  }
+</div>

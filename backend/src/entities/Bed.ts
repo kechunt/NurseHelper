@@ -5,33 +5,37 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
-  OneToOne,
+  OneToMany,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { Area } from './Area';
 import { Patient } from './Patient';
 
 @Entity('beds')
+@Index(['areaId'])
+@Index(['bedNumber'])
+@Index(['areaId', 'isActive'])
+// @Index(['isOccupied']) // Comentado temporalmente hasta que se ejecute la migración
 export class Bed {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ length: 50 })
+  @Column({ length: 50, unique: true })
   bedNumber: string;
 
   @Column()
   areaId: number;
 
-  @ManyToOne(() => Area, (area) => area.beds)
+  @ManyToOne(() => Area, (area) => area.beds, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'areaId' })
   area: Area;
 
-  @Column({ nullable: true })
-  patientId: number | null;
+  @OneToMany(() => Patient, (patient) => patient.bed)
+  patients: Patient[];
 
-  @OneToOne(() => Patient, (patient) => patient.bed, { nullable: true })
-  @JoinColumn({ name: 'patientId' })
-  patient: Patient | null;
+  @Column({ default: false, nullable: true, select: false })
+  isOccupied?: boolean;
 
   @Column({ default: true })
   isActive: boolean;

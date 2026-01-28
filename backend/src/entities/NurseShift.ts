@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { User } from './User';
 import { Shift } from './Shift';
@@ -21,6 +22,10 @@ export enum DayOfWeek {
 }
 
 @Entity('nurse_shifts')
+@Index(['nurseId'])
+@Index(['shiftId'])
+@Index(['nurseId', 'weekStartDate'])
+@Index(['dayOfWeek'])
 export class NurseShift {
   @PrimaryGeneratedColumn()
   id: number;
@@ -28,14 +33,14 @@ export class NurseShift {
   @Column()
   nurseId: number;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => User, (user) => user.nurseShifts, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'nurseId' })
   nurse: User;
 
   @Column()
   shiftId: number;
 
-  @ManyToOne(() => Shift)
+  @ManyToOne(() => Shift, (shift) => shift.nurseShifts, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'shiftId' })
   shift: Shift;
 

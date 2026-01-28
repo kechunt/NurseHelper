@@ -1,0 +1,31 @@
+# Red Hat Dependency Analytics ignore file
+# Excluir directorios de caché y build que no deben ser analizados
+
+# Angular cache
+frontend/.angular/
+frontend/.angular/cache/
+frontend/.angular/cache/**/vite/
+frontend/.angular/cache/**/vite/deps_ssr/
+frontend/.angular/cache/**/vite/deps/
+
+# Node modules
+node_modules/
+frontend/node_modules/
+backend/node_modules/
+
+# Build outputs
+frontend/dist/
+backend/dist/
+backend/build/
+
+# Vite cache
+frontend/.vite/
+
+# Otros directorios de caché
+.cache/
+*.cache/
+
+# Archivos package.json en directorios de caché (no tienen lock files)
+**/.angular/cache/**/package.json
+**/vite/deps_ssr/package.json
+**/vite/deps/package.json

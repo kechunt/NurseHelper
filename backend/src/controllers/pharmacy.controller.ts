@@ -3,6 +3,9 @@ import { AppDataSource } from '../data-source';
 import { MedicationRequest, RequestStatus, RequestPriority } from '../entities/MedicationRequest';
 import { DeliveryHistory } from '../entities/DeliveryHistory';
 import { Medication, MedicationStatus } from '../entities/Medication';
+import { Bed } from '../entities/Bed';
+import { Patient } from '../entities/Patient';
+import { Area } from '../entities/Area';
 import { AuthRequest } from '../middleware/auth.middleware';
 
 export const getMedicationRequests = async (req: Request, res: Response) => {
@@ -10,6 +13,9 @@ export const getMedicationRequests = async (req: Request, res: Response) => {
     const { status } = req.query;
     
     const requestRepo = AppDataSource.getRepository(MedicationRequest);
+    const bedRepo = AppDataSource.getRepository(Bed);
+    const patientRepo = AppDataSource.getRepository(Patient);
+    
     const query = requestRepo.createQueryBuilder('mr')
       .leftJoinAndSelect('mr.requestedBy', 'nurse')
       .leftJoinAndSelect('mr.medication', 'medication')
@@ -21,7 +27,60 @@ export const getMedicationRequests = async (req: Request, res: Response) => {
     }
 
     const requests = await query.getMany();
-    res.json(requests);
+    
+    // Actualizar información de pacientes con datos actualizados de camas y áreas
+    const updatedRequests = await Promise.all(requests.map(async (request) => {
+      if (request.patientsInfo && Array.isArray(request.patientsInfo)) {
+        const updatedPatientsInfo = await Promise.all(request.patientsInfo.map(async (patientInfo: any) => {
+          // Buscar paciente por ID si está disponible
+          if (patientInfo.patientId) {
+            const patient = await patientRepo.findOne({
+              where: { id: patientInfo.patientId },
+              relations: ['bed', 'bed.area']
+            });
+            
+            if (patient && patient.bed) {
+              return {
+                ...patientInfo,
+                bedNumber: patient.bed.bedNumber,
+                areaName: patient.bed.area?.name || 'Sin área',
+                areaId: patient.bed.areaId
+              };
+            }
+          }
+          
+          // Si no encontramos por ID, buscar por nombre y cama actualizada
+          if (patientInfo.patientName) {
+            // Buscar paciente por nombre completo
+            const patients = await patientRepo.find({
+              relations: ['bed', 'bed.area']
+            });
+            
+            const patient = patients.find(p => 
+              `${p.firstName} ${p.lastName}` === patientInfo.patientName
+            );
+            
+            if (patient && patient.bed) {
+              return {
+                ...patientInfo,
+                bedNumber: patient.bed.bedNumber,
+                areaName: patient.bed.area?.name || 'Sin área',
+                areaId: patient.bed.areaId,
+                patientId: patient.id
+              };
+            }
+          }
+          
+          return patientInfo;
+        }));
+        
+        request.patientsInfo = updatedPatientsInfo;
+      }
+      
+      return request;
+    }));
+    
+    res.json(updatedRequests);
   } catch (error) {
     console.error('Error al obtener solicitudes:', error);
     res.status(500).json({ message: 'Error al obtener solicitudes' });
@@ -31,7 +90,7 @@ export const getMedicationRequests = async (req: Request, res: Response) => {
 export const updateRequestStatus = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { status, notes } = req.body;
+    const { status, notes, rejectionReason } = req.body;
 
     const requestRepo = AppDataSource.getRepository(MedicationRequest);
     const request = await requestRepo.findOne({ where: { id: parseInt(id) } });
@@ -40,9 +99,37 @@ export const updateRequestStatus = async (req: Request, res: Response) => {
       return res.status(404).json({ message: 'Solicitud no encontrada' });
     }
 
-    request.status = status;
-    if (notes) {
-      request.notes = notes;
+    // Validar transiciones de estado
+    const validTransitions: { [key: string]: string[] } = {
+      'pending': ['in_preparation', 'cancelled'],
+      'in_preparation': ['ready', 'cancelled'],
+      'ready': ['delivered', 'cancelled'],
+      'delivered': [],
+      'cancelled': [],
+      'rejected': [] // Sinónimo de cancelled
+    };
+
+    const allowedStatuses = validTransitions[request.status] || [];
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({ 
+        message: `No se puede cambiar el estado de "${request.status}" a "${status}". Transiciones válidas: ${allowedStatuses.join(', ')}` 
+      });
+    }
+
+    // Si se rechaza, requerir razón
+    if (status === 'cancelled' && !rejectionReason && !notes) {
+      return res.status(400).json({ message: 'Se requiere una razón para rechazar la solicitud' });
+    }
+
+    request.status = status as RequestStatus;
+    
+    // Actualizar notas con razón de rechazo si aplica
+    if (status === 'cancelled' && rejectionReason) {
+      request.notes = request.notes 
+        ? `${request.notes}\n\n[RECHAZADO] Razón: ${rejectionReason}`
+        : `[RECHAZADO] Razón: ${rejectionReason}`;
+    } else if (notes) {
+      request.notes = request.notes ? `${request.notes}\n${notes}` : notes;
     }
 
     await requestRepo.save(request);
@@ -124,20 +211,60 @@ export const deliverMedication = async (req: Request, res: Response) => {
 
 export const getDeliveryHistory = async (req: Request, res: Response) => {
   try {
-    const { startDate, endDate } = req.query;
+    const { startDate, endDate, includeCancelled } = req.query;
     
     const deliveryRepo = AppDataSource.getRepository(DeliveryHistory);
-    const query = deliveryRepo.createQueryBuilder('dh')
+    const requestRepo = AppDataSource.getRepository(MedicationRequest);
+    
+    // Obtener entregas
+    const deliveryQuery = deliveryRepo.createQueryBuilder('dh')
       .leftJoinAndSelect('dh.medication', 'medication')
       .leftJoinAndSelect('dh.requestedBy', 'nurse')
       .leftJoinAndSelect('dh.deliveredBy', 'pharmacist')
       .orderBy('dh.deliveredAt', 'DESC');
 
     if (startDate && endDate) {
-      query.where('dh.deliveredAt BETWEEN :startDate AND :endDate', { startDate, endDate });
+      deliveryQuery.where('dh.deliveredAt BETWEEN :startDate AND :endDate', { startDate, endDate });
     }
 
-    const history = await query.limit(100).getMany();
+    const deliveries = await deliveryQuery.limit(100).getMany();
+    
+    // Obtener solicitudes rechazadas si se solicita
+    let cancelledRequests: MedicationRequest[] = [];
+    if (includeCancelled === 'true') {
+      const cancelledQuery = requestRepo.createQueryBuilder('mr')
+        .leftJoinAndSelect('mr.requestedBy', 'nurse')
+        .leftJoinAndSelect('mr.medication', 'medication')
+        .where('mr.status = :status', { status: RequestStatus.CANCELLED })
+        .orderBy('mr.updatedAt', 'DESC');
+      
+      if (startDate && endDate) {
+        cancelledQuery.andWhere('mr.updatedAt BETWEEN :startDate AND :endDate', { startDate, endDate });
+      }
+      
+      cancelledRequests = await cancelledQuery.limit(100).getMany();
+    }
+    
+    // Formatear respuesta con entregas y rechazos
+    const history = {
+      deliveries: deliveries.map(d => ({
+        ...d,
+        type: 'delivery'
+      })),
+      cancelled: cancelledRequests.map(r => ({
+        id: r.id,
+        requestId: r.requestId,
+        medication: r.medication,
+        dosage: r.dosage,
+        quantity: r.quantity,
+        requestedBy: r.requestedBy,
+        cancelledAt: r.updatedAt,
+        notes: r.notes,
+        patientsInfo: r.patientsInfo,
+        type: 'cancelled'
+      }))
+    };
+    
     res.json(history);
   } catch (error) {
     console.error('Error al obtener historial:', error);
@@ -190,6 +317,77 @@ export const updateMedicationStock = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error al actualizar stock:', error);
     res.status(500).json({ message: 'Error al actualizar stock' });
+  }
+};
+
+export const createMedication = async (req: Request, res: Response) => {
+  try {
+    const { name, dosage, description, stock, minStock, location, expiryDate } = req.body;
+
+    if (!name || !dosage) {
+      return res.status(400).json({ message: 'Nombre y dosis son requeridos' });
+    }
+
+    const medicationRepo = AppDataSource.getRepository(Medication);
+    
+    // Verificar si ya existe un medicamento con el mismo nombre y dosis
+    const existing = await medicationRepo.findOne({
+      where: { name, dosage, isActive: true }
+    });
+
+    if (existing) {
+      return res.status(400).json({ message: 'Ya existe un medicamento con ese nombre y dosis' });
+    }
+
+    const medication = new Medication();
+    medication.name = name;
+    medication.dosage = dosage;
+    medication.description = description || '';
+    medication.stock = stock || 0;
+    medication.minStock = minStock || 50;
+    medication.location = location || '';
+    medication.isActive = true;
+
+    if (expiryDate) {
+      medication.expiryDate = new Date(expiryDate);
+    }
+
+    // Determinar estado inicial
+    if (medication.stock === 0) {
+      medication.status = MedicationStatus.OUT_OF_STOCK;
+    } else if (medication.stock < medication.minStock) {
+      medication.status = MedicationStatus.LOW_STOCK;
+    } else {
+      medication.status = MedicationStatus.AVAILABLE;
+    }
+
+    await medicationRepo.save(medication);
+    res.json({ message: 'Medicamento creado exitosamente', medication });
+  } catch (error) {
+    console.error('Error al crear medicamento:', error);
+    res.status(500).json({ message: 'Error al crear medicamento' });
+  }
+};
+
+export const deleteMedication = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const medicationRepo = AppDataSource.getRepository(Medication);
+    const medication = await medicationRepo.findOne({ where: { id: parseInt(id) } });
+
+    if (!medication) {
+      return res.status(404).json({ message: 'Medicamento no encontrado' });
+    }
+
+    // En lugar de eliminar físicamente, marcamos como inactivo
+    medication.isActive = false;
+    await medicationRepo.save(medication);
+
+    res.json({ message: 'Medicamento eliminado exitosamente' });
+  } catch (error) {
+    console.error('Error al eliminar medicamento:', error);
+    res.status(500).json({ message: 'Error al eliminar medicamento' });
   }
 };
 

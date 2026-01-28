@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService, Area, Bed } from '../../../services/admin.service';
+import { ToastService } from '../../../services/toast.service';
+import { ConfirmationService } from '../../../services/confirmation.service';
 
 @Component({
   selector: 'app-areas-management',
@@ -29,7 +31,27 @@ export class AreasManagementComponent implements OnInit {
     isActive: true
   };
 
-  constructor(private adminService: AdminService) {}
+  // Nuevas propiedades para gestión de pacientes por área
+  patientsWithoutArea: any[] = [];
+  expandedAreas: Set<number> = new Set();
+  showAssignAreaModal = false;
+  selectedPatientForArea: any = null;
+  assignAreaForm: { areaId: number | null; bedId: number | null } = {
+    areaId: null,
+    bedId: null
+  };
+  availableBedsForAssignment: Bed[] = [];
+  showChangeAreaModal = false;
+  changeAreaForm: { areaId: number | null; bedId: number | null } = {
+    areaId: null,
+    bedId: null
+  };
+
+  constructor(
+    private adminService: AdminService,
+    private toastService: ToastService,
+    private confirmationService: ConfirmationService
+  ) {}
 
   ngOnInit(): void {
     this.loadAreas();
@@ -40,7 +62,24 @@ export class AreasManagementComponent implements OnInit {
   loadPatients(): void {
     this.adminService.getPatients().subscribe({
       next: (patients) => {
-        this.patients = patients.filter((p: any) => p.isActive);
+        // Enriquecer pacientes con información de cama y área
+        this.patients = patients
+          .filter((p: any) => p.isActive)
+          .map((patient: any) => {
+            const patientBed = this.beds.find(bed => bed.patientId === patient.id);
+            return {
+              ...patient,
+              bedId: patientBed?.id || null,
+              areaId: patientBed?.areaId || null,
+              bedNumber: patientBed?.bedNumber || null,
+              areaName: patientBed?.areaId 
+                ? this.areas.find(a => a.id === patientBed.areaId)?.name || 'Sin área'
+                : 'Sin área'
+            };
+          });
+        
+        // Separar pacientes sin área asignada
+        this.patientsWithoutArea = this.patients.filter(p => !p.bedId || !p.areaId);
       },
       error: (error) => {
         console.error('Error loading patients:', error);
@@ -74,6 +113,10 @@ export class AreasManagementComponent implements OnInit {
     this.adminService.getBeds().subscribe({
       next: (beds) => {
         this.beds = beds;
+        // Recargar pacientes para actualizar información de camas
+        if (this.patients.length > 0) {
+          this.loadPatients();
+        }
       },
       error: (error) => {
         console.error('Error loading beds:', error);
@@ -112,7 +155,7 @@ export class AreasManagementComponent implements OnInit {
 
   saveArea(): void {
     if (!this.areaForm.name) {
-      alert('El nombre del área es requerido');
+      this.toastService.warning('El nombre del área es requerido');
       return;
     }
 
@@ -138,7 +181,7 @@ export class AreasManagementComponent implements OnInit {
           }
         },
         error: (error) => {
-          alert(error.error?.message || 'Error al actualizar el área');
+          this.toastService.error(error.error?.message || 'Error al actualizar el área');
         },
       });
     } else {
@@ -156,7 +199,7 @@ export class AreasManagementComponent implements OnInit {
           }
         },
         error: (error) => {
-          alert(error.error?.message || 'Error al crear el área');
+          this.toastService.error(error.error?.message || 'Error al crear el área');
         },
       });
     }
@@ -190,7 +233,7 @@ export class AreasManagementComponent implements OnInit {
 
   createSelectedBeds(): void {
     if (!this.selectedArea?.id) {
-      alert('Error: Área no seleccionada');
+      this.toastService.error('Error: Área no seleccionada');
       return;
     }
 
@@ -200,14 +243,14 @@ export class AreasManagementComponent implements OnInit {
       .filter((num) => num.length > 0);
 
     if (validBedNumbers.length === 0) {
-      alert('Debes ingresar al menos un número de cama');
+      this.toastService.warning('Debes ingresar al menos un número de cama');
       return;
     }
 
     // Verificar duplicados en la lista de entrada
     const duplicates = validBedNumbers.filter((num, index) => validBedNumbers.indexOf(num) !== index);
     if (duplicates.length > 0) {
-      alert(`Hay números de cama duplicados: ${duplicates.join(', ')}`);
+      this.toastService.warning(`Hay números de cama duplicados: ${duplicates.join(', ')}`);
       return;
     }
 
@@ -230,7 +273,9 @@ export class AreasManagementComponent implements OnInit {
             this.loadAreas();
             this.closeBedsSelectionModal();
             if (errors > 0) {
-              alert(`Se crearon ${created} de ${bedsToCreate.length} camas.\nErrores: ${errorMessages.join(', ')}`);
+              this.toastService.warning(`Se crearon ${created} de ${bedsToCreate.length} camas. Errores: ${errorMessages.join(', ')}`);
+            } else {
+              this.toastService.success(`Se crearon ${created} camas exitosamente`);
             }
           }
         },
@@ -243,9 +288,9 @@ export class AreasManagementComponent implements OnInit {
             this.loadAreas();
             this.closeBedsSelectionModal();
             if (created > 0) {
-              alert(`Se crearon ${created} de ${bedsToCreate.length} camas.\nErrores: ${errorMessages.join(', ')}`);
+              this.toastService.warning(`Se crearon ${created} de ${bedsToCreate.length} camas. Errores: ${errorMessages.join(', ')}`);
             } else {
-              alert(`Error al crear las camas:\n${errorMessages.join('\n')}`);
+              this.toastService.error(`Error al crear las camas: ${errorMessages.join(', ')}`);
             }
           }
         },
@@ -264,7 +309,7 @@ export class AreasManagementComponent implements OnInit {
       this.loadAllBedsForSelection(this.selectedArea.id, bedsToAdd);
       this.showModal = false;
     } else {
-      alert('La cantidad de camas debe ser mayor a las actuales para agregar nuevas camas.');
+      this.toastService.warning('La cantidad de camas debe ser mayor a las actuales para agregar nuevas camas.');
     }
   }
 
@@ -286,7 +331,7 @@ export class AreasManagementComponent implements OnInit {
 
   saveBedChanges(): void {
     if (!this.selectedBed?.id || !this.editBedForm.bedNumber.trim()) {
-      alert('El número de cama es requerido');
+      this.toastService.warning('El número de cama es requerido');
       return;
     }
 
@@ -312,7 +357,7 @@ export class AreasManagementComponent implements OnInit {
               this.closeEditBedModal();
             },
             error: (error) => {
-              alert(error.error?.message || 'Error al actualizar la asignación de paciente');
+              this.toastService.error(error.error?.message || 'Error al actualizar la asignación de paciente');
               this.loadBeds();
               this.loadAreas();
               // Si el modal de área está abierto, refrescar el formulario para mostrar los cambios
@@ -335,13 +380,21 @@ export class AreasManagementComponent implements OnInit {
         }
       },
       error: (error) => {
-        alert(error.error?.message || 'Error al actualizar la cama');
+        this.toastService.error(error.error?.message || 'Error al actualizar la cama');
       },
     });
   }
 
-  removeBedFromArea(bed: Bed): void {
-    if (!confirm(`¿Estás seguro de eliminar la cama ${bed.bedNumber} de esta área?`)) {
+  async removeBedFromArea(bed: Bed): Promise<void> {
+    const confirmed = await this.confirmationService.confirm({
+      title: 'Eliminar cama',
+      message: `¿Estás seguro de eliminar la cama ${bed.bedNumber} de esta área?`,
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+      type: 'danger'
+    });
+
+    if (!confirmed) {
       return;
     }
 
@@ -355,22 +408,32 @@ export class AreasManagementComponent implements OnInit {
         this.loadAreas();
       },
       error: (error) => {
-        alert(error.error?.message || 'Error al eliminar la cama');
+        this.toastService.error(error.error?.message || 'Error al eliminar la cama');
       },
     });
   }
 
-  deleteArea(area: Area): void {
-    if (!confirm(`¿Estás seguro de eliminar el área "${area.name}"?`)) {
+  async deleteArea(area: Area): Promise<void> {
+    const confirmed = await this.confirmationService.confirm({
+      title: 'Eliminar área',
+      message: `¿Estás seguro de eliminar el área "${area.name}"? Esta acción eliminará todas las camas asociadas.`,
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+      type: 'danger'
+    });
+
+    if (!confirmed) {
       return;
     }
 
     this.adminService.deleteArea(area.id!).subscribe({
       next: () => {
+        this.toastService.success(`Área ${area.name} eliminada exitosamente`);
         this.loadAreas();
       },
       error: (error) => {
-        alert(error.error?.message || 'Error al eliminar el área');
+        const errorMessage = error.error?.message || error.message || 'Error al eliminar el área';
+        this.toastService.error(errorMessage);
       },
     });
   }
@@ -391,6 +454,234 @@ export class AreasManagementComponent implements OnInit {
 
   hasValidBedNumbers(): boolean {
     return this.customBedNumbers.some((num) => num && num.trim().length > 0);
+  }
+
+  // ========== GESTIÓN DE PACIENTES POR ÁREA ==========
+
+  /**
+   * Obtiene pacientes de un área específica
+   */
+  getPatientsByArea(areaId: number): any[] {
+    return this.patients.filter(p => p.areaId === areaId);
+  }
+
+  /**
+   * Alterna la expansión de un área en la tabla desplegable
+   */
+  toggleAreaExpansion(areaId: number): void {
+    if (this.expandedAreas.has(areaId)) {
+      this.expandedAreas.delete(areaId);
+    } else {
+      this.expandedAreas.add(areaId);
+    }
+  }
+
+  /**
+   * Verifica si un área está expandida
+   */
+  isAreaExpanded(areaId: number): boolean {
+    return this.expandedAreas.has(areaId);
+  }
+
+  /**
+   * Abre modal para asignar área y cama a un paciente sin área
+   */
+  openAssignAreaModal(patient: any): void {
+    this.selectedPatientForArea = patient;
+    this.assignAreaForm = {
+      areaId: null,
+      bedId: null
+    };
+    this.availableBedsForAssignment = [];
+    this.showAssignAreaModal = true;
+  }
+
+  /**
+   * Cierra modal de asignación de área
+   */
+  closeAssignAreaModal(): void {
+    this.showAssignAreaModal = false;
+    this.selectedPatientForArea = null;
+    this.assignAreaForm = { areaId: null, bedId: null };
+    this.availableBedsForAssignment = [];
+  }
+
+  /**
+   * Carga camas disponibles cuando se selecciona un área
+   */
+  onAreaSelectedForAssignment(): void {
+    const areaId = this.assignAreaForm.areaId;
+    if (areaId) {
+      this.adminService.getBedsByArea(areaId).subscribe({
+        next: (beds) => {
+          // Mostrar camas disponibles (sin paciente asignado) y la cama actual si existe
+          this.availableBedsForAssignment = beds.filter(bed => 
+            !bed.patientId || bed.id === this.selectedPatientForArea?.bedId
+          );
+          this.assignAreaForm.bedId = null;
+        },
+        error: (error) => {
+          console.error('Error loading beds:', error);
+          this.availableBedsForAssignment = [];
+        },
+      });
+    } else {
+      this.availableBedsForAssignment = [];
+      this.assignAreaForm.bedId = null;
+    }
+  }
+
+  /**
+   * Asigna área y cama a un paciente sin área
+   */
+  assignAreaToPatient(): void {
+    if (!this.selectedPatientForArea?.id) {
+      this.toastService.error('Error: Paciente no seleccionado');
+      return;
+    }
+
+    if (!this.assignAreaForm.areaId) {
+      this.toastService.warning('Por favor selecciona un área');
+      return;
+    }
+
+    if (!this.assignAreaForm.bedId) {
+      this.toastService.warning('Por favor selecciona una cama');
+      return;
+    }
+
+    // Asignar paciente a la cama seleccionada
+    this.adminService.assignPatientToBed(this.assignAreaForm.bedId, this.selectedPatientForArea.id).subscribe({
+      next: () => {
+        this.toastService.success(`Paciente ${this.selectedPatientForArea.firstName} ${this.selectedPatientForArea.lastName} asignado al área exitosamente`);
+        this.closeAssignAreaModal();
+        this.loadBeds();
+        this.loadPatients();
+      },
+      error: (error) => {
+        this.toastService.error(error.error?.message || 'Error al asignar paciente al área');
+      },
+    });
+  }
+
+  /**
+   * Abre modal para cambiar área y cama de un paciente
+   */
+  openChangeAreaModal(patient: any): void {
+    this.selectedPatientForArea = patient;
+    this.changeAreaForm = {
+      areaId: patient.areaId || null,
+      bedId: patient.bedId || null
+    };
+    this.availableBedsForAssignment = [];
+    
+    // Cargar camas del área actual si existe
+    if (this.changeAreaForm.areaId) {
+      this.onAreaSelectedForChange();
+    }
+    
+    this.showChangeAreaModal = true;
+  }
+
+  /**
+   * Cierra modal de cambio de área
+   */
+  closeChangeAreaModal(): void {
+    this.showChangeAreaModal = false;
+    this.selectedPatientForArea = null;
+    this.changeAreaForm = { areaId: null, bedId: null };
+    this.availableBedsForAssignment = [];
+  }
+
+  /**
+   * Carga camas disponibles cuando se selecciona un área para cambio
+   */
+  onAreaSelectedForChange(): void {
+    const areaId = this.changeAreaForm.areaId;
+    if (areaId) {
+      this.adminService.getBedsByArea(areaId).subscribe({
+        next: (beds) => {
+          // Mostrar camas disponibles y la cama actual del paciente
+          this.availableBedsForAssignment = beds.filter(bed => 
+            !bed.patientId || bed.id === this.selectedPatientForArea?.bedId
+          );
+          // Si el área cambió, resetear la cama seleccionada
+          if (this.changeAreaForm.areaId !== this.selectedPatientForArea?.areaId) {
+            this.changeAreaForm.bedId = null;
+          }
+        },
+        error: (error) => {
+          console.error('Error loading beds:', error);
+          this.availableBedsForAssignment = [];
+        },
+      });
+    } else {
+      this.availableBedsForAssignment = [];
+      this.changeAreaForm.bedId = null;
+    }
+  }
+
+  /**
+   * Cambia el área y cama de un paciente
+   */
+  changePatientArea(): void {
+    if (!this.selectedPatientForArea?.id) {
+      this.toastService.error('Error: Paciente no seleccionado');
+      return;
+    }
+
+    if (!this.changeAreaForm.areaId) {
+      this.toastService.warning('Por favor selecciona un área');
+      return;
+    }
+
+    if (!this.changeAreaForm.bedId) {
+      this.toastService.warning('Por favor selecciona una cama');
+      return;
+    }
+
+    const oldBedId = this.selectedPatientForArea.bedId;
+    const newBedId = this.changeAreaForm.bedId;
+
+    // Si cambió la cama, primero liberar la anterior y luego asignar la nueva
+    if (oldBedId && oldBedId !== newBedId) {
+      // Liberar cama anterior
+      this.adminService.assignPatientToBed(oldBedId, null).subscribe({
+        next: () => {
+          // Asignar nueva cama
+          this.adminService.assignPatientToBed(newBedId, this.selectedPatientForArea.id).subscribe({
+            next: () => {
+              this.toastService.success(`Paciente ${this.selectedPatientForArea.firstName} ${this.selectedPatientForArea.lastName} movido al área exitosamente`);
+              this.closeChangeAreaModal();
+              this.loadBeds();
+              this.loadPatients();
+            },
+            error: (error) => {
+              this.toastService.error(error.error?.message || 'Error al asignar nueva cama');
+            },
+          });
+        },
+        error: (error) => {
+          this.toastService.error('Error al liberar cama anterior');
+        },
+      });
+    } else if (!oldBedId) {
+      // Solo asignar nueva cama
+      this.adminService.assignPatientToBed(newBedId, this.selectedPatientForArea.id).subscribe({
+        next: () => {
+          this.toastService.success(`Paciente ${this.selectedPatientForArea.firstName} ${this.selectedPatientForArea.lastName} asignado al área exitosamente`);
+          this.closeChangeAreaModal();
+          this.loadBeds();
+          this.loadPatients();
+        },
+        error: (error) => {
+          this.toastService.error(error.error?.message || 'Error al asignar cama');
+        },
+      });
+    } else {
+      // Misma cama, solo cerrar modal
+      this.closeChangeAreaModal();
+    }
   }
 }
 

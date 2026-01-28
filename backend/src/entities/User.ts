@@ -6,8 +6,18 @@ import {
   UpdateDateColumn,
   BeforeInsert,
   BeforeUpdate,
+  ManyToOne,
+  OneToMany,
+  JoinColumn,
+  Index,
 } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
+import { Area } from './Area';
+import { Patient } from './Patient';
+import { Schedule } from './Schedule';
+import { AdministrationHistory } from './AdministrationHistory';
+import { MedicationRequest } from './MedicationRequest';
+import { NurseShift } from './NurseShift';
 
 export enum UserRole {
   ADMIN = 'admin',
@@ -17,6 +27,12 @@ export enum UserRole {
 }
 
 @Entity('users')
+@Index(['role'])
+@Index(['isActive'])
+@Index(['role', 'isActive'])
+@Index(['createdAt'])
+@Index(['email'])
+@Index(['username'])
 export class User {
   @PrimaryGeneratedColumn()
   id: number;
@@ -46,11 +62,39 @@ export class User {
   @Column({ default: true })
   isActive: boolean;
 
+  @Column({ default: false })
+  emailVerified: boolean;
+
+  @Column({ type: 'varchar', length: 6, nullable: true })
+  verificationCode: string | null;
+
+  @Column({ type: 'datetime', nullable: true })
+  verificationCodeExpires: Date | null;
+
   @Column({ type: 'int', nullable: true })
   maxPatients: number;
 
-  @Column({ type: 'int', nullable: true })
-  assignedAreaId: number;
+  @Column({ nullable: true })
+  assignedAreaId: number | null;
+
+  @ManyToOne(() => Area, { nullable: true })
+  @JoinColumn({ name: 'assignedAreaId' })
+  assignedArea: Area | null;
+
+  @OneToMany(() => Patient, (patient) => patient.assignedTo)
+  assignedPatients: Patient[];
+
+  @OneToMany(() => Schedule, (schedule) => schedule.assignedTo)
+  assignedSchedules: Schedule[];
+
+  @OneToMany(() => AdministrationHistory, (history) => history.administeredBy)
+  administrationHistory: AdministrationHistory[];
+
+  @OneToMany(() => MedicationRequest, (request) => request.requestedBy)
+  medicationRequests: MedicationRequest[];
+
+  @OneToMany(() => NurseShift, (nurseShift) => nurseShift.nurse)
+  nurseShifts: NurseShift[];
 
   @CreateDateColumn()
   createdAt: Date;

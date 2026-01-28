@@ -4,7 +4,10 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToMany,
+  Index,
 } from 'typeorm';
+import { NurseShift } from './NurseShift';
 
 export enum ShiftType {
   MORNING = 'morning',
@@ -13,6 +16,8 @@ export enum ShiftType {
 }
 
 @Entity('shifts')
+@Index(['type'])
+@Index(['isActive'])
 export class Shift {
   @PrimaryGeneratedColumn()
   id: number;
@@ -35,6 +40,9 @@ export class Shift {
 
   @Column({ default: true })
   isActive: boolean;
+
+  @OneToMany(() => NurseShift, (nurseShift) => nurseShift.shift)
+  nurseShifts: NurseShift[];
 
   @CreateDateColumn()
   createdAt: Date;

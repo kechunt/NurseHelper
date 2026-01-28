@@ -1,3 +1,7 @@
 .vercel
 .env*.local
 node_modules
+.angular/cache
+dist
+out-tsc
+*.tsbuildinfo

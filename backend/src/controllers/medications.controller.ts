@@ -62,14 +62,26 @@ export const addMedication = async (req: Request, res: Response) => {
       'thursday': 4, 'friday': 5, 'saturday': 6
     };
 
+    // Iterar sobre cada día desde startDate hasta endDate
     while (currentDate <= end) {
-      const dayOfWeek = currentDate.getDay();
+      const dayOfWeek = currentDate.getDay(); // 0 = domingo, 6 = sábado
       let includeDay = true;
 
-      if (days && days !== 'all' && Array.isArray(days)) {
-        includeDay = days.some(day => dayMap[day.toLowerCase()] === dayOfWeek);
+      // Verificar si este día debe incluirse según los días seleccionados
+      if (days && days !== 'all') {
+        if (Array.isArray(days)) {
+          // days es un array de strings como ['monday', 'tuesday', etc.]
+          includeDay = days.some(day => {
+            const dayName = day.toLowerCase();
+            return dayMap[dayName] === dayOfWeek;
+          });
+        } else {
+          // Si days no es 'all' ni un array válido, no incluir ningún día
+          includeDay = false;
+        }
       }
 
+      // Si el día debe incluirse, crear schedules para cada hora especificada
       if (includeDay) {
         for (const time of times) {
           const [hours, minutes] = time.split(':').map(Number);
@@ -91,10 +103,16 @@ export const addMedication = async (req: Request, res: Response) => {
         }
       }
 
+      // Avanzar al siguiente día
       currentDate.setDate(currentDate.getDate() + 1);
     }
 
-    await scheduleRepo.save(schedules);
+    // Optimizar inserción: usar inserción en batch (chunks de 1000)
+    const BATCH_SIZE = 1000;
+    for (let i = 0; i < schedules.length; i += BATCH_SIZE) {
+      const batch = schedules.slice(i, i + BATCH_SIZE);
+      await scheduleRepo.save(batch);
+    }
 
     res.status(201).json({ 
       message: `Medicamento agregado exitosamente. ${schedules.length} dosis programadas.`,

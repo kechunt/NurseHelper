@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { Patient } from './Patient';
 import { User } from './User';
@@ -17,6 +18,11 @@ export enum AdministrationStatus {
 }
 
 @Entity('administration_history')
+@Index(['patientId'])
+@Index(['scheduledTime'])
+@Index(['administeredById'])
+@Index(['patientId', 'scheduledTime'])
+@Index(['scheduleId'])
 export class AdministrationHistory {
   @PrimaryGeneratedColumn()
   id: number;
@@ -24,21 +30,21 @@ export class AdministrationHistory {
   @Column()
   patientId: number;
 
-  @ManyToOne(() => Patient)
+  @ManyToOne(() => Patient, (patient) => patient.administrationHistory, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'patientId' })
   patient: Patient;
 
   @Column({ nullable: true })
   scheduleId: number | null;
 
-  @ManyToOne(() => Schedule, { nullable: true })
+  @ManyToOne(() => Schedule, (schedule) => schedule.administrationHistory, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'scheduleId' })
   schedule: Schedule | null;
 
   @Column()
   administeredById: number;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => User, (user) => user.administrationHistory, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'administeredById' })
   administeredBy: User;
 
@@ -76,6 +82,12 @@ export class AdministrationHistory {
   @CreateDateColumn()
   createdAt: Date;
 }
+
+
+
+
+
+
 
 
 

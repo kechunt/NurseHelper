@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService, RegisterRequest } from '../../services/auth.service';
 import { TermsModalComponent } from '../terms-modal/terms-modal.component';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-register',
@@ -31,7 +32,8 @@ export class RegisterComponent {
 
   constructor(
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private toastService: ToastService
   ) {}
 
   openTermsModal(): void {
@@ -63,18 +65,30 @@ export class RegisterComponent {
 
     this.authService.register(this.formData).subscribe({
       next: (response) => {
-        const user = response.user;
-        if (user.role === 'admin') {
-          this.router.navigate(['/admin']);
-        } else if (user.role === 'pharmacy') {
-          this.router.navigate(['/pharmacy']);
-        } else {
-          this.router.navigate(['/nurse-dashboard']);
+        this.loading = false;
+        
+        if (response.requiresVerification) {
+          // Redirigir a página de verificación
+          this.router.navigate(['/verify-email'], {
+            queryParams: { email: response.email }
+          });
+          this.toastService.success('Registro exitoso. Por favor verifica tu correo electrónico.');
+        } else if (response.token && response.user) {
+          // Si ya viene verificado (caso especial), hacer login automático
+          const user = response.user;
+          if (user.role === 'admin') {
+            this.router.navigate(['/admin']);
+          } else if (user.role === 'pharmacy') {
+            this.router.navigate(['/pharmacy']);
+          } else {
+            this.router.navigate(['/nurse-dashboard']);
+          }
         }
       },
       error: (err) => {
         this.loading = false;
         this.error = err.error?.message || 'Error al registrar usuario';
+        this.toastService.error(this.error);
       },
     });
   }

@@ -1,1 +1,15 @@
-<router-outlet />
+<router-outlet></router-outlet>
+
+<!-- Toast Container -->
+<app-toast-container></app-toast-container>
+
+<!-- Confirmation Modal Wrapper -->
+<app-confirmation-wrapper></app-confirmation-wrapper>
+
+<!-- Global Loading Spinner -->
+@if (loadingService.isLoading()) {
+  <app-loading-spinner 
+    [overlay]="true" 
+    message="Cargando..."
+  ></app-loading-spinner>
+}

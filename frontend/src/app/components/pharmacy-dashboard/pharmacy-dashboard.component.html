@@ -129,19 +129,20 @@
               </div>
             </td>
             <td>
-              <span class="quantity-badge-large">{{ request.quantity }}</span>
-              <button class="availability-toggle-btn" 
-                      (click)="toggleMedicationAvailability(request)"
+              <div class="quantity-stock-container">
+                <span class="quantity-badge-large">{{ request.quantity }}</span>
+                <span class="stock-info-badge" 
                       [class.available]="isMedicationAvailable(request)"
                       [class.unavailable]="!isMedicationAvailable(request)"
-                      title="Marcar como disponible/no disponible">
-                {{ isMedicationAvailable(request) ? '✅' : '⚠️' }}
-              </button>
+                      title="Stock disponible en inventario">
+                  {{ isMedicationAvailable(request) ? '✅' : '⚠️' }} Stock: {{ request.stockAvailable || 0 }}
+                </span>
+              </div>
             </td>
             <td>
               <div class="area-badge">
                 <span *ngIf="request.patients && request.patients.length > 0">
-                  {{ request.patients[0].areaName || 'N/A' }}
+                  {{ request.patients[0].areaName || request.patients[0].area || 'N/A' }}
                 </span>
                 <span *ngIf="!request.patients || request.patients.length === 0">
                   N/A
@@ -153,7 +154,7 @@
                 <div *ngFor="let patient of request.patients" class="patient-item-inline">
                   <span class="patient-icon">👤</span>
                   <span class="patient-name-inline">{{ patient.patientName }}</span>
-                  <span class="bed-badge-tiny">{{ patient.bedNumber }}</span>
+                  <span class="bed-badge-tiny" title="Cama actualizada desde BD">{{ patient.bedNumber || 'Sin cama' }}</span>
                 </div>
               </div>
             </td>
@@ -179,23 +180,29 @@
                         title="Ver detalles">
                   👁️
                 </button>
-                <button class="action-btn-compact" 
+                <button class="action-btn-compact accept-btn" 
                         (click)="changeRequestStatus(request, 'in_preparation')" 
                         [disabled]="request.status !== 'pending'"
-                        title="Iniciar preparación">
-                  🔄
+                        title="Aceptar y poner en preparación">
+                  ✅ Aceptar
                 </button>
                 <button class="action-btn-compact" 
                         (click)="changeRequestStatus(request, 'ready')" 
                         [disabled]="request.status !== 'in_preparation'"
-                        title="Marcar como lista">
-                  ✅
+                        title="Marcar como surtido/lista">
+                  📦 Surtido
                 </button>
                 <button class="action-btn-compact success" 
                         (click)="openDeliveryModal(request)" 
                         [disabled]="request.status !== 'ready'"
                         title="Entregar">
-                  📦
+                  🚚 Entregar
+                </button>
+                <button class="action-btn-compact reject-btn" 
+                        (click)="changeRequestStatus(request, 'cancelled')" 
+                        [disabled]="request.status === 'delivered' || request.status === 'cancelled'"
+                        title="Rechazar solicitud">
+                  ❌ Rechazar
                 </button>
               </div>
             </td>
@@ -209,10 +216,10 @@
     </p>
   </div>
 
-  <!-- SECCIÓN: Historial de Entregas -->
+  <!-- SECCIÓN: Historial de Entregas y Rechazos -->
   <div *ngIf="activeSection === 'history'" class="section-container">
     <div class="section-header">
-      <h2 class="section-title">📜 Historial de Entregas</h2>
+      <h2 class="section-title">📜 Historial de Entregas y Rechazos</h2>
       <div class="section-actions">
         <input 
           type="text" 
@@ -231,23 +238,34 @@
       <table class="unified-tasks-table">
         <thead>
           <tr>
-            <th>ID Entrega</th>
+            <th>Tipo</th>
+            <th>ID</th>
             <th>Fecha/Hora</th>
             <th>Medicamento</th>
             <th>Cantidad</th>
             <th>Solicitado por</th>
             <th>Pacientes</th>
-            <th>Entregado por</th>
+            <th>Entregado por / Razón</th>
             <th>Notas</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let item of filteredHistory" class="history-row">
+          <tr *ngFor="let item of filteredHistory" 
+              class="history-row"
+              [class.delivery-row]="item.type === 'delivery'"
+              [class.cancelled-row]="item.type === 'cancelled'">
             <td>
-              <div class="delivery-id">{{ item.deliveryId }}</div>
+              <span class="history-type-badge" 
+                    [class.delivery-badge]="item.type === 'delivery'"
+                    [class.cancelled-badge]="item.type === 'cancelled'">
+                {{ getHistoryTypeLabel(item.type) }}
+              </span>
             </td>
             <td>
-              <div class="datetime-compact">{{ item.deliveredAt }}</div>
+              <div class="delivery-id">{{ item.deliveryId || item.requestId }}</div>
+            </td>
+            <td>
+              <div class="datetime-compact">{{ getHistoryDate(item) }}</div>
             </td>
             <td>
               <div class="med-info-compact">
@@ -262,15 +280,23 @@
               <div class="nurse-name-compact">{{ item.requestedBy }}</div>
             </td>
             <td>
-              <div class="patients-tags">
+              <div class="patients-tags" *ngIf="item.patients">
                 <span *ngFor="let patient of item.patients" class="patient-tag-small">{{ patient }}</span>
+              </div>
+              <div class="patients-tags" *ngIf="item.patientsInfo">
+                <span *ngFor="let patient of item.patientsInfo" class="patient-tag-small">
+                  {{ patient.patientName }} ({{ patient.bedNumber }})
+                </span>
               </div>
             </td>
             <td>
-              <div class="pharmacist-name">{{ item.deliveredBy }}</div>
+              <div class="pharmacist-name" *ngIf="item.type === 'delivery'">{{ item.deliveredBy }}</div>
+              <div class="rejection-reason" *ngIf="item.type === 'cancelled'">
+                <span class="rejection-text">{{ item.notes }}</span>
+              </div>
             </td>
             <td>
-              <div class="notes-compact">{{ item.notes }}</div>
+              <div class="notes-compact">{{ item.type === 'delivery' ? (item.notes || 'Sin observaciones') : '' }}</div>
             </td>
           </tr>
         </tbody>
@@ -278,14 +304,14 @@
     </div>
 
     <p *ngIf="filteredHistory.length === 0" class="empty-message">
-      No hay entregas registradas
+      No hay registros en el historial
     </p>
   </div>
 
   <!-- SECCIÓN: Inventario -->
   <div *ngIf="activeSection === 'inventory'" class="section-container">
     <div class="section-header">
-      <h2 class="section-title">📊 Inventario de Medicamentos</h2>
+      <h2 class="section-title">📊 Gestión de Inventario</h2>
       <div class="section-actions">
         <input 
           type="text" 
@@ -294,6 +320,9 @@
           placeholder="🔍 Buscar medicamento o ubicación..."
           (input)="filterInventory()"
         />
+        <button class="neuro-btn" (click)="openAddMedicationModal()">
+          ➕ Agregar Medicamento
+        </button>
       </div>
     </div>
 
@@ -347,6 +376,9 @@
               <div class="action-buttons-pharmacy">
                 <button class="action-btn-compact" (click)="updateStock(item)" title="Actualizar stock">
                   ✏️
+                </button>
+                <button class="action-btn-compact reject-btn" (click)="openDeleteMedicationModal(item)" title="Eliminar del inventario">
+                  🗑️
                 </button>
               </div>
             </td>
@@ -416,6 +448,188 @@
         <button class="btn-secondary-neuro" (click)="closeDeliveryModal()">Cancelar</button>
         <button class="btn-primary-neuro" (click)="confirmDelivery()">
           ✅ Confirmar Entrega
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Rechazo -->
+  <div *ngIf="showRejectModal" class="modal-backdrop" (click)="closeRejectModal()">
+    <div class="modal-content modal-delivery" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>❌ Rechazar Solicitud</h3>
+        <button class="close-btn" (click)="closeRejectModal()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="delivery-summary">
+          <div class="summary-row">
+            <span class="summary-label">ID Solicitud:</span>
+            <span class="summary-value">{{ selectedRequest?.requestId }}</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Medicamento:</span>
+            <span class="summary-value">{{ selectedRequest?.medication }} {{ selectedRequest?.dosage }}</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Cantidad:</span>
+            <span class="summary-value">{{ selectedRequest?.quantity }}</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Solicitado por:</span>
+            <span class="summary-value">{{ selectedRequest?.requestedBy }}</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Razón del Rechazo *</label>
+          <textarea 
+            class="neuro-input" 
+            [(ngModel)]="rejectionReason" 
+            placeholder="Ej: Medicamento no disponible en inventario, requiere autorización especial, etc." 
+            rows="4"
+            required></textarea>
+          <small>Es obligatorio proporcionar una razón para rechazar la solicitud</small>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary-neuro" (click)="closeRejectModal()">Cancelar</button>
+        <button class="btn-danger-neuro" (click)="confirmRejection()" [disabled]="!rejectionReason.trim()">
+          ❌ Confirmar Rechazo
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Agregar Medicamento -->
+  <div *ngIf="showAddMedicationModal" class="modal-backdrop" (click)="closeAddMedicationModal()">
+    <div class="modal-content modal-delivery" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>➕ Agregar Medicamento al Inventario</h3>
+        <button class="close-btn" (click)="closeAddMedicationModal()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Nombre del Medicamento *</label>
+          <input 
+            type="text" 
+            class="neuro-input" 
+            [(ngModel)]="newMedicationForm.name"
+            placeholder="Ej: Paracetamol, Ibuprofeno, etc."
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Dosis *</label>
+          <input 
+            type="text" 
+            class="neuro-input" 
+            [(ngModel)]="newMedicationForm.dosage"
+            placeholder="Ej: 500mg, 10ml, etc."
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Descripción</label>
+          <textarea 
+            class="neuro-input" 
+            [(ngModel)]="newMedicationForm.description"
+            placeholder="Descripción del medicamento..."
+            rows="3"
+          ></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Stock Inicial</label>
+            <input 
+              type="number" 
+              class="neuro-input" 
+              [(ngModel)]="newMedicationForm.stock"
+              min="0"
+              placeholder="0"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Stock Mínimo</label>
+            <input 
+              type="number" 
+              class="neuro-input" 
+              [(ngModel)]="newMedicationForm.minStock"
+              min="0"
+              placeholder="50"
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Ubicación</label>
+          <input 
+            type="text" 
+            class="neuro-input" 
+            [(ngModel)]="newMedicationForm.location"
+            placeholder="Ej: Estante A-1, Refrigerador, etc."
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Fecha de Vencimiento</label>
+          <input 
+            type="date" 
+            class="neuro-input" 
+            [(ngModel)]="newMedicationForm.expiryDate"
+          />
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary-neuro" (click)="closeAddMedicationModal()">Cancelar</button>
+        <button class="btn-primary-neuro" (click)="createMedication()" [disabled]="!newMedicationForm.name || !newMedicationForm.dosage">
+          ➕ Agregar al Inventario
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Eliminar Medicamento -->
+  <div *ngIf="showDeleteMedicationModal" class="modal-backdrop" (click)="closeDeleteMedicationModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>🗑️ Eliminar Medicamento del Inventario</h3>
+        <button class="close-btn" (click)="closeDeleteMedicationModal()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="delivery-summary">
+          <div class="summary-row">
+            <span class="summary-label">Medicamento:</span>
+            <span class="summary-value">{{ selectedMedicationForDelete?.medication }} {{ selectedMedicationForDelete?.dosage }}</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Stock Actual:</span>
+            <span class="summary-value">{{ selectedMedicationForDelete?.stock }}</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Ubicación:</span>
+            <span class="summary-value">{{ selectedMedicationForDelete?.location || 'N/A' }}</span>
+          </div>
+        </div>
+
+        <p class="warning-message">
+          ⚠️ Esta acción marcará el medicamento como inactivo en el inventario. 
+          No se eliminará físicamente de la base de datos, pero dejará de aparecer en las listas activas.
+        </p>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary-neuro" (click)="closeDeleteMedicationModal()">Cancelar</button>
+        <button class="btn-danger-neuro" (click)="confirmDeleteMedication()">
+          🗑️ Confirmar Eliminación
         </button>
       </div>
     </div>

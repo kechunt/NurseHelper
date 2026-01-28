@@ -56,19 +56,27 @@ export class PharmacyService {
     return this.http.get<MedicationRequest[]>(`${this.apiUrl}/requests`, { params });
   }
 
-  updateRequestStatus(id: number, status: string, notes?: string): Observable<any> {
-    return this.http.put(`${this.apiUrl}/requests/${id}/status`, { status, notes });
+  updateRequestStatus(id: number, status: string, rejectionReason?: string, notes?: string): Observable<any> {
+    const body: any = { status };
+    if (rejectionReason) {
+      body.rejectionReason = rejectionReason;
+    }
+    if (notes) {
+      body.notes = notes;
+    }
+    return this.http.put(`${this.apiUrl}/requests/${id}/status`, body);
   }
 
   deliverMedication(requestId: number, notes: string): Observable<any> {
     return this.http.post(`${this.apiUrl}/requests/${requestId}/deliver`, { notes });
   }
 
-  getDeliveryHistory(startDate?: string, endDate?: string): Observable<DeliveryHistoryItem[]> {
+  getDeliveryHistory(includeCancelled: boolean = false, startDate?: string, endDate?: string): Observable<any> {
     const params: any = {};
+    if (includeCancelled) params.includeCancelled = 'true';
     if (startDate) params.startDate = startDate;
     if (endDate) params.endDate = endDate;
-    return this.http.get<DeliveryHistoryItem[]>(`${this.apiUrl}/deliveries`, { params });
+    return this.http.get<any>(`${this.apiUrl}/deliveries`, { params });
   }
 
   getInventory(): Observable<InventoryItem[]> {
@@ -77,6 +85,22 @@ export class PharmacyService {
 
   updateMedicationStock(id: number, stock: number): Observable<any> {
     return this.http.put(`${this.apiUrl}/inventory/${id}/stock`, { stock });
+  }
+
+  createMedication(data: {
+    name: string;
+    dosage: string;
+    description?: string;
+    stock?: number;
+    minStock?: number;
+    location?: string;
+    expiryDate?: string;
+  }): Observable<any> {
+    return this.http.post(`${this.apiUrl}/inventory`, data);
+  }
+
+  deleteMedication(id: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/inventory/${id}`);
   }
 
   createMedicationRequest(data: {

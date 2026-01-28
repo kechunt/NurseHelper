@@ -12,29 +12,65 @@
     </div>
 
     <div class="compact-form-container" *ngIf="showIngresoForm">
+      <form [formGroup]="wizardFormGroup" (ngSubmit)="quickSavePatient()">
       <!-- Datos Personales -->
       <div class="form-section">
         <h3>👤 Datos Personales</h3>
         <div class="form-grid-compact">
           <div class="input-group">
             <label for="w-firstName">Nombre *</label>
-            <input type="text" id="w-firstName" class="neuro-input" [(ngModel)]="wizardForm.firstName" placeholder="Nombre"/>
+            <input 
+              type="text" 
+              id="w-firstName" 
+              class="neuro-input" 
+              formControlName="firstName"
+              [class.error]="wizardFormGroup.get('firstName')?.invalid && wizardFormGroup.get('firstName')?.touched"
+              placeholder="Nombre"/>
+            <small *ngIf="wizardFormGroup.get('firstName')?.invalid && wizardFormGroup.get('firstName')?.touched" class="error-message">
+              El nombre es requerido (mínimo 2 caracteres)
+            </small>
           </div>
           <div class="input-group">
             <label for="w-lastName">Apellido *</label>
-            <input type="text" id="w-lastName" class="neuro-input" [(ngModel)]="wizardForm.lastName" placeholder="Apellido"/>
+            <input 
+              type="text" 
+              id="w-lastName" 
+              class="neuro-input" 
+              formControlName="lastName"
+              [class.error]="wizardFormGroup.get('lastName')?.invalid && wizardFormGroup.get('lastName')?.touched"
+              placeholder="Apellido"/>
+            <small *ngIf="wizardFormGroup.get('lastName')?.invalid && wizardFormGroup.get('lastName')?.touched" class="error-message">
+              El apellido es requerido (mínimo 2 caracteres)
+            </small>
           </div>
           <div class="input-group">
             <label for="w-identification">Cédula/ID *</label>
-            <input type="text" id="w-identification" class="neuro-input" [(ngModel)]="wizardForm.identificationNumber" placeholder="1234567890"/>
+            <input 
+              type="text" 
+              id="w-identification" 
+              class="neuro-input" 
+              formControlName="identificationNumber"
+              [class.error]="wizardFormGroup.get('identificationNumber')?.invalid && wizardFormGroup.get('identificationNumber')?.touched"
+              placeholder="1234567890"/>
+            <small *ngIf="wizardFormGroup.get('identificationNumber')?.invalid && wizardFormGroup.get('identificationNumber')?.touched" class="error-message">
+              La cédula/ID es requerida
+            </small>
           </div>
           <div class="input-group">
             <label for="w-birthdate">Fecha de Nacimiento *</label>
-            <input type="date" id="w-birthdate" class="neuro-input" [(ngModel)]="wizardForm.dateOfBirth"/>
+            <input 
+              type="date" 
+              id="w-birthdate" 
+              class="neuro-input" 
+              formControlName="dateOfBirth"
+              [class.error]="wizardFormGroup.get('dateOfBirth')?.invalid && wizardFormGroup.get('dateOfBirth')?.touched"/>
+            <small *ngIf="wizardFormGroup.get('dateOfBirth')?.invalid && wizardFormGroup.get('dateOfBirth')?.touched" class="error-message">
+              La fecha de nacimiento es requerida
+            </small>
           </div>
           <div class="input-group">
             <label for="w-gender">Género</label>
-            <select id="w-gender" class="neuro-select" [(ngModel)]="wizardForm.gender">
+            <select id="w-gender" class="neuro-select" formControlName="gender">
               <option value="">Seleccionar</option>
               <option value="M">Masculino</option>
               <option value="F">Femenino</option>
@@ -43,7 +79,7 @@
           </div>
           <div class="input-group">
             <label for="w-phone">Teléfono</label>
-            <input type="tel" id="w-phone" class="neuro-input" [(ngModel)]="wizardForm.phone" placeholder="+1234567890"/>
+            <input type="tel" id="w-phone" class="neuro-input" formControlName="phone" placeholder="+1234567890"/>
           </div>
         </div>
       </div>
@@ -54,15 +90,33 @@
         <div class="form-grid-compact">
           <div class="input-group">
             <label for="w-emergency-contact">Nombre del Contacto *</label>
-            <input type="text" id="w-emergency-contact" class="neuro-input" [(ngModel)]="wizardForm.emergencyContact" placeholder="Nombre completo"/>
+            <input 
+              type="text" 
+              id="w-emergency-contact" 
+              class="neuro-input" 
+              formControlName="emergencyContact"
+              [class.error]="wizardFormGroup.get('emergencyContact')?.invalid && wizardFormGroup.get('emergencyContact')?.touched"
+              placeholder="Nombre completo"/>
+            <small *ngIf="wizardFormGroup.get('emergencyContact')?.invalid && wizardFormGroup.get('emergencyContact')?.touched" class="error-message">
+              El nombre del contacto es requerido
+            </small>
           </div>
           <div class="input-group">
             <label for="w-emergency-phone">Teléfono *</label>
-            <input type="tel" id="w-emergency-phone" class="neuro-input" [(ngModel)]="wizardForm.emergencyPhone" placeholder="+1234567890"/>
+            <input 
+              type="tel" 
+              id="w-emergency-phone" 
+              class="neuro-input" 
+              formControlName="emergencyPhone"
+              [class.error]="wizardFormGroup.get('emergencyPhone')?.invalid && wizardFormGroup.get('emergencyPhone')?.touched"
+              placeholder="+1234567890"/>
+            <small *ngIf="wizardFormGroup.get('emergencyPhone')?.invalid && wizardFormGroup.get('emergencyPhone')?.touched" class="error-message">
+              El teléfono de emergencia es requerido
+            </small>
           </div>
           <div class="input-group">
             <label for="w-emergency-relation">Parentesco</label>
-            <select id="w-emergency-relation" class="neuro-select" [(ngModel)]="wizardForm.emergencyRelation">
+            <select id="w-emergency-relation" class="neuro-select" formControlName="emergencyRelation">
               <option value="">Seleccionar</option>
               <option value="Hijo/a">Hijo/a</option>
               <option value="Esposo/a">Esposo/a</option>
@@ -81,22 +135,34 @@
         <div class="form-grid-compact">
           <div class="input-group">
             <label for="w-area">Área *</label>
-            <select id="w-area" class="neuro-select" [(ngModel)]="wizardForm.selectedAreaId" (change)="onAreaChangeForm()">
+            <select 
+              id="w-area" 
+              class="neuro-select" 
+              formControlName="selectedAreaId"
+              [class.error]="wizardFormGroup.get('selectedAreaId')?.invalid && wizardFormGroup.get('selectedAreaId')?.touched"
+              (change)="onAreaChangeForm()">
               <option value="">Seleccionar Área</option>
               <option *ngFor="let area of areas" [value]="area.id">
                 🏥 {{ area.name }} - {{ area.description }}
               </option>
             </select>
+            <small *ngIf="wizardFormGroup.get('selectedAreaId')?.invalid && wizardFormGroup.get('selectedAreaId')?.touched" class="error-message">
+              Debe seleccionar un área
+            </small>
           </div>
           <div class="input-group">
             <label for="w-bed">Cama</label>
-            <select id="w-bed" class="neuro-select" [(ngModel)]="wizardForm.selectedBedId" [disabled]="!wizardForm.selectedAreaId || availableBeds.length === 0">
+            <select 
+              id="w-bed" 
+              class="neuro-select" 
+              formControlName="selectedBedId" 
+              [disabled]="!wizardFormGroup.get('selectedAreaId')?.value || availableBeds.length === 0">
               <option value="">Sin asignar (se asignará después)</option>
               <option *ngFor="let bed of availableBeds" [value]="bed.id">
                 🛏️ {{ bed.bedNumber }} - Disponible
               </option>
             </select>
-            <small *ngIf="wizardForm.selectedAreaId && availableBeds.length === 0" style="color: #f56565;">
+            <small *ngIf="wizardFormGroup.get('selectedAreaId')?.value && availableBeds.length === 0" style="color: #f56565;">
               ⚠️ No hay camas disponibles en esta área
             </small>
           </div>
@@ -105,10 +171,14 @@
 
       <!-- Botón de Guardar -->
       <div class="form-actions">
-        <button class="neuro-btn-large success" (click)="quickSavePatient()">
-          ✅ Ingresar Paciente
+        <button 
+          type="submit"
+          class="neuro-btn-large success" 
+          [disabled]="wizardFormGroup.invalid || loading">
+          {{ loading ? '⏳ Guardando...' : '✅ Ingresar Paciente' }}
         </button>
       </div>
+    </form>
     </div>
   </div>
 
@@ -127,12 +197,28 @@
     <div class="filters-container">
       <div class="filter-box">
         <label for="patient-search">Buscar Paciente:</label>
-        <input type="text" id="patient-search" class="neuro-input search-input" [(ngModel)]="searchTerm" placeholder="🔍 Buscar por nombre o cédula..." (input)="filterPatients()"/>
+        <input 
+          type="text" 
+          id="patient-search" 
+          class="neuro-input search-input" 
+          [value]="searchTerm"
+          placeholder="🔍 Buscar por nombre o cédula..." 
+          appDebounce
+          [debounceTime]="300"
+          (debounced)="onSearchInput($event)"
+          aria-label="Buscar paciente por nombre o cédula"
+        />
       </div>
       
       <div class="filter-box">
         <label for="area-filter">Filtrar por Área:</label>
-        <select id="area-filter" class="neuro-select" [(ngModel)]="selectedAreaFilter" (change)="filterPatients()">
+        <select 
+          id="area-filter" 
+          class="neuro-select" 
+          [(ngModel)]="selectedAreaFilter" 
+          (change)="filterPatients()"
+          aria-label="Filtrar pacientes por área"
+        >
           <option value="">Todas las Áreas</option>
           <option *ngFor="let area of areas" [value]="area.id">{{ area.name }}</option>
         </select>
@@ -140,7 +226,13 @@
 
       <div class="filter-box">
         <label for="nurse-filter">Filtrar por Enfermera:</label>
-        <select id="nurse-filter" class="neuro-select" [(ngModel)]="selectedNurseFilter" (change)="filterPatients()">
+        <select 
+          id="nurse-filter" 
+          class="neuro-select" 
+          [(ngModel)]="selectedNurseFilter" 
+          (change)="filterPatients()"
+          aria-label="Filtrar pacientes por enfermera"
+        >
           <option value="">Todas las Enfermeras</option>
           <option *ngFor="let nurse of nurses" [value]="nurse.id">{{ nurse.firstName }} {{ nurse.lastName }}</option>
         </select>
@@ -148,7 +240,13 @@
 
       <div class="filter-box">
         <label for="status-filter">Estado del Paciente:</label>
-        <select id="status-filter" class="neuro-select" [(ngModel)]="selectedStatusFilter" (change)="filterPatients()">
+        <select 
+          id="status-filter" 
+          class="neuro-select" 
+          [(ngModel)]="selectedStatusFilter" 
+          (change)="filterPatients()"
+          aria-label="Filtrar pacientes por estado"
+        >
           <option value="">Todos</option>
           <option value="active">Activos</option>
           <option value="inactive">Inactivos</option>
@@ -157,7 +255,13 @@
 
       <div class="filter-box">
         <label for="bed-filter">Asignación de Cama:</label>
-        <select id="bed-filter" class="neuro-select" [(ngModel)]="selectedBedFilter" (change)="filterPatients()">
+        <select 
+          id="bed-filter" 
+          class="neuro-select" 
+          [(ngModel)]="selectedBedFilter" 
+          (change)="filterPatients()"
+          aria-label="Filtrar pacientes por asignación de cama"
+        >
           <option value="">Todos</option>
           <option value="assigned">Con cama asignada</option>
           <option value="unassigned">Sin cama asignada</option>
@@ -176,43 +280,58 @@
     </div>
 
     <div *ngIf="!loading" class="table-container">
-      <table class="neuro-table">
+      <div class="table-header-actions">
+        <button class="neuro-btn" (click)="exportToCSV()" title="Exportar a CSV">
+          📥 Exportar CSV
+        </button>
+        <button class="neuro-btn" (click)="exportToExcel()" title="Exportar a Excel">
+          📊 Exportar Excel
+        </button>
+      </div>
+      <table class="neuro-table" role="table" aria-label="Tabla de pacientes">
         <thead>
           <tr>
-            <th>ID</th>
-            <th>Nombre Completo</th>
-            <th>Cédula</th>
-            <th>Área</th>
-            <th>Cama</th>
-            <th>Estado</th>
-            <th>Acciones</th>
+            <th scope="col">ID</th>
+            <th scope="col">Nombre Completo</th>
+            <th scope="col">Cédula</th>
+            <th scope="col">Área</th>
+            <th scope="col">Cama</th>
+            <th scope="col">Estado</th>
+            <th scope="col">Acciones</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let patient of filteredPatients" [class.inactive]="!patient.isActive">
+          <tr *ngFor="let patient of paginatedPatients; trackBy: trackByPatientId" [class.inactive]="!patient.isActive">
             <td>{{ patient.id }}</td>
             <td>{{ patient.firstName }} {{ patient.lastName }}</td>
             <td>{{ patient.identificationNumber || '-' }}</td>
             <td>{{ patient.areaName || 'Sin asignar' }}</td>
             <td>{{ patient.bedNumber || '-' }}</td>
             <td>
-              <span class="neuro-status" [class.active]="patient.isActive" [class.inactive]="!patient.isActive">
+              <span class="neuro-status" [class.active]="patient.isActive" [class.inactive]="!patient.isActive" [attr.aria-label]="patient.isActive ? 'Paciente activo' : 'Paciente inactivo'">
                 {{ patient.isActive ? 'Activo' : 'Inactivo' }}
               </span>
             </td>
             <td>
-              <div class="action-buttons">
-                <button class="neuro-btn-icon" (click)="openEditModal(patient)" title="Ver/Editar Detalles">👁️</button>
-                <button class="neuro-btn-icon" (click)="toggleActive(patient)" title="{{ patient.isActive ? 'Desactivar' : 'Activar' }}">
+              <div class="action-buttons" role="group" aria-label="Acciones del paciente">
+                <button class="neuro-btn-icon" (click)="openEditModal(patient)" title="Ver/Editar Detalles" aria-label="Ver detalles de {{ patient.firstName }} {{ patient.lastName }}">👁️</button>
+                <button class="neuro-btn-icon" (click)="toggleActive(patient)" [attr.aria-label]="(patient.isActive ? 'Desactivar' : 'Activar') + ' paciente ' + patient.firstName + ' ' + patient.lastName">
                   {{ patient.isActive ? '🔒' : '🔓' }}
                 </button>
-                <button class="neuro-btn-icon delete-btn" (click)="deletePatient(patient)" title="Eliminar Paciente">🗑️</button>
+                <button class="neuro-btn-icon delete-btn" (click)="deletePatient(patient)" [attr.aria-label]="'Eliminar paciente ' + patient.firstName + ' ' + patient.lastName">🗑️</button>
               </div>
             </td>
           </tr>
         </tbody>
       </table>
-      <p *ngIf="filteredPatients.length === 0" class="empty-message">No se encontraron pacientes</p>
+      <p *ngIf="filteredPatients.length === 0" class="empty-message" role="status" aria-live="polite">No se encontraron pacientes</p>
+      
+      <!-- Componente de paginación -->
+      <app-pagination 
+        [config]="paginationConfig"
+        (pageChange)="onPageChange($event)"
+        (itemsPerPageChange)="onItemsPerPageChange($event)"
+      ></app-pagination>
     </div>
     </div>
   </div>

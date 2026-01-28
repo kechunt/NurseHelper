@@ -5,12 +5,16 @@ import {
   CreateDateColumn,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { User } from './User';
 import { Medication } from './Medication';
 import { MedicationRequest } from './MedicationRequest';
 
 @Entity('delivery_history')
+@Index(['deliveredAt'])
+@Index(['medicationId'])
+@Index(['requestedById'])
 export class DeliveryHistory {
   @PrimaryGeneratedColumn()
   id: number;

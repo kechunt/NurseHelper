@@ -121,7 +121,7 @@
         </thead>
         <tbody>
           <ng-container *ngFor="let hourGroup of tasksGroupedByHour">
-            <tr *ngFor="let task of hourGroup.tasks" class="task-row" 
+            <tr *ngFor="let task of hourGroup.tasks || []" class="task-row" 
                 [class.completed]="task.completed" 
                 [class.not-completed]="task.notCompleted">
               <td>
@@ -129,12 +129,14 @@
               </td>
               <td>
                 <span class="type-badge">
-                  {{ task.type === 'medication' ? '💊 Med.' : '🩺 Chequeo' }}
+                  <span *ngIf="task.type === 'medication'">💊 Med.</span>
+                  <span *ngIf="task.type === 'treatment'">🩺 Trat.</span>
+                  <span *ngIf="task.type === 'check' || (!task.type || (task.type !== 'medication' && task.type !== 'treatment'))">🩺 Chequeo</span>
                 </span>
               </td>
               <td>
                 <div class="patient-name-compact">{{ task.patientName }}</div>
-                <div *ngIf="task.notCompletedReason" class="reason-text" title="{{ task.notCompletedReason }}">
+                <div *ngIf="task.notCompletedReason" class="reason-text-compact" title="{{ task.notCompletedReason }}">
                   ⚠️ {{ task.notCompletedReason }}
                 </div>
               </td>
@@ -190,7 +192,7 @@
   </div>
 
   <!-- Modal para Razón de No Completar Tarea -->
-  <div *ngIf="showNotCompletedModal" class="modal-backdrop" (click)="closeNotCompletedModal()">
+  <div *ngIf="showNotCompletedModal" class="modal-backdrop modal-confirmation" (click)="closeNotCompletedModal()" style="z-index: 2000;">
     <div class="modal-content modal-small" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3>⚠️ Tarea No Realizada</h3>
@@ -199,13 +201,16 @@
 
       <div class="modal-body">
         <div class="task-info-summary">
-          <p><strong>Hora:</strong> {{ selectedTaskForNotCompleted?.time }}</p>
-          <p><strong>Paciente:</strong> {{ selectedTaskForNotCompleted?.patientName }}</p>
-          <p><strong>Tarea:</strong> {{ selectedTaskForNotCompleted?.description }}</p>
+          <p><strong>Hora programada:</strong> {{ selectedTaskForNotCompleted?.time }}</p>
+          <p><strong>Paciente:</strong> {{ selectedTaskForNotCompleted?.patientName || selectedPatient?.name }}</p>
+          <p><strong>Tarea/Medicamento:</strong> {{ selectedTaskForNotCompleted?.description || selectedTaskForNotCompleted?.medication }}</p>
+          <p *ngIf="selectedTaskForNotCompleted?.medication && selectedTaskForNotCompleted?.dosage">
+            <strong>Dosis:</strong> {{ selectedTaskForNotCompleted.dosage }}
+          </p>
         </div>
 
         <div class="reason-input-section">
-          <label for="reason-input">¿Por qué no se realizó esta tarea? *</label>
+          <label for="reason-input">¿Por qué no se administró el medicamento/tratamiento? *</label>
           <textarea 
             id="reason-input"
             class="observation-input" 
@@ -307,32 +312,45 @@
     </div>
 
     <div class="beds-grid">
-      <div *ngFor="let bed of myBeds" class="bed-card" [class.occupied]="bed.patient" [class.available]="!bed.patient">
+      <div *ngFor="let bed of myBeds" 
+           class="bed-card clickable-bed" 
+           [class.occupied]="bed.patient" 
+           [class.available]="!bed.patient"
+           (click)="openEditBedModal(bed)"
+           title="Click para editar cama">
         <div class="bed-header">
           <div class="bed-number">{{ bed.bedNumber }}</div>
           <div class="bed-status-badge" [class.occupied]="bed.patient">
-            {{ bed.patient ? 'Ocupada' : 'Disponible' }}
+            <span *ngIf="bed.patient">🛏️ Ocupada</span>
+            <span *ngIf="!bed.patient">✅ Disponible</span>
           </div>
         </div>
         
         <div *ngIf="bed.patient" class="bed-patient-info">
+          <div class="patient-assignment-header">
+            <span class="assignment-label">👤 Paciente Asignado:</span>
+          </div>
           <div class="patient-name">{{ bed.patient.name }}</div>
           <div class="patient-meta">
             <span class="meta-item">🎂 {{ bed.patient.age }} años</span>
+            <span class="meta-item" *ngIf="bed.patientId">ID: {{ bed.patientId }}</span>
           </div>
-          <div class="patient-conditions">
+          <div class="patient-conditions" *ngIf="bed.patient.conditions && bed.patient.conditions.length > 0">
             <div class="condition-badge" *ngFor="let condition of bed.patient.conditions">
               {{ condition }}
             </div>
           </div>
-          <button class="view-patient-btn-neuro" (click)="viewPatientDetails(bed.patient)">
-            👁️ Ver Detalles
+          <button class="view-patient-btn-neuro" 
+                  (click)="viewPatientDetails(bed.patient); $event.stopPropagation()"
+                  title="Ver detalles del paciente">
+            👁️ Ver Detalles Completos
           </button>
         </div>
         
         <div *ngIf="!bed.patient" class="bed-empty">
           <div class="empty-icon">🏥</div>
           <p>Cama disponible</p>
+          <small class="click-hint">Click para asignar paciente</small>
         </div>
       </div>
     </div>
@@ -390,21 +408,18 @@
             </td>
             <td>
               <div class="meds-summary">
-                <span class="med-count-badge" *ngIf="patient.medications.length > 0">
-                  {{ patient.medications.length }} medicamento(s)
+                <span class="med-count-badge clickable-meds" 
+                      *ngIf="(patient.medications.length || 0) > 0"
+                      (click)="openPatientModal(patient); activeTab = 'schedule'"
+                      title="Click para ver horarios de medicamentos">
+                  💊 {{ patient.medications.length || 0 }} medicamento(s)
                 </span>
-                <button class="show-meds-btn" 
-                        *ngIf="patient.medications.length > 0"
-                        (click)="openPatientModal(patient); activeTab = 'schedule'"
-                        title="Ver horarios">
-                  📋 Mostrar
-                </button>
-                <span *ngIf="patient.medications.length === 0" class="no-data">Sin medicamentos</span>
+                <span *ngIf="(patient.medications.length || 0) === 0" class="no-data">Sin medicamentos</span>
               </div>
             </td>
             <td>
-              <span class="tasks-indicator" [class.has-tasks]="patient.pendingTasks > 0">
-                {{ patient.pendingTasks }}
+              <span class="tasks-indicator" [class.has-tasks]="(patient.pendingTasks || 0) > 0">
+                {{ patient.pendingTasks || 0 }}
               </span>
             </td>
             <td>
@@ -515,10 +530,18 @@
                   </td>
                   <td>
                     <div class="action-buttons-table">
-                      <button class="action-btn-compact" (click)="markMedicationGiven(med)" title="Administrado">
+                      <button class="action-btn-compact success" (click)="markMedicationGiven(med)" title="Administrado" 
+                              [disabled]="!getPendingMedicationSchedule(med)">
                         ✓
                       </button>
-                      <button class="action-btn-compact" (click)="suspendMedicationModal(med)" title="Suspender">
+                      <button class="action-btn-compact warning" (click)="markMedicationAsNotAdministered(med)" 
+                              title="No Administrado" [disabled]="!getPendingMedicationSchedule(med)">
+                        ⚠️
+                      </button>
+                      <button class="action-btn-compact" *ngIf="med.suspended" (click)="reactivateMedicationModal(med)" title="Reactivar">
+                        ▶️
+                      </button>
+                      <button class="action-btn-compact" *ngIf="!med.suspended" (click)="suspendMedicationModal(med)" title="Suspender">
                         ⏸️
                       </button>
                       <button class="action-btn-compact danger" (click)="deleteMedicationModal(med)" title="Eliminar">
@@ -582,13 +605,14 @@
           <div class="observations-grid">
             <div class="observation-card">
               <div class="observation-header">
-                <h5>🩺 Diagnóstico Principal</h5>
+                <h5>🩺 Observaciones Médicas / Diagnóstico</h5>
                 <button class="edit-observation-btn" (click)="startEditingMedicalObservations()" *ngIf="!editingMedicalObservations" title="Editar">
                   ✏️
                 </button>
               </div>
               <div *ngIf="!editingMedicalObservations">
-                <p>{{ selectedPatient?.medicalObservations || 'Sin diagnóstico registrado' }}</p>
+                <p *ngIf="selectedPatient?.medicalObservations">{{ selectedPatient?.medicalObservations }}</p>
+                <p *ngIf="!selectedPatient?.medicalObservations" class="no-data-text">Sin observaciones médicas registradas</p>
               </div>
               <div *ngIf="editingMedicalObservations" class="edit-observation-form">
                 <textarea 
@@ -616,7 +640,8 @@
                 </button>
               </div>
               <div *ngIf="!editingAllergies">
-                <p>{{ selectedPatient?.allergies || 'Ninguna conocida' }}</p>
+                <p *ngIf="selectedPatient?.allergies">{{ selectedPatient?.allergies }}</p>
+                <p *ngIf="!selectedPatient?.allergies" class="no-data-text">Ninguna conocida</p>
               </div>
               <div *ngIf="editingAllergies" class="edit-observation-form">
                 <textarea 
@@ -644,7 +669,8 @@
                 </button>
               </div>
               <div *ngIf="!editingSpecialNeeds">
-                <p>{{ selectedPatient?.specialNeeds || 'Ninguna' }}</p>
+                <p *ngIf="selectedPatient?.specialNeeds">{{ selectedPatient?.specialNeeds }}</p>
+                <p *ngIf="!selectedPatient?.specialNeeds" class="no-data-text">Ninguna</p>
               </div>
               <div *ngIf="editingSpecialNeeds" class="edit-observation-form">
                 <textarea 
@@ -683,54 +709,94 @@
               placeholder="Escribe una nueva observación sobre el paciente..."
               rows="4"
             ></textarea>
-            <button class="save-observation-btn-neuro" (click)="saveObservation()">
-              💾 Guardar Observación
+            <button class="save-observation-btn-neuro" (click)="saveObservation()" [disabled]="isSavingObservation">
+              <span *ngIf="isSavingObservation">⏳ Guardando...</span>
+              <span *ngIf="!isSavingObservation">💾 Guardar Observación</span>
             </button>
           </div>
         </div>
 
         <!-- Tab: Historial -->
         <div *ngIf="activeTab === 'history'" class="tab-content">
-          <h4>📜 Historial de Administraciones</h4>
+          <div class="history-header-section">
+            <h4>📜 Historial de Administraciones</h4>
+            <div class="history-filters">
+              <button 
+                class="filter-btn-neuro" 
+                [class.active]="historyFilter === 'all'"
+                (click)="historyFilter = 'all'">
+                Todos
+              </button>
+              <button 
+                class="filter-btn-neuro" 
+                [class.active]="historyFilter === 'today'"
+                (click)="historyFilter = 'today'">
+                Hoy
+              </button>
+              <button 
+                class="filter-btn-neuro" 
+                [class.active]="historyFilter === 'week'"
+                (click)="historyFilter = 'week'">
+                Semana
+              </button>
+              <button 
+                class="filter-btn-neuro" 
+                [class.active]="historyFilter === 'month'"
+                (click)="historyFilter = 'month'">
+                Mes
+              </button>
+            </div>
+          </div>
           
-          <div class="history-timeline">
-            <div *ngFor="let record of selectedPatient?.treatmentHistory" class="history-item" 
-                 [class.administered]="record.status === 'administered'"
-                 [class.not-administered]="record.status === 'not_administered' || record.status === 'missed'">
-              <div class="history-date">
-                <div class="date-day">{{ record.date }}</div>
-                <div class="date-time">{{ record.time }}</div>
-                <div class="date-administered" *ngIf="record.administeredAt && record.status === 'administered'">
-                  Admin: {{ record.administeredAt.split(' ')[1]?.substring(0, 5) || record.administeredAt }}
-                </div>
+          <div class="history-timeline" *ngIf="getHistoryGroupedByDay().length > 0">
+            <div *ngFor="let dayGroup of getHistoryGroupedByDay()" class="history-day-group">
+              <div class="history-day-header">
+                <h5 class="day-title">📅 {{ dayGroup.date }}</h5>
+                <span class="day-summary">
+                  {{ getAdministeredCount(dayGroup.records) }} administrados / 
+                  {{ getNotAdministeredCount(dayGroup.records) }} no administrados
+                </span>
               </div>
-              <div class="history-content">
-                <div class="history-header">
-                  <span class="history-type">{{ record.type }}</span>
-                  <span class="history-status" 
-                        [class.status-administered]="record.status === 'administered'"
-                        [class.status-not-administered]="record.status === 'not_administered' || record.status === 'missed'">
-                    {{ record.status === 'administered' ? '✅ Administrado' : record.status === 'not_administered' ? '⚠️ No Administrado' : '❌ Omitido' }}
-                  </span>
-                  <span class="history-nurse">👩‍⚕️ {{ record.nurseName }}</span>
-                </div>
-                <div class="history-description">
-                  <strong>{{ record.description }}</strong>
-                  <span *ngIf="record.medication && record.dosage" class="medication-info">
-                    - {{ record.medication }} ({{ record.dosage }})
-                  </span>
-                </div>
-                <div *ngIf="record.notes" class="history-notes">
-                  📝 Notas: {{ record.notes }}
-                </div>
-                <div *ngIf="record.reasonNotAdministered" class="history-reason">
-                  ⚠️ Motivo: {{ record.reasonNotAdministered }}
+              
+              <div class="history-items-for-day">
+                <div *ngFor="let record of dayGroup.records" class="history-item" 
+                     [class.administered]="record.status === 'administered'"
+                     [class.not-administered]="record.status === 'not_administered' || record.status === 'missed'">
+                  <div class="history-date">
+                    <div class="date-time">{{ record.time }}</div>
+                    <div class="date-administered" *ngIf="record.administeredAt && record.status === 'administered'">
+                      Admin: {{ record.administeredAt.split(' ')[1]?.substring(0, 5) || record.administeredAt }}
+                    </div>
+                  </div>
+                  <div class="history-content">
+                    <div class="history-header">
+                      <span class="history-type">{{ record.type }}</span>
+                      <span class="history-status" 
+                            [class.status-administered]="record.status === 'administered'"
+                            [class.status-not-administered]="record.status === 'not_administered' || record.status === 'missed'">
+                        {{ record.status === 'administered' ? '✅ Administrado' : record.status === 'not_administered' ? '⚠️ No Administrado' : '❌ Omitido' }}
+                      </span>
+                      <span class="history-nurse">👩‍⚕️ {{ record.nurseName }}</span>
+                    </div>
+                    <div class="history-description">
+                      <strong>{{ record.description }}</strong>
+                      <span *ngIf="record.medication && record.dosage" class="medication-info">
+                        - {{ record.medication }} ({{ record.dosage }})
+                      </span>
+                    </div>
+                    <div *ngIf="record.notes" class="history-notes">
+                      📝 Notas: {{ record.notes }}
+                    </div>
+                    <div *ngIf="record.reasonNotAdministered" class="history-reason">
+                      ⚠️ Motivo: {{ record.reasonNotAdministered }}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
           
-          <p *ngIf="(selectedPatient?.treatmentHistory?.length || 0) === 0" class="empty-message">
+          <p *ngIf="getHistoryGroupedByDay().length === 0" class="empty-message">
             No hay registros en el historial
           </p>
         </div>
@@ -861,16 +927,17 @@
       </div>
 
       <div class="modal-footer">
-        <button class="btn-secondary-neuro" (click)="closeAddMedicationModal()">Cancelar</button>
-        <button class="btn-primary-neuro" (click)="confirmAddMedication()">
-          💊 Agregar Medicamento
+        <button class="btn-secondary-neuro" (click)="closeAddMedicationModal()" [disabled]="isAddingMedication">Cancelar</button>
+        <button class="btn-primary-neuro" (click)="confirmAddMedication()" [disabled]="isAddingMedication">
+          <span *ngIf="isAddingMedication">⏳ Agregando...</span>
+          <span *ngIf="!isAddingMedication">💊 Agregar Medicamento</span>
         </button>
       </div>
     </div>
   </div>
 
   <!-- Modal para Suspender Medicamento -->
-  <div *ngIf="showSuspendMedicationModal" class="modal-backdrop" (click)="closeSuspendMedicationModal()">
+  <div *ngIf="showSuspendMedicationModal" class="modal-backdrop modal-confirmation" (click)="closeSuspendMedicationModal()" style="z-index: 2000;">
     <div class="modal-content modal-small" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3>⏸️ Suspender Medicamento</h3>
@@ -985,9 +1052,14 @@
           <!-- Para recurrente -->
           <div *ngIf="newTreatment.scheduleType === 'recurring'" class="form-row">
             <div class="form-group">
-              <label>Hora *</label>
-              <input type="time" class="neuro-input" [(ngModel)]="newTreatment.time" 
-                     name="time" required>
+              <label>Horarios *</label>
+              <div class="times-input-group">
+                <div *ngFor="let time of newTreatment.times; let i = index" class="time-input-row">
+                  <input type="time" class="neuro-input small" [(ngModel)]="newTreatment.times[i]" [name]="'treatmentTime' + i">
+                  <button type="button" class="remove-time-btn" (click)="removeTreatmentTime(i)" *ngIf="newTreatment.times.length > 1">✕</button>
+                </div>
+                <button type="button" class="add-time-btn" (click)="addTreatmentTime()">➕ Agregar hora</button>
+              </div>
             </div>
           </div>
 
@@ -1007,6 +1079,22 @@
             </div>
           </div>
 
+          <!-- Duración (solo para recurrente) -->
+          <div *ngIf="newTreatment.scheduleType === 'recurring'" class="form-row two-cols">
+            <div class="form-group">
+              <label>Duración *</label>
+              <input type="number" class="neuro-input" [(ngModel)]="newTreatment.duration" 
+                     placeholder="Ej: 4" name="duration" min="1" required>
+            </div>
+            <div class="form-group">
+              <label>Unidad</label>
+              <select class="neuro-input" [(ngModel)]="newTreatment.durationUnit" name="durationUnit">
+                <option value="weeks">Semanas</option>
+                <option value="days">Días</option>
+              </select>
+            </div>
+          </div>
+
           <!-- Notas -->
           <div class="form-row">
             <div class="form-group">
@@ -1020,19 +1108,17 @@
       </div>
 
       <div class="modal-footer" *ngIf="patients.length > 0">
-        <button class="btn-secondary-neuro" (click)="closeAddTreatmentModal()">Cancelar</button>
-        <button class="btn-primary-neuro" (click)="confirmAddTreatment()" 
-                [disabled]="!newTreatment.patientId || !newTreatment.description || !newTreatment.time || 
-                           (newTreatment.scheduleType === 'single' && !newTreatment.date) ||
-                           (newTreatment.scheduleType === 'recurring' && newTreatment.daysOfWeek.length === 0)">
-          ✅ Agregar Tratamiento
+        <button class="btn-secondary-neuro" (click)="closeAddTreatmentModal()" [disabled]="isAddingTreatment">Cancelar</button>
+        <button class="btn-primary-neuro" (click)="confirmAddTreatment()" [disabled]="isAddingTreatment">
+          <span *ngIf="isAddingTreatment">⏳ Agregando...</span>
+          <span *ngIf="!isAddingTreatment">✅ Agregar Tratamiento</span>
         </button>
       </div>
     </div>
   </div>
 
   <!-- Modal para Eliminar Medicamento -->
-  <div *ngIf="showDeleteMedicationModal" class="modal-backdrop" (click)="closeDeleteMedicationModal()">
+  <div *ngIf="showDeleteMedicationModal" class="modal-backdrop modal-confirmation" (click)="closeDeleteMedicationModal()" style="z-index: 2000;">
     <div class="modal-content modal-small" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3>🗑️ Eliminar Medicamento</h3>
@@ -1066,6 +1152,181 @@
         </button>
       </div>
     </div>
+  </div>
+
+  <!-- Modal para Reactivar Medicamento -->
+  <div *ngIf="showReactivateMedicationModal" class="modal-backdrop modal-confirmation" (click)="closeReactivateMedicationModal()" style="z-index: 2000;">
+    <div class="modal-content modal-small" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>▶️ Reactivar Medicamento</h3>
+        <button class="close-btn" (click)="closeReactivateMedicationModal()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="medication-info">
+          <p><strong>Medicamento:</strong> {{ medicationToReactivate?.name }}</p>
+          <p><strong>Dosis:</strong> {{ medicationToReactivate?.dosage }}</p>
+          <p><strong>Paciente:</strong> {{ selectedPatient?.name }}</p>
+        </div>
+
+        <div class="info-box">
+          <p>✅ Esta acción reactivará todas las dosis futuras programadas de este medicamento.</p>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary-neuro" (click)="closeReactivateMedicationModal()">Cancelar</button>
+        <button class="btn-primary-neuro" (click)="confirmReactivateMedication()">
+          ▶️ Reactivar Medicamento
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Posponer Tarea -->
+  <div *ngIf="showPostponeTaskModal" class="modal-backdrop modal-confirmation" (click)="closePostponeTaskModal()" style="z-index: 2000;">
+    <div class="modal-content modal-small" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>⏱️ Posponer Tarea</h3>
+        <button class="close-btn" (click)="closePostponeTaskModal()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="task-info-summary">
+          <p><strong>Hora actual:</strong> {{ taskToPostpone?.time }}</p>
+          <p><strong>Paciente:</strong> {{ taskToPostpone?.patientName }}</p>
+          <p><strong>Tarea:</strong> {{ taskToPostpone?.description }}</p>
+        </div>
+
+        <div class="form-group">
+          <label>Nueva fecha *</label>
+          <input 
+            type="date" 
+            class="neuro-input" 
+            [(ngModel)]="postponeNewDate" 
+            required
+            [min]="getMinDate()"
+          />
+        </div>
+        <div class="form-group">
+          <label>Nueva hora *</label>
+          <input 
+            type="time" 
+            class="neuro-input" 
+            [(ngModel)]="postponeNewTime" 
+            required
+          />
+          <small class="hint-text">Seleccione la nueva fecha y hora para esta tarea</small>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary-neuro" (click)="closePostponeTaskModal()">Cancelar</button>
+        <button class="btn-primary-neuro" (click)="confirmPostponeTask()" 
+                [disabled]="!postponeNewDate || !postponeNewTime">
+          ⏱️ Posponer Tarea
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Editar Cama (Reutilizado del admin) -->
+  <div *ngIf="showEditBedModal" class="modal-backdrop" (click)="closeEditBedModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>✏️ Editar Cama</h3>
+        <button class="close-btn" (click)="closeEditBedModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="input-group">
+          <label for="edit-bed-number">Número/Nombre de Cama *</label>
+          <input
+            type="text"
+            id="edit-bed-number"
+            class="neuro-input"
+            [(ngModel)]="editBedForm.bedNumber"
+            placeholder="Ej: SAL-001, Cama-1, etc."
+          />
+        </div>
+        <div class="input-group">
+          <label for="edit-bed-availability">Estado de la Cama</label>
+          <select id="edit-bed-availability" class="neuro-select" [(ngModel)]="editBedForm.isActive">
+            <option [ngValue]="true">✅ Disponible (puede recibir pacientes)</option>
+            <option [ngValue]="false">❌ No Disponible (fuera de servicio)</option>
+          </select>
+          <small>
+            <span *ngIf="editBedForm.isActive" style="color: #48bb78;">
+              ✓ La cama está habilitada para uso
+            </span>
+            <span *ngIf="!editBedForm.isActive" style="color: #f56565;">
+              ⚠️ La cama está fuera de servicio (mantenimiento, reparación, etc.)
+            </span>
+          </small>
+        </div>
+        <div class="input-group">
+          <label for="edit-bed-patient">Asignación de Paciente</label>
+          
+          <!-- Botón para liberar cama -->
+          <div class="patient-actions" *ngIf="editBedForm.patientId">
+            <div class="current-patient">
+              <span class="patient-info">
+                👤 {{ getCurrentPatientName() }}
+              </span>
+              <button type="button" class="release-bed-btn" (click)="releaseBed()" title="Liberar cama">
+                🔓 Liberar Cama
+              </button>
+            </div>
+          </div>
+
+          <!-- Lista de pacientes del área -->
+          <div class="patient-selection" *ngIf="!editBedForm.patientId">
+            <div class="patient-search-header">
+              <label>Pacientes disponibles:</label>
+              <input
+                type="text"
+                class="neuro-input search-input"
+                [(ngModel)]="patientSearchTerm"
+                (input)="filterPatientsForBed()"
+                placeholder="🔍 Buscar por nombre..."
+              />
+            </div>
+            
+            <div class="patients-list-container">
+              <div class="patients-list" *ngIf="filteredPatientsForBed.length > 0">
+                <div 
+                  *ngFor="let patient of filteredPatientsForBed" 
+                  class="patient-item"
+                  [class.has-bed]="getPatientBed(patient.id ?? undefined)"
+                  (click)="selectPatientForBed(patient)">
+                  <div class="patient-item-info">
+                    <strong>{{ patient.firstName }} {{ patient.lastName }}</strong>
+                    <div class="patient-details">
+                      <span class="patient-bed-info" *ngIf="getPatientBed(patient.id ?? undefined)">
+                        🛏️ Cama: {{ getPatientBed(patient.id ?? undefined)?.bedNumber }}
+                      </span>
+                      <span class="patient-bed-info available" *ngIf="!getPatientBed(patient.id ?? undefined)">
+                        ✅ Disponible para asignar
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div *ngIf="filteredPatientsForBed.length === 0 && !patientSearchTerm" class="no-patients-message">
+                <p>No hay pacientes disponibles para asignar</p>
+              </div>
+              
+              <div *ngIf="filteredPatientsForBed.length === 0 && patientSearchTerm" class="no-patients-message">
+                <p>No se encontraron pacientes con ese nombre</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="neuro-btn outlined" (click)="closeEditBedModal()">Cancelar</button>
+        <button class="neuro-btn" (click)="saveBedChanges()">💾 Guardar Cambios</button>
+      </div>
     </div>
   </div>
 </div>

@@ -5,6 +5,37 @@
   gap: 3rem;
 }
 
+/* Estilos para mensajes de error en formularios */
+.error-message {
+  color: #f56565;
+  font-size: 12px;
+  margin-top: 4px;
+  display: block;
+}
+
+.neuro-input.error,
+.neuro-select.error {
+  border-color: #f56565;
+  box-shadow: 0 0 0 3px rgba(245, 101, 101, 0.1);
+}
+
+.neuro-btn-large:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.table-header-actions {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  justify-content: flex-end;
+}
+
+.table-header-actions .neuro-btn {
+  padding: 8px 16px;
+  font-size: 0.9rem;
+}
+
 /* ========== FORMULARIO COMPACTO DE INGRESO ========== */
 .patient-form-section {
   background: #e0e5ec;
@@ -284,32 +315,75 @@ select.neuro-select {
 }
 
 .neuro-table th {
-  padding: 1rem;
+  padding: 0.5rem 0.4rem !important;
   text-align: left;
   font-weight: 600;
   color: #4a5568;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  padding-bottom: 1.25rem;
+  white-space: nowrap;
+  line-height: 1 !important;
 }
 
 .neuro-table th:first-child {
-  padding-left: 1.5rem;
+  padding-left: 1rem;
 }
 
 .neuro-table td {
-  padding: 0.9rem;
+  padding: 0.35rem 0.4rem !important;
   color: #4a5568;
-  vertical-align: top;
+  vertical-align: middle !important;
+  font-size: 0.8rem;
+  line-height: 1 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.neuro-table td > div,
+.neuro-table td > span {
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+  display: inline-block !important;
+  vertical-align: middle !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 100% !important;
+}
+
+/* Forzar que la columna de acciones tenga altura mínima y esté en una sola línea */
+.neuro-table td:last-child {
+  height: 30px !important;
+  min-height: 30px !important;
+  max-height: 30px !important;
+  padding: 0.2rem 0.3rem !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+}
+
+/* Asegurar que las filas no se expandan */
+.neuro-table tr {
+  height: auto !important;
+  min-height: 0 !important;
+  line-height: 1 !important;
+}
+
+.neuro-table tr td {
+  height: auto !important;
+  min-height: 0 !important;
 }
 
 .neuro-table td:first-child {
-  padding-left: 1.5rem;
+  padding-left: 1rem;
 }
 
 .neuro-table td:last-child {
-  padding-right: 1.5rem;
+  padding-right: 1rem;
 }
 
 .neuro-table tbody tr + tr td {
@@ -364,21 +438,58 @@ select.neuro-select {
   color: #f56565;
 }
 
+/* ========== CONTENEDOR DE BOTONES DE ACCIÓN - NORMALIZADO ========== */
 .action-buttons {
-  display: flex;
-  gap: 0.5rem;
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.15rem !important;
+  width: 100% !important;
+  height: 30px !important;
+  max-height: 30px !important;
+  min-height: 30px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+  overflow: visible !important;
+  white-space: nowrap !important;
 }
 
+.action-buttons > * {
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
+  display: inline-flex !important;
+  white-space: nowrap !important;
+}
+
+/* ========== BOTÓN DE ACCIÓN COMPACTO - NORMALIZADO ========== */
 .neuro-btn-icon {
-  background: #e0e5ec;
-  border: none;
-  width: 35px;
-  height: 35px;
-  border-radius: 10px;
-  cursor: pointer;
-  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
-  transition: all 0.2s ease;
-  font-size: 1rem;
+  background: #e0e5ec !important;
+  border: none !important;
+  width: 28px !important;
+  height: 28px !important;
+  max-width: 28px !important;
+  max-height: 28px !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  box-shadow: 2px 2px 4px #bebebe, -2px -2px 4px #ffffff !important;
+  transition: all 0.2s ease !important;
+  font-size: 0.85rem !important;
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
+  flex-basis: 28px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+  vertical-align: middle !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
 }
 
 .neuro-btn-icon:hover {
@@ -425,18 +536,19 @@ select.neuro-select {
 
 .modal-content {
   background: #e0e5ec;
-  border-radius: 20px;
-  box-shadow: 20px 20px 40px #bebebe, -20px -20px 40px #ffffff;
-  max-width: 600px;
+  border-radius: 30px;
+  box-shadow: 30px 30px 60px rgba(0, 0, 0, 0.3), -30px -30px 60px rgba(255, 255, 255, 0.1);
+  max-width: 900px;
   width: 90%;
   max-height: 90vh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
 .modal-content.modal-extra-large {
-  max-width: 1000px;
+  max-width: 1200px;
 }
 
 .modal-header {
@@ -444,7 +556,11 @@ select.neuro-select {
   justify-content: space-between;
   align-items: center;
   padding: 2rem;
-  border-bottom: 2px solid rgba(66, 153, 225, 0.2);
+  border-bottom: 1px solid rgba(174, 174, 192, 0.2);
+  flex-shrink: 0;
+  background: #e0e5ec;
+  border-radius: 30px 30px 0 0;
+  position: relative;
 }
 
 .modal-header h3 {
@@ -478,39 +594,93 @@ select.neuro-select {
 .tabs-container {
   display: flex;
   gap: 0.5rem;
-  padding: 1rem 2rem 0;
-  border-bottom: 2px solid rgba(66, 153, 225, 0.2);
+  padding: 1rem 2rem;
+  border-bottom: 1px solid rgba(174, 174, 192, 0.2);
   overflow-x: auto;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  flex-shrink: 0;
+  background: #e0e5ec;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.3s ease;
+}
+
+/* Scrollbar personalizado para tabs horizontales */
+.tabs-container::-webkit-scrollbar {
+  height: 6px;
+}
+
+.tabs-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tabs-container::-webkit-scrollbar-thumb {
+  background: rgba(174, 174, 192, 0.3);
+  border-radius: 10px;
+}
+
+.tabs-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(174, 174, 192, 0.5);
 }
 
 .tab {
-  background: #e0e5ec;
+  background: transparent;
   border: none;
   padding: 0.75rem 1.5rem;
-  border-radius: 10px 10px 0 0;
+  border-radius: 12px;
   cursor: pointer;
   color: #718096;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 500;
-  box-shadow: inset 2px 2px 4px #bebebe, inset -2px -2px 4px #ffffff;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   white-space: nowrap;
+  position: relative;
+  flex-shrink: 0;
+  box-shadow: none;
+}
+
+.tab::before {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 2px;
+  background: #4299e1;
+  transition: width 0.3s ease;
+  border-radius: 2px;
+}
+
+.tab:hover {
+  background: rgba(255, 255, 255, 0.4);
+  color: #4a5568;
+  box-shadow: 2px 2px 4px rgba(174, 174, 192, 0.2), -2px -2px 4px rgba(255, 255, 255, 0.8);
 }
 
 .tab.active {
+  background: rgba(255, 255, 255, 0.5);
   color: #4299e1;
-  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+  box-shadow: 4px 4px 8px rgba(174, 174, 192, 0.3), -4px -4px 8px rgba(255, 255, 255, 0.9);
   font-weight: 600;
+}
+
+.tab.active::before {
+  width: calc(100% - 2rem);
 }
 
 .modal-body {
   padding: 2rem;
   overflow-y: auto;
+  overflow-x: hidden;
   flex: 1;
+  min-height: 0;
 }
 
 .modal-body.scrollable {
-  max-height: 60vh;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .tab-content {
@@ -704,8 +874,12 @@ textarea.neuro-input {
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
-  padding: 2rem;
-  border-top: 2px solid rgba(66, 153, 225, 0.2);
+  padding: 1.5rem 2rem;
+  border-top: 1px solid rgba(174, 174, 192, 0.2);
+  flex-shrink: 0;
+  background: #e0e5ec;
+  border-radius: 0 0 30px 30px;
+  position: relative;
 }
 
 .neuro-btn.outlined {
@@ -819,6 +993,20 @@ textarea.neuro-input {
     width: 100%;
     gap: 0.5rem;
   }
+  
+  .table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .neuro-table {
+    min-width: 900px;
+  }
+  
+  .action-buttons {
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
 
   .toggle-btn-neuro {
     width: 100%;
@@ -832,12 +1020,21 @@ textarea.neuro-input {
 
   .neuro-table th,
   .neuro-table td {
-    padding: 0.75rem 0.5rem;
+    padding: 0.5rem 0.4rem;
   }
 
   .action-buttons {
-    flex-wrap: wrap;
-    gap: 0.25rem;
+    flex-wrap: nowrap !important;
+    gap: 0.2rem !important;
+    justify-content: center !important;
+  }
+  
+  .neuro-btn-icon {
+    width: 30px !important;
+    height: 30px !important;
+    max-width: 30px !important;
+    max-height: 30px !important;
+    font-size: 0.85rem !important;
   }
 
   .neuro-btn-icon {

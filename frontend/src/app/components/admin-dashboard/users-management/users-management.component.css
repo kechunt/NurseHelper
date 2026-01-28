@@ -143,9 +143,51 @@
 }
 
 .neuro-table td {
-  padding: 0.9rem;
+  padding: 0.35rem 0.4rem !important;
   color: #4a5568;
-  vertical-align: top;
+  vertical-align: middle !important;
+  font-size: 0.8rem;
+  line-height: 1 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.neuro-table td > div,
+.neuro-table td > span {
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+  display: inline-block !important;
+  vertical-align: middle !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 100% !important;
+}
+
+/* Forzar que la columna de acciones tenga altura mínima y esté en una sola línea */
+.neuro-table td:last-child {
+  height: 30px !important;
+  min-height: 30px !important;
+  max-height: 30px !important;
+  padding: 0.2rem 0.3rem !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+}
+
+/* Asegurar que las filas no se expandan */
+.neuro-table tr {
+  height: auto !important;
+  min-height: 0 !important;
+  line-height: 1 !important;
+}
+
+.neuro-table tr td {
+  height: auto !important;
+  min-height: 0 !important;
 }
 
 .neuro-table td:first-child {
@@ -224,26 +266,59 @@
   color: #48bb78;
 }
 
+/* ========== CONTENEDOR DE BOTONES DE ACCIÓN - NORMALIZADO ========== */
 .action-buttons {
-  display: flex;
-  gap: 0.5rem;
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.15rem !important;
+  width: 100% !important;
+  height: 30px !important;
+  max-height: 30px !important;
+  min-height: 30px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+  overflow: visible !important;
+  white-space: nowrap !important;
 }
 
+.action-buttons > * {
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
+  display: inline-flex !important;
+  white-space: nowrap !important;
+}
+
+/* ========== BOTÓN DE ACCIÓN COMPACTO - NORMALIZADO ========== */
 .neuro-btn-icon {
-  background: #e0e5ec;
-  border: none;
-  padding: 8px;
-  border-radius: 50%;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  color: #4a5568;
-  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
+  background: #e0e5ec !important;
+  border: none !important;
+  padding: 0 !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  color: #4a5568 !important;
+  box-shadow: 2px 2px 4px #bebebe, -2px -2px 4px #ffffff !important;
+  width: 28px !important;
+  height: 28px !important;
+  max-width: 28px !important;
+  max-height: 28px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 0.85rem !important;
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
+  flex-basis: 28px !important;
+  margin: 0 !important;
+  line-height: 1 !important;
+  vertical-align: middle !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
 }
 
 .neuro-btn-icon:hover {
@@ -474,20 +549,238 @@
   border-top: 1px solid rgba(174, 174, 192, 0.3);
 }
 
+@media (max-width: 1024px) {
+  .filters-container {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .filter-group {
+    width: 100%;
+    min-width: unset;
+  }
+  
+  .filter-group.search-group {
+    min-width: unset;
+  }
+  
+  .table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .neuro-table {
+    min-width: 800px;
+  }
+}
+
 @media (max-width: 768px) {
+  .users-management {
+    padding: 0;
+  }
+  
   .section-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
   }
-
+  
+  .section-title {
+    font-size: 1.4rem;
+  }
+  
+  .filters-container {
+    padding: 1rem;
+  }
+  
   .table-container {
+    padding: 0.75rem;
     font-size: 0.85rem;
   }
 
+  .neuro-table {
+    min-width: 700px;
+  }
+  
   .neuro-table th,
   .neuro-table td {
     padding: 12px 8px;
+    font-size: 0.8rem;
+  }
+  
+  .action-buttons {
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+  
+  .neuro-btn-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+  
+  .modal-content {
+    max-width: 95%;
+    margin: 1rem;
+  }
+  
+  .modal-header {
+    padding: 1.5rem 1.5rem 1rem;
+  }
+  
+  .modal-header h3 {
+    font-size: 1.3rem;
+  }
+  
+.modal-body {
+  padding: 1.5rem;
+}
+
+.modal-warning {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: #fff3cd;
+  border-radius: 8px;
+  color: #856404;
+  font-size: 0.9rem;
+  border-left: 3px solid #ffc107;
+}
+}
+
+@media (max-width: 576px) {
+  .section-title {
+    font-size: 1.2rem;
+  }
+  
+  .filters-container {
+    padding: 0.75rem;
+  }
+  
+  .table-container {
+    padding: 0.5rem;
+  }
+  
+  .neuro-table {
+    min-width: 600px;
+    font-size: 0.75rem;
+  }
+  
+  .neuro-table th,
+  .neuro-table td {
+    padding: 8px 6px;
+  }
+  
+  .modal-content {
+    max-width: 98%;
+    margin: 0.5rem;
+    border-radius: 20px;
+  }
+  
+  .modal-header {
+    padding: 1rem;
+  }
+  
+  .modal-header h3 {
+    font-size: 1.1rem;
+  }
+  
+  .modal-body {
+    padding: 1rem;
+  }
+  
+  .neuro-input,
+  .neuro-select {
+    font-size: 14px;
+    padding: 12px 16px;
+  }
+}
+
+.role-section {
+  background: #e0e5ec;
+  border-radius: 20px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 10px 10px 20px #bebebe, -10px -10px 20px #ffffff;
+}
+
+.role-section-title {
+  color: #4a5568;
+  font-size: 1.5rem;
+  font-weight: 400;
+  margin: 0 0 1.5rem 0;
+  text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8),
+    -1px -1px 2px rgba(174, 174, 192, 0.4);
+}
+
+.role-cards-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.role-card {
+  background: #e0e5ec;
+  border-radius: 15px;
+  padding: 1.5rem;
+  box-shadow: inset 5px 5px 10px #bebebe, inset -5px -5px 10px #ffffff;
+  transition: all 0.3s ease;
+}
+
+.role-card:hover {
+  box-shadow: 8px 8px 16px #bebebe, -8px -8px 16px #ffffff;
+  transform: translateY(-2px);
+}
+
+.role-card-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.role-card-info {
+  flex: 1;
+}
+
+.role-card-info h4 {
+  margin: 0 0 0.5rem 0;
+  color: #4a5568;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.role-card-username {
+  margin: 0 0 0.25rem 0;
+  color: #718096;
+  font-size: 0.9rem;
+}
+
+.role-card-email {
+  margin: 0 0 0.75rem 0;
+  color: #718096;
+  font-size: 0.85rem;
+}
+
+.role-card-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.no-role-users {
+  padding: 2rem;
+  text-align: center;
+  color: #718096;
+  font-style: italic;
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 768px) {
+  .role-cards-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .role-section-title {
+    font-size: 1.25rem;
   }
 }
 

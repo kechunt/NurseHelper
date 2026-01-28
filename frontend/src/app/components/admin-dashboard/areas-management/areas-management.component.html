@@ -197,5 +197,207 @@
       </div>
     </div>
   </div>
+
+  <!-- Tabla de Pacientes sin Área Asignada -->
+  <div class="patients-section">
+    <h3 class="section-subtitle">👤 Pacientes sin Área Asignada</h3>
+    <div *ngIf="patientsWithoutArea.length === 0" class="no-data-message">
+      <p>No hay pacientes sin área asignada</p>
+    </div>
+    <div *ngIf="patientsWithoutArea.length > 0" class="patients-table-container">
+      <table class="patients-table">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Identificación</th>
+            <th>Teléfono</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let patient of patientsWithoutArea">
+            <td>{{ patient.firstName }} {{ patient.lastName }}</td>
+            <td>{{ patient.identificationNumber || 'N/A' }}</td>
+            <td>{{ patient.phone || 'N/A' }}</td>
+            <td>
+              <span class="status-badge" [class.active]="patient.isActive">
+                {{ patient.isActive ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td>
+              <button class="action-btn assign-btn" (click)="openAssignAreaModal(patient)" title="Asignar área">
+                📍 Asignar Área
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Tabla Desplegable de Áreas con Pacientes -->
+  <div class="areas-patients-section">
+    <h3 class="section-subtitle">🏥 Pacientes por Área</h3>
+    <div *ngIf="areas.length === 0" class="no-data-message">
+      <p>No hay áreas creadas</p>
+    </div>
+    <div *ngIf="areas.length > 0" class="areas-patients-list">
+      <div *ngFor="let area of areas" class="area-patients-item">
+        <div class="area-patients-header" (click)="toggleAreaExpansion(area.id!)">
+          <div class="area-header-info">
+            <span class="expand-icon" [class.expanded]="isAreaExpanded(area.id!)">▶</span>
+            <h4>{{ area.name }}</h4>
+            <span class="patients-count-badge">
+              {{ getPatientsByArea(area.id!).length }} paciente(s)
+            </span>
+          </div>
+        </div>
+        <div *ngIf="isAreaExpanded(area.id!)" class="area-patients-content">
+          <div *ngIf="getPatientsByArea(area.id!).length === 0" class="no-patients-message">
+            <p>No hay pacientes asignados a esta área</p>
+          </div>
+          <div *ngIf="getPatientsByArea(area.id!).length > 0" class="patients-table-container">
+            <table class="patients-table">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Identificación</th>
+                  <th>Cama</th>
+                  <th>Teléfono</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let patient of getPatientsByArea(area.id!)">
+                  <td>{{ patient.firstName }} {{ patient.lastName }}</td>
+                  <td>{{ patient.identificationNumber || 'N/A' }}</td>
+                  <td>
+                    <span class="bed-badge" *ngIf="patient.bedNumber">{{ patient.bedNumber }}</span>
+                    <span class="no-bed-badge" *ngIf="!patient.bedNumber">Sin cama</span>
+                  </td>
+                  <td>{{ patient.phone || 'N/A' }}</td>
+                  <td>
+                    <button class="action-btn change-btn" (click)="openChangeAreaModal(patient)" title="Cambiar área">
+                      🔄 Cambiar Área
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Asignar Área a Paciente sin Área -->
+  <div *ngIf="showAssignAreaModal" class="modal-backdrop" (click)="closeAssignAreaModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Asignar Área y Cama</h3>
+        <button class="close-btn" (click)="closeAssignAreaModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="patient-info-display">
+          <p><strong>Paciente:</strong> {{ selectedPatientForArea?.firstName }} {{ selectedPatientForArea?.lastName }}</p>
+          <p><strong>Identificación:</strong> {{ selectedPatientForArea?.identificationNumber || 'N/A' }}</p>
+        </div>
+        <div class="input-group">
+          <label for="assign-area">Área *</label>
+          <select 
+            id="assign-area" 
+            class="neuro-select" 
+            [(ngModel)]="assignAreaForm.areaId"
+            (change)="onAreaSelectedForAssignment()">
+            <option [value]="null">Selecciona un área</option>
+            <option *ngFor="let area of areas" [value]="area.id">
+              {{ area.name }}
+            </option>
+          </select>
+        </div>
+        <div class="input-group" *ngIf="assignAreaForm.areaId">
+          <label for="assign-bed">Cama *</label>
+          <select 
+            id="assign-bed" 
+            class="neuro-select" 
+            [(ngModel)]="assignAreaForm.bedId"
+            [disabled]="availableBedsForAssignment.length === 0">
+            <option [value]="null">Selecciona una cama</option>
+            <option *ngFor="let bed of availableBedsForAssignment" [value]="bed.id">
+              {{ bed.bedNumber }} {{ bed.patientId ? '(Ocupada)' : '(Disponible)' }}
+            </option>
+          </select>
+          <small *ngIf="availableBedsForAssignment.length === 0">
+            No hay camas disponibles en esta área
+          </small>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="neuro-btn outlined" (click)="closeAssignAreaModal()">Cancelar</button>
+        <button 
+          class="neuro-btn" 
+          (click)="assignAreaToPatient()"
+          [disabled]="!assignAreaForm.areaId || !assignAreaForm.bedId">
+          Asignar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Cambiar Área y Cama de Paciente -->
+  <div *ngIf="showChangeAreaModal" class="modal-backdrop" (click)="closeChangeAreaModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Cambiar Área y Cama</h3>
+        <button class="close-btn" (click)="closeChangeAreaModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="patient-info-display">
+          <p><strong>Paciente:</strong> {{ selectedPatientForArea?.firstName }} {{ selectedPatientForArea?.lastName }}</p>
+          <p><strong>Área Actual:</strong> {{ selectedPatientForArea?.areaName || 'Sin área' }}</p>
+          <p><strong>Cama Actual:</strong> {{ selectedPatientForArea?.bedNumber || 'Sin cama' }}</p>
+        </div>
+        <div class="input-group">
+          <label for="change-area">Nueva Área *</label>
+          <select 
+            id="change-area" 
+            class="neuro-select" 
+            [(ngModel)]="changeAreaForm.areaId"
+            (change)="onAreaSelectedForChange()">
+            <option [value]="null">Selecciona un área</option>
+            <option *ngFor="let area of areas" [value]="area.id">
+              {{ area.name }}
+            </option>
+          </select>
+        </div>
+        <div class="input-group" *ngIf="changeAreaForm.areaId">
+          <label for="change-bed">Nueva Cama *</label>
+          <select 
+            id="change-bed" 
+            class="neuro-select" 
+            [(ngModel)]="changeAreaForm.bedId"
+            [disabled]="availableBedsForAssignment.length === 0">
+            <option [value]="null">Selecciona una cama</option>
+            <option *ngFor="let bed of availableBedsForAssignment" [value]="bed.id">
+              {{ bed.bedNumber }} {{ bed.patientId && bed.id !== selectedPatientForArea?.bedId ? '(Ocupada)' : '(Disponible)' }}
+            </option>
+          </select>
+          <small *ngIf="availableBedsForAssignment.length === 0">
+            No hay camas disponibles en esta área
+          </small>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="neuro-btn outlined" (click)="closeChangeAreaModal()">Cancelar</button>
+        <button 
+          class="neuro-btn" 
+          (click)="changePatientArea()"
+          [disabled]="!changeAreaForm.areaId || !changeAreaForm.bedId">
+          Cambiar
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
 

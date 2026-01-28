@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "Sistema de gestión de enfermería - Frontend y Backend",
   "scripts": {
-    "dev": "concurrently -n BACKEND,FRONTEND -c cyan,yellow \"npm run start:backend\" \"npm run start:frontend\"",
+    "dev": "node scripts/start-dev.js",
+    "dev:simple": "concurrently -n \"🔷 BACKEND,🟡 FRONTEND\" -c \"cyan,yellow\" --kill-others-on-fail --restart-tries 3 --restart-after 2000 \"npm run start:backend\" \"npm run start:frontend\"",
+    "start": "npm run dev",
     "start:backend": "cd backend && npm run dev",
     "start:frontend": "cd frontend && npm start",
     "build:frontend": "cd frontend && npm run build",

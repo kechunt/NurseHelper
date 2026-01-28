@@ -22,10 +22,34 @@ export class AreasController {
     try {
       const { id } = req.params;
       const areaRepository = AppDataSource.getRepository(Area);
-      const area = await areaRepository.findOne({
-        where: { id: parseInt(id) },
-        relations: ['beds', 'beds.patient'],
-      });
+      let area;
+      
+      try {
+        area = await areaRepository.findOne({
+          where: { id: parseInt(id) },
+          relations: ['beds', 'beds.patients'],
+        });
+      } catch (error: any) {
+        // Si falla por falta de columna bedId o assignedToId, intentar sin la relación patients
+        const errorMessage = error?.message || error?.sqlMessage || '';
+        if (error?.code === 'ER_BAD_FIELD_ERROR' && 
+            (errorMessage.includes('bedId') || errorMessage.includes('bed') || 
+             errorMessage.includes('assignedToId') || errorMessage.includes('assignedTo') ||
+             errorMessage.includes('Patient'))) {
+          console.warn('⚠️ Columna bedId o assignedToId no encontrada. Cargando área sin relación de pacientes.');
+          area = await areaRepository.findOne({
+            where: { id: parseInt(id) },
+            relations: ['beds'],
+          });
+          if (area && area.beds) {
+            area.beds.forEach((bed: any) => {
+              bed.patients = [];
+            });
+          }
+        } else {
+          throw error;
+        }
+      }
 
       if (!area) {
         res.status(404).json({ message: 'Área no encontrada' });

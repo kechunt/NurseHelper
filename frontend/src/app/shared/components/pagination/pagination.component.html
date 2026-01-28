@@ -1,0 +1,69 @@
+<div class="pagination-container" *ngIf="config.totalPages > 1">
+  <div class="pagination-info">
+    <span>Mostrando {{ startItem }} - {{ endItem }} de {{ config.totalItems }} resultados</span>
+    <select 
+      class="items-per-page-select"
+      [value]="config.itemsPerPage"
+      (change)="onItemsPerPageChange($event)"
+      aria-label="Items por página"
+    >
+      <option [value]="10">10 por página</option>
+      <option [value]="25">25 por página</option>
+      <option [value]="50">50 por página</option>
+      <option [value]="100">100 por página</option>
+    </select>
+  </div>
+  
+  <div class="pagination-controls">
+    <button 
+      class="pagination-btn"
+      [disabled]="config.currentPage === 1"
+      (click)="previousPage()"
+      aria-label="Página anterior"
+    >
+      ‹ Anterior
+    </button>
+    
+    <div class="page-numbers">
+      <button
+        *ngIf="pages[0] > 1"
+        class="pagination-btn"
+        (click)="goToPage(1)"
+        aria-label="Ir a página 1"
+      >
+        1
+      </button>
+      <span *ngIf="pages[0] > 2" class="ellipsis">...</span>
+      
+      <button
+        *ngFor="let page of pages"
+        class="pagination-btn"
+        [class.active]="page === config.currentPage"
+        (click)="goToPage(page)"
+        [attr.aria-label]="'Ir a página ' + page"
+        [attr.aria-current]="page === config.currentPage ? 'page' : null"
+      >
+        {{ page }}
+      </button>
+      
+      <span *ngIf="pages[pages.length - 1] < config.totalPages - 1" class="ellipsis">...</span>
+      <button
+        *ngIf="pages[pages.length - 1] < config.totalPages"
+        class="pagination-btn"
+        (click)="goToPage(config.totalPages)"
+        [attr.aria-label]="'Ir a página ' + config.totalPages"
+      >
+        {{ config.totalPages }}
+      </button>
+    </div>
+    
+    <button
+      class="pagination-btn"
+      [disabled]="config.currentPage === config.totalPages"
+      (click)="nextPage()"
+      aria-label="Página siguiente"
+    >
+      Siguiente ›
+    </button>
+  </div>
+</div>

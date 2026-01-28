@@ -1,6 +1,9 @@
 <div class="beds-management">
   <div class="section-header">
     <h2 class="section-title">Gestión de Camas</h2>
+    <button class="neuro-btn" (click)="openCreateBedModal()" title="Agregar nueva cama">
+      ➕ Agregar Cama
+    </button>
   </div>
 
   <div class="filters-container">
@@ -112,9 +115,9 @@
         </div>
         <div class="input-group">
           <label for="edit-bed-availability">Estado de la Cama</label>
-          <select id="edit-bed-availability" class="neuro-select" [(ngModel)]="editBedForm.isActive">
-            <option [value]="true">✅ Disponible (puede recibir pacientes)</option>
-            <option [value]="false">❌ No Disponible (fuera de servicio)</option>
+          <select id="edit-bed-availability" class="neuro-select" [ngModel]="editBedForm.isActive" (ngModelChange)="editBedForm.isActive = $event === 'true' || $event === true || $event === 1">
+            <option [ngValue]="true">✅ Disponible (puede recibir pacientes)</option>
+            <option [ngValue]="false">❌ No Disponible (fuera de servicio)</option>
           </select>
           <small>
             <span *ngIf="editBedForm.isActive" style="color: #48bb78;">
@@ -140,42 +143,100 @@
             </div>
           </div>
 
-          <!-- Buscador de pacientes -->
-          <div class="patient-search" *ngIf="!editBedForm.patientId">
-            <input
-              type="text"
-              class="neuro-input search-input"
-              [(ngModel)]="patientSearchTerm"
-              (input)="filterPatients()"
-              placeholder="🔍 Buscar por nombre o cédula..."
-            />
-            
-            <div class="patients-list" *ngIf="patientSearchTerm && filteredPatients.length > 0">
-              <div 
-                *ngFor="let patient of filteredPatients.slice(0, 5)" 
-                class="patient-item"
-                (click)="selectPatient(patient)">
-                <div class="patient-item-info">
-                  <strong>{{ patient.firstName }} {{ patient.lastName }}</strong>
-                  <span class="patient-id" *ngIf="patient.identificationNumber">
-                    {{ patient.identificationNumber }}
-                  </span>
-                </div>
-              </div>
+          <!-- Lista de pacientes del área -->
+          <div class="patient-selection" *ngIf="!editBedForm.patientId">
+            <div class="patient-search-header">
+              <label>Pacientes del área: <strong>{{ getAreaName(editBedForm.areaId || undefined) }}</strong></label>
+              <input
+                type="text"
+                class="neuro-input search-input"
+                [(ngModel)]="patientSearchTerm"
+                (input)="filterPatients()"
+                placeholder="🔍 Buscar por nombre..."
+              />
             </div>
             
-            <small *ngIf="patientSearchTerm && filteredPatients.length === 0" class="no-results-text">
-              No se encontraron pacientes
-            </small>
-            <small *ngIf="!patientSearchTerm">
-              Escribe para buscar pacientes sin cama asignada
-            </small>
+            <div class="patients-list-container">
+              <div class="patients-list" *ngIf="filteredPatients.length > 0">
+                <div 
+                  *ngFor="let patient of filteredPatients" 
+                  class="patient-item"
+                  [class.has-bed]="getPatientBed(patient.id)"
+                  (click)="selectPatient(patient)">
+                  <div class="patient-item-info">
+                    <strong>{{ patient.firstName }} {{ patient.lastName }}</strong>
+                    <div class="patient-details">
+                      <span class="patient-bed-info" *ngIf="getPatientBed(patient.id)">
+                        🛏️ Cama: {{ getPatientBed(patient.id)?.bedNumber }}
+                      </span>
+                      <span class="patient-bed-info available" *ngIf="!getPatientBed(patient.id)">
+                        ✅ Disponible para asignar
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div *ngIf="filteredPatients.length === 0 && !patientSearchTerm" class="no-patients-message">
+                <p>No hay pacientes asignados a camas del área <strong>{{ getAreaName(editBedForm.areaId || undefined) }}</strong></p>
+                <small>Los pacientes aparecerán aquí cuando se les asigne una cama de esta área específica</small>
+              </div>
+              
+              <div *ngIf="filteredPatients.length === 0 && patientSearchTerm" class="no-patients-message">
+                <p>No se encontraron pacientes con ese nombre en el área <strong>{{ getAreaName(editBedForm.areaId || undefined) }}</strong></p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
       <div class="modal-footer">
         <button class="neuro-btn outlined" (click)="closeEditBedModal()">Cancelar</button>
         <button class="neuro-btn" (click)="saveBedChanges()">Guardar Cambios</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para crear nueva cama -->
+  <div *ngIf="showCreateBedModal" class="modal-backdrop" (click)="closeCreateBedModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Agregar Nueva Cama</h3>
+        <button class="close-btn" (click)="closeCreateBedModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="input-group">
+          <label for="create-bed-number">Número/Nombre de Cama *</label>
+          <input
+            type="text"
+            id="create-bed-number"
+            class="neuro-input"
+            [(ngModel)]="createBedForm.bedNumber"
+            placeholder="Ej: SAL-001, Cama-1, etc."
+          />
+        </div>
+        <div class="input-group">
+          <label for="create-bed-area">Área *</label>
+          <select id="create-bed-area" class="neuro-select" [(ngModel)]="createBedForm.areaId">
+            <option [value]="null">Selecciona un área</option>
+            <option *ngFor="let area of areas" [value]="area.id">
+              {{ area.name }}
+            </option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label for="create-bed-notes">Notas (opcional)</label>
+          <textarea
+            id="create-bed-notes"
+            class="neuro-input"
+            [(ngModel)]="createBedForm.notes"
+            placeholder="Notas adicionales sobre la cama..."
+            rows="3"
+          ></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="neuro-btn outlined" (click)="closeCreateBedModal()">Cancelar</button>
+        <button class="neuro-btn" (click)="createBed()">Crear Cama</button>
       </div>
     </div>
   </div>

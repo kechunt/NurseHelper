@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { User } from './User';
 import { Medication } from './Medication';
@@ -16,6 +17,7 @@ export enum RequestStatus {
   READY = 'ready',
   DELIVERED = 'delivered',
   CANCELLED = 'cancelled',
+  REJECTED = 'rejected', // Sinónimo de cancelled para claridad
 }
 
 export enum RequestPriority {
@@ -26,6 +28,11 @@ export enum RequestPriority {
 }
 
 @Entity('medication_requests')
+@Index(['status'])
+@Index(['requestedById'])
+@Index(['medicationId'])
+@Index(['status', 'priority'])
+@Index(['createdAt'])
 export class MedicationRequest {
   @PrimaryGeneratedColumn()
   id: number;
@@ -36,14 +43,14 @@ export class MedicationRequest {
   @Column()
   requestedById: number;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => User, (user) => user.medicationRequests, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'requestedById' })
   requestedBy: User;
 
   @Column()
   medicationId: number;
 
-  @ManyToOne(() => Medication)
+  @ManyToOne(() => Medication, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'medicationId' })
   medication: Medication;
 

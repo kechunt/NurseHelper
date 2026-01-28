@@ -11,6 +11,7 @@ export interface User {
   lastName: string;
   role: 'admin' | 'nurse' | 'supervisor' | 'pharmacy';
   isActive?: boolean;
+  emailVerified?: boolean;
   maxPatients?: number;
   assignedAreaId?: number | null;
 }
@@ -28,6 +29,25 @@ export interface RegisterRequest {
   firstName: string;
   lastName: string;
   role?: 'admin' | 'nurse' | 'supervisor' | 'pharmacy';
+}
+
+export interface RegisterResponse {
+  message: string;
+  requiresVerification: boolean;
+  email?: string;
+  token?: string;
+  user?: User;
+}
+
+export interface VerifyEmailRequest {
+  email: string;
+  code: string;
+}
+
+export interface VerifyEmailResponse {
+  message: string;
+  token: string;
+  user: User;
 }
 
 @Injectable({
@@ -63,15 +83,23 @@ export class AuthService {
       );
   }
 
-  register(data: RegisterRequest): Observable<LoginResponse> {
+  register(data: RegisterRequest): Observable<RegisterResponse> {
+    return this.http.post<RegisterResponse>(`${this.apiUrl}/register`, data);
+  }
+
+  verifyEmail(data: VerifyEmailRequest): Observable<VerifyEmailResponse> {
     return this.http
-      .post<LoginResponse>(`${this.apiUrl}/register`, data)
+      .post<VerifyEmailResponse>(`${this.apiUrl}/verify-email`, data)
       .pipe(
         tap((response) => {
           this.setToken(response.token);
           this.setUser(response.user);
         })
       );
+  }
+
+  resendVerificationCode(email: string): Observable<{ message: string; email: string }> {
+    return this.http.post<{ message: string; email: string }>(`${this.apiUrl}/resend-verification`, { email });
   }
 
   logout(): void {

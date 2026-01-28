@@ -1,7 +1,68 @@
 <div class="users-management">
   <div class="section-header">
     <h2 class="section-title">Gestión de Usuarios</h2>
-    <button class="neuro-btn" (click)="loadUsers()">🔄 Actualizar</button>
+    <button class="neuro-btn" (click)="loadUsers(); loadSupervisors(); loadPharmacyUsers();">🔄 Actualizar</button>
+  </div>
+
+  <!-- Sección de Jefas de Enfermeras -->
+  <div class="role-section">
+    <h3 class="role-section-title">👩‍⚕️ Jefas de Enfermeras</h3>
+    <div *ngIf="loadingSupervisors" class="loading-state">
+      <p>⏳ Cargando jefas de enfermeras...</p>
+    </div>
+    <div *ngIf="!loadingSupervisors" class="role-cards-container">
+      <div *ngIf="supervisors.length === 0" class="no-role-users">
+        <p>No hay jefas de enfermeras asignadas</p>
+      </div>
+      <div *ngFor="let supervisor of supervisors" class="role-card">
+        <div class="role-card-content">
+          <div class="role-card-info">
+            <h4>{{ supervisor.firstName }} {{ supervisor.lastName }}</h4>
+            <p class="role-card-username">@{{ supervisor.username }}</p>
+            <p class="role-card-email">{{ supervisor.email }}</p>
+            <span class="neuro-status" [class.role-admin]="supervisor.role === 'admin'"
+              [class.role-supervisor]="supervisor.role === 'supervisor'">
+              {{ getRoleLabel(supervisor.role) }}
+            </span>
+          </div>
+          <div class="role-card-actions">
+            <button class="neuro-btn-icon" (click)="openSupervisorRoleModal(supervisor)" title="Cambiar Rol">
+              🔄
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sección de Encargado de Farmacia -->
+  <div class="role-section">
+    <h3 class="role-section-title">💊 Encargado de Farmacia</h3>
+    <div *ngIf="loadingPharmacy" class="loading-state">
+      <p>⏳ Cargando encargado de farmacia...</p>
+    </div>
+    <div *ngIf="!loadingPharmacy" class="role-cards-container">
+      <div *ngIf="pharmacyUsers.length === 0" class="no-role-users">
+        <p>No hay encargado de farmacia asignado</p>
+      </div>
+      <div *ngFor="let pharmacyUser of pharmacyUsers" class="role-card">
+        <div class="role-card-content">
+          <div class="role-card-info">
+            <h4>{{ pharmacyUser.firstName }} {{ pharmacyUser.lastName }}</h4>
+            <p class="role-card-username">@{{ pharmacyUser.username }}</p>
+            <p class="role-card-email">{{ pharmacyUser.email }}</p>
+            <span class="neuro-status role-pharmacy">
+              {{ getRoleLabel(pharmacyUser.role) }}
+            </span>
+          </div>
+          <div class="role-card-actions">
+            <button class="neuro-btn-icon" (click)="openPharmacyRoleModal(pharmacyUser)" title="Cambiar Rol">
+              🔄
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Filtros -->
@@ -13,6 +74,7 @@
         <option value="admin">Administrador</option>
         <option value="nurse">Enfermera</option>
         <option value="supervisor">Supervisor</option>
+        <option value="pharmacy">Farmacia</option>
       </select>
     </div>
 
@@ -23,9 +85,12 @@
           type="text"
           id="search-input"
           class="neuro-input search-input"
-          [(ngModel)]="searchQuery"
-          (input)="onSearchChange()"
+          [value]="searchQuery"
+          appDebounce
+          [debounceTime]="300"
+          (debounced)="onSearchInput($event)"
           placeholder="Buscar por nombre, usuario o email..."
+          aria-label="Buscar usuario por nombre, usuario o email"
         />
         <span class="search-icon">🔍</span>
       </div>
@@ -40,30 +105,37 @@
 
   <div class="results-info" *ngIf="!loading">
     <p>
-      Mostrando {{ filteredUsers.length }} de {{ users.length }} usuarios
+      Mostrando {{ filteredUsers.length }} de {{ totalUsers || users.length }} usuarios
       <span *ngIf="selectedRole !== 'all'">(Rol: {{ getRoleLabel(selectedRole) }})</span>
+      <span *ngIf="searchQuery.trim()">(Búsqueda: "{{ searchQuery }}")</span>
     </p>
   </div>
 
   <div *ngIf="loading" class="loading-state">
-    <p>Cargando usuarios...</p>
+    <p>⏳ Cargando usuarios...</p>
   </div>
 
+
   <div *ngIf="!loading" class="table-container">
-    <table class="neuro-table">
+    <div class="table-header-actions">
+      <button class="neuro-btn" (click)="exportToCSV()" title="Exportar a CSV">
+        📥 Exportar CSV
+      </button>
+    </div>
+    <table class="neuro-table" role="table" aria-label="Tabla de usuarios">
       <thead>
         <tr>
-          <th>ID</th>
-          <th>Usuario</th>
-          <th>Email</th>
-          <th>Nombre Completo</th>
-          <th>Rol</th>
-          <th>Estado</th>
-          <th>Acciones</th>
+          <th scope="col">ID</th>
+          <th scope="col">Usuario</th>
+          <th scope="col">Email</th>
+          <th scope="col">Nombre Completo</th>
+          <th scope="col">Rol</th>
+          <th scope="col">Estado</th>
+          <th scope="col">Acciones</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let user of filteredUsers" [class.inactive]="!user.isActive">
+        <tr *ngFor="let user of paginatedUsers; trackBy: trackByUserId" [class.inactive]="!user.isActive">
           <td>{{ user.id }}</td>
           <td>{{ user.username }}</td>
           <td>{{ user.email }}</td>
@@ -71,7 +143,8 @@
           <td>
             <span class="neuro-status" [class.role-admin]="user.role === 'admin'"
               [class.role-supervisor]="user.role === 'supervisor'"
-              [class.role-nurse]="user.role === 'nurse'">
+              [class.role-nurse]="user.role === 'nurse'"
+              [class.role-pharmacy]="user.role === 'pharmacy'">
               {{ getRoleLabel(user.role) }}
             </span>
           </td>
@@ -82,17 +155,14 @@
             </span>
           </td>
           <td>
-            <div class="action-buttons">
-              <button class="neuro-btn-icon" (click)="openEditModal(user)" title="Editar">
-                ✏️
-              </button>
-              <button class="neuro-btn-icon" (click)="openRoleModal(user)" title="Cambiar Rol">
-                🔄
-              </button>
+            <div class="action-buttons" role="group" [attr.aria-label]="'Acciones para usuario ' + user.username">
+              <button class="neuro-btn-icon" (click)="openEditModal(user)" title="Editar" [attr.aria-label]="'Editar usuario ' + user.username">✏️</button>
+              <button class="neuro-btn-icon" (click)="openRoleModal(user)" title="Cambiar Rol" [attr.aria-label]="'Cambiar rol de ' + user.username">🔄</button>
               <button
                 class="neuro-btn-icon delete-btn"
                 (click)="deleteUser(user)"
                 title="Eliminar Permanentemente"
+                [attr.aria-label]="'Eliminar usuario ' + user.username"
               >
                 🗑️
               </button>
@@ -102,9 +172,17 @@
       </tbody>
     </table>
     
-    <div *ngIf="filteredUsers.length === 0 && !loading" class="no-results">
+    <div *ngIf="filteredUsers.length === 0 && !loading" class="no-results" role="status" aria-live="polite">
       <p>No se encontraron usuarios que coincidan con los filtros seleccionados.</p>
     </div>
+    
+    <!-- Componente de paginación -->
+    <app-pagination 
+      *ngIf="filteredUsers.length > 0"
+      [config]="paginationConfig"
+      (pageChange)="onPageChange($event)"
+      (itemsPerPageChange)="onItemsPerPageChange($event)"
+    ></app-pagination>
   </div>
 
   <!-- Modal para editar usuario -->
@@ -162,6 +240,7 @@
               <option value="nurse">Enfermera</option>
               <option value="supervisor">Supervisor</option>
               <option value="admin">Administrador</option>
+              <option value="pharmacy">Farmacia</option>
             </select>
           </div>
           <div class="input-group checkbox-group">
@@ -194,14 +273,22 @@
       <div class="modal-body">
         <p><strong>Usuario:</strong> {{ selectedUser?.username }}</p>
         <p><strong>Nombre:</strong> {{ selectedUser?.firstName }} {{ selectedUser?.lastName }}</p>
+        <p><strong>Rol Actual:</strong> {{ getRoleLabel(selectedUser?.role || '') }}</p>
         <div class="input-group">
-          <label for="role">Nuevo Rol</label>
+          <label for="role">Nuevo Rol *</label>
           <select id="role" class="neuro-select" [(ngModel)]="newRole">
             <option value="nurse">Enfermera</option>
-            <option value="supervisor">Supervisor</option>
+            <option value="supervisor">Supervisor (Jefa de Enfermeras)</option>
             <option value="admin">Administrador</option>
+            <option value="pharmacy">Farmacia</option>
           </select>
         </div>
+        <p class="modal-warning" *ngIf="selectedUser?.role === 'nurse' && newRole !== 'nurse'">
+          ⚠️ Esta enfermera tiene pacientes asignados. Al cambiar el rol, los pacientes mantendrán su área asignada pero quedarán sin enfermera asignada para poder asignar otra.
+        </p>
+        <p class="modal-warning" *ngIf="selectedUser?.role !== 'nurse' || newRole === 'nurse'">
+          ⚠️ Al cambiar el rol, el usuario perderá los permisos del rol anterior y obtendrá los del nuevo rol.
+        </p>
       </div>
       <div class="modal-footer">
         <button class="neuro-btn outlined" (click)="closeRoleModal()">Cancelar</button>

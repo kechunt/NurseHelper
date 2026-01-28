@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { AuthController } from '../controllers/auth.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
+import { authRateLimitMiddleware } from '../middleware/rate-limit.middleware';
 
 const router = Router();
 const authController = new AuthController();
@@ -48,7 +49,7 @@ const authController = new AuthController();
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/login', authController.login.bind(authController));
+router.post('/login', authRateLimitMiddleware(), authController.login.bind(authController));
 
 /**
  * @swagger
@@ -89,7 +90,7 @@ router.post('/login', authController.login.bind(authController));
  *       400:
  *         description: Error de validación
  */
-router.post('/register', authController.register.bind(authController));
+router.post('/register', authRateLimitMiddleware(), authController.register.bind(authController));
 
 /**
  * @swagger
@@ -112,6 +113,60 @@ router.post('/register', authController.register.bind(authController));
  *       401:
  *         description: No autenticado
  */
+/**
+ * @swagger
+ * /api/auth/verify-email:
+ *   post:
+ *     summary: Verificar correo electrónico con código
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - code
+ *             properties:
+ *               email:
+ *                 type: string
+ *               code:
+ *                 type: string
+ *                 description: Código de verificación de 6 dígitos
+ *     responses:
+ *       200:
+ *         description: Email verificado exitosamente
+ *       400:
+ *         description: Código inválido o expirado
+ */
+router.post('/verify-email', authRateLimitMiddleware(), authController.verifyEmail.bind(authController));
+
+/**
+ * @swagger
+ * /api/auth/resend-verification:
+ *   post:
+ *     summary: Reenviar código de verificación
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Código reenviado exitosamente
+ *       400:
+ *         description: Email ya verificado o no encontrado
+ */
+router.post('/resend-verification', authRateLimitMiddleware(), authController.resendVerificationCode.bind(authController));
+
 router.get('/me', authMiddleware, authController.me.bind(authController));
 
 export default router;

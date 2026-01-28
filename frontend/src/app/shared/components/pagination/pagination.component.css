@@ -1,0 +1,103 @@
+.pagination-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  margin-top: 1rem;
+  background: #e0e5ec;
+  border-radius: 12px;
+  box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #ffffff;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.pagination-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: #4a5568;
+  font-size: 0.9rem;
+}
+
+.items-per-page-select {
+  background: #e0e5ec;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 8px;
+  color: #4a5568;
+  font-size: 0.9rem;
+  cursor: pointer;
+  box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
+  outline: none;
+}
+
+.items-per-page-select:focus {
+  box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff, 0 0 0 3px rgba(66, 153, 225, 0.3);
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.page-numbers {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.pagination-btn {
+  background: #e0e5ec;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: #4a5568;
+  font-size: 0.9rem;
+  cursor: pointer;
+  min-width: 40px;
+  transition: all 0.2s ease;
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  box-shadow: 2px 2px 4px #bebebe, -2px -2px 4px #ffffff;
+  transform: translateY(-1px);
+}
+
+.pagination-btn:active:not(:disabled) {
+  box-shadow: inset 2px 2px 4px #bebebe, inset -2px -2px 4px #ffffff;
+}
+
+.pagination-btn.active {
+  background: #4299e1;
+  color: white;
+  box-shadow: inset 3px 3px 6px #2c5282, inset -3px -3px 6px #63b3ed;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ellipsis {
+  padding: 0 8px;
+  color: #718096;
+}
+
+@media (max-width: 768px) {
+  .pagination-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .pagination-info {
+    justify-content: space-between;
+    width: 100%;
+  }
+  
+  .pagination-controls {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+}

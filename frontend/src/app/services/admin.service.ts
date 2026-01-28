@@ -1,11 +1,14 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { map, shareReplay, tap } from 'rxjs/operators';
+import { map, shareReplay, tap, timeout, catchError } from 'rxjs/operators';
+import { throwError } from 'rxjs';
 import { User } from './auth.service';
 import { environment } from '../../environments/environment';
 
+// Constantes para configuración
 const CACHE_SIZE = 1;
+const DEFAULT_TIMEOUT = 10000;
 
 export interface Area {
   id?: number;
@@ -86,33 +89,75 @@ export class AdminService {
 
   /**
    * Obtiene todos los usuarios con caché opcional
+   * Siempre devuelve User[] para compatibilidad con otros componentes
    * @param useCache - Si es true, usa caché (por defecto true)
-   * @param params - Parámetros de paginación opcionales
    */
-  getUsers(useCache: boolean = true, params?: { page?: number; limit?: number; search?: string; role?: string }): Observable<User[]> {
-    // Si no hay parámetros de paginación, usar la versión simple con caché
-    if (!params) {
-      if (!useCache || !this.usersCache$) {
-        this.usersCache$ = this.http.get<any>(`${environment.apiUrl}/users?limit=1000`).pipe(
-          map(response => {
-            // Si la respuesta tiene formato paginado, extraer items
-            return response.items ? response.items : response;
-          }),
-          shareReplay(CACHE_SIZE)
-        );
-      }
-      return this.usersCache$;
+  getUsers(useCache: boolean = true): Observable<User[]> {
+    if (!useCache || !this.usersCache$) {
+      // Por defecto, pedir 100 usuarios (suficiente para la mayoría de casos)
+      this.usersCache$ = this.http.get<any>(`${environment.apiUrl}/users?limit=100`).pipe(
+        map(response => {
+          // Si la respuesta tiene formato paginado, extraer items
+          return response.items ? response.items : response;
+        }),
+        shareReplay(CACHE_SIZE)
+      );
+    }
+    return this.usersCache$;
+  }
+  
+  /**
+   * Obtiene usuarios con paginación y filtros (devuelve objeto con users y total)
+   * Usar este método cuando necesites paginación o filtros en el servidor
+   * @param params - Parámetros de paginación y filtros
+   */
+  getUsersPaginated(params: { page?: number; limit?: number; search?: string; role?: string }): Observable<{ users: User[]; total?: number }> {
+    const defaultParams = {
+      page: params.page || 1,
+      limit: params.limit || 100,
+      search: params.search || '',
+      role: params.role || ''
+    };
+
+    // Construir query params
+    let queryParams = new HttpParams();
+    queryParams = queryParams.set('page', defaultParams.page.toString());
+    queryParams = queryParams.set('limit', defaultParams.limit.toString());
+    if (defaultParams.search) queryParams = queryParams.set('search', defaultParams.search);
+    if (defaultParams.role && defaultParams.role !== 'all') {
+      queryParams = queryParams.set('role', defaultParams.role);
     }
     
-    // Con parámetros de paginación, hacer petición directa
-    let queryParams = new HttpParams();
-    if (params.page) queryParams = queryParams.set('page', params.page.toString());
-    if (params.limit) queryParams = queryParams.set('limit', params.limit.toString());
-    if (params.search) queryParams = queryParams.set('search', params.search);
-    if (params.role) queryParams = queryParams.set('role', params.role);
+    const url = `${environment.apiUrl}/users`;
     
-    return this.http.get<any>(`${environment.apiUrl}/users`, { params: queryParams }).pipe(
-      map(response => response.items ? response.items : response)
+    return this.http.get<any>(url, { params: queryParams }).pipe(
+      timeout(DEFAULT_TIMEOUT),
+      map(response => {
+        // Si la respuesta tiene formato paginado, devolver objeto con users y total
+        if (response.items) {
+          return { users: response.items, total: response.total };
+        }
+        
+        // Si es un array directo, devolverlo como users
+        if (Array.isArray(response)) {
+          return { users: response, total: response.length };
+        }
+        
+        // Si no es ninguno de los formatos esperados
+        console.warn('⚠️ Formato inesperado de respuesta:', response);
+        return { users: [], total: 0 };
+      }),
+      catchError(error => {
+        if (error.name === 'TimeoutError') {
+          console.error('⏱️ Timeout: El servidor no respondió en 10 segundos');
+          return throwError(() => ({
+            status: 0,
+            message: 'El servidor no responde. Verifica que el backend esté corriendo en http://localhost:3000',
+            error: { message: 'Timeout: El servidor tardó demasiado en responder' }
+          }));
+        }
+        return throwError(() => error);
+      })
     );
   }
 
@@ -127,7 +172,9 @@ export class AdminService {
   }
 
   updateUserRole(id: number, role: string): Observable<any> {
-    return this.http.patch(`${environment.apiUrl}/users/${id}/role`, { role });
+    return this.http.patch(`${environment.apiUrl}/users/${id}/role`, { role }).pipe(
+      tap(() => this.clearUsersCache())
+    );
   }
 
   deleteUser(id: number): Observable<any> {
@@ -225,9 +272,19 @@ export class AdminService {
     );
   }
 
-  // Patients
+  // Patients - Manejar respuesta paginada igual que otros métodos
   getPatients(): Observable<Patient[]> {
-    return this.http.get<Patient[]>(`${environment.apiUrl}/patients`);
+    return this.http.get<any>(`${environment.apiUrl}/patients?limit=1000`).pipe(
+      map((response) => {
+        // Manejar respuesta paginada o array directo (misma lógica que en staff-management)
+        const patients = response.items || response || [];
+        return Array.isArray(patients) ? patients : [];
+      }),
+      catchError((error) => {
+        console.error('❌ Error cargando pacientes:', error);
+        return throwError(() => error);
+      })
+    );
   }
 
   getPatient(id: number): Observable<Patient> {

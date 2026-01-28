@@ -14,7 +14,7 @@ interface MedicationRequest {
   dosage: string;
   quantity: number;
   patients: PatientMedication[];
-  status: 'pending' | 'in_preparation' | 'ready' | 'delivered';
+  status: 'pending' | 'in_preparation' | 'ready' | 'delivered' | 'cancelled';
   priority: 'low' | 'normal' | 'high' | 'urgent';
   notes: string;
   medicationId?: number;
@@ -26,6 +26,9 @@ interface PatientMedication {
   patientName: string;
   bedNumber: string;
   areaName?: string;
+  area?: string;
+  areaId?: number;
+  patientId?: number;
   doses: MedicationDose[];
 }
 
@@ -37,15 +40,20 @@ interface MedicationDose {
 
 interface DeliveryHistoryItem {
   id: number;
-  deliveryId: string;
+  deliveryId?: string;
+  requestId?: string;
   medication: string;
   dosage: string;
   quantity: number;
   requestedBy: string;
-  deliveredAt: string;
-  deliveredBy: string;
-  patients: string[];
+  deliveredAt?: string;
+  deliveredAtRaw?: Date; // Fecha original para comparación
+  cancelledAt?: string;
+  deliveredBy?: string;
+  patients?: string[];
+  patientsInfo?: PatientMedication[];
   notes: string;
+  type: 'delivery' | 'cancelled';
 }
 
 interface InventoryItem {
@@ -94,8 +102,34 @@ export class PharmacyDashboardComponent implements OnInit {
   selectedRequest: MedicationRequest | null = null;
   deliveryNotes: string = '';
   
-  // Mapa para rastrear disponibilidad de medicamentos en solicitudes
-  medicationAvailability: Map<number, boolean> = new Map();
+  // Modal de rechazo
+  showRejectModal: boolean = false;
+  rejectionReason: string = '';
+  
+  // Gestión de inventario
+  showAddMedicationModal = false;
+  showDeleteMedicationModal = false;
+  selectedMedicationForDelete: InventoryItem | null = null;
+  newMedicationForm: {
+    name: string;
+    dosage: string;
+    description: string;
+    stock: number;
+    minStock: number;
+    location: string;
+    expiryDate: string;
+  } = {
+    name: '',
+    dosage: '',
+    description: '',
+    stock: 0,
+    minStock: 50,
+    location: '',
+    expiryDate: ''
+  };
+  
+  // Historial completo (entregas y rechazos)
+  fullHistory: any[] = [];
 
   constructor(
     private authService: AuthService,
@@ -144,18 +178,13 @@ export class PharmacyDashboardComponent implements OnInit {
     this.pharmacyService.getMedicationRequests().subscribe({
       next: (requests) => {
         this.medicationRequests = requests.map(r => {
-          // Verificar disponibilidad en inventario
+          // Verificar disponibilidad REAL en inventario desde BD
           const medicationInInventory = this.inventory.find(
             inv => inv.medication === r.medication.name && inv.dosage === r.dosage
           );
           const isAvailable = medicationInInventory ? 
             (medicationInInventory.stock >= r.quantity && medicationInInventory.status !== 'out_of_stock') : 
             false;
-          
-          // Inicializar disponibilidad si no existe
-          if (!this.medicationAvailability.has(r.id)) {
-            this.medicationAvailability.set(r.id, isAvailable);
-          }
           
           return {
             id: r.id,
@@ -176,7 +205,10 @@ export class PharmacyDashboardComponent implements OnInit {
         });
         
         this.filteredRequests = this.medicationRequests;
+        
+        // Actualizar contadores después de cargar solicitudes
         this.updateCounters();
+        
         console.log('✅ Solicitudes cargadas:', this.medicationRequests.length);
       },
       error: (error) => {
@@ -190,43 +222,128 @@ export class PharmacyDashboardComponent implements OnInit {
   }
 
   loadHistory(): void {
-    this.pharmacyService.getDeliveryHistory().subscribe({
-      next: (history) => {
-        this.deliveryHistory = history.map(h => ({
-          id: h.id,
-          deliveryId: h.deliveryId,
-          medication: h.medication.name,
-          dosage: h.dosage,
-          quantity: h.quantity,
-          requestedBy: `${h.requestedBy.firstName} ${h.requestedBy.lastName}`,
-          deliveredAt: new Date(h.deliveredAt).toLocaleString('es-ES'),
-          deliveredBy: `${h.deliveredBy.firstName} ${h.deliveredBy.lastName}`,
-          patients: h.patients || [],
-          notes: h.notes || 'Sin observaciones'
+    this.pharmacyService.getDeliveryHistory(true).subscribe({
+      next: (historyData: any) => {
+        // Procesar entregas
+        const deliveries = (historyData.deliveries || []).map((h: any) => {
+          const deliveredDate = h.deliveredAt ? new Date(h.deliveredAt) : new Date();
+          return {
+            id: h.id,
+            deliveryId: h.deliveryId,
+            medication: h.medication.name,
+            dosage: h.dosage,
+            quantity: h.quantity,
+            requestedBy: `${h.requestedBy.firstName} ${h.requestedBy.lastName}`,
+            deliveredAt: deliveredDate.toLocaleString('es-ES'),
+            deliveredAtRaw: deliveredDate, // Guardar fecha original para comparación
+            deliveredBy: `${h.deliveredBy.firstName} ${h.deliveredBy.lastName}`,
+            patients: h.patients || [],
+            notes: h.notes || 'Sin observaciones',
+            type: 'delivery'
+          };
+        });
+        
+        // Procesar rechazos
+        const cancelled = (historyData.cancelled || []).map((r: any) => ({
+          id: r.id,
+          requestId: r.requestId,
+          medication: r.medication.name,
+          dosage: r.dosage,
+          quantity: r.quantity,
+          requestedBy: `${r.requestedBy.firstName} ${r.requestedBy.lastName}`,
+          cancelledAt: new Date(r.cancelledAt).toLocaleString('es-ES'),
+          notes: r.notes || '',
+          patientsInfo: r.patientsInfo || [],
+          type: 'cancelled'
         }));
         
-        this.filteredHistory = this.deliveryHistory;
+        // Combinar y ordenar por fecha
+        this.fullHistory = [...deliveries, ...cancelled].sort((a, b) => {
+          const dateA = a.deliveredAt || a.cancelledAt;
+          const dateB = b.deliveredAt || b.cancelledAt;
+          return new Date(dateB).getTime() - new Date(dateA).getTime();
+        });
+        
+        // Mantener compatibilidad con código existente
+        this.deliveryHistory = deliveries;
+        this.filteredHistory = this.fullHistory;
+        
+        // Actualizar contadores después de cargar historial
         this.updateCounters();
-        console.log('✅ Historial cargado:', this.deliveryHistory.length);
+        
+        console.log('✅ Historial cargado:', {
+          entregas: deliveries.length,
+          rechazos: cancelled.length,
+          total: this.fullHistory.length
+        });
       },
       error: (error) => {
         console.error('Error cargando historial:', error);
         this.deliveryHistory = [];
         this.filteredHistory = [];
+        this.fullHistory = [];
+        this.updateCounters();
       }
     });
   }
 
 
   updateCounters(): void {
+    // Contar solicitudes por estado
     this.pendingRequestsCount = this.medicationRequests.filter(r => r.status === 'pending').length;
     this.inPreparationCount = this.medicationRequests.filter(r => r.status === 'in_preparation').length;
     this.readyForDeliveryCount = this.medicationRequests.filter(r => r.status === 'ready').length;
     
-    const today = new Date().toDateString();
-    this.deliveredTodayCount = this.deliveryHistory.filter(h => {
-      return new Date(h.deliveredAt).toDateString() === today;
+    // Contar entregas del día actual desde el historial completo
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    this.deliveredTodayCount = this.fullHistory.filter(h => {
+      if (h.type !== 'delivery') return false;
+      
+      try {
+        // Usar deliveredAtRaw si está disponible (fecha original), sino parsear deliveredAt
+        let deliveryDate: Date;
+        if ((h as any).deliveredAtRaw) {
+          deliveryDate = new Date((h as any).deliveredAtRaw);
+        } else if (h.deliveredAt) {
+          // Si viene como string formateado (ej: "17/12/2025, 19:30:00")
+          if (typeof h.deliveredAt === 'string') {
+            const dateStr = h.deliveredAt.split(',')[0]; // Tomar solo la parte de la fecha
+            const parts = dateStr.split('/');
+            if (parts.length === 3) {
+              // Formato DD/MM/YYYY
+              deliveryDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+            } else {
+              // Intentar parseo directo
+              deliveryDate = new Date(h.deliveredAt);
+            }
+          } else {
+            deliveryDate = new Date(h.deliveredAt);
+          }
+        } else {
+          return false;
+        }
+        
+        deliveryDate.setHours(0, 0, 0, 0);
+        const isToday = deliveryDate.getTime() === today.getTime();
+        
+        return isToday;
+      } catch (e) {
+        console.error('Error parseando fecha de entrega:', h.deliveredAt, e);
+        return false;
+      }
     }).length;
+    
+    console.log('📊 Contadores actualizados:', {
+      pendientes: this.pendingRequestsCount,
+      enPreparacion: this.inPreparationCount,
+      listas: this.readyForDeliveryCount,
+      entregadasHoy: this.deliveredTodayCount,
+      totalHistorial: this.fullHistory.length,
+      entregasEnHistorial: this.fullHistory.filter(h => h.type === 'delivery').length,
+      fechaHoy: today.toDateString()
+    });
   }
 
   filterRequests(): void {
@@ -242,10 +359,11 @@ export class PharmacyDashboardComponent implements OnInit {
   }
 
   filterHistory(): void {
-    this.filteredHistory = this.deliveryHistory.filter(item => {
-      return !this.historySearchTerm ||
+    this.filteredHistory = this.fullHistory.filter(item => {
+      const matchesSearch = !this.historySearchTerm ||
         item.medication.toLowerCase().includes(this.historySearchTerm.toLowerCase()) ||
         item.requestedBy.toLowerCase().includes(this.historySearchTerm.toLowerCase());
+      return matchesSearch;
     });
   }
 
@@ -261,27 +379,23 @@ export class PharmacyDashboardComponent implements OnInit {
     this.activeSection = section;
   }
 
-  toggleMedicationAvailability(request: MedicationRequest): void {
-    const currentAvailability = this.medicationAvailability.get(request.id) || false;
-    const newAvailability = !currentAvailability;
-    
-    this.medicationAvailability.set(request.id, newAvailability);
-    request.availableInStock = newAvailability;
-    
-    if (!newAvailability && request.status === 'pending') {
-      request.notes = (request.notes || '') + ' [Medicamento no disponible en inventario - Requiere solicitud externa]';
-    }
-  }
-
+  // Usar disponibilidad REAL del inventario (sin simulaciones)
   isMedicationAvailable(request: MedicationRequest): boolean {
-    return this.medicationAvailability.get(request.id) ?? (request.availableInStock || false);
+    return request.availableInStock || false;
   }
 
-  changeRequestStatus(request: MedicationRequest, newStatus: 'pending' | 'in_preparation' | 'ready' | 'delivered'): void {
+  changeRequestStatus(request: MedicationRequest, newStatus: 'pending' | 'in_preparation' | 'ready' | 'delivered' | 'cancelled'): void {
+    // Si es rechazo, abrir modal para razón
+    if (newStatus === 'cancelled') {
+      this.openRejectModal(request);
+      return;
+    }
+    
+    // Verificar disponibilidad REAL del inventario
     const isAvailable = this.isMedicationAvailable(request);
     
     if (!isAvailable && (newStatus === 'in_preparation' || newStatus === 'ready')) {
-      const confirmMessage = `⚠️ Este medicamento no está disponible en inventario.\n\n¿Deseas continuar marcándolo como "${newStatus === 'in_preparation' ? 'En Preparación' : 'Listo'}" de todas formas?\n\nNota: Deberás solicitar el medicamento externamente.`;
+      const confirmMessage = `⚠️ Este medicamento no está disponible en inventario (Stock: ${request.stockAvailable || 0}).\n\n¿Deseas continuar marcándolo como "${newStatus === 'in_preparation' ? 'En Preparación' : 'Listo'}" de todas formas?\n\nNota: Deberás solicitar el medicamento externamente o agregarlo al inventario primero.`;
       if (!confirm(confirmMessage)) {
         return;
       }
@@ -298,7 +412,10 @@ export class PharmacyDashboardComponent implements OnInit {
         };
 
         alert(statusMessages[newStatus] || 'Estado actualizado');
-        this.updateCounters();
+        
+        // Recargar datos y actualizar contadores
+        this.loadRequests();
+        this.loadHistory();
 
         if (newStatus === 'ready') {
           alert('✅ Medicamento listo. Puede entregarse cuando la enfermera lo recoja.');
@@ -306,9 +423,56 @@ export class PharmacyDashboardComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error actualizando estado:', error);
-        alert('Error al actualizar el estado');
+        alert(error.error?.message || 'Error al actualizar el estado');
       }
     });
+  }
+
+  openRejectModal(request: MedicationRequest): void {
+    this.selectedRequest = request;
+    this.rejectionReason = '';
+    this.showRejectModal = true;
+  }
+
+  closeRejectModal(): void {
+    this.showRejectModal = false;
+    this.selectedRequest = null;
+    this.rejectionReason = '';
+  }
+
+  confirmRejection(): void {
+    if (!this.selectedRequest) return;
+    
+    if (!this.rejectionReason.trim()) {
+      alert('Por favor ingresa una razón para rechazar la solicitud');
+      return;
+    }
+
+    this.pharmacyService.updateRequestStatus(
+      this.selectedRequest.id, 
+      'cancelled', 
+      this.rejectionReason
+    ).subscribe({
+      next: () => {
+        alert('❌ Solicitud rechazada exitosamente');
+        this.closeRejectModal();
+        this.loadRequests();
+        this.loadHistory();
+        this.updateCounters();
+      },
+      error: (error) => {
+        console.error('Error rechazando solicitud:', error);
+        alert(error.error?.message || 'Error al rechazar la solicitud');
+      }
+    });
+  }
+
+  getHistoryTypeLabel(type: string): string {
+    return type === 'delivery' ? '📦 Entregada' : '❌ Rechazada';
+  }
+
+  getHistoryDate(item: any): string {
+    return item.deliveredAt || item.cancelledAt || 'N/A';
   }
 
   openDeliveryModal(request: MedicationRequest): void {
@@ -330,7 +494,10 @@ export class PharmacyDashboardComponent implements OnInit {
       next: (response) => {
         alert(`✅ Entrega confirmada\nID: ${response.deliveryId}`);
         
-        this.loadData();
+        // Recargar datos para actualizar todo
+        this.loadRequests();
+        this.loadHistory();
+        this.updateCounters();
         this.closeDeliveryModal();
       },
       error: (error) => {
@@ -419,6 +586,91 @@ export class PharmacyDashboardComponent implements OnInit {
   logout(): void {
     this.authService.logout();
     this.router.navigate(['/login']);
+  }
+
+  // ========== GESTIÓN DE INVENTARIO ==========
+
+  openAddMedicationModal(): void {
+    this.newMedicationForm = {
+      name: '',
+      dosage: '',
+      description: '',
+      stock: 0,
+      minStock: 50,
+      location: '',
+      expiryDate: ''
+    };
+    this.showAddMedicationModal = true;
+  }
+
+  closeAddMedicationModal(): void {
+    this.showAddMedicationModal = false;
+    this.newMedicationForm = {
+      name: '',
+      dosage: '',
+      description: '',
+      stock: 0,
+      minStock: 50,
+      location: '',
+      expiryDate: ''
+    };
+  }
+
+  createMedication(): void {
+    if (!this.newMedicationForm.name || !this.newMedicationForm.dosage) {
+      alert('El nombre y la dosis son requeridos');
+      return;
+    }
+
+    if (this.newMedicationForm.stock < 0) {
+      alert('El stock no puede ser negativo');
+      return;
+    }
+
+    this.pharmacyService.createMedication(this.newMedicationForm).subscribe({
+      next: () => {
+        alert('✅ Medicamento agregado al inventario exitosamente');
+        this.closeAddMedicationModal();
+        this.loadData();
+      },
+      error: (error) => {
+        console.error('Error creando medicamento:', error);
+        alert(error.error?.message || 'Error al crear el medicamento');
+      }
+    });
+  }
+
+  openDeleteMedicationModal(item: InventoryItem): void {
+    this.selectedMedicationForDelete = item;
+    this.showDeleteMedicationModal = true;
+  }
+
+  closeDeleteMedicationModal(): void {
+    this.showDeleteMedicationModal = false;
+    this.selectedMedicationForDelete = null;
+  }
+
+  confirmDeleteMedication(): void {
+    if (!this.selectedMedicationForDelete?.id) {
+      alert('Error: No se pudo identificar el medicamento');
+      return;
+    }
+
+    if (!confirm(`¿Estás seguro de eliminar "${this.selectedMedicationForDelete.medication} ${this.selectedMedicationForDelete.dosage}" del inventario?\n\nEsta acción marcará el medicamento como inactivo.`)) {
+      return;
+    }
+
+    this.pharmacyService.deleteMedication(this.selectedMedicationForDelete.id).subscribe({
+      next: () => {
+        alert('✅ Medicamento eliminado del inventario exitosamente');
+        this.closeDeleteMedicationModal();
+        this.loadData();
+      },
+      error: (error) => {
+        console.error('Error eliminando medicamento:', error);
+        alert(error.error?.message || 'Error al eliminar el medicamento');
+      }
+    });
   }
 }
 

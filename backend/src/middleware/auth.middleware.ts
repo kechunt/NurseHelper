@@ -13,6 +13,16 @@ export const authMiddleware = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    // Verificar que AppDataSource esté inicializado
+    if (!AppDataSource.isInitialized) {
+      console.error('❌ AppDataSource no está inicializado en authMiddleware');
+      res.status(500).json({ 
+        message: 'Error de conexión a la base de datos',
+        error: 'La base de datos no está inicializada'
+      });
+      return;
+    }
+
     const token = req.headers.authorization?.replace('Bearer ', '');
 
     if (!token) {
@@ -35,7 +45,16 @@ export const authMiddleware = async (
     req.user = user;
     next();
   } catch (error) {
-    res.status(401).json({ message: 'Token inválido' });
+    console.error('❌ Error en authMiddleware:', error);
+    console.error('Error details:', {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
+    res.status(401).json({ 
+      message: 'Token inválido',
+      error: error instanceof Error ? error.message : 'Error desconocido'
+    });
   }
 };
 

@@ -1,4 +1,6 @@
 /* You can add global styles to this file, and also import other style files */
+@import './app/shared/styles/table-actions-normalized.css';
+
 * {
   margin: 0;
   padding: 0;
@@ -32,4 +34,115 @@ html, body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #a0a0a0;
+}
+
+/* Estilos para mejorar rendimiento */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Prevenir layout shift durante carga */
+app-root {
+  display: block;
+  min-height: 100vh;
+}
+
+/* Mejoras de accesibilidad */
+:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Skip link para navegación por teclado */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: #3b82f6;
+  color: white;
+  padding: 8px;
+  text-decoration: none;
+  z-index: 10000;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* Mejoras responsive */
+@media (max-width: 768px) {
+  body {
+    font-size: 14px;
+  }
+}
+
+/* Alto contraste para accesibilidad */
+@media (prefers-contrast: high) {
+  * {
+    border-color: currentColor !important;
+  }
+  
+  button, a {
+    border: 2px solid currentColor;
+  }
+}
+
+/* Reducir animaciones si el usuario lo prefiere */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Mejoras responsive globales */
+@media (max-width: 768px) {
+  /* Ajustar tamaños de fuente en móviles */
+  body {
+    font-size: 14px;
+  }
+
+  /* Mejorar espaciado en móviles */
+  .container, .section {
+    padding: 1rem;
+  }
+
+  /* Botones más grandes para touch */
+  button, .btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Mejoras de contraste para accesibilidad */
+@media (prefers-contrast: high) {
+  * {
+    border-color: currentColor !important;
+  }
+
+  button, a, input, select, textarea {
+    border: 2px solid currentColor;
+  }
+
+  /* Asegurar contraste mínimo */
+  .text-muted {
+    color: #000 !important;
+  }
+}
+
+/* Mejoras para modo oscuro (preparado) */
+@media (prefers-color-scheme: dark) {
+  /* Implementar cuando se agregue soporte para modo oscuro */
+}
+
+/* Mejoras de rendimiento para animaciones */
+@media (prefers-reduced-motion: no-preference) {
+  * {
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
 }

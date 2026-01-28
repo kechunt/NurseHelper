@@ -15,8 +15,12 @@ import { loadEnv } from './utils/env';
 loadEnv();
 
 const password = process.env.DB_PASSWORD || 'Loktarogar';
-if (!process.env.DB_PASSWORD) {
-  console.warn('⚠️  DB_PASSWORD no encontrado en .env, usando valor por defecto');
+const databaseName = process.env.DB_DATABASE || 'nursehelper';
+
+if (databaseName.toLowerCase().includes('raikway')) {
+  console.error('❌ ERROR: El nombre de la base de datos contiene un error de tipeo: "raikway"');
+  console.error('💡 Debe ser "railway" (con "l" después de "rai")');
+  process.exit(1);
 }
 
 export const AppDataSource = new DataSource({
@@ -25,9 +29,9 @@ export const AppDataSource = new DataSource({
   port: parseInt(process.env.DB_PORT || '3306'),
   username: process.env.DB_USERNAME || 'root',
   password: password || '',
-  database: process.env.DB_DATABASE || 'nursehelper',
+  database: databaseName,
   synchronize: false,
-  logging: process.env.NODE_ENV === 'development',
+  logging: false,
   entities: [
     User,
     Area,
@@ -43,5 +47,15 @@ export const AppDataSource = new DataSource({
   ],
   migrations: ['src/migrations/**/*.ts'],
   subscribers: ['src/subscribers/**/*.ts'],
+  extra: {
+    connectionLimit: parseInt(process.env.DB_CONNECTION_LIMIT || '10'),
+    waitForConnections: true,
+    queueLimit: 0,
+    idleTimeout: 60000,
+    connectTimeout: parseInt(process.env.DB_CONNECT_TIMEOUT || '30000'), // 30 segundos por defecto
+  },
+  poolSize: parseInt(process.env.DB_POOL_SIZE || '10'),
+  maxQueryExecutionTime: 1000,
+  connectTimeout: parseInt(process.env.DB_CONNECT_TIMEOUT || '30000'), // 30 segundos por defecto
 });
 

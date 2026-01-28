@@ -1,0 +1,25 @@
+.toast-container {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  pointer-events: none;
+  max-width: calc(100vw - 2rem);
+}
+
+.toast-container > * {
+  pointer-events: auto;
+}
+
+/* Responsive: en móviles, centrar arriba */
+@media (max-width: 640px) {
+  .toast-container {
+    top: 0.5rem;
+    right: 0;
+    left: 0;
+    align-items: center;
+  }
+}

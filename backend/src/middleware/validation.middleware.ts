@@ -1,0 +1,78 @@
+/**
+ * Middleware de validación usando class-validator
+ */
+
+import { Request, Response, NextFunction } from 'express';
+import { validate, ValidationError } from 'class-validator';
+import { plainToInstance } from 'class-transformer';
+import { ValidationError as AppValidationError } from '../utils/errors';
+
+/**
+ * Valida un DTO contra los datos del request
+ */
+export function validateDto<T extends object>(dtoClass: new () => T) {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      // Convertir el body a instancia del DTO
+      const dto = plainToInstance(dtoClass, req.body);
+      
+      // Validar
+      const errors = await validate(dto as object, {
+        whitelist: true, // Eliminar propiedades no definidas en el DTO
+        forbidNonWhitelisted: false, // No lanzar error por propiedades extra
+        transform: true, // Transformar tipos automáticamente
+      });
+
+      if (errors.length > 0) {
+        const formattedErrors = formatValidationErrors(errors);
+        throw new AppValidationError('Error de validación', formattedErrors);
+      }
+
+      // Reemplazar req.body con el DTO validado
+      req.body = dto;
+      next();
+    } catch (error) {
+      next(error);
+    }
+  };
+}
+
+/**
+ * Valida query parameters
+ */
+export function validateQuery<T extends object>(dtoClass: new () => T) {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const dto = plainToInstance(dtoClass, req.query);
+      const errors = await validate(dto as object, {
+        whitelist: true,
+        forbidNonWhitelisted: false,
+        transform: true,
+      });
+
+      if (errors.length > 0) {
+        const formattedErrors = formatValidationErrors(errors);
+        throw new AppValidationError('Error de validación en query parameters', formattedErrors);
+      }
+
+      req.query = dto as any;
+      next();
+    } catch (error) {
+      next(error);
+    }
+  };
+}
+
+/**
+ * Formatea errores de validación para respuesta
+ */
+function formatValidationErrors(errors: ValidationError[]): any {
+  return errors.map(error => ({
+    property: error.property,
+    value: error.value,
+    constraints: error.constraints,
+    children: error.children && error.children.length > 0 
+      ? formatValidationErrors(error.children) 
+      : undefined,
+  }));
+}

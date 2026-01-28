@@ -10,19 +10,54 @@ const usersController = new UsersController();
  * @swagger
  * /api/users:
  *   get:
- *     summary: Obtener todos los usuarios
+ *     summary: Obtener todos los usuarios con paginación y filtros
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Número de página
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 50
+ *         description: Límite de resultados por página
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Búsqueda por nombre, email o username
+ *       - in: query
+ *         name: role
+ *         schema:
+ *           type: string
+ *           enum: [admin, nurse, supervisor, pharmacy]
+ *         description: Filtrar por rol
  *     responses:
  *       200:
- *         description: Lista de usuarios
+ *         description: Lista de usuarios con paginación
  *         content:
  *           application/json:
  *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/User'
+ *               type: object
+ *               properties:
+ *                 items:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/User'
+ *                 total:
+ *                   type: integer
+ *                 page:
+ *                   type: integer
+ *                 limit:
+ *                   type: integer
+ *                 totalPages:
+ *                   type: integer
  */
 router.get('/', authMiddleware, requireAdminOrSupervisor, usersController.getAll.bind(usersController));
 
@@ -57,7 +92,7 @@ router.get('/', authMiddleware, requireAdminOrSupervisor, usersController.getAll
  *                 type: string
  *               role:
  *                 type: string
- *                 enum: [admin, nurse, supervisor]
+ *                 enum: [admin, nurse, supervisor, pharmacy]
  *               isActive:
  *                 type: boolean
  *     responses:
@@ -91,7 +126,7 @@ router.patch('/:id', authMiddleware, requireAdminOrSupervisor, usersController.u
  *             properties:
  *               role:
  *                 type: string
- *                 enum: [admin, nurse, supervisor]
+ *                 enum: [admin, nurse, supervisor, pharmacy]
  *     responses:
  *       200:
  *         description: Rol actualizado exitosamente

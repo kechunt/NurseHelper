@@ -4,13 +4,22 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  OneToOne,
+  ManyToOne,
   OneToMany,
+  JoinColumn,
+  Index,
 } from 'typeorm';
 import { Bed } from './Bed';
 import { Schedule } from './Schedule';
+import { User } from './User';
+import { AdministrationHistory } from './AdministrationHistory';
 
 @Entity('patients')
+@Index(['isActive'])
+@Index(['lastName'])
+@Index(['firstName', 'lastName'])
+// @Index(['bedId']) // Comentado temporalmente hasta que se ejecute la migración
+// @Index(['assignedToId']) // Comentado temporalmente hasta que se ejecute la migración
 export class Patient {
   @PrimaryGeneratedColumn()
   id: number;
@@ -21,7 +30,7 @@ export class Patient {
   @Column({ length: 100 })
   lastName: string;
 
-  @Column({ length: 20, nullable: true })
+  @Column({ length: 20, nullable: true, unique: true })
   identificationNumber: string;
 
   @Column({ type: 'date', nullable: true })
@@ -72,11 +81,25 @@ export class Patient {
   @Column({ default: true })
   isActive: boolean;
 
-  @OneToOne(() => Bed, (bed) => bed.patient, { nullable: true })
+  @Column({ nullable: true, select: false })
+  bedId?: number | null;
+
+  @ManyToOne(() => Bed, (bed) => bed.patients, { nullable: true })
+  @JoinColumn({ name: 'bedId' })
   bed: Bed | null;
 
-  @OneToMany(() => Schedule, (schedule) => schedule.patient)
+  @Column({ nullable: true, select: false })
+  assignedToId?: number | null;
+
+  @ManyToOne(() => User, (user) => user.assignedPatients, { nullable: true })
+  @JoinColumn({ name: 'assignedToId' })
+  assignedTo: User | null;
+
+  @OneToMany(() => Schedule, (schedule) => schedule.patient, { cascade: false })
   schedules: Schedule[];
+
+  @OneToMany(() => AdministrationHistory, (history) => history.patient, { cascade: false })
+  administrationHistory: AdministrationHistory[];
 
   @CreateDateColumn()
   createdAt: Date;

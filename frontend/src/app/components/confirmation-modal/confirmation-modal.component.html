@@ -1,0 +1,52 @@
+<div 
+  *ngIf="show"
+  class="modal-overlay"
+  role="dialog"
+  aria-modal="true"
+  [attr.aria-labelledby]="'modal-title-' + type"
+  [attr.aria-describedby]="'modal-description-' + type"
+  (click)="close()"
+>
+  <div 
+    class="modal-content modal-{{ type }}"
+    (click)="$event.stopPropagation()"
+    appKeyboardNav="vertical"
+  >
+    <div class="modal-header">
+      <h2 [id]="'modal-title-' + type" class="modal-title">{{ title }}</h2>
+      <button 
+        type="button"
+        class="modal-close"
+        (click)="close()"
+        aria-label="Cerrar modal"
+        tabindex="0"
+      >
+        <span aria-hidden="true">×</span>
+      </button>
+    </div>
+    
+    <div class="modal-body">
+      <p [id]="'modal-description-' + type">{{ message }}</p>
+    </div>
+    
+    <div class="modal-footer">
+      <button 
+        type="button"
+        class="btn btn-secondary"
+        (click)="cancel()"
+        tabindex="0"
+      >
+        {{ cancelText }}
+      </button>
+      <button 
+        type="button"
+        class="btn btn-{{ type === 'danger' ? 'danger' : 'primary' }}"
+        (click)="confirm()"
+        tabindex="0"
+        [attr.aria-label]="confirmText + ' - ' + title"
+      >
+        {{ confirmText }}
+      </button>
+    </div>
+  </div>
+</div>

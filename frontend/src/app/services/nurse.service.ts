@@ -191,14 +191,17 @@ export class NurseService {
   deleteMedication(patientId: number, medication: string, reason: string): Observable<any> {
     // Codificar el nombre del medicamento para la URL
     const encodedMedication = encodeURIComponent(medication);
-    return this.http.delete(`${this.apiUrl}/medications/patient/${patientId}/${encodedMedication}`, {
-      body: { reason }
+    return this.http.request('DELETE', `${this.apiUrl}/medications/patient/${patientId}/${encodedMedication}`, {
+      body: { reason },
+      headers: { 'Content-Type': 'application/json' }
     });
   }
 
   // Reactivar medicamento suspendido
   reactivateMedication(patientId: number, medication: string): Observable<any> {
-    return this.http.put(`${this.apiUrl}/medications/patient/${patientId}/${medication}/reactivate`, {});
+    // Codificar el nombre del medicamento para la URL
+    const encodedMedication = encodeURIComponent(medication);
+    return this.http.put(`${this.apiUrl}/medications/patient/${patientId}/${encodedMedication}/reactivate`, {});
   }
 
   // Obtener medicamentos activos de un paciente
@@ -211,9 +214,12 @@ export class NurseService {
     patientId: number;
     description: string;
     scheduleType: 'single' | 'recurring';
-    time: string;
+    time?: string;
+    times?: string[];
     date?: string;
     daysOfWeek?: number[];
+    duration?: number;
+    durationUnit?: string;
     notes?: string;
   }): Observable<any> {
     const payload: any = {
@@ -224,10 +230,26 @@ export class NurseService {
     };
 
     if (data.scheduleType === 'single' && data.date) {
-      payload.scheduledTime = this.parseDateTimeToDate(data.date, data.time);
+      // Para schedule único, usar el primer horario de times o time
+      const timeToUse = (data.times && data.times.length > 0) ? data.times[0] : (data.time || '08:00');
+      payload.scheduledTime = this.parseDateTimeToDate(data.date, timeToUse);
+      payload.date = data.date;
+      payload.time = timeToUse;
     } else if (data.scheduleType === 'recurring' && data.daysOfWeek) {
-      payload.time = data.time;
+      // Para schedule recurrente, enviar times (array) o time (string)
+      if (data.times && data.times.length > 0) {
+        payload.times = data.times;
+      } else if (data.time) {
+        payload.time = data.time;
+      }
       payload.daysOfWeek = data.daysOfWeek;
+      // Enviar duración si está presente
+      if (data.duration !== undefined) {
+        payload.duration = data.duration;
+      }
+      if (data.durationUnit) {
+        payload.durationUnit = data.durationUnit;
+      }
     }
 
     return this.http.post(`${this.apiUrl}/nurse/treatments`, payload);
@@ -260,5 +282,21 @@ export class NurseService {
   // Obtener historial de administraciones de un paciente
   getPatientHistory(patientId: number): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/nurse/patients/${patientId}/history`);
+  }
+
+  // ========== GESTIÓN DE CAMAS (Reutilizando funcionalidad del admin) ==========
+  
+  // Actualizar cama (asignar/liberar paciente, cambiar estado)
+  updateBed(bedId: number, data: {
+    bedNumber?: string;
+    patientId?: number | null;
+    isActive?: boolean;
+  }): Observable<any> {
+    return this.http.patch(`${this.apiUrl}/beds/${bedId}`, data);
+  }
+
+  // Obtener detalles de una cama
+  getBed(bedId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/beds/${bedId}`);
   }
 }

@@ -51,21 +51,33 @@
   box-shadow: none;
 }
 
+/* ========== BOTÓN DE ACCIÓN COMPACTO - NORMALIZADO ========== */
 .neuro-btn-icon {
-  background: #e0e5ec;
-  border: none;
-  padding: 8px;
-  border-radius: 50%;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  color: #4a5568;
-  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
+  background: #e0e5ec !important;
+  border: none !important;
+  padding: 0 !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  color: #4a5568 !important;
+  box-shadow: 2px 2px 4px #bebebe, -2px -2px 4px #ffffff !important;
+  width: 28px !important;
+  height: 28px !important;
+  max-width: 28px !important;
+  max-height: 28px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 0.85rem !important;
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
+  flex-basis: 28px !important;
+  margin: 0 !important;
+  line-height: 1 !important;
+  vertical-align: middle !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
 }
 
 .neuro-btn-icon:hover {
@@ -490,5 +502,281 @@
 
 .remove-bed-btn:active {
   box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
+}
+
+/* Estilos para gestión de pacientes por área */
+.patients-section,
+.areas-patients-section {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 2px solid rgba(174, 174, 192, 0.3);
+}
+
+.section-subtitle {
+  color: #4a5568;
+  font-size: 1.5rem;
+  font-weight: 300;
+  margin-bottom: 1.5rem;
+  text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8),
+    -1px -1px 2px rgba(174, 174, 192, 0.4);
+}
+
+.no-data-message {
+  text-align: center;
+  padding: 2rem;
+  color: #718096;
+  background: #d1d9e6;
+  border-radius: 15px;
+  box-shadow: inset 5px 5px 10px #bebebe, inset -5px -5px 10px #ffffff;
+}
+
+.patients-table-container {
+  overflow-x: auto;
+  border-radius: 15px;
+  background: #d1d9e6;
+  box-shadow: inset 5px 5px 10px #bebebe, inset -5px -5px 10px #ffffff;
+  padding: 1rem;
+}
+
+.patients-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #e0e5ec;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.patients-table thead {
+  background: #d1d9e6;
+}
+
+.patients-table th {
+  padding: 1rem;
+  text-align: left;
+  color: #4a5568;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.patients-table td {
+  padding: 0.35rem 0.4rem !important;
+  color: #4a5568;
+  border-top: 1px solid rgba(174, 174, 192, 0.3);
+  vertical-align: middle !important;
+  line-height: 1 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  font-size: 0.8rem;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.patients-table td > div,
+.patients-table td > span {
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+  display: inline-block !important;
+  vertical-align: middle !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 100% !important;
+}
+
+.patients-table td:last-child {
+  height: 30px !important;
+  min-height: 30px !important;
+  max-height: 30px !important;
+  padding: 0.2rem 0.3rem !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+}
+
+.patients-table tr {
+  height: auto !important;
+  min-height: 0 !important;
+  line-height: 1 !important;
+}
+
+.patients-table tr td {
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+.patients-table tbody tr:hover {
+  background: #d1d9e6;
+}
+
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  display: inline-block;
+}
+
+.status-badge.active {
+  background: #c6f6d5;
+  color: #22543d;
+}
+
+.status-badge:not(.active) {
+  background: #fed7d7;
+  color: #c53030;
+}
+
+.bed-badge {
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: #bee3f8;
+  color: #2c5282;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.no-bed-badge {
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: #fed7d7;
+  color: #c53030;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.action-btn {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+}
+
+.assign-btn {
+  background: #bee3f8;
+  color: #2c5282;
+}
+
+.assign-btn:hover {
+  box-shadow: 2px 2px 4px #bebebe, -2px -2px 4px #ffffff;
+}
+
+.change-btn {
+  background: #fbd38d;
+  color: #744210;
+}
+
+.change-btn:hover {
+  box-shadow: 2px 2px 4px #bebebe, -2px -2px 4px #ffffff;
+}
+
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.areas-patients-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.area-patients-item {
+  background: #e0e5ec;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 8px 8px 16px #bebebe, -8px -8px 16px #ffffff;
+}
+
+.area-patients-header {
+  padding: 1.25rem 1.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: #d1d9e6;
+  border-bottom: 2px solid rgba(174, 174, 192, 0.3);
+}
+
+.area-patients-header:hover {
+  background: #c4cfe0;
+}
+
+.area-header-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.expand-icon {
+  font-size: 0.8rem;
+  color: #4a5568;
+  transition: transform 0.2s ease;
+  display: inline-block;
+}
+
+.expand-icon.expanded {
+  transform: rotate(90deg);
+}
+
+.area-header-info h4 {
+  margin: 0;
+  color: #4a5568;
+  font-size: 1.1rem;
+  font-weight: 500;
+  flex: 1;
+}
+
+.patients-count-badge {
+  padding: 6px 12px;
+  border-radius: 12px;
+  background: #bee3f8;
+  color: #2c5282;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.area-patients-content {
+  padding: 1.5rem;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 1000px;
+  }
+}
+
+.no-patients-message {
+  text-align: center;
+  padding: 1.5rem;
+  color: #718096;
+}
+
+.patient-info-display {
+  background: #d1d9e6;
+  padding: 1rem;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  box-shadow: inset 5px 5px 10px #bebebe, inset -5px -5px 10px #ffffff;
+}
+
+.patient-info-display p {
+  margin: 0.5rem 0;
+  color: #4a5568;
+  font-size: 0.9rem;
+}
+
+.patient-info-display strong {
+  color: #2d3748;
 }
 

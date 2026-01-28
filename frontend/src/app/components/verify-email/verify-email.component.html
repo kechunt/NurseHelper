@@ -1,0 +1,63 @@
+<div class="verify-container">
+  <div class="verify-card">
+    <div class="logo-container">
+      <img
+        src="/nursehelper.png"
+        alt="NurseHelper Logo"
+        class="logo"
+      />
+    </div>
+
+    <h1 class="verify-title">Verificar Correo Electrónico</h1>
+    <p class="verify-subtitle">Ingresa el código de verificación que enviamos a:</p>
+    <p class="email-display">{{ email }}</p>
+
+    <form (ngSubmit)="onSubmit()" class="verify-form">
+      <div class="input-group">
+        <label for="code">Código de Verificación</label>
+        <input
+          type="text"
+          id="code"
+          class="neuro-input code-input"
+          placeholder="000000"
+          [(ngModel)]="code"
+          name="code"
+          (input)="onCodeInput($event)"
+          maxlength="6"
+          required
+          autocomplete="off"
+        />
+        <small class="help-text">Ingresa el código de 6 dígitos que recibiste por correo</small>
+      </div>
+
+      <div *ngIf="error" class="error-message">{{ error }}</div>
+
+      <button
+        type="submit"
+        class="neuro-btn"
+        [disabled]="loading || code.length !== 6"
+      >
+        {{ loading ? 'Verificando...' : 'Verificar' }}
+      </button>
+    </form>
+
+    <div class="resend-section">
+      <p>¿No recibiste el código?</p>
+      <button
+        type="button"
+        class="link-button"
+        (click)="resendCode()"
+        [disabled]="resending"
+      >
+        {{ resending ? 'Reenviando...' : 'Reenviar código' }}
+      </button>
+    </div>
+
+    <div class="verify-footer">
+      <p>
+        ¿Ya tienes cuenta?
+        <a routerLink="/login" class="link">Inicia sesión aquí</a>
+      </p>
+    </div>
+  </div>
+</div>

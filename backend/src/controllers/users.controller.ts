@@ -5,6 +5,7 @@ import { Schedule } from '../entities/Schedule';
 import { NurseShift } from '../entities/NurseShift';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { logger, logUserAction, logApiError } from '../utils/logger';
+import { sendPaginatedResponse, sendErrorResponse, handleControllerError, parseId, parsePagination } from '../utils/response.helper';
 
 export class UsersController {
   /**
@@ -13,11 +14,9 @@ export class UsersController {
    */
   async getAll(req: Request, res: Response): Promise<void> {
     try {
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 50;
+      const { page, limit, skip } = parsePagination(req.query);
       const search = req.query.search as string;
       const roleFilter = req.query.role as string;
-      const skip = (page - 1) * limit;
 
       const userRepository = AppDataSource.getRepository(User);
       
@@ -53,21 +52,16 @@ export class UsersController {
         }
       }
 
-      // Paginación
+      // Paginación y ordenamiento (usando índice en createdAt)
       queryBuilder
         .orderBy('user.createdAt', 'DESC')
         .skip(skip)
         .take(limit);
 
+      // Ejecutar consulta optimizada
       const [users, total] = await queryBuilder.getManyAndCount();
 
-      res.json({
-        items: users,
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      });
+      sendPaginatedResponse(res, users, total, page, limit);
       
       logger.info('Users fetched', { 
         userId: (req as AuthRequest).user?.id,
@@ -76,37 +70,31 @@ export class UsersController {
         total 
       });
     } catch (error) {
-      logApiError(error as Error, req);
-      res.status(500).json({ 
-        message: 'Error interno del servidor',
-        code: 'SERVER_ERROR'
-      });
+      handleControllerError(error, req, res, 'Error al obtener usuarios');
     }
   }
 
   async update(req: Request, res: Response): Promise<void> {
     try {
-      const { id } = req.params;
+      const userId = parseId(req.params.id);
+      if (!userId) {
+        sendErrorResponse(res, 400, 'ID de usuario inválido', 'INVALID_ID');
+        return;
+      }
       const { username, email, firstName, lastName, role, isActive, maxPatients, assignedAreaId } = req.body;
 
       const userRepository = AppDataSource.getRepository(User);
-      const user = await userRepository.findOne({ where: { id: parseInt(id) } });
+      const user = await userRepository.findOne({ where: { id: userId } });
 
       if (!user) {
-        res.status(404).json({ 
-          message: 'Usuario no encontrado',
-          code: 'USER_NOT_FOUND'
-        });
+        sendErrorResponse(res, 404, 'Usuario no encontrado', 'USER_NOT_FOUND');
         return;
       }
 
       // Validaciones
       if (maxPatients !== undefined) {
         if (maxPatients < 0 || maxPatients > 50) {
-          res.status(400).json({ 
-            message: 'La capacidad debe estar entre 0 y 50 pacientes',
-            code: 'VALIDATION_ERROR'
-          });
+          sendErrorResponse(res, 400, 'La capacidad debe estar entre 0 y 50 pacientes', 'VALIDATION_ERROR');
           return;
         }
       }
@@ -114,19 +102,13 @@ export class UsersController {
       // Verificar si username o email ya están en uso por otro usuario
       if (username && username !== user.username) {
         if (username.length < 3 || username.length > 50) {
-          res.status(400).json({ 
-            message: 'El nombre de usuario debe tener entre 3 y 50 caracteres',
-            code: 'VALIDATION_ERROR'
-          });
+          sendErrorResponse(res, 400, 'El nombre de usuario debe tener entre 3 y 50 caracteres', 'VALIDATION_ERROR');
           return;
         }
         
         const existingUsername = await userRepository.findOne({ where: { username } });
         if (existingUsername) {
-          res.status(400).json({ 
-            message: 'El nombre de usuario ya está en uso',
-            code: 'VALIDATION_ERROR'
-          });
+          sendErrorResponse(res, 400, 'El nombre de usuario ya está en uso', 'VALIDATION_ERROR');
           return;
         }
         user.username = username;
@@ -135,19 +117,13 @@ export class UsersController {
       if (email && email !== user.email) {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
-          res.status(400).json({ 
-            message: 'Email inválido',
-            code: 'VALIDATION_ERROR'
-          });
+          sendErrorResponse(res, 400, 'Email inválido', 'VALIDATION_ERROR');
           return;
         }
         
         const existingEmail = await userRepository.findOne({ where: { email } });
         if (existingEmail) {
-          res.status(400).json({ 
-            message: 'El correo electrónico ya está en uso',
-            code: 'VALIDATION_ERROR'
-          });
+          sendErrorResponse(res, 400, 'El correo electrónico ya está en uso', 'VALIDATION_ERROR');
           return;
         }
         user.email = email;
@@ -164,9 +140,28 @@ export class UsersController {
       // Solo permitir cambiar rol si no es el propio usuario
       if (role && Object.values(UserRole).includes(role)) {
         if (authReq.user?.id !== user.id) {
+          // Si el usuario era enfermera y está cambiando de rol,
+          // desasignar todos los schedules asignados a esta enfermera
+          const wasNurse = user.role === UserRole.NURSE;
+          const isChangingFromNurse = wasNurse && role !== UserRole.NURSE;
+
+          if (isChangingFromNurse) {
+            const scheduleRepository = AppDataSource.getRepository(Schedule);
+            // Poner en null todos los assignedToId de schedules que apuntan a este usuario
+            await scheduleRepository.update(
+              { assignedToId: userId },
+              { assignedToId: null }
+            );
+            logger.info('Schedules desasignados al cambiar rol de enfermera (update)', {
+              userId,
+              previousRole: user.role,
+              newRole: role
+            });
+          }
+
           user.role = role;
         } else {
-          res.status(400).json({ message: 'No puedes cambiar tu propio rol' });
+          sendErrorResponse(res, 400, 'No puedes cambiar tu propio rol', 'FORBIDDEN');
           return;
         }
       }
@@ -176,7 +171,7 @@ export class UsersController {
         if (authReq.user?.id !== user.id) {
           user.isActive = isActive;
         } else {
-          res.status(400).json({ message: 'No puedes cambiar tu propio estado' });
+          sendErrorResponse(res, 400, 'No puedes cambiar tu propio estado', 'FORBIDDEN');
           return;
         }
       }
@@ -191,94 +186,163 @@ export class UsersController {
       
       res.json({ message: 'Usuario actualizado exitosamente', user });
     } catch (error) {
-      logApiError(error as Error, req, { userId: req.params.id });
-      res.status(500).json({ 
-        message: 'Error interno del servidor',
-        code: 'SERVER_ERROR'
-      });
+      handleControllerError(error, req, res, 'Error al actualizar usuario');
     }
   }
 
   async updateRole(req: Request, res: Response): Promise<void> {
     try {
-      const { id } = req.params;
+      const userId = parseId(req.params.id);
+      if (!userId) {
+        sendErrorResponse(res, 400, 'ID de usuario inválido', 'INVALID_ID');
+        return;
+      }
+
       const { role } = req.body;
 
       if (!Object.values(UserRole).includes(role)) {
-        res.status(400).json({ message: 'Rol inválido' });
+        sendErrorResponse(res, 400, 'Rol inválido', 'VALIDATION_ERROR');
         return;
       }
 
       const userRepository = AppDataSource.getRepository(User);
-      const user = await userRepository.findOne({ where: { id: parseInt(id) } });
+      const scheduleRepository = AppDataSource.getRepository(Schedule);
+      const user = await userRepository.findOne({ where: { id: userId } });
 
       if (!user) {
-        res.status(404).json({ message: 'Usuario no encontrado' });
+        sendErrorResponse(res, 404, 'Usuario no encontrado', 'USER_NOT_FOUND');
         return;
       }
 
       const authReq = req as AuthRequest;
       if (authReq.user?.id === user.id) {
-        res.status(400).json({ message: 'No puedes cambiar tu propio rol' });
+        sendErrorResponse(res, 400, 'No puedes cambiar tu propio rol', 'FORBIDDEN');
         return;
+      }
+
+      // Si el usuario era enfermera y está cambiando de rol,
+      // desasignar todos los schedules asignados a esta enfermera
+      // Los pacientes mantendrán su área asignada (a través de bed.areaId)
+      const wasNurse = user.role === UserRole.NURSE;
+      const isChangingFromNurse = wasNurse && role !== UserRole.NURSE;
+
+      if (isChangingFromNurse) {
+        // Poner en null todos los assignedToId de schedules que apuntan a este usuario
+        await scheduleRepository.update(
+          { assignedToId: userId },
+          { assignedToId: null }
+        );
+        logger.info('Schedules desasignados al cambiar rol de enfermera', {
+          userId,
+          previousRole: user.role,
+          newRole: role
+        });
       }
 
       user.role = role;
       await userRepository.save(user);
 
-      res.json({ message: 'Rol actualizado exitosamente', user });
+      logUserAction(
+        authReq.user!.id,
+        'update_user_role',
+        { targetUserId: user.id, previousRole: wasNurse ? UserRole.NURSE : user.role, newRole: role }
+      );
+
+      res.json({ 
+        message: 'Rol actualizado exitosamente', 
+        user,
+        schedulesUnassigned: isChangingFromNurse 
+      });
     } catch (error) {
-      console.error('Error al actualizar rol:', error);
-      res.status(500).json({ message: 'Error interno del servidor' });
+      handleControllerError(error, req, res, 'Error al actualizar rol');
     }
   }
 
   async delete(req: Request, res: Response): Promise<void> {
     try {
-      const { id } = req.params;
+      const userId = parseId(req.params.id);
+      if (!userId) {
+        sendErrorResponse(res, 400, 'ID de usuario inválido', 'INVALID_ID');
+        return;
+      }
+
       const userRepository = AppDataSource.getRepository(User);
       const scheduleRepository = AppDataSource.getRepository(Schedule);
       const nurseShiftRepository = AppDataSource.getRepository(NurseShift);
 
       const authReq = req as AuthRequest;
-      if (authReq.user?.id === parseInt(id)) {
-        res.status(400).json({ message: 'No puedes eliminar tu propia cuenta' });
+      if (authReq.user?.id === userId) {
+        sendErrorResponse(res, 400, 'No puedes eliminar tu propia cuenta', 'FORBIDDEN');
         return;
       }
 
-      const user = await userRepository.findOne({ where: { id: parseInt(id) } });
+      const user = await userRepository.findOne({ where: { id: userId } });
 
       if (!user) {
-        res.status(404).json({ message: 'Usuario no encontrado' });
+        sendErrorResponse(res, 404, 'Usuario no encontrado', 'USER_NOT_FOUND');
         return;
       }
 
-      await scheduleRepository.delete({ assignedToId: parseInt(id) });
-      await nurseShiftRepository.delete({ nurseId: parseInt(id) });
+      const wasNurse = user.role === UserRole.NURSE;
+
+      // Si era enfermera, desasignar schedules en lugar de eliminarlos
+      // Esto mantiene los schedules pero sin enfermera asignada
+      // Los pacientes mantendrán su área asignada (a través de bed.areaId)
+      if (wasNurse) {
+        // Poner en null todos los assignedToId de schedules que apuntan a este usuario
+        // en lugar de eliminarlos, para mantener el historial
+        await scheduleRepository.update(
+          { assignedToId: userId },
+          { assignedToId: null }
+        );
+        logger.info('Schedules desasignados al eliminar enfermera', {
+          deletedUserId: userId,
+          deletedUsername: user.username
+        });
+      } else {
+        // Para otros roles, eliminar los schedules asignados
+        await scheduleRepository.delete({ assignedToId: userId });
+      }
+
+      // Eliminar turnos de enfermera
+      await nurseShiftRepository.delete({ nurseId: userId });
+      
+      // Eliminar usuario
       await userRepository.remove(user);
 
       logUserAction(
         authReq.user!.id,
         'delete_user',
-        { deletedUserId: parseInt(id), deletedUsername: user.username }
+        { 
+          deletedUserId: userId, 
+          deletedUsername: user.username,
+          deletedRole: user.role,
+          schedulesUnassigned: wasNurse
+        }
       );
 
-      res.json({ message: 'Usuario eliminado permanentemente de la base de datos' });
+      res.json({ 
+        message: 'Usuario eliminado permanentemente de la base de datos',
+        schedulesUnassigned: wasNurse
+      });
     } catch (error) {
-      console.error('Error al eliminar usuario:', error);
-      res.status(500).json({ message: 'Error interno del servidor' });
+      handleControllerError(error, req, res, 'Error al eliminar usuario');
     }
   }
 
   async restore(req: Request, res: Response): Promise<void> {
     try {
-      const { id } = req.params;
-      const userRepository = AppDataSource.getRepository(User);
+      const userId = parseId(req.params.id);
+      if (!userId) {
+        sendErrorResponse(res, 400, 'ID de usuario inválido', 'INVALID_ID');
+        return;
+      }
 
-      const user = await userRepository.findOne({ where: { id: parseInt(id) } });
+      const userRepository = AppDataSource.getRepository(User);
+      const user = await userRepository.findOne({ where: { id: userId } });
 
       if (!user) {
-        res.status(404).json({ message: 'Usuario no encontrado' });
+        sendErrorResponse(res, 404, 'Usuario no encontrado', 'USER_NOT_FOUND');
         return;
       }
 
@@ -287,8 +351,7 @@ export class UsersController {
 
       res.json({ message: 'Usuario restaurado exitosamente', user });
     } catch (error) {
-      console.error('Error al restaurar usuario:', error);
-      res.status(500).json({ message: 'Error interno del servidor' });
+      handleControllerError(error, req, res, 'Error al restaurar usuario');
     }
   }
 }

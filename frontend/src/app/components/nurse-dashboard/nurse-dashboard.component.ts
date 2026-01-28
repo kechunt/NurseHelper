@@ -6,15 +6,22 @@ import { forkJoin } from 'rxjs';
 import { NurseService, PatientDetail, BedWithPatient, MedicationForPharmacy } from '../../services/nurse.service';
 import { AuthService } from '../../services/auth.service';
 import { PharmacyService } from '../../services/pharmacy.service';
+import { ToastService } from '../../services/toast.service';
+import { ConfirmationService } from '../../services/confirmation.service';
+import { AdminService, Bed, Patient as AdminPatient } from '../../services/admin.service';
 
-interface Bed {
+interface BedDisplay {
+  id?: number;
   bedNumber: string;
+  areaId?: number;
   patient: {
     id: string;
     name: string;
     age: number;
     conditions: string[];
   } | null;
+  patientId?: number | null;
+  isActive?: boolean;
 }
 
 interface Patient {
@@ -41,6 +48,7 @@ interface Medication {
   frequency: string;
   schedules: string;
   notes: string;
+  suspended?: boolean;
 }
 
 interface ScheduleItem {
@@ -85,9 +93,22 @@ export class NurseDashboardComponent implements OnInit {
   pendingTasksCount: number = 0;
   medicationsToday: number = 0;
 
-  myBeds: Bed[] = [];
+  myBeds: BedDisplay[] = [];
   patients: Patient[] = [];
   filteredPatients: Patient[] = [];
+  
+  // Modal de edición de cama
+  showEditBedModal: boolean = false;
+  selectedBed: BedDisplay | null = null;
+  editBedForm: { bedNumber: string; patientId: number | null; isActive: boolean; areaId: number | null } = { 
+    bedNumber: '', 
+    patientId: null,
+    isActive: true,
+    areaId: null
+  };
+  patientSearchTerm: string = '';
+  filteredPatientsForBed: AdminPatient[] = [];
+  allPatientsForBed: AdminPatient[] = [];
 
   searchTerm: string = '';
   selectedFilter: string = 'all';
@@ -110,6 +131,9 @@ export class NurseDashboardComponent implements OnInit {
   showAddMedicationModal: boolean = false;
   medicationModalFromPatientDetail: boolean = false;
   selectedPatientForMedication: string = '';
+  isAddingMedication: boolean = false; // Prevenir múltiples clics
+  isAddingTreatment: boolean = false; // Prevenir múltiples clics al agregar tratamiento
+  isSavingObservation: boolean = false; // Prevenir múltiples clics al guardar observación
   newMedication: any = {
     medication: '',
     dosage: '',
@@ -142,14 +166,28 @@ export class NurseDashboardComponent implements OnInit {
   medicationToDelete: any = null;
   deleteReason: string = '';
 
+  showReactivateMedicationModal: boolean = false;
+  medicationToReactivate: any = null;
+
+  showPostponeTaskModal: boolean = false;
+  taskToPostpone: any = null;
+  postponeNewDate: string = '';
+  postponeNewTime: string = '';
+
+  // Filtros de historial
+  historyFilter: 'all' | 'today' | 'week' | 'month' = 'all';
+
   showAddTreatmentModal: boolean = false;
   newTreatment: any = {
     patientId: '',
     description: '',
     scheduleType: 'recurring', // 'single' o 'recurring'
     date: '',
-    time: '08:00',
+    times: ['08:00'], // Múltiples horarios como en medicinas
+    time: '08:00', // Para compatibilidad
     daysOfWeek: [], // Para schedules recurrentes (0=Domingo, 1=Lunes, etc.)
+    duration: 4, // Duración en semanas por defecto
+    durationUnit: 'weeks', // 'weeks' para tratamientos
     notes: ''
   };
   selectedTreatmentDays: string[] = [];
@@ -170,7 +208,10 @@ export class NurseDashboardComponent implements OnInit {
     private nurseService: NurseService,
     private authService: AuthService,
     private pharmacyService: PharmacyService,
-    private router: Router
+    private router: Router,
+    private toastService: ToastService,
+    private confirmationService: ConfirmationService,
+    private adminService: AdminService
   ) {}
 
   ngOnInit(): void {
@@ -193,105 +234,170 @@ export class NurseDashboardComponent implements OnInit {
       this.nurseName = `${currentUser.firstName} ${currentUser.lastName}`;
     }
 
-    this.nurseService.getNurseStats().subscribe({
-      next: (stats) => {
-        this.assignedArea = stats.assignedArea;
-        this.maxPatients = stats.maxPatients;
-        // Los contadores se calcularán después de cargar los pacientes
-      },
-      error: (error) => {
-        console.error('Error cargando estadísticas:', error);
-      }
-    });
+    console.log('🔄 Iniciando carga de datos del dashboard de enfermera...');
 
-    this.nurseService.getMyBeds().subscribe({
-      next: (beds) => {
-        this.myBeds = beds.map(bed => ({
-          bedNumber: bed.bedNumber,
-          patient: bed.patient ? {
-            id: bed.patient.id.toString(),
-            name: `${bed.patient.firstName} ${bed.patient.lastName}`,
-            age: bed.patient.age,
-            conditions: this.parseConditions(bed.patient.medicalObservations)
-          } : null
-        }));
-      },
-      error: (error) => {
-        console.error('Error cargando camas:', error);
-      }
-    });
+    // Cargar datos críticos primero (estadísticas y pacientes)
+    // Luego cargar datos secundarios (tareas y medicamentos) en paralelo
+    forkJoin({
+      stats: this.nurseService.getNurseStats(),
+      beds: this.nurseService.getMyBeds(),
+      patients: this.nurseService.getMyPatients()
+    }).subscribe({
+      next: ({ stats, beds, patients }) => {
+        console.log('✅ Datos recibidos:', { 
+          stats: stats ? 'OK' : 'null', 
+          beds: beds?.length || 0, 
+          patients: patients?.length || 0 
+        });
 
-    this.nurseService.getMyPatients().subscribe({
-      next: (patients) => {
-        this.patients = patients.map(p => ({
-          id: p.id.toString(),
-          name: `${p.firstName} ${p.lastName}`,
-          bedNumber: p.bedNumber,
-          age: p.age,
+        // Procesar estadísticas
+        this.assignedArea = stats?.assignedArea || 'Sin asignar';
+        this.maxPatients = stats?.maxPatients || 0;
+
+        // Procesar camas - incluir ID y otros datos necesarios
+        this.myBeds = (beds || []).map(bed => {
+          const processedBed = {
+            id: bed.id,
+            bedNumber: bed.bedNumber || '',
+            areaId: bed.areaId,
+            patientId: bed.patient?.id || null,
+            isActive: true,
+            patient: bed.patient ? {
+              id: bed.patient.id?.toString() || '',
+              name: `${bed.patient.firstName || ''} ${bed.patient.lastName || ''}`,
+              age: bed.patient.age || 0,
+              conditions: this.parseConditions(bed.patient.medicalObservations || '')
+            } : null
+          };
+          
+          // Log para depuración
+          if (processedBed.patient) {
+            console.log(`🛏️ Cama ${processedBed.bedNumber} tiene paciente:`, {
+              bedId: processedBed.id,
+              patientId: processedBed.patientId,
+              patientName: processedBed.patient?.name || 'Sin nombre'
+            });
+          }
+          
+          return processedBed;
+        });
+
+        console.log(`🛏️ Camas procesadas: ${this.myBeds.length}`);
+        console.log(`📊 Camas con paciente: ${this.myBeds.filter(b => b.patient).length}`);
+        console.log(`📊 Camas disponibles: ${this.myBeds.filter(b => !b.patient).length}`);
+
+        // Procesar pacientes
+        this.patients = (patients || []).map(p => ({
+          id: p.id?.toString() || '',
+          name: `${p.firstName || ''} ${p.lastName || ''}`,
+          bedNumber: p.bedNumber || '',
+          age: p.age || 0,
           diagnosis: p.diagnosis || 'Sin diagnóstico',
           medications: p.medications || [],
           medicationsDetail: p.medicationsDetail || [],
           todaySchedule: p.todaySchedule || [],
           treatmentHistory: p.treatmentHistory || [],
-          pendingTasks: p.pendingTasks,
-          priority: p.priority,
-          medicalObservations: p.medicalObservations || '',
-          allergies: p.allergies || 'Ninguna conocida',
-          specialNeeds: p.specialNeeds || 'Ninguna',
-          generalObservations: p.generalObservations || ''
+          pendingTasks: p.pendingTasks || 0,
+          priority: p.priority || 'normal',
+          medicalObservations: p.medicalObservations !== undefined && p.medicalObservations !== null ? p.medicalObservations : '',
+          allergies: p.allergies !== undefined && p.allergies !== null ? p.allergies : '',
+          specialNeeds: p.specialNeeds !== undefined && p.specialNeeds !== null ? p.specialNeeds : '',
+          generalObservations: p.generalObservations !== undefined && p.generalObservations !== null ? p.generalObservations : ''
         }));
         this.filteredPatients = this.patients;
         
-        // Calcular estadísticas basadas en los pacientes asignados
+        console.log(`👥 Pacientes procesados: ${this.patients.length}`);
+
+        // Calcular estadísticas iniciales
         this.assignedPatientsCount = this.patients.length;
         this.pendingTasksCount = this.patients.reduce((sum, p) => sum + (p.pendingTasks || 0), 0);
-        this.medicationsToday = this.patients.reduce((sum, p) => sum + (p.medications?.length || 0), 0);
+        this.medicationsToday = this.patients.reduce((sum, p) => sum + (p.medications.length || 0), 0);
+
+        // Cargar datos secundarios en paralelo después de los críticos
+        this.loadSecondaryData();
       },
       error: (error) => {
-        console.error('Error cargando pacientes:', error);
-        // Si hay error, asegurar que los contadores estén en 0
+        console.error('❌ Error cargando datos principales:', error);
+        console.error('Detalles del error:', {
+          status: error.status,
+          statusText: error.statusText,
+          message: error.message,
+          error: error.error,
+          url: error.url
+        });
+        
+        // Establecer valores por defecto en caso de error
+        this.myBeds = [];
+        this.patients = [];
+        this.filteredPatients = [];
         this.assignedPatientsCount = 0;
         this.pendingTasksCount = 0;
         this.medicationsToday = 0;
+        
+        // Mostrar mensaje de error más descriptivo
+        if (error.status === 0) {
+          this.toastService.error('No se puede conectar al servidor. Verifica que el backend esté corriendo en http://localhost:3000');
+        } else if (error.status === 401) {
+          this.toastService.error('Sesión expirada. Por favor inicia sesión nuevamente.');
+          this.logout();
+        } else if (error.status === 403) {
+          this.toastService.error('No tienes permisos para acceder a estos datos.');
+        } else {
+          // Mostrar detalles completos del error en desarrollo
+          const errorMsg = error.error?.message || error.message || 'Error desconocido';
+          this.toastService.error(`Error al cargar datos: ${errorMsg}. Por favor recarga la página.`);
+        }
       }
     });
+  }
 
-    this.nurseService.getTodayTasks().subscribe({
-      next: (tasks) => {
-        this.allTasksGroupedByHour = tasks;
-        
-        // Recalcular tareas pendientes basadas en las tareas cargadas
-        const allTasks = tasks.flatMap(group => group.tasks || []);
+  private loadSecondaryData(): void {
+    console.log('🔄 Cargando datos secundarios (tareas y medicamentos)...');
+    
+    // Cargar tareas y medicamentos en paralelo (datos menos críticos)
+    forkJoin({
+      tasks: this.nurseService.getTodayTasks(),
+      medications: this.nurseService.getMedicationsForPharmacy()
+    }).subscribe({
+      next: ({ tasks, medications }) => {
+        console.log('✅ Datos secundarios recibidos:', { 
+          tasks: tasks?.length || 0, 
+          medications: medications?.length || 0 
+        });
+
+        // Procesar tareas
+        this.allTasksGroupedByHour = tasks || [];
+        const allTasks = (tasks || []).flatMap(group => group.tasks || []);
         const pendingTasks = allTasks.filter(task => !task.completed && !task.notCompleted);
         this.pendingTasksCount = pendingTasks.length;
-        
         this.applyTasksFilters();
-        
-        setTimeout(() => {
-          const tasksSection = document.getElementById('tasks-section');
-          if (tasksSection) {
-            tasksSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }
-        }, 100);
-      },
-      error: (error) => {
-        console.error('Error cargando tareas:', error);
-        this.pendingTasksCount = 0;
-      }
-    });
 
-    this.nurseService.getMedicationsForPharmacy().subscribe({
-      next: (meds) => {
-        this.medicationsForPharmacy = meds;
-        this.uniqueMedicationsCount = meds.length;
-        this.totalDosesToday = meds.reduce((sum, med) => sum + med.totalDoses, 0);
-        
-        // Recalcular medicamentos de hoy basado en los medicamentos cargados
+        console.log(`⏰ Tareas procesadas: ${allTasks.length}, Pendientes: ${pendingTasks.length}`);
+
+        // Procesar medicamentos
+        this.medicationsForPharmacy = medications || [];
+        this.uniqueMedicationsCount = (medications || []).length;
+        this.totalDosesToday = (medications || []).reduce((sum, med) => sum + (med.totalDoses || 0), 0);
         this.medicationsToday = this.totalDosesToday;
+
+        console.log(`💊 Medicamentos procesados: ${this.uniqueMedicationsCount}, Total dosis: ${this.totalDosesToday}`);
       },
       error: (error) => {
-        console.error('Error cargando medicamentos:', error);
-        this.medicationsToday = 0;
+        console.error('❌ Error cargando datos secundarios:', error);
+        console.error('Detalles del error:', {
+          status: error.status,
+          statusText: error.statusText,
+          message: error.message,
+          error: error.error
+        });
+        
+        // Establecer valores por defecto
+        this.allTasksGroupedByHour = [];
+        this.tasksGroupedByHour = [];
+        this.medicationsForPharmacy = [];
+        this.uniqueMedicationsCount = 0;
+        this.totalDosesToday = 0;
+        // No mostrar alerta para datos secundarios, solo loggear
       }
     });
   }
@@ -312,9 +418,9 @@ export class NurseDashboardComponent implements OnInit {
       // Filtro por categoría
       let matchesFilter = true;
       if (this.selectedFilter === 'medications') {
-        matchesFilter = patient.medications.length > 0;
+        matchesFilter = (patient.medications?.length || 0) > 0;
       } else if (this.selectedFilter === 'tasks') {
-        matchesFilter = patient.pendingTasks > 0;
+        matchesFilter = (patient.pendingTasks || 0) > 0;
       } else if (this.selectedFilter === 'critical') {
         matchesFilter = patient.priority === 'critical';
       }
@@ -334,8 +440,14 @@ export class NurseDashboardComponent implements OnInit {
     this.selectedPatient = patient;
     this.activeTab = activeTab || 'medications';
     this.showPatientModal = true;
+    // Cargar detalles completos del paciente desde la BD (incluye observaciones, alergias, necesidades especiales)
+    this.loadPatientDetails(patient.id);
     // Cargar historial del paciente
     this.loadPatientHistory(patient.id);
+    // Resetear estados de edición
+    this.editingMedicalObservations = false;
+    this.editingAllergies = false;
+    this.editingSpecialNeeds = false;
   }
 
   closePatientModal(): void {
@@ -356,91 +468,139 @@ export class NurseDashboardComponent implements OnInit {
     this.activeTab = 'observations';
   }
 
+  getPendingMedicationSchedule(medication: any): any {
+    if (!this.selectedPatient || !medication) {
+      return null;
+    }
+
+    const todaySchedules = this.selectedPatient.todaySchedule?.filter(
+      (item: any) => 
+        item.type === 'medication' && 
+        item.medication === medication.name && 
+        !item.completed && 
+        !item.notCompleted &&
+        item.scheduleId
+    ) || [];
+
+    return todaySchedules.length > 0 ? todaySchedules[0] : null;
+  }
+
   markMedicationGiven(medication: any): void {
-    if (!medication.scheduleId) {
-      alert('⚠️ Error: No se encontró el ID del horario del medicamento');
+    if (!this.selectedPatient || !medication) {
+      this.toastService.error('Error: Información no disponible');
       return;
     }
-    
-    // Guardar directamente sin mostrar prompt
-    this.nurseService.markMedicationGiven(medication.scheduleId, '').subscribe({
+
+    const scheduleToComplete = this.getPendingMedicationSchedule(medication);
+
+    if (!scheduleToComplete || !scheduleToComplete.scheduleId) {
+      this.toastService.warning('No se encontró una dosis pendiente para hoy de este medicamento');
+      return;
+    }
+
+    this.nurseService.completeTask(scheduleToComplete.scheduleId).subscribe({
       next: () => {
-        alert(`✅ Medicamento ${medication.name} marcado como administrado`);
-        // Recargar datos del paciente para actualizar la lista
-        if (this.selectedPatient) {
-          this.nurseService.getPatientDetails(parseInt(this.selectedPatient.id)).subscribe({
-            next: (patient) => {
-              if (this.selectedPatient) {
-                this.selectedPatient.medicationsDetail = patient.medicationsDetail || [];
-                this.selectedPatient.todaySchedule = patient.todaySchedule || [];
-              }
-            }
-          });
+        const adminTime = new Date().toLocaleString('es-ES');
+        this.toastService.success(`Medicamento ${medication.name || 'medicamento'} marcado como ADMINISTRADO. Hora: ${adminTime}`);
+        if (this.selectedPatient && this.selectedPatient.id) {
+          this.loadPatientDetails(this.selectedPatient.id);
+          this.loadPatientHistory(this.selectedPatient.id);
         }
+        this.loadNurseData();
       },
       error: (error) => {
-        console.error('Error marcando medicamento:', error);
-        alert('Error al registrar el medicamento. Por favor intente nuevamente.');
+        const errorMsg = error?.error?.message || 'Error desconocido';
+        this.toastService.error(`Error al registrar el medicamento: ${errorMsg}`);
       }
     });
   }
 
-  completeScheduleItem(item: any): void {
-    if (item.scheduleId) {
-      this.nurseService.recordAdministration({
-        scheduleId: item.scheduleId,
-        status: 'administered',
-        notes: undefined
-      }).subscribe({
-        next: () => {
-          item.completed = true;
-          alert(`✅ ${item.type === 'medication' ? 'Medicamento administrado' : 'Tratamiento realizado'}: ${item.description}`);
-          this.loadNurseData();
-          if (this.selectedPatient) {
-            this.loadPatientHistory(this.selectedPatient.id);
-          }
-        },
-        error: (error) => {
-          console.error('Error registrando administración:', error);
-          alert('Error al registrar la administración');
-        }
-      });
+  markMedicationAsNotAdministered(medication: any): void {
+    if (!this.selectedPatient || !medication) {
+      this.toastService.error('Error: Información no disponible');
+      return;
     }
+
+    const scheduleToMark = this.getPendingMedicationSchedule(medication);
+
+    if (!scheduleToMark) {
+      this.toastService.warning('No se encontró una dosis pendiente para hoy de este medicamento');
+      return;
+    }
+
+    if (!scheduleToMark.scheduleId) {
+      this.toastService.error('Error: No se pudo identificar el horario del medicamento');
+      return;
+    }
+
+    this.selectedTaskForNotCompleted = {
+      ...scheduleToMark,
+      scheduleId: scheduleToMark.scheduleId,
+      id: scheduleToMark.scheduleId,
+      medication: medication.name,
+      dosage: medication.dosage,
+      patientName: this.selectedPatient.name,
+      description: scheduleToMark.description || `Administrar ${medication.name}`
+    };
+    
+    this.notCompletedReason = '';
+    this.showNotCompletedModal = true;
+  }
+
+  completeScheduleItem(item: any): void {
+    if (!item || !item.scheduleId) {
+      this.toastService.error('Error: Información de horario no válida');
+      return;
+    }
+
+    this.nurseService.completeTask(item.scheduleId).subscribe({
+      next: () => {
+        const actionType = item.type === 'medication' ? 'Medicamento administrado' : 'Tratamiento realizado';
+        this.toastService.success(`${actionType}: ${item.description || item.medication || 'Item'}. Hora: ${new Date().toLocaleString('es-ES')}`);
+        
+        item.completed = true;
+        item.completedAt = new Date().toLocaleString('es-ES');
+        item.status = 'completed';
+        item.notCompleted = false;
+        
+        if (this.selectedPatient && this.selectedPatient.id) {
+          this.loadPatientDetails(this.selectedPatient.id);
+          this.loadPatientHistory(this.selectedPatient.id);
+        }
+        this.loadNurseData();
+      },
+      error: (error) => {
+        const errorMsg = error?.error?.message || 'Error desconocido';
+        this.toastService.error(`Error al registrar la administración: ${errorMsg}`);
+      }
+    });
   }
 
   markScheduleAsNotAdministered(item: any): void {
-    const reason = prompt(`¿Por qué no se ${item.type === 'medication' ? 'administró el medicamento' : 'realizó el tratamiento'}?\n\n${item.description}`);
-    if (reason && reason.trim() && item.scheduleId) {
-      this.nurseService.recordAdministration({
-        scheduleId: item.scheduleId,
-        status: 'not_administered',
-        reasonNotAdministered: reason.trim(),
-        notes: undefined
-      }).subscribe({
-        next: () => {
-          item.completed = false;
-          item.notCompleted = true;
-          item.notCompletedReason = reason.trim();
-          alert(`⚠️ Registrado: No se ${item.type === 'medication' ? 'administró' : 'realizó'}`);
-          // Recargar datos y historial
-          this.loadNurseData();
-          if (this.selectedPatient) {
-            this.loadPatientHistory(this.selectedPatient.id);
-          }
-        },
-        error: (error) => {
-          console.error('Error registrando no administración:', error);
-          alert('Error al registrar');
-        }
-      });
+    if (!item || !item.scheduleId) {
+      alert('⚠️ Error: Información de horario no válida');
+      return;
     }
+    
+    // Usar modal en lugar de prompt
+    this.selectedTaskForNotCompleted = item;
+    this.notCompletedReason = '';
+    this.showNotCompletedModal = true;
   }
 
-  loadPatientHistory(patientId: string): void {
-    this.nurseService.getPatientHistory(parseInt(patientId)).subscribe({
+  loadPatientHistory(patientId: string | number): void {
+    const idNum = typeof patientId === 'string' ? parseInt(patientId, 10) : patientId;
+    if (isNaN(idNum)) {
+      console.error('❌ ID de paciente inválido para historial:', patientId);
+      return;
+    }
+
+    this.nurseService.getPatientHistory(idNum).subscribe({
       next: (history) => {
         if (this.selectedPatient) {
-          this.selectedPatient.treatmentHistory = history.map((h: any) => ({
+          // Ordenar historial por fecha y hora (más reciente primero)
+          const sortedHistory = history
+            .map((h: any) => ({
             date: h.date,
             time: h.time,
             type: h.type,
@@ -462,34 +622,44 @@ export class NurseDashboardComponent implements OnInit {
   }
 
   saveObservation(): void {
-    if (this.newObservation.trim() && this.selectedPatient) {
-      this.nurseService.saveObservation(parseInt(this.selectedPatient.id), this.newObservation.trim()).subscribe({
-        next: () => {
-          alert(`✅ Observación guardada para ${this.selectedPatient?.name}`);
-          this.newObservation = '';
-          
-          // Recargar datos del paciente
-          if (this.selectedPatient) {
-            this.nurseService.getPatientDetails(parseInt(this.selectedPatient.id)).subscribe({
-              next: (patient) => {
-                if (this.selectedPatient) {
-                  this.selectedPatient.generalObservations = patient.generalObservations;
-                }
-              }
-            });
-          }
-        },
-        error: (error) => {
-          console.error('Error guardando observación:', error);
-          alert('Error al guardar la observación. Por favor intente nuevamente.');
-        }
-      });
+    // Prevenir múltiples clics
+    if (this.isSavingObservation) {
+      return;
     }
+
+    if (!this.newObservation.trim()) {
+      this.toastService.warning('Por favor escribe una observación antes de guardar');
+      return;
+    }
+
+    if (!this.selectedPatient) {
+      this.toastService.error('Error: No hay paciente seleccionado');
+      return;
+    }
+
+    this.isSavingObservation = true;
+    const observationText = this.newObservation.trim();
+
+    this.nurseService.saveObservation(parseInt(this.selectedPatient.id), observationText).subscribe({
+      next: () => {
+        this.toastService.success(`Observación guardada para ${this.selectedPatient?.name}`);
+        this.newObservation = '';
+        // Recargar datos completos del paciente desde la BD
+        this.loadPatientDetails(this.selectedPatient!.id);
+        this.isSavingObservation = false;
+      },
+      error: (error) => {
+        this.toastService.error('Error al guardar la observación. Por favor intente nuevamente.');
+        this.isSavingObservation = false;
+      }
+    });
   }
 
   startEditingMedicalObservations(): void {
     if (this.selectedPatient) {
-      this.editedMedicalObservations = this.selectedPatient.medicalObservations || '';
+      // Cargar el valor actual desde la BD si está disponible
+      const currentValue = this.selectedPatient.medicalObservations;
+      this.editedMedicalObservations = currentValue !== undefined && currentValue !== null ? currentValue : '';
       this.editingMedicalObservations = true;
     }
   }
@@ -501,17 +671,16 @@ export class NurseDashboardComponent implements OnInit {
 
   saveMedicalObservations(): void {
     if (this.selectedPatient && this.editedMedicalObservations !== undefined) {
-      this.nurseService.updateMedicalObservations(parseInt(this.selectedPatient.id), this.editedMedicalObservations.trim()).subscribe({
+      const observationsToSave = this.editedMedicalObservations.trim();
+      this.nurseService.updateMedicalObservations(parseInt(this.selectedPatient.id), observationsToSave).subscribe({
         next: () => {
-          if (this.selectedPatient) {
-            this.selectedPatient.medicalObservations = this.editedMedicalObservations.trim();
-          }
+          // Recargar datos del paciente desde la BD
+          this.loadPatientDetails(this.selectedPatient!.id);
           this.editingMedicalObservations = false;
-          alert('✅ Observaciones médicas actualizadas exitosamente');
+          this.toastService.success('Observaciones médicas actualizadas exitosamente');
         },
         error: (error) => {
-          console.error('Error actualizando observaciones médicas:', error);
-          alert('Error al actualizar las observaciones médicas. Por favor intente nuevamente.');
+          this.toastService.error('Error al actualizar las observaciones médicas. Por favor intente nuevamente.');
         }
       });
     }
@@ -519,7 +688,9 @@ export class NurseDashboardComponent implements OnInit {
 
   startEditingAllergies(): void {
     if (this.selectedPatient) {
-      this.editedAllergies = this.selectedPatient.allergies || '';
+      // Cargar el valor actual desde la BD si está disponible
+      const currentValue = this.selectedPatient.allergies;
+      this.editedAllergies = currentValue !== undefined && currentValue !== null ? currentValue : '';
       this.editingAllergies = true;
     }
   }
@@ -531,17 +702,16 @@ export class NurseDashboardComponent implements OnInit {
 
   saveAllergies(): void {
     if (this.selectedPatient && this.editedAllergies !== undefined) {
-      this.nurseService.updateAllergies(parseInt(this.selectedPatient.id), this.editedAllergies.trim()).subscribe({
+      const allergiesToSave = this.editedAllergies.trim();
+      this.nurseService.updateAllergies(parseInt(this.selectedPatient.id), allergiesToSave).subscribe({
         next: () => {
-          if (this.selectedPatient) {
-            this.selectedPatient.allergies = this.editedAllergies.trim() || 'Ninguna conocida';
-          }
+          // Recargar datos del paciente desde la BD
+          this.loadPatientDetails(this.selectedPatient!.id);
           this.editingAllergies = false;
-          alert('✅ Alergias actualizadas exitosamente');
+          this.toastService.success('Alergias actualizadas exitosamente');
         },
         error: (error) => {
-          console.error('Error actualizando alergias:', error);
-          alert('Error al actualizar las alergias. Por favor intente nuevamente.');
+          this.toastService.error('Error al actualizar las alergias. Por favor intente nuevamente.');
         }
       });
     }
@@ -549,7 +719,9 @@ export class NurseDashboardComponent implements OnInit {
 
   startEditingSpecialNeeds(): void {
     if (this.selectedPatient) {
-      this.editedSpecialNeeds = this.selectedPatient.specialNeeds || '';
+      // Cargar el valor actual desde la BD si está disponible
+      const currentValue = this.selectedPatient.specialNeeds;
+      this.editedSpecialNeeds = currentValue !== undefined && currentValue !== null ? currentValue : '';
       this.editingSpecialNeeds = true;
     }
   }
@@ -561,17 +733,16 @@ export class NurseDashboardComponent implements OnInit {
 
   saveSpecialNeeds(): void {
     if (this.selectedPatient && this.editedSpecialNeeds !== undefined) {
-      this.nurseService.updateSpecialNeeds(parseInt(this.selectedPatient.id), this.editedSpecialNeeds.trim()).subscribe({
+      const specialNeedsToSave = this.editedSpecialNeeds.trim();
+      this.nurseService.updateSpecialNeeds(parseInt(this.selectedPatient.id), specialNeedsToSave).subscribe({
         next: () => {
-          if (this.selectedPatient) {
-            this.selectedPatient.specialNeeds = this.editedSpecialNeeds.trim() || 'Ninguna';
-          }
+          // Recargar datos del paciente desde la BD
+          this.loadPatientDetails(this.selectedPatient!.id);
           this.editingSpecialNeeds = false;
-          alert('✅ Necesidades especiales actualizadas exitosamente');
+          this.toastService.success('Necesidades especiales actualizadas exitosamente');
         },
         error: (error) => {
-          console.error('Error actualizando necesidades especiales:', error);
-          alert('Error al actualizar las necesidades especiales. Por favor intente nuevamente.');
+          this.toastService.error('Error al actualizar las necesidades especiales. Por favor intente nuevamente.');
         }
       });
     }
@@ -593,8 +764,134 @@ export class NurseDashboardComponent implements OnInit {
       .filter(obs => obs.length > 0);
   }
 
-  printPatientInfo(): void {
-    window.print();
+  /**
+   * Filtra el historial según el filtro seleccionado
+   */
+  getFilteredHistory(): TreatmentRecord[] {
+    if (!this.selectedPatient?.treatmentHistory || this.selectedPatient.treatmentHistory.length === 0) {
+      return [];
+    }
+
+    let filtered = [...this.selectedPatient.treatmentHistory];
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    now.setMinutes(0, 0, 0);
+
+    switch (this.historyFilter) {
+      case 'today':
+        // Normalizar fecha de hoy para comparación
+        const todayStr = now.toLocaleDateString('es-ES');
+        // Comparar normalizando ambas fechas
+        filtered = filtered.filter(r => {
+          if (!r.date) return false;
+          // Normalizar formato de fecha para comparación
+          const recordDateStr = r.date.trim();
+          return recordDateStr === todayStr;
+        });
+        break;
+      case 'week':
+        const weekAgo = new Date(now);
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        weekAgo.setHours(0, 0, 0, 0);
+        filtered = filtered.filter(r => {
+          if (!r.date) return false;
+          try {
+            const parts = r.date.split('/');
+            if (parts.length === 3) {
+              const recordDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+              recordDate.setHours(0, 0, 0, 0);
+              return recordDate >= weekAgo;
+            }
+          } catch (e) {
+          }
+          return false;
+        });
+        break;
+      case 'month':
+        const monthAgo = new Date(now);
+        monthAgo.setMonth(monthAgo.getMonth() - 1);
+        monthAgo.setHours(0, 0, 0, 0);
+        filtered = filtered.filter(r => {
+          if (!r.date) return false;
+          try {
+            const parts = r.date.split('/');
+            if (parts.length === 3) {
+              const recordDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+              recordDate.setHours(0, 0, 0, 0);
+              return recordDate >= monthAgo;
+            }
+          } catch (e) {
+          }
+          return false;
+        });
+        break;
+      case 'all':
+      default:
+        break;
+    }
+
+    return filtered;
+  }
+
+  getHistoryGroupedByDay(): { date: string; records: TreatmentRecord[] }[] {
+    const filteredHistory = this.getFilteredHistory();
+    
+    if (filteredHistory.length === 0) {
+      return [];
+    }
+
+    const grouped: { [key: string]: TreatmentRecord[] } = {};
+    
+    filteredHistory.forEach(record => {
+      const date = record.date || 'Sin fecha';
+      if (!grouped[date]) {
+        grouped[date] = [];
+      }
+      grouped[date].push(record);
+    });
+
+    // Convertir a array y ordenar por fecha (más reciente primero)
+    return Object.keys(grouped)
+      .map(date => ({
+        date,
+        records: grouped[date].sort((a, b) => {
+          // Ordenar por hora dentro del mismo día (más reciente primero)
+          const timeA = a.time || '00:00';
+          const timeB = b.time || '00:00';
+          return timeB.localeCompare(timeA);
+        })
+      }))
+      .sort((a, b) => {
+        // Ordenar por fecha (más reciente primero)
+        try {
+          const dateA = new Date(a.date.split('/').reverse().join('-'));
+          const dateB = new Date(b.date.split('/').reverse().join('-'));
+          return dateB.getTime() - dateA.getTime();
+        } catch {
+          return 0;
+        }
+      });
+  }
+
+  /**
+   * Obtiene el conteo de administrados para un día
+   */
+  getAdministeredCount(records: TreatmentRecord[]): number {
+    return records.filter(r => r.status === 'administered').length;
+  }
+
+  /**
+   * Obtiene el conteo de no administrados para un día
+   */
+  getNotAdministeredCount(records: TreatmentRecord[]): number {
+    return records.filter(r => r.status === 'not_administered' || r.status === 'missed').length;
+  }
+
+  /**
+   * Obtiene la fecha mínima para el input de fecha (hoy)
+   */
+  getMinDate(): string {
+    return new Date().toISOString().split('T')[0];
   }
 
   // ========== FUNCIONES DE LAS STAT CARDS ==========
@@ -645,19 +942,16 @@ export class NurseDashboardComponent implements OnInit {
 
   // ========== FUNCIONES DE FARMACIA ==========
   updatePharmacyRequest(): void {
-    // Actualizar UI cuando se marca/desmarca checkbox
-    console.log('Solicitud de farmacia actualizada');
   }
 
   sendPharmacyRequest(): void {
     const requestedMeds = this.medicationsForPharmacy.filter(m => m.requested);
     
     if (requestedMeds.length === 0) {
-      alert('⚠️ Selecciona al menos un medicamento para solicitar');
+      this.toastService.warning('Selecciona al menos un medicamento para solicitar');
       return;
     }
 
-    console.log('📤 Enviando solicitudes a farmacia:', requestedMeds);
 
     const requests = requestedMeds.map(med => {
       const patientsInfo = med.patients.map((p: { patientName: string; patientId: number; bedNumber: string; areaName: string }) => ({
@@ -676,44 +970,25 @@ export class NurseDashboardComponent implements OnInit {
         notes: `Solicitud para ${med.patientsCount} paciente(s) del área ${med.patients[0]?.areaName || 'N/A'}`
       };
 
-      console.log('📋 Datos de solicitud:', requestData);
       return requestData;
     });
 
     const requestObservables = requests.map(req => {
-      console.log('🔄 Enviando solicitud:', req);
       return this.pharmacyService.createMedicationRequest(req);
     });
 
-    console.log(`📨 Enviando ${requestObservables.length} solicitud(es) a la API...`);
-
     forkJoin(requestObservables).subscribe({
       next: (responses) => {
-        console.log('✅ Respuestas recibidas del servidor:', responses);
         const successCount = responses.length;
-        const medsList = requestedMeds.map(m => `${m.name} ${m.dosage} (${m.totalDoses} dosis)`).join('\n');
-        alert(`✅ ${successCount} solicitud(es) enviada(s) a farmacia:\n\n${medsList}\n\nTotal: ${successCount} medicamentos`);
+        const medsList = requestedMeds.map(m => `${m.name} ${m.dosage} (${m.totalDoses} dosis)`).join(', ');
+        this.toastService.success(`${successCount} solicitud(es) enviada(s) a farmacia. Total: ${successCount} medicamentos`);
         
-        // Desmarcar todos los medicamentos seleccionados
         requestedMeds.forEach(m => m.requested = false);
-        
-        // Recargar datos para actualizar la lista
         this.loadNurseData();
-        
-        console.log('✅ Solicitudes enviadas exitosamente:', responses);
       },
       error: (error) => {
-        console.error('❌ Error enviando solicitudes:', error);
-        console.error('Detalles del error:', {
-          status: error.status,
-          statusText: error.statusText,
-          error: error.error,
-          message: error.message,
-          url: error.url
-        });
         const errorMessage = error.error?.message || error.message || 'Error desconocido';
-        const errorDetails = error.error?.error || '';
-        alert(`❌ Error al enviar las solicitudes:\n\n${errorMessage}${errorDetails ? '\n' + errorDetails : ''}\n\nPor favor, intenta de nuevo.`);
+        this.toastService.error(`Error al enviar las solicitudes: ${errorMessage}`);
       }
     });
   }
@@ -723,12 +998,14 @@ export class NurseDashboardComponent implements OnInit {
     const currentHour = now.getHours();
     
     // Empezar con todas las tareas
-    let filteredTasks = [...this.allTasksGroupedByHour];
+    let filteredTasks = [...(this.allTasksGroupedByHour || [])];
 
     // 1. Filtro por hora
     if (this.tasksHourFilter !== 'all') {
       filteredTasks = filteredTasks.filter(group => {
+        if (!group.hour) return false;
         const hour = parseInt(group.hour.split(':')[0]);
+        if (isNaN(hour)) return false;
 
         if (this.tasksHourFilter === 'current') {
           return hour >= currentHour;
@@ -753,14 +1030,14 @@ export class NurseDashboardComponent implements OnInit {
 
     // 2. Filtro por paciente
     if (this.tasksPatientFilter) {
-      const selectedPatient = this.patients.find(p => p.id === this.tasksPatientFilter);
+      const selectedPatient = (this.patients || []).find(p => p.id === this.tasksPatientFilter);
       const patientName = selectedPatient?.name;
       
       if (patientName) {
         filteredTasks = filteredTasks.map(group => ({
           ...group,
-          tasks: group.tasks.filter((task: any) => task.patientName === patientName)
-        })).filter(group => group.tasks.length > 0);
+          tasks: (group.tasks || []).filter((task: any) => task.patientName === patientName)
+        })).filter(group => (group.tasks || []).length > 0);
       }
     }
 
@@ -791,8 +1068,11 @@ export class NurseDashboardComponent implements OnInit {
       description: '',
       scheduleType: 'recurring',
       date: '',
+      times: ['08:00'],
       time: '08:00',
       daysOfWeek: [],
+      duration: 4,
+      durationUnit: 'weeks',
       notes: ''
     };
     this.selectedTreatmentDays = [];
@@ -801,16 +1081,33 @@ export class NurseDashboardComponent implements OnInit {
 
   closeAddTreatmentModal(): void {
     this.showAddTreatmentModal = false;
+    this.isAddingTreatment = false;
     this.newTreatment = {
       patientId: '',
       description: '',
       scheduleType: 'recurring',
       date: '',
+      times: ['08:00'],
       time: '08:00',
       daysOfWeek: [],
+      duration: 4,
+      durationUnit: 'weeks',
       notes: ''
     };
     this.selectedTreatmentDays = [];
+  }
+
+  addTreatmentTime(): void {
+    if (!this.newTreatment.times) {
+      this.newTreatment.times = ['08:00'];
+    }
+    this.newTreatment.times.push('08:00');
+  }
+
+  removeTreatmentTime(index: number): void {
+    if (this.newTreatment.times && this.newTreatment.times.length > 1) {
+      this.newTreatment.times.splice(index, 1);
+    }
   }
 
   getDaysOfWeek(): string[] {
@@ -877,8 +1174,24 @@ export class NurseDashboardComponent implements OnInit {
   }
 
   confirmAddTreatment(): void {
-    if (!this.newTreatment.patientId || !this.newTreatment.description || !this.newTreatment.time) {
+    // Prevenir múltiples clics
+    if (this.isAddingTreatment) {
+      return;
+    }
+
+    // Validar campos básicos
+    if (!this.newTreatment.patientId || !this.newTreatment.description) {
       alert('⚠️ Por favor complete todos los campos obligatorios');
+      return;
+    }
+
+    // Validar horarios
+    const timesToUse = this.newTreatment.times && this.newTreatment.times.length > 0 
+      ? this.newTreatment.times 
+      : (this.newTreatment.time ? [this.newTreatment.time] : []);
+    
+    if (timesToUse.length === 0) {
+      alert('⚠️ Por favor agregue al menos un horario');
       return;
     }
 
@@ -887,43 +1200,64 @@ export class NurseDashboardComponent implements OnInit {
       return;
     }
 
-    if (this.newTreatment.scheduleType === 'recurring' && this.newTreatment.daysOfWeek.length === 0) {
+    if (this.newTreatment.scheduleType === 'recurring' && (!this.newTreatment.daysOfWeek || this.newTreatment.daysOfWeek.length === 0)) {
       alert('⚠️ Por favor seleccione al menos un día de la semana');
       return;
     }
+
+    // Validar que daysOfWeek sea un array válido
+    if (this.newTreatment.scheduleType === 'recurring' && !Array.isArray(this.newTreatment.daysOfWeek)) {
+      alert('⚠️ Error: Los días seleccionados no son válidos');
+      return;
+    }
+
+    this.isAddingTreatment = true;
 
     const treatmentData: any = {
       patientId: parseInt(this.newTreatment.patientId),
       description: this.newTreatment.description,
       scheduleType: this.newTreatment.scheduleType,
-      time: this.newTreatment.time,
       notes: this.newTreatment.notes || ''
     };
 
     if (this.newTreatment.scheduleType === 'single') {
       treatmentData.date = this.newTreatment.date;
+      // Para single, usar el primer horario de times o time
+      treatmentData.time = timesToUse[0];
+      treatmentData.times = timesToUse; // También enviar times para compatibilidad
     } else {
-      treatmentData.daysOfWeek = this.newTreatment.daysOfWeek;
+      // Para recurrente, enviar times (array) y días
+      treatmentData.times = timesToUse;
+      treatmentData.time = timesToUse[0]; // También enviar time para compatibilidad
+      // Asegurar que daysOfWeek sea un array de números (0-6)
+      treatmentData.daysOfWeek = Array.isArray(this.newTreatment.daysOfWeek) 
+        ? this.newTreatment.daysOfWeek.map((d: any) => typeof d === 'number' ? d : parseInt(d))
+        : [];
+      treatmentData.duration = this.newTreatment.duration || 4;
+      treatmentData.durationUnit = this.newTreatment.durationUnit || 'weeks';
     }
+
 
     this.nurseService.addTreatment(treatmentData).subscribe({
       next: (response) => {
         const message = this.newTreatment.scheduleType === 'single' 
-          ? '✅ Tratamiento agregado exitosamente'
+          ? `✅ Tratamiento agregado exitosamente: ${response.count || response.schedules?.length || 0} schedule(s) creado(s)`
           : `✅ Tratamiento recurrente agregado: ${response.count || response.schedules?.length || 0} schedule(s) creado(s)`;
         alert(message);
         this.closeAddTreatmentModal();
+        this.isAddingTreatment = false;
         this.loadNurseData();
       },
       error: (error) => {
         console.error('Error agregando tratamiento:', error);
-        alert('❌ Error al agregar tratamiento');
+        const errorMessage = error?.error?.message || error?.error?.error || 'Error desconocido';
+        alert(`❌ Error al agregar tratamiento: ${errorMessage}\n\nPor favor intente nuevamente.`);
+        this.isAddingTreatment = false;
       }
     });
   }
 
   openAddMedicationFromTasks(): void {
-    // Abrir modal sin paciente pre-seleccionado
     if (this.patients.length === 0) {
       alert('⚠️ No hay pacientes disponibles');
       return;
@@ -934,23 +1268,76 @@ export class NurseDashboardComponent implements OnInit {
   }
 
   completeTask(task: any): void {
+    if (!task || !task.id) {
+      alert('⚠️ Error: Información de tarea no válida');
+      return;
+    }
+
     this.nurseService.completeTask(task.id).subscribe({
       next: () => {
         task.completed = true;
         task.completedAt = new Date().toLocaleString('es-ES');
         task.status = 'completed';
-        alert(`✅ Tarea completada: ${task.description}`);
+        this.toastService.success(`Tarea completada: ${task.description || 'Tarea'}`);
         // Actualizar contadores
         this.pendingTasksCount = Math.max(0, this.pendingTasksCount - 1);
+        
+        // Si el modal del paciente está abierto, recargar historial y detalles
+        if (this.selectedPatient && this.showPatientModal) {
+          this.loadPatientDetails(this.selectedPatient.id);
+          this.loadPatientHistory(this.selectedPatient.id);
+        }
+        // Recargar tareas para actualizar la vista
+        this.loadNurseData();
       },
       error: (error) => {
-        console.error('Error completando tarea:', error);
-        alert('Error al completar la tarea. Por favor intente nuevamente.');
+        this.toastService.error('Error al completar la tarea. Por favor intente nuevamente.');
+      }
+    });
+  }
+
+  /**
+   * Cargar detalles del paciente desde la BD
+   */
+  /**
+   * Cargar detalles completos del paciente desde la BD
+   */
+  loadPatientDetails(patientId: string | number): void {
+    const idNum = typeof patientId === 'string' ? parseInt(patientId, 10) : patientId;
+    if (isNaN(idNum)) {
+      console.error('❌ ID de paciente inválido:', patientId);
+      this.toastService.error('Error: ID de paciente inválido');
+      return;
+    }
+
+    this.nurseService.getPatientDetails(idNum).subscribe({
+      next: (patient) => {
+        if (this.selectedPatient) {
+          this.selectedPatient.todaySchedule = patient.todaySchedule || [];
+          this.selectedPatient.medicationsDetail = patient.medicationsDetail || [];
+          this.selectedPatient.treatmentHistory = patient.treatmentHistory || [];
+          this.selectedPatient.medicalObservations = patient.medicalObservations !== undefined && patient.medicalObservations !== null ? patient.medicalObservations : '';
+          this.selectedPatient.allergies = patient.allergies !== undefined && patient.allergies !== null ? patient.allergies : '';
+          this.selectedPatient.specialNeeds = patient.specialNeeds !== undefined && patient.specialNeeds !== null ? patient.specialNeeds : '';
+          this.selectedPatient.generalObservations = patient.generalObservations !== undefined && patient.generalObservations !== null ? patient.generalObservations : '';
+          this.editedMedicalObservations = patient.medicalObservations !== undefined && patient.medicalObservations !== null ? patient.medicalObservations : '';
+          this.editedAllergies = patient.allergies !== undefined && patient.allergies !== null ? patient.allergies : '';
+          this.editedSpecialNeeds = patient.specialNeeds !== undefined && patient.specialNeeds !== null ? patient.specialNeeds : '';
+        }
+      },
+      error: (error) => {
+        console.error('❌ Error cargando detalles del paciente:', error);
+        const errorMsg = error?.error?.message || error?.message || 'Error desconocido';
+        this.toastService.error(`Error al cargar los detalles del paciente: ${errorMsg}`);
       }
     });
   }
 
   markTaskAsNotCompleted(task: any): void {
+    if (!task || !task.id) {
+      this.toastService.error('Error: Información de tarea no válida');
+      return;
+    }
     this.selectedTaskForNotCompleted = task;
     this.notCompletedReason = '';
     this.showNotCompletedModal = true;
@@ -963,56 +1350,60 @@ export class NurseDashboardComponent implements OnInit {
   }
 
   confirmNotCompleted(): void {
-    if (this.selectedTaskForNotCompleted && this.notCompletedReason && this.notCompletedReason.trim().length >= 10) {
-      this.nurseService.markTaskAsNotCompleted(this.selectedTaskForNotCompleted.id, this.notCompletedReason.trim()).subscribe({
-        next: () => {
-          this.selectedTaskForNotCompleted.notCompleted = true;
-          this.selectedTaskForNotCompleted.notCompletedReason = this.notCompletedReason.trim();
-          this.selectedTaskForNotCompleted.notCompletedAt = new Date().toLocaleString('es-ES');
-          this.selectedTaskForNotCompleted.status = 'missed';
-          
-          alert(`⚠️ Tarea marcada como no realizada.\nMotivo: ${this.notCompletedReason}`);
-          
-          // Actualizar contadores
-          this.pendingTasksCount = Math.max(0, this.pendingTasksCount - 1);
-          
-          this.closeNotCompletedModal();
-        },
-        error: (error) => {
-          console.error('Error marcando tarea como no completada:', error);
-          alert('Error al guardar. Por favor intente nuevamente.');
-        }
-      });
+    if (!this.selectedTaskForNotCompleted) {
+      this.toastService.error('Error: Información de tarea no válida');
+      return;
     }
+
+    const taskId = this.selectedTaskForNotCompleted.scheduleId || this.selectedTaskForNotCompleted.id;
+    
+    if (!taskId) {
+      this.toastService.error('Error: No se pudo identificar la tarea. Por favor cierre y vuelva a abrir el modal.');
+      return;
+    }
+
+    if (!this.notCompletedReason || this.notCompletedReason.trim().length < 10) {
+      this.toastService.warning('El motivo debe tener al menos 10 caracteres');
+      return;
+    }
+
+    const reason = this.notCompletedReason.trim();
+    const notAdministeredTime = new Date().toLocaleString('es-ES');
+
+    this.nurseService.markTaskAsNotCompleted(taskId, reason).subscribe({
+      next: () => {
+        if (this.selectedTaskForNotCompleted) {
+          this.selectedTaskForNotCompleted.notCompleted = true;
+          this.selectedTaskForNotCompleted.notCompletedReason = reason;
+          this.selectedTaskForNotCompleted.status = 'missed';
+          this.selectedTaskForNotCompleted.completed = false;
+        }
+        
+        const taskDescription = this.selectedTaskForNotCompleted?.description || 
+                               this.selectedTaskForNotCompleted?.medication || 
+                               'Tarea';
+        this.toastService.success(`${taskDescription} marcado como NO ADMINISTRADO. Motivo: ${reason}`);
+        
+        if (this.selectedPatient && this.selectedPatient.id && this.showPatientModal) {
+          this.loadPatientDetails(this.selectedPatient.id);
+          this.loadPatientHistory(this.selectedPatient.id);
+        }
+        
+        this.pendingTasksCount = Math.max(0, this.pendingTasksCount - 1);
+        this.loadNurseData();
+        
+        this.closeNotCompletedModal();
+      },
+      error: (error) => {
+        const errorMsg = error?.error?.message || error?.error?.error || error?.message || 'Error desconocido';
+        this.toastService.error(`Error al guardar en la BD: ${errorMsg}`);
+      }
+    });
   }
 
   postponeTask(task: any): void {
-    const newTime = prompt('¿A qué hora desea posponer esta tarea? (formato HH:MM)', task.time);
-    
-    if (newTime && /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(newTime)) {
-      this.nurseService.postponeTask(task.id, newTime).subscribe({
-        next: () => {
-          task.time = newTime;
-          task.postponed = true;
-          task.originalTime = task.time;
-          alert(`⏱️ Tarea pospuesta para las ${newTime}`);
-          
-          // Recargar tareas
-          this.nurseService.getTodayTasks().subscribe({
-            next: (tasks) => {
-              this.tasksGroupedByHour = tasks;
-              this.filterTasksByCurrentTime();
-            }
-          });
-        },
-        error: (error) => {
-          console.error('Error posponiendo tarea:', error);
-          alert('Error al posponer la tarea. Por favor intente nuevamente.');
-        }
-      });
-    } else if (newTime) {
-      alert('⚠️ Formato de hora inválido. Use HH:MM (ejemplo: 14:30)');
-    }
+    // Usar modal en lugar de prompt
+    this.openPostponeTaskModal(task);
   }
 
   scrollToTop(): void {
@@ -1133,10 +1524,32 @@ export class NurseDashboardComponent implements OnInit {
   }
 
   confirmAddMedication(): void {
+    // Prevenir múltiples clics
+    if (this.isAddingMedication) {
+      return;
+    }
+
     if (!this.selectedPatientForMedication || !this.newMedication.medication || 
         !this.newMedication.dosage || this.newMedication.times.length === 0) {
       alert('⚠️ Por favor complete todos los campos requeridos');
       return;
+    }
+
+    // Validar que se hayan seleccionado días
+    if (this.newMedication.days !== 'all' && (!this.selectedDays || this.selectedDays.length === 0)) {
+      alert('⚠️ Por favor seleccione al menos un día de la semana');
+      return;
+    }
+
+    this.isAddingMedication = true;
+
+    // Asegurar que days sea 'all' o un array de strings con los nombres de los días
+    let daysToSend: string[] | 'all';
+    if (this.newMedication.days === 'all') {
+      daysToSend = 'all';
+    } else {
+      // Usar selectedDays que contiene los valores correctos ('monday', 'tuesday', etc.)
+      daysToSend = this.selectedDays.length > 0 ? this.selectedDays : this.newMedication.days;
     }
 
     const medicationData = {
@@ -1145,23 +1558,26 @@ export class NurseDashboardComponent implements OnInit {
       dosage: this.newMedication.dosage,
       frequency: this.newMedication.frequency,
       times: this.newMedication.times,
-      days: this.newMedication.days,
+      days: daysToSend,
       duration: this.newMedication.duration,
       durationUnit: this.newMedication.durationUnit,
       notes: this.newMedication.notes,
       startDate: new Date()
     };
 
+
     this.nurseService.addMedication(medicationData).subscribe({
       next: (response) => {
-        alert(`✅ Medicamento agregado exitosamente!\n${response.schedulesCreated} dosis programadas.`);
+        alert(`✅ Medicamento agregado exitosamente!\n${response.schedulesCreated || 0} dosis programadas.`);
         this.closeAddMedicationModal();
+        this.isAddingMedication = false;
         // Recargar datos del paciente
         this.loadNurseData();
       },
       error: (error) => {
         console.error('Error agregando medicamento:', error);
         alert('❌ Error al agregar medicamento. Por favor intente nuevamente.');
+        this.isAddingMedication = false;
       }
     });
   }
@@ -1211,13 +1627,6 @@ export class NurseDashboardComponent implements OnInit {
       alert('⚠️ Error: Información del paciente o medicamento no disponible');
       return;
     }
-
-    console.log('Suspender medicamento:', {
-      patientId: this.selectedPatient.id,
-      medication: this.medicationToSuspend.name,
-      reason: this.suspendReason,
-      suspendUntil: suspendUntil
-    });
 
     this.nurseService.suspendMedication(
       parseInt(this.selectedPatient.id),
@@ -1270,20 +1679,66 @@ export class NurseDashboardComponent implements OnInit {
       return;
     }
 
-    console.log('Eliminar medicamento:', {
-      patientId: this.selectedPatient.id,
-      medication: this.medicationToDelete.name,
-      reason: this.deleteReason
+    const patientId = parseInt(this.selectedPatient.id);
+    const medicationName = this.medicationToDelete.name;
+    const reason = this.deleteReason.trim();
+
+    console.log('🗑️ Eliminando medicamento:', {
+      patientId,
+      medication: medicationName,
+      reason
     });
 
-    this.nurseService.deleteMedication(
-      parseInt(this.selectedPatient.id),
-      this.medicationToDelete.name,
-      this.deleteReason.trim()
-    ).subscribe({
+    this.nurseService.deleteMedication(patientId, medicationName, reason).subscribe({
       next: (response) => {
         alert(`🗑️ Medicamento eliminado permanentemente.\n${response.dosesDeleted || 0} dosis eliminadas.`);
         this.closeDeleteMedicationModal();
+        if (this.selectedPatient && this.selectedPatient.id) {
+          this.loadPatientDetails(this.selectedPatient.id);
+        }
+        this.loadNurseData();
+      },
+      error: (error) => {
+        const errorMsg = error?.error?.message || error?.error?.error || 'Error desconocido';
+        alert(`❌ Error al eliminar medicamento: ${errorMsg}\n\nPor favor intente nuevamente.`);
+      }
+    });
+  }
+
+  filterTasksByCurrentTime(): void {
+    this.tasksHourFilter = 'current';
+    this.filterTasksByHour();
+  }
+
+  // ========== FUNCIONES DE REACTIVAR MEDICAMENTO ==========
+  reactivateMedicationModal(medication: any): void {
+    this.medicationToReactivate = medication;
+    this.showReactivateMedicationModal = true;
+  }
+
+  closeReactivateMedicationModal(): void {
+    this.showReactivateMedicationModal = false;
+    this.medicationToReactivate = null;
+  }
+
+  confirmReactivateMedication(): void {
+    if (!this.selectedPatient || !this.medicationToReactivate) {
+      alert('⚠️ Error: Información del paciente o medicamento no disponible');
+      return;
+    }
+
+    console.log('Reactivar medicamento:', {
+      patientId: this.selectedPatient.id,
+      medication: this.medicationToReactivate.name
+    });
+
+    this.nurseService.reactivateMedication(
+      parseInt(this.selectedPatient.id),
+      this.medicationToReactivate.name
+    ).subscribe({
+      next: (response) => {
+        alert(`▶️ Medicamento reactivado exitosamente.\n${response.dosesReactivated || 0} dosis reactivadas.`);
+        this.closeReactivateMedicationModal();
         // Recargar datos del paciente
         if (this.selectedPatient) {
           this.nurseService.getPatientDetails(parseInt(this.selectedPatient.id)).subscribe({
@@ -1297,17 +1752,406 @@ export class NurseDashboardComponent implements OnInit {
         this.loadNurseData();
       },
       error: (error) => {
-        console.error('Error eliminando medicamento:', error);
-        const errorMessage = error.error?.message || 'Error desconocido al eliminar medicamento';
-        alert(`❌ Error al eliminar medicamento: ${errorMessage}`);
+        const errorMessage = error.error?.message || 'Error desconocido al reactivar medicamento';
+        alert(`❌ Error al reactivar medicamento: ${errorMessage}`);
       }
     });
   }
 
-  filterTasksByCurrentTime(): void {
-    // Por defecto, mostrar las próximas 3 horas desde la hora actual
-    this.tasksHourFilter = 'current';
-    this.filterTasksByHour();
+  // ========== FUNCIONES DE POSPONER TAREA ==========
+  openPostponeTaskModal(task: any): void {
+    this.taskToPostpone = task;
+    const today = new Date();
+    this.postponeNewDate = today.toISOString().split('T')[0];
+    this.postponeNewTime = task.time || '08:00';
+    this.showPostponeTaskModal = true;
+  }
+
+  closePostponeTaskModal(): void {
+    this.showPostponeTaskModal = false;
+    this.taskToPostpone = null;
+    this.postponeNewDate = '';
+    this.postponeNewTime = '';
+  }
+
+  confirmPostponeTask(): void {
+    if (!this.taskToPostpone || !this.taskToPostpone.id) {
+      alert('⚠️ Error: Información de tarea no válida');
+      return;
+    }
+
+    if (!this.postponeNewDate || !this.postponeNewTime) {
+      alert('⚠️ Por favor ingrese fecha y hora válidas');
+      return;
+    }
+
+    // Crear fecha completa combinando fecha y hora
+    const newDateTime = new Date(`${this.postponeNewDate}T${this.postponeNewTime}:00`);
+    const now = new Date();
+    
+    if (newDateTime <= now) {
+      alert('⚠️ La fecha y hora deben ser futuras');
+      return;
+    }
+
+    this.nurseService.postponeTask(this.taskToPostpone.id, newDateTime.toISOString()).subscribe({
+      next: () => {
+        alert(`⏱️ Tarea pospuesta para el ${this.postponeNewDate} a las ${this.postponeNewTime}`);
+        
+        this.closePostponeTaskModal();
+        this.loadNurseData();
+      },
+      error: (error) => {
+        alert('Error al posponer la tarea. Por favor intente nuevamente.');
+      }
+    });
+  }
+
+  // ========== FUNCIÓN MEJORADA DE IMPRESIÓN ==========
+  // ========== GESTIÓN DE CAMAS (Reutilizando código del admin) ==========
+  
+  openEditBedModal(bed: BedDisplay): void {
+    if (!bed.id) {
+      this.toastService.warning('No se puede editar esta cama');
+      return;
+    }
+
+    this.selectedBed = { ...bed };
+    this.editBedForm = {
+      bedNumber: bed.bedNumber || '',
+      patientId: bed.patientId || null,
+      isActive: bed.isActive !== undefined ? bed.isActive : true,
+      areaId: bed.areaId || null
+    };
+    
+    // Cargar pacientes del área para asignar
+    this.loadPatientsForBedArea(bed.areaId);
+    this.patientSearchTerm = '';
+    this.showEditBedModal = true;
+  }
+
+  closeEditBedModal(): void {
+    this.showEditBedModal = false;
+    this.selectedBed = null;
+    this.editBedForm = { bedNumber: '', patientId: null, isActive: true, areaId: null };
+    this.patientSearchTerm = '';
+    this.filteredPatientsForBed = [];
+  }
+
+  loadPatientsForBedArea(areaId: number | null | undefined): void {
+    if (!areaId) {
+      this.filteredPatientsForBed = [];
+      return;
+    }
+
+    // Cargar todos los pacientes del área
+    this.adminService.getPatients().subscribe({
+      next: (patients) => {
+        this.allPatientsForBed = patients.filter((p: AdminPatient) => {
+          if (p.isActive === false) return false;
+          // Mostrar pacientes del área o sin cama asignada
+          return p.areaId === areaId || !p.bedId;
+        });
+        this.filteredPatientsForBed = [...this.allPatientsForBed];
+      },
+      error: (error) => {
+        console.error('Error cargando pacientes:', error);
+        this.filteredPatientsForBed = [];
+      }
+    });
+  }
+
+  filterPatientsForBed(): void {
+    if (this.patientSearchTerm.trim()) {
+      const searchLower = this.patientSearchTerm.toLowerCase();
+      this.filteredPatientsForBed = this.allPatientsForBed.filter((patient: AdminPatient) => {
+        const fullName = `${patient.firstName} ${patient.lastName}`.toLowerCase();
+        const identification = (patient.identificationNumber || '').toLowerCase();
+        return fullName.includes(searchLower) || identification.includes(searchLower);
+      });
+    } else {
+      this.filteredPatientsForBed = [...this.allPatientsForBed];
+    }
+  }
+
+  selectPatientForBed(patient: AdminPatient): void {
+    this.editBedForm.patientId = patient.id ? Number(patient.id) : null;
+    this.patientSearchTerm = '';
+    this.filteredPatientsForBed = [];
+  }
+
+  releaseBed(): void {
+    this.confirmationService.confirm({
+      title: 'Liberar Cama',
+      message: '¿Estás seguro de liberar esta cama? El paciente quedará sin cama asignada.',
+      type: 'warning'
+    }).then((confirmed) => {
+      if (confirmed) {
+        this.editBedForm.patientId = null;
+      }
+    });
+  }
+
+  getCurrentPatientName(): string {
+    if (!this.editBedForm.patientId) return '';
+    const patient = this.allPatientsForBed.find((p: AdminPatient) => {
+      const pId = p.id ? Number(p.id) : null;
+      return pId === this.editBedForm.patientId;
+    });
+    return patient ? `${patient.firstName} ${patient.lastName}` : '';
+  }
+
+  getPatientBed(patientId: number | string | null | undefined): BedDisplay | null {
+    if (patientId === null || patientId === undefined) return null;
+    const idNum = typeof patientId === 'string' ? parseInt(patientId, 10) : patientId;
+    if (isNaN(idNum)) return null;
+    return this.myBeds.find(bed => bed.patientId === idNum) || null;
+  }
+
+  saveBedChanges(): void {
+    if (!this.selectedBed || !this.selectedBed.id) {
+      this.toastService.error('Error: Cama no válida');
+      return;
+    }
+
+    if (!this.editBedForm.bedNumber.trim()) {
+      this.toastService.warning('El número de cama es requerido');
+      return;
+    }
+
+    const updateData: any = {
+      bedNumber: this.editBedForm.bedNumber.trim(),
+      isActive: this.editBedForm.isActive
+    };
+
+    // Si hay un paciente seleccionado, asignarlo
+    if (this.editBedForm.patientId) {
+      updateData.patientId = this.editBedForm.patientId;
+    } else {
+      // Si no hay paciente, liberar la cama
+      updateData.patientId = null;
+    }
+
+    if (!this.selectedBed || !this.selectedBed.id) {
+      this.toastService.error('Error: Cama no válida');
+      return;
+    }
+
+    console.log('💾 Guardando cambios de cama:', {
+      bedId: this.selectedBed.id,
+      updateData
+    });
+
+    this.adminService.updateBed(this.selectedBed.id, updateData).subscribe({
+      next: (response) => {
+        console.log('✅ Respuesta del servidor:', response);
+        
+        // Si la respuesta incluye información del paciente, actualizar la cama localmente
+        if (response?.bed && this.selectedBed) {
+          const updatedBedIndex = this.myBeds.findIndex(b => b.id === this.selectedBed?.id);
+          if (updatedBedIndex !== -1) {
+            const bed = this.myBeds[updatedBedIndex];
+            if (response.bed.patient) {
+              bed.patient = {
+                id: response.bed.patient.id?.toString() || '',
+                name: `${response.bed.patient.firstName || ''} ${response.bed.patient.lastName || ''}`,
+                age: response.bed.patient.age || 0,
+                conditions: this.parseConditions(response.bed.patient.medicalObservations || '')
+              };
+              bed.patientId = response.bed.patient.id;
+            } else {
+              bed.patient = null;
+              bed.patientId = null;
+            }
+            console.log('✅ Cama actualizada localmente:', bed);
+          }
+        }
+        
+        this.toastService.success('Cama actualizada exitosamente');
+        this.closeEditBedModal();
+        
+        // Recargar datos después de un pequeño delay para asegurar que la BD se actualizó
+        setTimeout(() => {
+          console.log('🔄 Recargando datos de enfermera...');
+          this.loadNurseData();
+        }, 500);
+      },
+      error: (error) => {
+        console.error('❌ Error actualizando cama:', error);
+        console.error('Detalles del error:', {
+          status: error.status,
+          statusText: error.statusText,
+          message: error.message,
+          error: error.error
+        });
+        const errorMsg = error?.error?.message || error?.message || 'Error al actualizar la cama';
+        this.toastService.error(errorMsg);
+        // Recargar datos incluso si hay error para mostrar el estado actual
+        setTimeout(() => {
+          this.loadNurseData();
+        }, 500);
+      }
+    });
+  }
+
+  printPatientInfo(): void {
+    if (!this.selectedPatient) {
+      alert('⚠️ No hay información del paciente para imprimir');
+      return;
+    }
+
+    // Crear ventana de impresión con contenido formateado
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('⚠️ Por favor permite ventanas emergentes para imprimir');
+      return;
+    }
+
+    const printContent = this.generatePrintContent();
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    
+    // Esperar a que se cargue el contenido antes de imprimir
+    setTimeout(() => {
+      printWindow.print();
+    }, 250);
+  }
+
+  generatePrintContent(): string {
+    if (!this.selectedPatient) return '';
+
+    const patient = this.selectedPatient;
+    const today = new Date().toLocaleDateString('es-ES', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Información del Paciente - ${patient.name}</title>
+  <style>
+    @media print {
+      body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
+      .header { border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
+      .section { margin-bottom: 20px; page-break-inside: avoid; }
+      .section-title { font-size: 16px; font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
+      .info-row { margin: 5px 0; }
+      .label { font-weight: bold; display: inline-block; width: 150px; }
+      table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+      th, td { border: 1px solid #000; padding: 8px; text-align: left; }
+      th { background-color: #f0f0f0; font-weight: bold; }
+      .no-data { color: #666; font-style: italic; }
+    }
+    body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
+    .header { border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
+    .section { margin-bottom: 20px; }
+    .section-title { font-size: 16px; font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
+    .info-row { margin: 5px 0; }
+    .label { font-weight: bold; display: inline-block; width: 150px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #000; padding: 8px; text-align: left; }
+    th { background-color: #f0f0f0; font-weight: bold; }
+    .no-data { color: #666; font-style: italic; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Información del Paciente</h1>
+    <p><strong>Fecha de impresión:</strong> ${today}</p>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Datos Generales</div>
+    <div class="info-row"><span class="label">Nombre:</span> ${patient.name}</div>
+    <div class="info-row"><span class="label">ID:</span> ${patient.id}</div>
+    <div class="info-row"><span class="label">Cama:</span> ${patient.bedNumber}</div>
+    <div class="info-row"><span class="label">Edad:</span> ${patient.age} años</div>
+    <div class="info-row"><span class="label">Diagnóstico:</span> ${patient.diagnosis || 'No especificado'}</div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Observaciones Médicas</div>
+    <p>${patient.medicalObservations || 'Sin observaciones médicas registradas'}</p>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Alergias</div>
+    <p>${patient.allergies || 'Ninguna conocida'}</p>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Necesidades Especiales</div>
+    <p>${patient.specialNeeds || 'Ninguna'}</p>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Medicamentos Activos</div>
+    ${patient.medicationsDetail && patient.medicationsDetail.length > 0 ? `
+    <table>
+      <thead>
+        <tr>
+          <th>Medicamento</th>
+          <th>Dosis</th>
+          <th>Frecuencia</th>
+          <th>Horarios</th>
+          <th>Notas</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${patient.medicationsDetail.map((med: any) => `
+        <tr>
+          <td>${med.name || '—'}</td>
+          <td>${med.dosage || '—'}</td>
+          <td>${med.frequency || '—'}</td>
+          <td>${med.schedules || '—'}</td>
+          <td>${med.notes || '—'}</td>
+        </tr>
+        `).join('')}
+      </tbody>
+    </table>
+    ` : '<p class="no-data">No hay medicamentos registrados</p>'}
+  </div>
+
+  <div class="section">
+    <div class="section-title">Tratamientos de Hoy</div>
+    ${patient.todaySchedule && patient.todaySchedule.length > 0 ? `
+    <table>
+      <thead>
+        <tr>
+          <th>Hora</th>
+          <th>Tipo</th>
+          <th>Descripción</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${patient.todaySchedule.map((item: any) => `
+        <tr>
+          <td>${item.time || '—'}</td>
+          <td>${item.type === 'medication' ? 'Medicamento' : 'Tratamiento'}</td>
+          <td>${item.description || '—'} ${item.dosage ? `(${item.dosage})` : ''}</td>
+          <td>${item.completed ? '✅ Completado' : item.notCompleted ? '⚠️ No realizado' : '⏳ Pendiente'}</td>
+        </tr>
+        `).join('')}
+      </tbody>
+    </table>
+    ` : '<p class="no-data">No hay tratamientos programados para hoy</p>'}
+  </div>
+
+  ${patient.generalObservations ? `
+  <div class="section">
+    <div class="section-title">Observaciones Generales</div>
+    <div style="white-space: pre-wrap;">${patient.generalObservations}</div>
+  </div>
+  ` : ''}
+</body>
+</html>
+    `;
   }
 }
 

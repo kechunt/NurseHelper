@@ -5,10 +5,13 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
+  OneToMany,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { Patient } from './Patient';
 import { User } from './User';
+import { AdministrationHistory } from './AdministrationHistory';
 
 export enum ScheduleType {
   MEDICATION = 'medication',
@@ -25,6 +28,14 @@ export enum ScheduleStatus {
 }
 
 @Entity('schedules')
+@Index(['patientId'])
+@Index(['scheduledTime'])
+@Index(['status'])
+@Index(['patientId', 'status'])
+@Index(['patientId', 'scheduledTime'])
+@Index(['assignedToId'])
+@Index(['type', 'status'])
+@Index(['scheduledTime', 'status'])
 export class Schedule {
   @PrimaryGeneratedColumn()
   id: number;
@@ -32,14 +43,14 @@ export class Schedule {
   @Column()
   patientId: number;
 
-  @ManyToOne(() => Patient, (patient) => patient.schedules)
+  @ManyToOne(() => Patient, (patient) => patient.schedules, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'patientId' })
   patient: Patient;
 
   @Column({ nullable: true })
   assignedToId: number | null;
 
-  @ManyToOne(() => User, { nullable: true })
+  @ManyToOne(() => User, (user) => user.assignedSchedules, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'assignedToId' })
   assignedTo: User | null;
 
@@ -71,6 +82,9 @@ export class Schedule {
 
   @Column({ nullable: true })
   dosage: string;
+
+  @OneToMany(() => AdministrationHistory, (history) => history.schedule)
+  administrationHistory: AdministrationHistory[];
 
   @CreateDateColumn()
   createdAt: Date;

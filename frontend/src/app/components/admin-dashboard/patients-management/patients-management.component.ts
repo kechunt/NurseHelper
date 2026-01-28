@@ -1,7 +1,14 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 import { AdminService, Patient, Area, Bed } from '../../../services/admin.service';
+import { ToastService } from '../../../services/toast.service';
+import { ConfirmationService } from '../../../services/confirmation.service';
+import { ExportService } from '../../../shared/services/export.service';
+import { PaginationComponent, PaginationConfig } from '../../../shared/components/pagination/pagination.component';
+import { DebounceDirective } from '../../../shared/directives/debounce.directive';
 
 // Interfaces para el formulario extendido
 interface Medication {
@@ -33,15 +40,25 @@ interface PendingTask {
 @Component({
   selector: 'app-patients-management',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, PaginationComponent, DebounceDirective],
   templateUrl: './patients-management.component.html',
   styleUrl: './patients-management.component.css',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class PatientsManagementComponent implements OnInit {
+export class PatientsManagementComponent implements OnInit, OnDestroy {
   // Listado de pacientes
   patients: Patient[] = [];
   filteredPatients: Patient[] = [];
+  paginatedPatients: Patient[] = [];
   loading = false;
+  
+  // Paginación
+  paginationConfig: PaginationConfig = {
+    currentPage: 1,
+    totalItems: 0,
+    itemsPerPage: 25,
+    totalPages: 0
+  };
   
   // Filtros
   searchTerm: string = '';
@@ -50,21 +67,17 @@ export class PatientsManagementComponent implements OnInit {
   selectedStatusFilter: string = '';
   selectedBedFilter: string = '';
   
-  // Formulario de ingreso
-  wizardForm: any = {
-    firstName: '',
-    lastName: '',
-    identificationNumber: '',
-    dateOfBirth: '',
-    gender: '',
-    phone: '',
-    address: '',
-    emergencyContact: '',
-    emergencyPhone: '',
-    emergencyRelation: '',
-    selectedAreaId: '',
-    selectedBedId: ''
-  };
+  // Debounce para búsqueda
+  private searchSubject = new Subject<string>();
+  private destroy$ = new Subject<void>();
+  
+  // Formulario de ingreso con Reactive Forms
+  wizardFormGroup!: FormGroup;
+  
+  // Mantener compatibilidad con template
+  get wizardForm() {
+    return this.wizardFormGroup?.value || {};
+  }
   
   // Datos para el wizard y modal
   areas: Area[] = [];
@@ -104,7 +117,55 @@ export class PatientsManagementComponent implements OnInit {
     pendingTasks: [] as PendingTask[]
   };
 
-  constructor(private adminService: AdminService) {}
+  constructor(
+    private adminService: AdminService,
+    private fb: FormBuilder,
+    private toastService: ToastService,
+    private confirmationService: ConfirmationService,
+    private exportService: ExportService,
+    private cdr: ChangeDetectorRef
+  ) {
+    this.initWizardForm();
+    this.setupSearchDebounce();
+  }
+
+  /**
+   * Configura el debounce para la búsqueda
+   */
+  private setupSearchDebounce(): void {
+    this.searchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      takeUntil(this.destroy$)
+    ).subscribe(searchTerm => {
+      this.searchTerm = searchTerm;
+      this.filterPatients();
+    });
+  }
+
+  /**
+   * Maneja el cambio en el input de búsqueda con debounce
+   */
+  onSearchInput(value: string): void {
+    this.searchSubject.next(value);
+  }
+
+  initWizardForm(): void {
+    this.wizardFormGroup = this.fb.group({
+      firstName: ['', [Validators.required, Validators.minLength(2)]],
+      lastName: ['', [Validators.required, Validators.minLength(2)]],
+      identificationNumber: ['', [Validators.required]],
+      dateOfBirth: ['', [Validators.required]],
+      gender: [''],
+      phone: [''],
+      address: [''],
+      emergencyContact: ['', [Validators.required]],
+      emergencyPhone: ['', [Validators.required]],
+      emergencyRelation: [''],
+      selectedAreaId: ['', [Validators.required]],
+      selectedBedId: ['']
+    });
+  }
 
   ngOnInit(): void {
     this.loadPatients();
@@ -113,13 +174,22 @@ export class PatientsManagementComponent implements OnInit {
     this.loadNurses();
   }
 
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
   // ========== CARGA DE DATOS ==========
   loadPatients(): void {
     this.loading = true;
+    
     this.adminService.getPatients().subscribe({
       next: (patients) => {
+        // Asegurar que patients sea un array
+        const patientsArray = Array.isArray(patients) ? patients : [];
+        
         // Enriquecer datos de pacientes con información de área y cama
-        this.patients = patients.map(patient => {
+        this.patients = patientsArray.map((patient: any) => {
           if (patient.bed) {
             const bed = patient.bed;
             const area = this.areas.find(a => a.id === bed.areaId);
@@ -131,13 +201,25 @@ export class PatientsManagementComponent implements OnInit {
               bedNumber: bed.bedNumber
             };
           }
-          return patient;
+          return {
+            ...patient,
+            areaId: null,
+            bedId: null,
+            areaName: 'Sin área',
+            bedNumber: 'Sin cama'
+          };
         });
+        
         this.filteredPatients = this.patients;
+        this.updatePagination();
         this.loading = false;
+        this.cdr.markForCheck();
       },
       error: (error) => {
-        console.error('Error loading patients:', error);
+        const errorMessage = error.error?.message || error.message || 'Error desconocido';
+        this.toastService.error(`No se pudieron cargar los pacientes: ${errorMessage}`);
+        this.patients = [];
+        this.filteredPatients = [];
         this.loading = false;
       },
     });
@@ -149,14 +231,9 @@ export class PatientsManagementComponent implements OnInit {
         this.areas = areas.filter(a => a.isActive);
       },
       error: (error) => {
-        console.error('Error loading areas:', error);
-        // Fallback a áreas de ejemplo
-        this.areas = [
-          { id: 1, name: 'Cuidados Intensivos', description: 'UCI - Pacientes críticos' },
-          { id: 2, name: 'Medicina General', description: 'Área de medicina general' },
-          { id: 3, name: 'Geriatría', description: 'Cuidados para adultos mayores' },
-          { id: 4, name: 'Rehabilitación', description: 'Área de fisioterapia y rehabilitación' },
-        ];
+        const errorMessage = error.error?.message || error.message || 'Error desconocido';
+        this.toastService.error(`No se pudieron cargar las áreas: ${errorMessage}`);
+        this.areas = [];
       },
     });
   }
@@ -167,7 +244,9 @@ export class PatientsManagementComponent implements OnInit {
         this.allBeds = beds;
       },
       error: (error) => {
-        console.error('Error loading beds:', error);
+        const errorMessage = error.error?.message || error.message || 'Error desconocido';
+        this.toastService.warning(`No se pudieron cargar las camas: ${errorMessage}`);
+        this.allBeds = [];
       },
     });
   }
@@ -178,38 +257,164 @@ export class PatientsManagementComponent implements OnInit {
         this.nurses = users.filter(u => u.role === 'nurse' && u.isActive);
       },
       error: (error) => {
-        console.error('Error loading nurses:', error);
+        const errorMessage = error.error?.message || error.message || 'Error desconocido';
+        this.toastService.warning(`No se pudieron cargar las enfermeras: ${errorMessage}`);
+        this.nurses = [];
       },
     });
   }
 
   // ========== FILTROS Y BÚSQUEDA ==========
+  /**
+   * Filtra los pacientes según los criterios seleccionados
+   */
   filterPatients(): void {
-    this.filteredPatients = this.patients.filter(patient => {
-      // Filtro de búsqueda por nombre o cédula
-      const matchesSearch = !this.searchTerm || 
-        `${patient.firstName} ${patient.lastName}`.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        (patient.identificationNumber && patient.identificationNumber.toLowerCase().includes(this.searchTerm.toLowerCase()));
+    let filtered = [...this.patients];
+
+    // Filtro por búsqueda
+    if (this.searchTerm.trim()) {
+      const search = this.searchTerm.toLowerCase().trim();
+      filtered = filtered.filter(p => 
+        p.firstName?.toLowerCase().includes(search) ||
+        p.lastName?.toLowerCase().includes(search) ||
+        p.identificationNumber?.toLowerCase().includes(search)
+      );
+    }
+
+    // Filtro por área
+    if (this.selectedAreaFilter) {
+      filtered = filtered.filter(p => p.areaId === parseInt(this.selectedAreaFilter));
+    }
+
+    // Filtro por enfermera
+    if (this.selectedNurseFilter) {
+      filtered = filtered.filter(p => this.patientHasNurse(p, this.selectedNurseFilter));
+    }
+
+    // Filtro por estado
+    if (this.selectedStatusFilter) {
+      if (this.selectedStatusFilter === 'active') {
+        filtered = filtered.filter(p => p.isActive);
+      } else if (this.selectedStatusFilter === 'inactive') {
+        filtered = filtered.filter(p => !p.isActive);
+      }
+    }
+
+    // Filtro por asignación de cama
+    if (this.selectedBedFilter) {
+      if (this.selectedBedFilter === 'assigned') {
+        filtered = filtered.filter(p => p.bedId);
+      } else if (this.selectedBedFilter === 'unassigned') {
+        filtered = filtered.filter(p => !p.bedId);
+      }
+    }
+
+    this.filteredPatients = filtered;
+    this.paginationConfig.currentPage = 1; // Reset a primera página al filtrar
+    this.updatePagination();
+    this.cdr.markForCheck();
+  }
+
+  /**
+   * Actualiza la paginación y los pacientes paginados
+   */
+  updatePagination(): void {
+    const total = this.filteredPatients.length;
+    const itemsPerPage = this.paginationConfig.itemsPerPage;
+    const totalPages = Math.ceil(total / itemsPerPage);
+    
+    this.paginationConfig = {
+      ...this.paginationConfig,
+      totalItems: total,
+      totalPages: totalPages || 1,
+      currentPage: Math.min(this.paginationConfig.currentPage, totalPages || 1)
+    };
+
+    const start = (this.paginationConfig.currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    this.paginatedPatients = this.filteredPatients.slice(start, end);
+  }
+
+  /**
+   * Maneja el cambio de página
+   */
+  onPageChange(page: number): void {
+    this.paginationConfig.currentPage = page;
+    this.updatePagination();
+    this.cdr.markForCheck();
+  }
+
+  /**
+   * Maneja el cambio de items por página
+   */
+  onItemsPerPageChange(itemsPerPage: number): void {
+    this.paginationConfig.itemsPerPage = itemsPerPage;
+    this.paginationConfig.currentPage = 1;
+    this.updatePagination();
+    this.cdr.markForCheck();
+  }
+
+  /**
+   * TrackBy function para mejorar rendimiento en *ngFor
+   */
+  trackByPatientId(index: number, patient: Patient): number {
+    return patient.id || index;
+  }
+
+  /**
+   * Exporta los pacientes filtrados a CSV
+   */
+  exportToCSV(): void {
+    try {
+      const data = this.filteredPatients.map(p => ({
+        ID: p.id,
+        'Nombre': p.firstName,
+        'Apellido': p.lastName,
+        'Cédula': p.identificationNumber || '',
+        'Fecha de Nacimiento': p.dateOfBirth ? new Date(p.dateOfBirth).toLocaleDateString('es-ES') : '',
+        'Género': p.gender || '',
+        'Teléfono': p.phone || '',
+        'Área': p.areaName || 'Sin área',
+        'Cama': p.bedNumber || 'Sin cama',
+        'Estado': p.isActive ? 'Activo' : 'Inactivo'
+      }));
+
+      this.exportService.exportToCSV(data, {
+        filename: `pacientes-${new Date().toISOString().split('T')[0]}.csv`
+      });
       
-      // Filtro por área
-      const matchesArea = !this.selectedAreaFilter || 
-        patient.areaId?.toString() === this.selectedAreaFilter;
+      this.toastService.success(`Exportados ${data.length} pacientes a CSV`);
+    } catch (error: any) {
+      this.toastService.error(`Error al exportar: ${error.message}`);
+    }
+  }
+
+  /**
+   * Exporta los pacientes filtrados a Excel
+   */
+  exportToExcel(): void {
+    try {
+      const data = this.filteredPatients.map(p => ({
+        ID: p.id,
+        'Nombre': p.firstName,
+        'Apellido': p.lastName,
+        'Cédula': p.identificationNumber || '',
+        'Fecha de Nacimiento': p.dateOfBirth ? new Date(p.dateOfBirth).toLocaleDateString('es-ES') : '',
+        'Género': p.gender || '',
+        'Teléfono': p.phone || '',
+        'Área': p.areaName || 'Sin área',
+        'Cama': p.bedNumber || 'Sin cama',
+        'Estado': p.isActive ? 'Activo' : 'Inactivo'
+      }));
+
+      this.exportService.exportToExcel(data, {
+        filename: `pacientes-${new Date().toISOString().split('T')[0]}.xlsx`
+      });
       
-      // Filtro por enfermera (basado en tareas asignadas - por ahora solo verificamos que tenga tareas)
-      const matchesNurse = !this.selectedNurseFilter || this.patientHasNurse(patient, this.selectedNurseFilter);
-      
-      // Filtro por estado (activo/inactivo)
-      const matchesStatus = !this.selectedStatusFilter ||
-        (this.selectedStatusFilter === 'active' && patient.isActive) ||
-        (this.selectedStatusFilter === 'inactive' && !patient.isActive);
-      
-      // Filtro por asignación de cama
-      const matchesBed = !this.selectedBedFilter ||
-        (this.selectedBedFilter === 'assigned' && patient.bedId) ||
-        (this.selectedBedFilter === 'unassigned' && !patient.bedId);
-      
-      return matchesSearch && matchesArea && matchesNurse && matchesStatus && matchesBed;
-    });
+      this.toastService.success(`Exportados ${data.length} pacientes a Excel`);
+    } catch (error: any) {
+      this.toastService.error(`Error al exportar: ${error.message}`);
+    }
   }
 
   patientHasNurse(patient: Patient, nurseId: string): boolean {
@@ -234,13 +439,18 @@ export class PatientsManagementComponent implements OnInit {
     return false;
   }
 
+  /**
+   * Limpia todos los filtros aplicados
+   */
   clearFilters(): void {
     this.searchTerm = '';
     this.selectedAreaFilter = '';
     this.selectedNurseFilter = '';
     this.selectedStatusFilter = '';
     this.selectedBedFilter = '';
+    this.searchSubject.next(''); // Limpiar también el debounce
     this.filterPatients();
+    this.cdr.markForCheck();
   }
 
   hasActiveFilters(): boolean {
@@ -250,31 +460,18 @@ export class PatientsManagementComponent implements OnInit {
 
   // ========== FORMULARIO DE INGRESO ==========
   resetForm(): void {
-    this.wizardForm = {
-      firstName: '',
-      lastName: '',
-      identificationNumber: '',
-      dateOfBirth: '',
-      gender: '',
-      phone: '',
-      address: '',
-      emergencyContact: '',
-      emergencyPhone: '',
-      emergencyRelation: '',
-      selectedAreaId: '',
-      selectedBedId: ''
-    };
+    this.wizardFormGroup.reset();
     this.availableBeds = [];
   }
 
   onAreaChangeForm(): void {
-    const areaId = parseInt(this.wizardForm.selectedAreaId);
+    const areaId = this.wizardFormGroup.get('selectedAreaId')?.value;
     if (areaId) {
-      this.loadBedsForArea(areaId);
+      this.loadBedsForArea(parseInt(areaId));
     } else {
       this.availableBeds = [];
     }
-    this.wizardForm.selectedBedId = '';
+    this.wizardFormGroup.patchValue({ selectedBedId: '' });
   }
 
   loadBedsForArea(areaId: number): void {
@@ -283,36 +480,40 @@ export class PatientsManagementComponent implements OnInit {
         this.availableBeds = beds.filter(bed => !bed.patientId && bed.isActive);
       },
       error: (error) => {
-        console.error('Error loading beds:', error);
+        const errorMessage = error.error?.message || error.message || 'Error desconocido';
+        this.toastService.warning(`No se pudieron cargar las camas del área: ${errorMessage}`);
         this.availableBeds = [];
       },
     });
   }
 
   quickSavePatient(): void {
-    // Validar campos obligatorios
-    if (!this.wizardForm.firstName || !this.wizardForm.lastName || 
-        !this.wizardForm.identificationNumber || !this.wizardForm.dateOfBirth ||
-        !this.wizardForm.emergencyContact || !this.wizardForm.emergencyPhone ||
-        !this.wizardForm.selectedAreaId) {
-      alert('⚠️ Por favor complete todos los campos obligatorios (*) y seleccione un área');
+    // Validar formulario
+    if (this.wizardFormGroup.invalid) {
+      this.wizardFormGroup.markAllAsTouched();
+      const firstError = this.getFirstFormError();
+      this.toastService.warning(`Por favor complete todos los campos obligatorios: ${firstError}`);
       return;
     }
 
+    const formValue = this.wizardFormGroup.value;
+
     // Preparar datos del paciente
     const patientData: any = {
-      firstName: this.wizardForm.firstName,
-      lastName: this.wizardForm.lastName,
-      identificationNumber: this.wizardForm.identificationNumber,
-      dateOfBirth: this.wizardForm.dateOfBirth,
-      gender: this.wizardForm.gender,
-      phone: this.wizardForm.phone,
-      address: this.wizardForm.address,
-      emergencyContact: this.wizardForm.emergencyContact,
-      emergencyPhone: this.wizardForm.emergencyPhone,
-      emergencyRelation: this.wizardForm.emergencyRelation,
+      firstName: formValue.firstName,
+      lastName: formValue.lastName,
+      identificationNumber: formValue.identificationNumber,
+      dateOfBirth: formValue.dateOfBirth,
+      gender: formValue.gender,
+      phone: formValue.phone,
+      address: formValue.address,
+      emergencyContact: formValue.emergencyContact,
+      emergencyPhone: formValue.emergencyPhone,
+      emergencyRelation: formValue.emergencyRelation,
       isActive: true,
     };
+
+    this.loading = true;
 
     // Crear el paciente
     this.adminService.createPatient(patientData).subscribe({
@@ -320,10 +521,10 @@ export class PatientsManagementComponent implements OnInit {
         const patientId = response.patient?.id || response.id;
         
         // Determinar qué cama asignar
-        let bedIdToAssign = this.wizardForm.selectedBedId;
+        let bedIdToAssign = formValue.selectedBedId;
         
         // Si se seleccionó un área pero no una cama específica, asignar la primera cama disponible
-        if (!bedIdToAssign && this.wizardForm.selectedAreaId && this.availableBeds.length > 0) {
+        if (!bedIdToAssign && formValue.selectedAreaId && this.availableBeds.length > 0) {
           bedIdToAssign = this.availableBeds[0].id?.toString();
         }
         
@@ -331,33 +532,54 @@ export class PatientsManagementComponent implements OnInit {
         if (bedIdToAssign && patientId) {
           this.adminService.assignPatientToBed(parseInt(bedIdToAssign), patientId).subscribe({
             next: () => {
-              alert(`✅ Paciente ${this.wizardForm.firstName} ${this.wizardForm.lastName} ingresado exitosamente`);
+              this.toastService.success(`Paciente ${formValue.firstName} ${formValue.lastName} ingresado exitosamente`);
               this.resetForm();
               this.loadPatients();
               this.loadBeds();
+              this.loading = false;
             },
             error: (error) => {
-              console.error('Error assigning bed:', error);
-              alert('✅ Paciente creado pero sin cama asignada. Puede asignarla después.');
+              const errorMessage = error.error?.message || error.message || 'Error desconocido';
+              this.toastService.warning(`Paciente creado pero sin cama asignada: ${errorMessage}`);
               this.resetForm();
               this.loadPatients();
+              this.loading = false;
             },
           });
-        } else if (this.wizardForm.selectedAreaId && this.availableBeds.length === 0) {
-          alert(`⚠️ Paciente ${this.wizardForm.firstName} ${this.wizardForm.lastName} creado, pero no hay camas disponibles en el área seleccionada. Puede asignar una cama después.`);
+        } else if (formValue.selectedAreaId && this.availableBeds.length === 0) {
+          this.toastService.warning(`Paciente ${formValue.firstName} ${formValue.lastName} creado, pero no hay camas disponibles en el área seleccionada`);
           this.resetForm();
           this.loadPatients();
+          this.loading = false;
         } else {
-          alert(`✅ Paciente ${this.wizardForm.firstName} ${this.wizardForm.lastName} ingresado exitosamente (sin cama asignada)`);
+          this.toastService.success(`Paciente ${formValue.firstName} ${formValue.lastName} ingresado exitosamente (sin cama asignada)`);
           this.resetForm();
           this.loadPatients();
+          this.loading = false;
         }
       },
       error: (error) => {
-        console.error('Error creating patient:', error);
-        alert(error.error?.message || 'Error al crear el paciente');
+        const errorMessage = error.error?.message || error.message || 'Error al crear el paciente';
+        this.toastService.error(errorMessage);
+        this.loading = false;
       },
     });
+  }
+
+  getFirstFormError(): string {
+    const controls = this.wizardFormGroup.controls;
+    for (const key in controls) {
+      if (controls[key].errors) {
+        const control = controls[key];
+        if (control.errors?.['required']) {
+          return `${key} es requerido`;
+        }
+        if (control.errors?.['minlength']) {
+          return `${key} debe tener al menos ${control.errors['minlength'].requiredLength} caracteres`;
+        }
+      }
+    }
+    return 'Campos incompletos';
   }
 
   // ========== MODAL DE EDICIÓN ==========
@@ -410,7 +632,9 @@ export class PatientsManagementComponent implements OnInit {
         );
       },
       error: (error) => {
-        console.error('Error loading beds:', error);
+        const errorMessage = error.error?.message || error.message || 'Error desconocido';
+        this.toastService.warning(`No se pudieron cargar las camas: ${errorMessage}`);
+        this.availableBeds = [];
       },
     });
   }
@@ -575,9 +799,18 @@ export class PatientsManagementComponent implements OnInit {
     });
   }
 
-  removeTreatment(index: number): void {
-    if (confirm('¿Eliminar este registro?')) {
+  async removeTreatment(index: number): Promise<void> {
+    const confirmed = await this.confirmationService.confirm({
+      title: 'Eliminar registro',
+      message: '¿Está seguro de eliminar este registro de tratamiento?',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+      type: 'warning'
+    });
+    
+    if (confirmed) {
       this.editForm.treatmentHistory.splice(index, 1);
+      this.toastService.success('Registro eliminado');
     }
   }
 
@@ -608,40 +841,63 @@ export class PatientsManagementComponent implements OnInit {
     });
   }
 
-  removeTask(index: number): void {
-    if (confirm('¿Eliminar esta tarea?')) {
+  async removeTask(index: number): Promise<void> {
+    const confirmed = await this.confirmationService.confirm({
+      title: 'Eliminar tarea',
+      message: '¿Está seguro de eliminar esta tarea?',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+      type: 'warning'
+    });
+    
+    if (confirmed) {
       this.editForm.pendingTasks.splice(index, 1);
+      this.toastService.success('Tarea eliminada');
     }
   }
 
   // ========== OTRAS FUNCIONES ==========
-  toggleActive(patient: Patient): void {
-    if (confirm(`¿${patient.isActive ? 'Desactivar' : 'Activar'} al paciente ${patient.firstName} ${patient.lastName}?`)) {
-      console.log('Cambiando estado del paciente');
-      // Aquí iría la llamada al servicio
+  async toggleActive(patient: Patient): Promise<void> {
+    const confirmed = await this.confirmationService.confirm({
+      title: `${patient.isActive ? 'Desactivar' : 'Activar'} paciente`,
+      message: `¿Está seguro de ${patient.isActive ? 'desactivar' : 'activar'} al paciente ${patient.firstName} ${patient.lastName}?`,
+      confirmText: patient.isActive ? 'Desactivar' : 'Activar',
+      cancelText: 'Cancelar',
+      type: 'warning'
+    });
+    
+    if (confirmed) {
+      // Aquí iría la llamada al servicio para cambiar el estado
+      this.toastService.info('Funcionalidad de cambio de estado pendiente de implementar');
       this.loadPatients();
     }
   }
 
-  deletePatient(patient: Patient): void {
+  async deletePatient(patient: Patient): Promise<void> {
     if (!patient.id) {
-      alert('Error: No se puede eliminar el paciente (ID no válido)');
+      this.toastService.error('No se puede eliminar el paciente (ID no válido)');
       return;
     }
 
-    const confirmMessage = `¿Está seguro de eliminar permanentemente al paciente ${patient.firstName} ${patient.lastName}?\n\nEsta acción no se puede deshacer y eliminará todos los datos relacionados.`;
+    const confirmed = await this.confirmationService.confirm({
+      title: 'Eliminar paciente permanentemente',
+      message: `¿Está seguro de eliminar permanentemente al paciente ${patient.firstName} ${patient.lastName}?\n\nEsta acción no se puede deshacer y eliminará todos los datos relacionados.`,
+      confirmText: 'Eliminar permanentemente',
+      cancelText: 'Cancelar',
+      type: 'danger'
+    });
     
-    if (confirm(confirmMessage)) {
+    if (confirmed) {
       this.loading = true;
       this.adminService.deletePatient(patient.id).subscribe({
         next: () => {
-          alert(`✅ Paciente ${patient.firstName} ${patient.lastName} eliminado exitosamente`);
+          this.toastService.success(`Paciente ${patient.firstName} ${patient.lastName} eliminado exitosamente`);
           this.loadPatients();
           this.loading = false;
         },
         error: (error) => {
-          console.error('Error al eliminar paciente:', error);
-          alert(error.error?.message || 'Error al eliminar el paciente. Por favor, intente nuevamente.');
+          const errorMessage = error.error?.message || error.message || 'Error al eliminar el paciente';
+          this.toastService.error(errorMessage);
           this.loading = false;
         },
       });
