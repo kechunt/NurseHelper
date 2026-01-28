@@ -1,7 +1,12 @@
 # Red Hat Dependency Analytics ignore file
 # Excluir directorios de caché y build que no deben ser analizados
 
-# Angular cache
+# Angular cache (raíz y frontend)
+.angular/
+.angular/cache/
+.angular/cache/**/vite/
+.angular/cache/**/vite/deps_ssr/
+.angular/cache/**/vite/deps/
 frontend/.angular/
 frontend/.angular/cache/
 frontend/.angular/cache/**/vite/
