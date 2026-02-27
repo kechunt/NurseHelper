@@ -8,10 +8,3 @@ export const environment = {
   apiUrl: 'https://nursehelper-production.up.railway.app/api'
 };
 
-// Opción 2: Si necesitas usar variables de entorno, descomenta esto y comenta lo de arriba
-// Nota: Necesitarás configurar el build para inyectar las variables
-// export const environment = {
-//   production: true,
-//   apiUrl: (window as any).__ENV__?.NG_APP_API_URL || 'https://nursehelper-production.up.railway.app/api'
-// };
-

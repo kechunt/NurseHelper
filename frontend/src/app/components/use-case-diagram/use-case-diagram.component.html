@@ -1,0 +1,21 @@
+<div class="diagram-container">
+  <div class="toolbar">
+    <h2>Diagrama de Casos de Uso - Sistema NurseHelper</h2>
+    <div class="controls">
+      <button (click)="zoomIn()" class="btn btn-sm">🔍+</button>
+      <button (click)="zoomOut()" class="btn btn-sm">🔍-</button>
+      <button (click)="resetView()" class="btn btn-sm">🔄 Reset</button>
+    </div>
+  </div>
+  <div class="canvas-wrapper">
+    <canvas #canvas class="diagram-canvas"></canvas>
+  </div>
+  <div class="instructions">
+    <p><strong>Instrucciones:</strong></p>
+    <ul>
+      <li>Usa la rueda del mouse para hacer zoom</li>
+      <li>Arrastra con el mouse para mover el diagrama</li>
+      <li>Usa los botones de zoom y reset para controlar la vista</li>
+    </ul>
+  </div>
+</div>

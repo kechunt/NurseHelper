@@ -6,6 +6,7 @@ import { AdminDashboardComponent } from './components/admin-dashboard/admin-dash
 import { SupervisorDashboardComponent } from './components/supervisor-dashboard/supervisor-dashboard.component';
 import { NurseDashboardComponent } from './components/nurse-dashboard/nurse-dashboard.component';
 import { PharmacyDashboardComponent } from './components/pharmacy-dashboard/pharmacy-dashboard.component';
+import { UseCaseDiagramComponent } from './components/use-case-diagram/use-case-diagram.component';
 import { adminGuard, authGuard, supervisorGuard, pharmacyGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
@@ -17,5 +18,6 @@ export const routes: Routes = [
   { path: 'supervisor', component: SupervisorDashboardComponent, canActivate: [supervisorGuard] },
   { path: 'nurse-dashboard', component: NurseDashboardComponent, canActivate: [authGuard] },
   { path: 'pharmacy', component: PharmacyDashboardComponent, canActivate: [pharmacyGuard] },
+  { path: 'use-case-diagram', component: UseCaseDiagramComponent, canActivate: [authGuard] },
   { path: 'dashboard', redirectTo: 'nurse-dashboard', pathMatch: 'full' }, // Redirect antigua ruta
 ];

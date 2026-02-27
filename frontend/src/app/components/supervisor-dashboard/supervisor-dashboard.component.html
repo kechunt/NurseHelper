@@ -38,7 +38,7 @@
         [class.active]="activeTab === 'staff'"
         (click)="setActiveTab('staff')"
       >
-        👩‍⚕️ Gestión de Personal
+        👩‍⚕️ Gestión de Enfermeras
       </button>
       <button
         class="nav-link"
@@ -81,7 +81,7 @@
         <app-users-management></app-users-management>
       </div>
 
-      <!-- Gestión de Personal -->
+      <!-- Gestión de Enfermeras -->
       <div *ngIf="activeTab === 'staff'" class="tab-content">
         <app-staff-management></app-staff-management>
       </div>
