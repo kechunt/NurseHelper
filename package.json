@@ -4,6 +4,7 @@
   "description": "Sistema de gestión de enfermería - Frontend y Backend",
   "scripts": {
     "dev": "node scripts/start-dev.js",
+    "dev:win": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-dev.ps1",
     "dev:simple": "concurrently -n \"🔷 BACKEND,🟡 FRONTEND\" -c \"cyan,yellow\" --kill-others-on-fail --restart-tries 3 --restart-after 2000 \"npm run start:backend\" \"npm run start:frontend\"",
     "start": "npm run dev",
     "start:backend": "cd backend && npm run dev",

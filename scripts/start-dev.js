@@ -119,23 +119,43 @@ function main() {
   log('🚀 Iniciando servicios...', 'green');
   log('');
   
-  // Ejecutar directamente concurrently para evitar bucle infinito
-  // Usar npx para asegurar que concurrently esté disponible
-  const devProcess = spawn('npx', [
+  // En Windows, spawn('npx', …) con shell:false da ENOENT (busca "npx", no "npx.cmd").
+  // Lanzar el CLI de concurrently con el mismo Node evita npx, npm y shell.
+  const repoRoot = path.join(__dirname, '..');
+  // No usar require.resolve(ruta profunda): el package.json de concurrently restringe "exports".
+  const concurrentlyBin = path.join(
+    repoRoot,
+    'node_modules',
     'concurrently',
+    'dist',
+    'bin',
+    'concurrently.js',
+  );
+  if (!fs.existsSync(concurrentlyBin)) {
+    log('❌ No se encontró concurrently. En la raíz del repo ejecuta: npm install', 'red');
+    process.exit(1);
+  }
+
+  const devProcess = spawn(process.execPath, [
+    concurrentlyBin,
     '-n', '🔷 BACKEND,🟡 FRONTEND',
     '-c', 'cyan,yellow',
     '--kill-others-on-fail',
     '--restart-tries', '3',
     '--restart-after', '2000',
     'npm run start:backend',
-    'npm run start:frontend'
+    'npm run start:frontend',
   ], {
-    cwd: path.join(__dirname, '..'),
+    cwd: repoRoot,
     stdio: 'inherit',
-    shell: false
+    shell: false,
   });
-  
+
+  devProcess.on('error', (err) => {
+    log(`❌ No se pudo iniciar los servicios: ${err.message}`, 'red');
+    process.exit(1);
+  });
+
   // Manejar señales de terminación
   process.on('SIGINT', () => {
     log('\n🛑 Deteniendo servicios...', 'yellow');
