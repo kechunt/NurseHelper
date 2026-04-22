@@ -1,0 +1,42 @@
+<!--
+  Patrones HTML + clases usadas en NurseHelper (neumorfismo).
+  CSS: design-catalog/css/neuro-base.css + tokens, o estilos por componente en frontend.
+-->
+<form class="login-form">
+  <div class="input-group">
+    <label for="campo">Etiqueta</label>
+    <input id="campo" class="neuro-input" type="text" placeholder="Texto" />
+  </div>
+  <button type="button" class="neuro-btn">Acción principal</button>
+  <div class="error-message" role="alert">Mensaje de error</div>
+</form>
+
+<!--
+  Tabla con botones de acción en línea (estilos normalizados en el repo):
+  @import en styles.css: app/shared/styles/table-actions-normalized.css
+-->
+<table class="neuro-table">
+  <thead>
+    <tr>
+      <th>Col</th>
+      <th>Acciones</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Valor</td>
+      <td>
+        <div class="action-buttons-table">
+          <button type="button" class="action-btn-compact info" title="Ver">👁</button>
+          <button type="button" class="action-btn-compact danger" title="Eliminar">🗑</button>
+        </div>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<!--
+  Búsqueda con debounce (directiva standalone appDebounce):
+  imports: [DebounceDirective]
+-->
+<input type="search" appDebounce [debounceTime]="300" (debounced)="onBusqueda($event)" placeholder="Buscar…" />

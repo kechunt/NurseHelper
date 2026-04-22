@@ -14,13 +14,13 @@ export function validateDto<T extends object>(dtoClass: new () => T) {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       // Convertir el body a instancia del DTO
-      const dto = plainToInstance(dtoClass, req.body);
-      
-      // Validar
+      const dto = plainToInstance(dtoClass, req.body, {
+        enableImplicitConversion: true,
+      });
+
       const errors = await validate(dto as object, {
-        whitelist: true, // Eliminar propiedades no definidas en el DTO
-        forbidNonWhitelisted: false, // No lanzar error por propiedades extra
-        transform: true, // Transformar tipos automáticamente
+        whitelist: true,
+        forbidNonWhitelisted: false,
       });
 
       if (errors.length > 0) {
@@ -43,11 +43,12 @@ export function validateDto<T extends object>(dtoClass: new () => T) {
 export function validateQuery<T extends object>(dtoClass: new () => T) {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const dto = plainToInstance(dtoClass, req.query);
+      const dto = plainToInstance(dtoClass, req.query, {
+        enableImplicitConversion: true,
+      });
       const errors = await validate(dto as object, {
         whitelist: true,
         forbidNonWhitelisted: false,
-        transform: true,
       });
 
       if (errors.length > 0) {

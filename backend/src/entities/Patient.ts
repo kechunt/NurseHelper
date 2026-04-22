@@ -30,65 +30,66 @@ export class Patient {
   @Column({ length: 100 })
   lastName: string;
 
-  @Column({ length: 20, nullable: true, unique: true })
-  identificationNumber: string;
+  @Column({ type: 'varchar', length: 20, nullable: true, unique: true })
+  identificationNumber: string | null;
 
   @Column({ type: 'date', nullable: true })
-  dateOfBirth: Date;
+  dateOfBirth: Date | null;
 
-  @Column({ length: 10, nullable: true })
-  gender: string;
+  @Column({ type: 'varchar', length: 10, nullable: true })
+  gender: string | null;
 
-  @Column({ length: 20, nullable: true })
-  phone: string;
-
-  @Column({ type: 'text', nullable: true })
-  address: string;
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  phone: string | null;
 
   @Column({ type: 'text', nullable: true })
-  medicalHistory: string;
+  address: string | null;
 
   @Column({ type: 'text', nullable: true })
-  allergies: string;
+  medicalHistory: string | null;
 
   @Column({ type: 'text', nullable: true })
-  emergencyContact: string;
-
-  @Column({ length: 20, nullable: true })
-  emergencyPhone: string;
-
-  @Column({ length: 50, nullable: true })
-  emergencyRelation: string;
+  allergies: string | null;
 
   @Column({ type: 'text', nullable: true })
-  medicalObservations: string;
+  emergencyContact: string | null;
+
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  emergencyPhone: string | null;
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  emergencyRelation: string | null;
 
   @Column({ type: 'text', nullable: true })
-  specialNeeds: string;
+  medicalObservations: string | null;
 
   @Column({ type: 'text', nullable: true })
-  generalObservations: string;
+  specialNeeds: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  generalObservations: string | null;
 
   @Column({ type: 'json', nullable: true })
-  medications: string;
+  medications: string | null;
 
   @Column({ type: 'json', nullable: true })
-  treatmentHistory: string;
+  treatmentHistory: string | null;
 
   @Column({ type: 'json', nullable: true })
-  pendingTasks: string;
+  pendingTasks: string | null;
 
   @Column({ default: true })
   isActive: boolean;
 
-  @Column({ nullable: true, select: false })
+  @Column({ type: 'int', nullable: true, select: false })
   bedId?: number | null;
 
   @ManyToOne(() => Bed, (bed) => bed.patients, { nullable: true })
   @JoinColumn({ name: 'bedId' })
   bed: Bed | null;
 
-  @Column({ nullable: true, select: false })
+  /** Visible en API para asignación enfermera–paciente (gestión de personal). */
+  @Column({ type: 'int', nullable: true })
   assignedToId?: number | null;
 
   @ManyToOne(() => User, (user) => user.assignedPatients, { nullable: true })

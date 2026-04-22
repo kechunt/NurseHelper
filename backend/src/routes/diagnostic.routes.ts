@@ -9,8 +9,20 @@ import { AuthRequest } from '../middleware/auth.middleware';
 
 const router = Router();
 
-// Endpoint de diagnóstico para verificar conexión y datos
-// Endpoint simple sin autenticación para verificar conexión básica
+/**
+ * @swagger
+ * /api/diagnostic/simple:
+ *   get:
+ *     summary: Diagnóstico mínimo de BD (sin autenticación)
+ *     description: Comprueba si TypeORM está inicializado y si `SELECT 1` responde.
+ *     tags: [Diagnostic]
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: Estado de conexión
+ *       500:
+ *         description: Error interno
+ */
 router.get('/simple', async (req: Request, res: Response) => {
   try {
     const result = {
@@ -45,6 +57,21 @@ router.get('/simple', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/diagnostic/db-status:
+ *   get:
+ *     summary: Diagnóstico detallado (requiere JWT)
+ *     description: Incluye usuario actual, muestras de áreas, camas y pacientes.
+ *     tags: [Diagnostic]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Información de diagnóstico
+ *       500:
+ *         description: BD no disponible
+ */
 router.get('/db-status', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const diagnostics: any = {

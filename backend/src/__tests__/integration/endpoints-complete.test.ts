@@ -4,6 +4,7 @@
 
 import request from 'supertest';
 import app from '../../app-test';
+import { requestByMethod } from '../supertest-request';
 import { AppDataSource } from '../../data-source';
 import { User, UserRole } from '../../entities/User';
 import { generateToken } from '../../utils/jwt';
@@ -62,7 +63,7 @@ describe('Complete Endpoints Test', () => {
 
     endpoints.forEach(({ method, path, requiresAuth }) => {
       it(`${method} ${path} debería estar disponible`, async () => {
-        const req = request(app)[method.toLowerCase()](path);
+        const req = requestByMethod(app, method, path);
         
         if (requiresAuth) {
           req.set('Authorization', `Bearer ${adminToken}`);
@@ -87,7 +88,7 @@ describe('Complete Endpoints Test', () => {
 
     endpoints.forEach(({ method, path }) => {
       it(`${method} ${path} debería estar disponible`, async () => {
-        const req = request(app)[method.toLowerCase()](path)
+        const req = requestByMethod(app, method, path)
           .set('Authorization', `Bearer ${adminToken}`);
 
         if (method === 'POST' || method === 'PUT') {
@@ -111,7 +112,7 @@ describe('Complete Endpoints Test', () => {
 
     endpoints.forEach(({ method, path }) => {
       it(`${method} ${path} debería estar disponible`, async () => {
-        const req = request(app)[method.toLowerCase()](path)
+        const req = requestByMethod(app, method, path)
           .set('Authorization', `Bearer ${adminToken}`);
 
         if (method === 'POST' || method === 'PUT') {
@@ -135,7 +136,7 @@ describe('Complete Endpoints Test', () => {
 
     endpoints.forEach(({ method, path }) => {
       it(`${method} ${path} debería estar disponible`, async () => {
-        const req = request(app)[method.toLowerCase()](path)
+        const req = requestByMethod(app, method, path)
           .set('Authorization', `Bearer ${adminToken}`);
 
         if (method === 'POST' || method === 'PUT') {
@@ -159,7 +160,7 @@ describe('Complete Endpoints Test', () => {
 
     endpoints.forEach(({ method, path }) => {
       it(`${method} ${path} debería estar disponible`, async () => {
-        const req = request(app)[method.toLowerCase()](path)
+        const req = requestByMethod(app, method, path)
           .set('Authorization', `Bearer ${adminToken}`);
 
         if (method === 'POST' || method === 'PUT') {
@@ -181,7 +182,7 @@ describe('Complete Endpoints Test', () => {
 
     endpoints.forEach(({ method, path }) => {
       it(`${method} ${path} debería estar disponible`, async () => {
-        const req = request(app)[method.toLowerCase()](path)
+        const req = requestByMethod(app, method, path)
           .set('Authorization', `Bearer ${adminToken}`);
 
         if (method === 'POST') {
@@ -204,8 +205,7 @@ describe('Complete Endpoints Test', () => {
 
     endpoints.forEach(({ method, path }) => {
       it(`${method} ${path} debería estar disponible`, async () => {
-        const response = await request(app)
-          [method.toLowerCase()](path)
+        const response = await requestByMethod(app, method, path)
           .set('Authorization', `Bearer ${nurseToken}`);
 
         expect([200, 400, 404]).toContain(response.status);
@@ -221,7 +221,7 @@ describe('Complete Endpoints Test', () => {
 
     endpoints.forEach(({ method, path }) => {
       it(`${method} ${path} debería estar disponible`, async () => {
-        const req = request(app)[method.toLowerCase()](path)
+        const req = requestByMethod(app, method, path)
           .set('Authorization', `Bearer ${adminToken}`);
 
         if (method === 'POST') {
@@ -242,7 +242,7 @@ describe('Complete Endpoints Test', () => {
 
     endpoints.forEach(({ method, path }) => {
       it(`${method} ${path} debería estar disponible`, async () => {
-        const req = request(app)[method.toLowerCase()](path)
+        const req = requestByMethod(app, method, path)
           .set('Authorization', `Bearer ${adminToken}`);
 
         if (method === 'POST') {
@@ -263,7 +263,7 @@ describe('Complete Endpoints Test', () => {
 
     endpoints.forEach(({ method, path }) => {
       it(`${method} ${path} debería estar disponible`, async () => {
-        const req = request(app)[method.toLowerCase()](path)
+        const req = requestByMethod(app, method, path)
           .set('Authorization', `Bearer ${adminToken}`);
 
         if (method === 'POST') {
@@ -285,7 +285,7 @@ describe('Complete Endpoints Test', () => {
 
     endpoints.forEach(({ method, path }) => {
       it(`${method} ${path} debería estar disponible`, async () => {
-        const req = request(app)[method.toLowerCase()](path)
+        const req = requestByMethod(app, method, path)
           .set('Authorization', `Bearer ${adminToken}`)
           .query({
             startDate: new Date().toISOString(),
@@ -309,7 +309,7 @@ describe('Complete Endpoints Test', () => {
 
     endpoints.forEach(({ method, path }) => {
       it(`${method} ${path} debería estar disponible`, async () => {
-        const response = await request(app)[method.toLowerCase()](path);
+        const response = await requestByMethod(app, method, path);
         expect([200, 503]).toContain(response.status);
       });
     });
@@ -322,8 +322,8 @@ describe('Complete Endpoints Test', () => {
     ];
 
     endpoints.forEach(({ method, path }) => {
-      it(`${method} ${path} debería estar disponible (solo admin)', async () => {
-        const req = request(app)[method.toLowerCase()](path)
+      it(`${method} ${path} debería estar disponible (solo admin)`, async () => {
+        const req = requestByMethod(app, method, path)
           .set('Authorization', `Bearer ${adminToken}`);
 
         if (method === 'POST') {

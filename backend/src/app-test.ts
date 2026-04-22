@@ -23,6 +23,11 @@ import nursesRoutes from './routes/nurses.routes';
 import medicationsRoutes from './routes/medications.routes';
 import shiftsRoutes from './routes/shifts.routes';
 import pharmacyRoutes from './routes/pharmacy.routes';
+import reportsRoutes from './routes/reports.routes';
+import webhooksRoutes from './routes/webhooks.routes';
+import notificationsRoutes from './routes/notifications.routes';
+import backupRoutes from './routes/backup.routes';
+import healthRoutes from './routes/health.routes';
 
 // Cargar variables de entorno
 loadEnv();
@@ -67,11 +72,11 @@ app.use('/api/nurse', nursesRoutes);
 app.use('/api/medications', medicationsRoutes);
 app.use('/api/shifts', shiftsRoutes);
 app.use('/api/pharmacy', pharmacyRoutes);
-app.use('/api/reports', require('./routes/reports.routes').default);
-app.use('/api/webhooks', require('./routes/webhooks.routes').default);
-app.use('/api/notifications', require('./routes/notifications.routes').default);
-app.use('/api/backup', require('./routes/backup.routes').default);
-app.use('/health', require('./routes/health.routes').default);
+app.use('/api/reports', reportsRoutes);
+app.use('/api/webhooks', webhooksRoutes);
+app.use('/api/notifications', notificationsRoutes);
+app.use('/api/backup', backupRoutes);
+app.use('/health', healthRoutes);
 
 // Health check básico (mantener para compatibilidad)
 app.get('/health-basic', (req, res) => {

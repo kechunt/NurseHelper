@@ -1,0 +1,19 @@
+/**
+ * Estilos neumórficos reutilizados desde los mismos archivos que la app en producción.
+ * Orden: módulos base primero; farmacia/usuarios/staff; nurse-dashboard al final para que
+ * .neuro-input y controles comunes no queden sobreescritos por el CSS de farmacia.
+ * Ruta de prueba: /design-catalog
+ */
+@import '../../components/login/login.component.css';
+@import '../../components/register/register.component.css';
+@import '../../components/admin-dashboard/patients-management/patients-management.component.css';
+@import '../../components/admin-dashboard/schedules-management/schedules-management.component.css';
+@import '../../shared/components/pagination/pagination.component.css';
+@import '../../components/admin-dashboard/overview/overview.component.css';
+@import '../../components/admin-dashboard/beds-management/beds-management.component.css';
+@import '../../components/admin-dashboard/areas-management/areas-management.component.css';
+@import '../../components/terms-modal/terms-modal.component.css';
+@import '../../components/pharmacy-dashboard/pharmacy-dashboard.component.css';
+@import '../../components/admin-dashboard/users-management/users-management.component.css';
+@import '../../components/admin-dashboard/staff-management/staff-management.component.css';
+@import '../../components/nurse-dashboard/nurse-dashboard.component.css';

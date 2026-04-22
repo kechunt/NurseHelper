@@ -13,6 +13,10 @@ export class PatientsController {
     try {
       const { page, limit, skip } = parsePagination(req.query);
       const search = req.query.search as string;
+      const isActiveQ = req.query.isActive as string | undefined;
+      const areaIdQ = req.query.areaId as string | undefined;
+      const hasBedQ = req.query.hasBed as string | undefined;
+      const assignedToIdQ = req.query.assignedToId as string | undefined;
 
       const patientRepository = AppDataSource.getRepository(Patient);
       
@@ -22,12 +26,63 @@ export class PatientsController {
         .leftJoinAndSelect('bed.area', 'area')
         .orderBy('patient.lastName', 'ASC');
 
-      // Agregar búsqueda si existe
       if (search) {
         queryBuilder.where(
           '(patient.firstName LIKE :search OR patient.lastName LIKE :search OR patient.identificationNumber LIKE :search)',
           { search: `%${search}%` }
         );
+      }
+
+      if (isActiveQ === 'true' || isActiveQ === 'false') {
+        const active = isActiveQ === 'true';
+        if (search) {
+          queryBuilder.andWhere('patient.isActive = :isActive', { isActive: active });
+        } else {
+          queryBuilder.where('patient.isActive = :isActive', { isActive: active });
+        }
+      }
+
+      if (areaIdQ) {
+        const aid = parseInt(areaIdQ, 10);
+        if (!isNaN(aid)) {
+          if (search || isActiveQ === 'true' || isActiveQ === 'false') {
+            queryBuilder.andWhere('bed.areaId = :areaId', { areaId: aid });
+          } else {
+            queryBuilder.where('bed.areaId = :areaId', { areaId: aid });
+          }
+        }
+      }
+
+      const priorForBed =
+        !!search ||
+        isActiveQ === 'true' ||
+        isActiveQ === 'false' ||
+        !!(areaIdQ && !isNaN(parseInt(areaIdQ, 10)));
+
+      if (hasBedQ === 'true' || hasBedQ === 'false') {
+        const withBed = hasBedQ === 'true';
+        const bedSql = withBed ? 'bed.id IS NOT NULL' : 'bed.id IS NULL';
+        if (priorForBed) {
+          queryBuilder.andWhere(bedSql);
+        } else {
+          queryBuilder.where(bedSql);
+        }
+      }
+
+      const priorForAssigned =
+        priorForBed ||
+        hasBedQ === 'true' ||
+        hasBedQ === 'false';
+
+      if (assignedToIdQ) {
+        const atId = parseInt(assignedToIdQ, 10);
+        if (!isNaN(atId)) {
+          if (priorForAssigned) {
+            queryBuilder.andWhere('patient.assignedToId = :assignedToId', { assignedToId: atId });
+          } else {
+            queryBuilder.where('patient.assignedToId = :assignedToId', { assignedToId: atId });
+          }
+        }
       }
 
       // Paginación
@@ -56,6 +111,40 @@ export class PatientsController {
               '(patient.firstName LIKE :search OR patient.lastName LIKE :search OR patient.identificationNumber LIKE :search)',
               { search: `%${search}%` }
             );
+          }
+
+          if (isActiveQ === 'true' || isActiveQ === 'false') {
+            const active = isActiveQ === 'true';
+            if (search) {
+              queryBuilder.andWhere('patient.isActive = :isActive', { isActive: active });
+            } else {
+              queryBuilder.where('patient.isActive = :isActive', { isActive: active });
+            }
+          }
+
+          let fallbackHasWhere =
+            !!search || isActiveQ === 'true' || isActiveQ === 'false';
+
+          if (hasBedQ === 'true' || hasBedQ === 'false') {
+            const withBed = hasBedQ === 'true';
+            const bedSql = withBed ? 'patient.bedId IS NOT NULL' : 'patient.bedId IS NULL';
+            if (fallbackHasWhere) {
+              queryBuilder.andWhere(bedSql);
+            } else {
+              queryBuilder.where(bedSql);
+              fallbackHasWhere = true;
+            }
+          }
+
+          if (assignedToIdQ) {
+            const atId = parseInt(assignedToIdQ, 10);
+            if (!isNaN(atId)) {
+              if (fallbackHasWhere) {
+                queryBuilder.andWhere('patient.assignedToId = :assignedToId', { assignedToId: atId });
+              } else {
+                queryBuilder.where('patient.assignedToId = :assignedToId', { assignedToId: atId });
+              }
+            }
           }
 
           queryBuilder.skip(skip).take(limit);
@@ -275,12 +364,21 @@ export class PatientsController {
         isActive,
       } = req.body;
 
+      const assignedToIdBody = req.body.assignedToId;
+
       const patientRepository = AppDataSource.getRepository(Patient);
       const bedRepository = AppDataSource.getRepository(Bed);
       const patient = await patientRepository.findOne({ where: { id: patientId } });
 
       if (!patient) {
         sendErrorResponse(res, 404, 'Paciente no encontrado', 'PATIENT_NOT_FOUND');
+        return;
+      }
+
+      const authReqEarly = req as AuthRequest;
+      const userEarly = authReqEarly.user;
+      if (assignedToIdBody !== undefined && userEarly?.role === UserRole.NURSE) {
+        sendErrorResponse(res, 403, 'No tienes permiso para cambiar la enfermera asignada al paciente', 'FORBIDDEN');
         return;
       }
 
@@ -342,6 +440,31 @@ export class PatientsController {
       if (treatmentHistory !== undefined) patient.treatmentHistory = treatmentHistory;
       if (pendingTasks !== undefined) patient.pendingTasks = pendingTasks;
       if (isActive !== undefined) patient.isActive = isActive;
+
+      if (assignedToIdBody !== undefined) {
+        if (
+          !user ||
+          (user.role !== UserRole.ADMIN && user.role !== UserRole.SUPERVISOR)
+        ) {
+          sendErrorResponse(
+            res,
+            403,
+            'Solo administradores o supervisores pueden asignar o quitar la enfermera responsable',
+            'FORBIDDEN'
+          );
+          return;
+        }
+        if (assignedToIdBody === null || assignedToIdBody === '') {
+          (patient as any).assignedToId = null;
+        } else {
+          const aid = parseInt(String(assignedToIdBody), 10);
+          if (isNaN(aid)) {
+            sendErrorResponse(res, 400, 'assignedToId inválido', 'VALIDATION_ERROR');
+            return;
+          }
+          (patient as any).assignedToId = aid;
+        }
+      }
 
       await patientRepository.save(patient);
 

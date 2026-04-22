@@ -324,7 +324,7 @@
           </tr>
         </tbody>
       </table>
-      <p *ngIf="filteredPatients.length === 0" class="empty-message" role="status" aria-live="polite">No se encontraron pacientes</p>
+      <p *ngIf="paginationConfig.totalItems === 0" class="empty-message" role="status" aria-live="polite">No se encontraron pacientes</p>
       
       <!-- Componente de paginación -->
       <app-pagination 

@@ -19,6 +19,12 @@ import nursesRoutes from './routes/nurses.routes';
 import medicationsRoutes from './routes/medications.routes';
 import shiftsRoutes from './routes/shifts.routes';
 import pharmacyRoutes from './routes/pharmacy.routes';
+import reportsRoutes from './routes/reports.routes';
+import webhooksRoutes from './routes/webhooks.routes';
+import notificationsRoutes from './routes/notifications.routes';
+import backupRoutes from './routes/backup.routes';
+import diagnosticRoutes from './routes/diagnostic.routes';
+import healthRoutes from './routes/health.routes';
 
 // Cargar variables de entorno al inicio
 loadEnv();
@@ -46,16 +52,11 @@ const corsOptions: cors.CorsOptions = {
     const defaultOrigins: string[] = ['http://localhost:4200'];
     const allAllowedOrigins: string[] = [...defaultOrigins, ...allowedOriginsEnv];
 
-    // Patrón regex para dominios de Vercel (acepta cualquier subdominio de vercel.app)
     const vercelPattern = /^https:\/\/.*\.vercel\.app$/;
-    
-    // Patrón para dominios personalizados de Vercel
-    const vercelCustomPattern = /^https:\/\/.*\.vercel\.app$/;
 
-    // Verificar si el origin está permitido
-    const isAllowed = 
-      allAllowedOrigins.includes(origin) || 
-      (process.env.NODE_ENV === 'production' && (vercelPattern.test(origin) || vercelCustomPattern.test(origin)));
+    const isAllowed =
+      allAllowedOrigins.includes(origin) ||
+      (process.env.NODE_ENV === 'production' && vercelPattern.test(origin));
 
     if (isAllowed) {
       callback(null, true);
@@ -99,23 +100,35 @@ app.use('/api/nurse', nursesRoutes);
 app.use('/api/medications', medicationsRoutes);
 app.use('/api/shifts', shiftsRoutes);
 app.use('/api/pharmacy', pharmacyRoutes);
-app.use('/api/reports', require('./routes/reports.routes').default);
-app.use('/api/webhooks', require('./routes/webhooks.routes').default);
-app.use('/api/notifications', require('./routes/notifications.routes').default);
-app.use('/api/backup', require('./routes/backup.routes').default);
-app.use('/api/diagnostic', require('./routes/diagnostic.routes').default);
-app.use('/health', require('./routes/health.routes').default);
+app.use('/api/reports', reportsRoutes);
+app.use('/api/webhooks', webhooksRoutes);
+app.use('/api/notifications', notificationsRoutes);
+app.use('/api/backup', backupRoutes);
+app.use('/api/diagnostic', diagnosticRoutes);
+app.use('/health', healthRoutes);
 console.log('✅ Rutas registradas');
 
 /**
  * @swagger
- * /health:
+ * /:
  *   get:
- *     summary: Verificar estado del servidor
- *     tags: [Health]
+ *     summary: Información básica de la API
+ *     tags: [Root]
+ *     security: []
  *     responses:
  *       200:
- *         description: Servidor funcionando correctamente
+ *         description: Metadatos y enlaces útiles
+ */
+/**
+ * @swagger
+ * /health-basic:
+ *   get:
+ *     summary: Health check mínimo (sin prefijo /health)
+ *     tags: [Health]
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: Servidor en ejecución
  */
 // Health check básico (mantener para compatibilidad)
 app.get('/health-basic', (req, res) => {
@@ -127,7 +140,7 @@ app.get('/health-basic', (req, res) => {
   });
 });
 
-// Root endpoint para verificar que el servidor está funcionando
+// Raíz
 app.get('/', (req, res) => {
   res.json({ 
     message: 'NurseHelper Backend API',
@@ -200,33 +213,10 @@ AppDataSource.initialize()
     server.on('error', (error: any) => {
       if (error.code === 'EADDRINUSE') {
         console.error(`❌ El puerto ${PORT} ya está en uso.`);
-        console.error(`💡 Intentando liberar el puerto automáticamente...`);
-        
-        // Intentar liberar el puerto automáticamente
-        try {
-          const { execSync } = require('child_process');
-          const pids = execSync(`lsof -ti:${PORT}`, { encoding: 'utf8', stdio: 'pipe' }).trim();
-          if (pids) {
-            execSync(`kill -9 ${pids}`, { stdio: 'pipe' });
-            console.log(`✅ Puerto ${PORT} liberado. Reiniciando servidor...`);
-            // Esperar un momento y reintentar
-            setTimeout(() => {
-              const newServer = app.listen(PORT, '0.0.0.0', () => {
-                console.log(`✅ Servidor iniciado en puerto ${PORT} después de liberarlo`);
-              });
-              newServer.on('error', (retryError: any) => {
-                console.error(`❌ Error al reintentar: ${retryError.message}`);
-                process.exit(1);
-              });
-            }, 1000);
-            return;
-          }
-        } catch (autoFreeError) {
-          // Si no se puede liberar automáticamente, mostrar instrucciones
-          console.error(`⚠️  No se pudo liberar el puerto automáticamente.`);
-          console.error(`💡 Para liberar manualmente: lsof -ti:${PORT} | xargs kill -9`);
-          console.error(`💡 O cambia el puerto en el .env: PORT=3001`);
+        if (process.env.NODE_ENV !== 'production') {
+          console.error(`💡 En desarrollo puedes liberar el puerto: lsof -ti:${PORT} | xargs kill -9`);
         }
+        console.error(`💡 O define otro puerto en el entorno, por ejemplo: PORT=3001`);
       } else if (error.code === 'EACCES') {
         console.error(`❌ No tienes permisos para usar el puerto ${PORT}`);
         console.error(`💡 Intenta usar un puerto mayor a 1024 o ejecuta con sudo`);

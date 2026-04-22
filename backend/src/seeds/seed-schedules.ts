@@ -3,7 +3,6 @@ import { loadEnv } from '../utils/env';
 import { AppDataSource } from '../data-source';
 import { Patient } from '../entities/Patient';
 import { Schedule, ScheduleType, ScheduleStatus } from '../entities/Schedule';
-import { Bed } from '../entities/Bed';
 import { User } from '../entities/User';
 
 loadEnv();
@@ -59,7 +58,6 @@ async function seedSchedules() {
 
     const patientRepo = AppDataSource.getRepository(Patient);
     const scheduleRepo = AppDataSource.getRepository(Schedule);
-    const bedRepo = AppDataSource.getRepository(Bed);
     const userRepo = AppDataSource.getRepository(User);
 
     const patients = await patientRepo.find({
@@ -86,8 +84,12 @@ async function seedSchedules() {
     console.log('📅 Generando horarios para cada paciente...\n');
 
     for (const patient of patients) {
-      const bed = await bedRepo.findOne({ where: { patientId: patient.id } });
-      
+      const patientWithBed = await patientRepo.findOne({
+        where: { id: patient.id },
+        relations: ['bed'],
+      });
+      const bed = patientWithBed?.bed ?? null;
+
       if (!bed) {
         console.log(`⚠️ Paciente ${patient.firstName} ${patient.lastName} sin cama, saltando...`);
         continue;

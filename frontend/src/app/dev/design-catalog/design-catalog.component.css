@@ -1,0 +1,256 @@
+@import './design-catalog.imports.css';
+
+/* Farmacia: botón peligro y badges de stock (mismo CSS que pharmacy-dashboard, sin importar el archivo completo). */
+.btn-danger-neuro {
+  background: #fed7d7;
+  color: #c53030;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 50px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 8px 8px 16px #bebebe, -8px -8px 16px #ffffff;
+}
+
+.btn-danger-neuro:hover:not(:disabled) {
+  background: #fc8181;
+  color: #fff;
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+}
+
+.btn-danger-neuro:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.stock-info-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  box-shadow: inset 2px 2px 4px rgba(0, 0, 0, 0.1), inset -2px -2px 4px rgba(255, 255, 255, 0.5);
+}
+
+.stock-info-badge.available {
+  background: #c6f6d5;
+  color: #22543d;
+}
+
+.stock-info-badge.unavailable {
+  background: #fed7d7;
+  color: #c53030;
+}
+
+.dc-category {
+  margin-bottom: 3rem;
+}
+
+.dc-category-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #2d3748;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0 0 1.25rem;
+  padding: 0.5rem 0 0.5rem 0.75rem;
+  border-left: 4px solid #4299e1;
+  background: linear-gradient(90deg, rgba(66, 153, 225, 0.12), transparent);
+  border-radius: 0 8px 8px 0;
+}
+
+.dc-subsection-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #4a5568;
+  margin: 1.75rem 0 0.5rem;
+}
+
+.dc-subsection-title:first-child {
+  margin-top: 0;
+}
+
+/* Vista previa de modal sin cubrir toda la ventana */
+.dc-modal-sandbox {
+  position: relative;
+  min-height: 260px;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: inset 2px 2px 6px #c4cad4;
+}
+
+.dc-modal-sandbox .modal-backdrop {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  inset: 0 !important;
+  align-items: flex-start !important;
+  padding-top: 0.75rem !important;
+}
+
+.dc-modal-sandbox .modal-content {
+  max-height: 240px !important;
+  width: min(520px, 100% - 1.5rem) !important;
+  margin: 0 auto;
+}
+
+.design-catalog-root {
+  min-height: 100vh;
+  background: #e0e5ec;
+  color: #4a5568;
+  padding: 1.5rem 1.5rem 4rem;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.dc-header {
+  max-width: 1100px;
+  margin: 0 auto 1.5rem;
+  padding: 1.25rem 1.5rem;
+  border-radius: 20px;
+  background: #e0e5ec;
+  box-shadow: 8px 8px 16px #bebebe, -8px -8px 16px #ffffff;
+}
+
+.dc-header h1 {
+  font-weight: 300;
+  font-size: 1.75rem;
+  margin: 0 0 0.5rem;
+  text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8), -1px -1px 2px rgba(174, 174, 192, 0.4);
+}
+
+.dc-header p {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+  color: #718096;
+}
+
+.dc-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.dc-link {
+  color: #667eea;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.dc-link:hover {
+  text-decoration: underline;
+}
+
+.dc-nav {
+  max-width: 1100px;
+  margin: 0 auto 2rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  padding: 1rem 1.25rem;
+  border-radius: 16px;
+  background: #e0e5ec;
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+}
+
+.dc-nav a {
+  color: #4a5568;
+  font-size: 0.88rem;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.dc-nav a:hover {
+  color: #2b6cb0;
+}
+
+.dc-main {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+.dc-section {
+  background: #e0e5ec;
+  border-radius: 22px;
+  padding: 1.5rem 1.75rem;
+  box-shadow: 10px 10px 20px #bebebe, -10px -10px 20px #ffffff;
+}
+
+.dc-section h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 0.35rem;
+  color: #4a5568;
+}
+
+.dc-section > p.dc-lead {
+  margin: 0 0 1.25rem;
+  font-size: 0.9rem;
+  color: #718096;
+}
+
+.dc-preview {
+  padding: 1.25rem;
+  border-radius: 16px;
+  margin-bottom: 1rem;
+  background: #e0e5ec;
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+}
+
+.dc-preview.dc-preview--column {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.dc-preview-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.dc-code {
+  margin: 0;
+  padding: 1rem 1.1rem;
+  border-radius: 12px;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  overflow-x: auto;
+  background: #d8dde6;
+  color: #2d3748;
+  box-shadow: inset 3px 3px 6px #b8bcc4, inset -3px -3px 6px #f0f4fa;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.dc-code code {
+  font-family: inherit;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.dc-label {
+  font-size: 0.75rem;
+  color: #718096;
+  width: 100%;
+  margin-bottom: -0.5rem;
+}
+
+.dc-table-wrap {
+  overflow-x: auto;
+  width: 100%;
+}
+
+.dc-spacer {
+  height: 0.5rem;
+}

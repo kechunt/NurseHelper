@@ -1,0 +1,682 @@
+<div class="design-catalog-root">
+  <header class="dc-header">
+    <h1>Catálogo de diseño (neumorfismo)</h1>
+    <p>
+      Ruta de prueba: <code>/design-catalog</code>. Estilos importados desde los <code>*.component.css</code> reales; debajo de cada bloque hay un fragmento de referencia.
+    </p>
+    <div class="dc-header-actions">
+      <a class="dc-link" routerLink="/login">Ir al login</a>
+    </div>
+  </header>
+
+  <nav class="dc-nav" aria-label="Índice del catálogo">
+    <a href="#cat-fundamentos">Fundamentos</a>
+    <a href="#cat-formulario">Formulario admin</a>
+    <a href="#cat-botones">Botones</a>
+    <a href="#cat-filtros">Filtros</a>
+    <a href="#cat-tablas">Tablas</a>
+    <a href="#cat-tarjetas">Tarjetas y grillas</a>
+    <a href="#cat-turnos">Turnos y resumen</a>
+    <a href="#cat-paginacion">Paginación</a>
+    <a href="#cat-camas">Camas y áreas</a>
+    <a href="#cat-farmacia">Farmacia</a>
+    <a href="#cat-modales">Modales</a>
+    <a href="#cat-tokens">Tokens</a>
+  </nav>
+
+  <main class="dc-main">
+    <!-- ——— Fundamentos ——— -->
+    <div id="cat-fundamentos" class="dc-category">
+      <h2 class="dc-category-title">Fundamentos</h2>
+
+      <article class="dc-section">
+        <h2>Login</h2>
+        <p class="dc-lead"><code>login-card</code>, <code>neuro-input</code>, <code>neuro-btn</code>, <code>error-message</code></p>
+        <div class="dc-preview dc-preview--column" style="max-width: 420px">
+          <div class="login-card" style="padding: 1.5rem">
+            <div class="input-group">
+              <label>Correo</label>
+              <input class="neuro-input" type="email" placeholder="correo@ejemplo.com" readonly />
+            </div>
+            <button type="button" class="neuro-btn">Entrar</button>
+            <div class="error-message" style="margin-top: 0.75rem">Ejemplo de error</div>
+          </div>
+        </div>
+        <pre class="dc-code"><code>{{ snip.loginCard }}</code></pre>
+        <p class="dc-label">{{ snip.loginCss }}</p>
+      </article>
+
+      <article class="dc-section">
+        <h2>Registro — select y checkbox</h2>
+        <p class="dc-lead">Mismo patrón que alta de usuario.</p>
+        <div class="dc-preview dc-preview--column" style="max-width: 480px">
+          <select class="neuro-select">
+            <option>Enfermería</option>
+            <option>Supervisor</option>
+          </select>
+          <label class="neuro-checkbox">
+            <input type="checkbox" />
+            Acepto los términos
+          </label>
+        </div>
+        <pre class="dc-code"><code>{{ snip.registerSelectCheckbox }}</code></pre>
+        <p class="dc-label">{{ snip.registerCss }}</p>
+      </article>
+    </div>
+
+    <!-- ——— Formulario admin ——— -->
+    <div id="cat-formulario" class="dc-category">
+      <h2 class="dc-category-title">Formularios en admin</h2>
+
+      <article class="dc-section">
+        <h2>Cabecera de sección colapsable (pacientes)</h2>
+        <p class="dc-lead"><code>section-header</code>, <code>section-title</code>, <code>toggle-btn-neuro</code></p>
+        <div class="dc-preview dc-preview--column">
+          <div class="section-header collapsible-header" style="cursor: default">
+            <h2 class="section-title">Ingreso de paciente</h2>
+            <div class="header-actions">
+              <button type="button" class="toggle-btn-neuro">Alternar</button>
+            </div>
+          </div>
+        </div>
+        <pre class="dc-code"><code>{{ snip.sectionHeaderCollapsible }}</code></pre>
+        <p class="dc-label">{{ snip.patientsCss }}</p>
+      </article>
+
+      <article class="dc-section">
+        <h2>Bloque hundido y textarea</h2>
+        <p class="dc-lead"><code>patient-form-section</code>, <code>form-section</code>, <code>section-header-small</code>, <code>neuro-btn-small</code></p>
+        <div class="dc-preview dc-preview--column">
+          <div class="patient-form-section" style="margin: 0">
+            <div class="form-section">
+              <div class="section-header-small">
+                <h4>Medicación</h4>
+                <button type="button" class="neuro-btn-small">Añadir</button>
+              </div>
+              <textarea class="neuro-input" rows="2" readonly placeholder="textarea.neuro-input"></textarea>
+            </div>
+          </div>
+        </div>
+        <pre class="dc-code"><code>{{ snip.patientFormSection }}</code></pre>
+        <p class="dc-label">{{ snip.patientsCss }}</p>
+      </article>
+    </div>
+
+    <!-- ——— Botones ——— -->
+    <div id="cat-botones" class="dc-category">
+      <h2 class="dc-category-title">Botones y acciones</h2>
+
+      <article class="dc-section">
+        <h2>Primario, secundario, neuro</h2>
+        <div class="dc-preview dc-preview-row">
+          <button type="button" class="btn-primary-neuro">btn-primary-neuro</button>
+          <button type="button" class="btn-secondary-neuro">btn-secondary-neuro</button>
+          <button type="button" class="neuro-btn outlined">neuro-btn outlined</button>
+          <button type="button" class="neuro-btn">neuro-btn</button>
+        </div>
+        <pre class="dc-code"><code>{{ snip.primaryButtons }}</code></pre>
+      </article>
+
+      <article class="dc-section">
+        <h2>Enfermería — iconos y acciones de tarea</h2>
+        <p class="dc-lead">Icono cabecera, filtros, completar, etc. · compactos en <code>{{ snip.tableActionsCss }}</code></p>
+        <div class="dc-preview dc-preview-row">
+          <button type="button" class="neuro-btn-icon logout-btn" title="Salir">⎋</button>
+          <button type="button" class="add-task-btn-neuro" title="Añadir">＋</button>
+          <button type="button" class="filter-btn-neuro">Pendiente</button>
+          <button type="button" class="filter-btn-neuro active">Activo</button>
+          <button type="button" class="view-patient-btn-neuro">Ver paciente</button>
+          <button type="button" class="complete-btn-neuro">Completar</button>
+          <button type="button" class="not-administered-btn-neuro">No adm.</button>
+          <button type="button" class="save-observation-btn-neuro small">Guardar obs.</button>
+        </div>
+        <pre class="dc-code"><code>{{ snip.headerIcon }}</code></pre>
+        <pre class="dc-code" style="margin-top: 0.75rem"><code>{{ snip.nurseActions }}</code></pre>
+        <p class="dc-label">{{ snip.nurseCss }}</p>
+      </article>
+
+      <article class="dc-section">
+        <h2>Turnos — guardar / cerrar / cancelar</h2>
+        <div class="dc-preview dc-preview-row">
+          <button type="button" class="btn-save-neuro">btn-save-neuro</button>
+          <button type="button" class="btn-close-neuro">btn-close-neuro</button>
+          <button type="button" class="btn-cancel-neuro">btn-cancel-neuro</button>
+        </div>
+        <pre class="dc-code"><code>{{ snip.schedulesExtraButtons }}</code></pre>
+        <p class="dc-label">{{ snip.schedulesCss }}</p>
+      </article>
+
+      <article class="dc-section">
+        <h2>Modal de términos</h2>
+        <div class="dc-preview dc-preview-row">
+          <button type="button" class="neuro-btn outlined">Cerrar</button>
+          <button type="button" class="neuro-btn">Acepto</button>
+        </div>
+        <pre class="dc-code"><code>{{ snip.termsModal }}</code></pre>
+        <p class="dc-label">{{ snip.termsCss }}</p>
+      </article>
+    </div>
+
+    <!-- ——— Filtros ——— -->
+    <div id="cat-filtros" class="dc-category">
+      <h2 class="dc-category-title">Filtros y búsqueda</h2>
+
+      <article class="dc-section">
+        <h2>Pacientes — <code>filter-box</code></h2>
+        <div class="dc-preview dc-preview--column">
+          <div class="filters-container">
+            <div class="filter-box">
+              <label>Buscar</label>
+              <input class="neuro-input search-input" type="search" placeholder="Nombre, ID…" readonly />
+            </div>
+            <div class="filter-box">
+              <label>Área</label>
+              <select class="neuro-select">
+                <option>Todas</option>
+              </select>
+            </div>
+            <div class="filter-box">
+              <button type="button" class="neuro-btn clear-filters">Limpiar filtros</button>
+            </div>
+          </div>
+        </div>
+        <pre class="dc-code"><code>{{ snip.filtersPatients }}</code></pre>
+        <p class="dc-label">{{ snip.patientsCss }}</p>
+      </article>
+
+      <article class="dc-section">
+        <h2>Usuarios / staff — <code>filter-group</code></h2>
+        <div class="dc-preview dc-preview--column">
+          <div class="filters-container">
+            <div class="filter-group">
+              <label for="dc-role">Rol</label>
+              <select id="dc-role" class="neuro-select">
+                <option>Todos</option>
+              </select>
+            </div>
+            <div class="filter-group search-group">
+              <label for="dc-search">Buscar</label>
+              <div class="search-input-wrapper">
+                <input id="dc-search" class="neuro-input search-input" type="search" placeholder="Usuario, email…" readonly />
+                <span class="search-icon">🔍</span>
+              </div>
+            </div>
+            <div class="filter-group">
+              <button type="button" class="neuro-btn clear-filters-btn">Limpiar</button>
+            </div>
+          </div>
+          <div class="results-info" style="margin-top: 1rem">
+            <p>Mostrando 10 de 120 usuarios</p>
+          </div>
+        </div>
+        <pre class="dc-code"><code>{{ snip.filtersUsers }}</code></pre>
+        <pre class="dc-code" style="margin-top: 0.75rem"><code>{{ snip.resultsInfo }}</code></pre>
+        <p class="dc-label">{{ snip.usersCss }}</p>
+      </article>
+    </div>
+
+    <!-- ——— Tablas ——— -->
+    <div id="cat-tablas" class="dc-category">
+      <h2 class="dc-category-title">Tablas</h2>
+
+      <article class="dc-section">
+        <h2>Admin — <code>neuro-table</code> + contenedor</h2>
+        <p class="dc-lead">Pacientes, usuarios: <code>table-container</code>, <code>table-header-actions</code>, <code>action-buttons-table</code></p>
+        <div class="dc-preview dc-preview--column">
+          <div class="table-container">
+            <div class="table-header-actions">
+              <button type="button" class="neuro-btn">Exportar CSV</button>
+            </div>
+            <table class="neuro-table">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Estado</th>
+                  <th>Rol</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span>María López</span></td>
+                  <td><span class="neuro-status active">Activo</span></td>
+                  <td>
+                    <span class="neuro-status role-nurse">Enfermería</span>
+                  </td>
+                  <td>
+                    <div class="action-buttons-table">
+                      <button type="button" class="neuro-btn-icon success" title="Ok">✓</button>
+                      <button type="button" class="neuro-btn-icon danger delete-btn" title="Eliminar">✕</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr class="inactive">
+                  <td><span>Juan Pérez</span></td>
+                  <td><span class="neuro-status inactive">Inactivo</span></td>
+                  <td><span class="neuro-status role-admin">Admin</span></td>
+                  <td>
+                    <div class="action-buttons-table">
+                      <button type="button" class="neuro-btn-icon warning" title="Aviso">!</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <pre class="dc-code"><code>{{ snip.neuroTable }}</code></pre>
+        <p class="dc-label">{{ snip.patientsCss }} · {{ snip.usersCss }} · {{ snip.tableActionsCss }}</p>
+      </article>
+
+      <article class="dc-section">
+        <h2>Turnos — <code>shifts-table-neuro</code></h2>
+        <p class="dc-lead"><code>table-wrapper-neuro</code>, <code>select-day-neuro</code>, <code>badge-area-neuro</code>, <code>badge-hours-neuro</code></p>
+        <div class="dc-preview dc-preview--column" style="overflow-x: auto">
+          <div class="table-wrapper-neuro">
+            <table class="shifts-table-neuro">
+              <thead>
+                <tr>
+                  <th>Enfermera</th>
+                  <th>Área</th>
+                  <th>Lun</th>
+                  <th>Horas</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="row-neuro">
+                  <td class="cell-nurse-neuro"><strong>Ana Ruiz</strong></td>
+                  <td class="cell-area-neuro">
+                    <span class="badge-area-neuro">UCI</span>
+                  </td>
+                  <td class="cell-day-neuro">
+                    <select class="select-day-neuro shift-morning">
+                      <option>Mañana</option>
+                    </select>
+                  </td>
+                  <td class="cell-hours-neuro">
+                    <span class="badge-hours-neuro">40h</span>
+                  </td>
+                  <td class="cell-actions-neuro">
+                    <button type="button" class="btn-save-nurse-neuro">Guardar</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <pre class="dc-code"><code>{{ snip.shiftsTable }}</code></pre>
+        <p class="dc-label">{{ snip.schedulesCss }}</p>
+      </article>
+
+      <article class="dc-section">
+        <h2>Tareas unificadas — <code>unified-tasks-table</code></h2>
+        <p class="dc-lead">Enfermería y farmacia (contenedor con scroll horizontal en producción).</p>
+        <div class="dc-preview dc-preview--column" style="overflow-x: auto">
+          <div class="unified-table-container">
+            <table class="unified-tasks-table">
+              <thead>
+                <tr>
+                  <th>Tarea</th>
+                  <th>Paciente</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span>Control de signos</span></td>
+                  <td><span>Pérez</span></td>
+                  <td>
+                    <div class="action-buttons-table">
+                      <button type="button" class="action-btn-compact success" title="Hecho">✓</button>
+                      <button type="button" class="action-btn-compact danger" title="Cancelar">✕</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <pre class="dc-code"><code>{{ snip.unifiedTasksTable }}</code></pre>
+        <p class="dc-label">{{ snip.nurseCss }} · {{ snip.pharmacyCss }}</p>
+      </article>
+
+      <article class="dc-section">
+        <h2>Áreas — <code>patients-table</code></h2>
+        <p class="dc-lead">Listados compactos en gestión de áreas / camas.</p>
+        <div class="dc-preview dc-preview--column" style="overflow-x: auto">
+          <div class="patients-table-container">
+            <table class="patients-table">
+              <thead>
+                <tr>
+                  <th>Paciente</th>
+                  <th>Cama</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span>López García</span></td>
+                  <td><span>12A</span></td>
+                  <td>
+                    <div class="action-buttons-table">
+                      <button type="button" class="neuro-btn-icon" title="Editar">✎</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <pre class="dc-code"><code>{{ snip.patientsTableAreas }}</code></pre>
+        <p class="dc-label">{{ snip.areasCss }}</p>
+      </article>
+    </div>
+
+    <!-- ——— Tarjetas ——— -->
+    <div id="cat-tarjetas" class="dc-category">
+      <h2 class="dc-category-title">Tarjetas y grillas</h2>
+
+      <article class="dc-section">
+        <h2>Overview admin — <code>stat-card</code></h2>
+        <div class="dc-preview">
+          <div class="stats-grid" style="width: 100%">
+            <div class="stat-card">
+              <div class="stat-icon">👤</div>
+              <div class="stat-content">
+                <p class="stat-value">128</p>
+                <p class="stat-label">Pacientes</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">📅</div>
+              <div class="stat-content">
+                <p class="stat-value">36</p>
+                <p class="stat-label">Turnos hoy</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <pre class="dc-code"><code>{{ snip.overviewStats }}</code></pre>
+        <p class="dc-label">{{ snip.overviewCss }}</p>
+      </article>
+
+      <article class="dc-section">
+        <h2>Enfermería — quick stats</h2>
+        <div class="dc-preview">
+          <div class="stat-card clickable" style="max-width: 280px">
+            <div class="stat-icon">📋</div>
+            <div class="stat-content">
+              <p class="stat-value">5</p>
+              <p class="stat-label">Tareas pendientes</p>
+            </div>
+          </div>
+        </div>
+        <pre class="dc-code"><code>{{ snip.statCardNurse }}</code></pre>
+        <p class="dc-label">{{ snip.nurseCss }}</p>
+      </article>
+
+      <article class="dc-section">
+        <h2>Usuarios — <code>role-card</code> por rol</h2>
+        <div class="dc-preview dc-preview--column">
+          <h3 class="role-section-title" style="margin: 0 0 0.75rem">Jefas de enfermería</h3>
+          <div class="role-cards-container" style="width: 100%">
+            <div class="role-card">
+              <div class="role-card-content">
+                <div class="role-card-info">
+                  <h4>María Supervisor</h4>
+                  <p class="role-card-username">@msup</p>
+                  <p class="role-card-email">m@centro.org</p>
+                  <span class="neuro-status role-supervisor">Supervisor</span>
+                </div>
+                <div class="role-card-actions">
+                  <button type="button" class="neuro-btn-icon" title="Cambiar rol">⚙</button>
+                </div>
+              </div>
+            </div>
+            <div class="role-card">
+              <div class="role-card-content">
+                <div class="role-card-info">
+                  <h4>Farmacia Central</h4>
+                  <p class="role-card-username">@farm</p>
+                  <span class="neuro-status role-pharmacy">Farmacia</span>
+                </div>
+                <div class="role-card-actions">
+                  <button type="button" class="neuro-btn-icon" title="Cambiar rol">⚙</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <pre class="dc-code"><code>{{ snip.roleCard }}</code></pre>
+        <p class="dc-label">{{ snip.usersCss }}</p>
+      </article>
+
+      <article class="dc-section">
+        <h2>Staff — <code>nurse-card</code></h2>
+        <div class="dc-preview dc-preview--column">
+          <div class="nurses-grid" style="width: 100%; margin: 0">
+            <div class="nurse-card">
+              <div class="nurse-card-header">
+                <div class="nurse-info">
+                  <h3 class="nurse-name">Laura Gómez</h3>
+                  <p class="nurse-username">@lgomez</p>
+                  <p class="nurse-email">laura@centro.org</p>
+                </div>
+                <div class="nurse-status active">Activo</div>
+              </div>
+              <div class="nurse-details">
+                <div class="detail-item">
+                  <span class="detail-label">Turno</span>
+                  <span class="detail-value">Mañana</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <pre class="dc-code"><code>{{ snip.nurseCardStaff }}</code></pre>
+        <p class="dc-label">{{ snip.staffCss }}</p>
+      </article>
+
+      <article class="dc-section">
+        <h2>Botones de tamaño (pacientes)</h2>
+        <div class="dc-preview dc-preview-row">
+          <button type="button" class="toggle-btn-neuro">toggle-btn-neuro</button>
+          <button type="button" class="neuro-btn-large">neuro-btn-large</button>
+          <button type="button" class="neuro-btn-small">neuro-btn-small</button>
+        </div>
+        <pre class="dc-code"><code>{{ snip.toggleAndLarge }}</code></pre>
+        <p class="dc-label">{{ snip.patientsCss }}</p>
+      </article>
+    </div>
+
+    <!-- ——— Turnos ——— -->
+    <div id="cat-turnos" class="dc-category">
+      <h2 class="dc-category-title">Turnos — cabecera, filtros y resumen</h2>
+
+      <article class="dc-section">
+        <h2>Cabecera y filtros neumórficos</h2>
+        <div class="dc-preview dc-preview--column">
+          <div class="section-header-neuro">
+            <h2 class="section-title-neuro">Gestión de turnos</h2>
+            <button type="button" class="btn-save-neuro">Guardar todos</button>
+          </div>
+          <div class="filters-neuro" style="width: 100%; box-sizing: border-box; margin-top: 1rem">
+            <div class="filter-item-neuro">
+              <label>Área</label>
+              <select class="select-neuro">
+                <option>UCI</option>
+              </select>
+            </div>
+            <div class="filter-item-neuro">
+              <label>Semana</label>
+              <input class="input-neuro" type="date" />
+            </div>
+          </div>
+        </div>
+        <pre class="dc-code"><code>{{ snip.schedulesHeader }}</code></pre>
+        <pre class="dc-code" style="margin-top: 0.75rem"><code>{{ snip.schedulesFilters }}</code></pre>
+        <p class="dc-label">{{ snip.schedulesCss }}</p>
+      </article>
+
+      <article class="dc-section">
+        <h2>Resumen por área y estados de carga</h2>
+        <div class="dc-preview dc-preview--column">
+          <div class="summary-section-neuro" style="margin: 0">
+            <h3 class="title-summary-neuro" style="font-size: 1.2rem; margin-bottom: 1rem">Resumen</h3>
+            <div class="areas-container-neuro">
+              <div class="area-box-neuro">
+                <div class="area-title-box-neuro">
+                  <h4>UCI</h4>
+                </div>
+                <div class="shift-box-neuro">
+                  <div class="shift-header-box-neuro">
+                    <span class="badge-shift-neuro morning">Mañana</span>
+                  </div>
+                  <p style="margin: 0; font-size: 0.85rem; color: #718096">Lista de enfermeras…</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="loading-neuro" style="margin-top: 1rem"><p>Cargando turnos…</p></div>
+          <div class="empty-neuro" style="margin-top: 0.5rem"><p>Sin datos para la semana</p></div>
+        </div>
+        <pre class="dc-code"><code>{{ snip.schedulesSummary }}</code></pre>
+        <pre class="dc-code" style="margin-top: 0.75rem"><code>{{ snip.schedulesLoading }}</code></pre>
+        <p class="dc-label">{{ snip.schedulesCss }}</p>
+      </article>
+    </div>
+
+    <!-- ——— Paginación ——— -->
+    <div id="cat-paginacion" class="dc-category">
+      <h2 class="dc-category-title">Paginación</h2>
+      <article class="dc-section">
+        <h2>Componente compartido</h2>
+        <div class="dc-preview dc-preview--column">
+          <div class="pagination-container">
+            <div class="pagination-info">
+              <span>Mostrando 1 - 10 de 100 resultados</span>
+              <select class="items-per-page-select">
+                <option>10 por página</option>
+              </select>
+            </div>
+            <div class="pagination-controls">
+              <button type="button" class="pagination-btn" disabled>Anterior</button>
+              <div class="page-numbers">
+                <button type="button" class="pagination-btn active">1</button>
+                <button type="button" class="pagination-btn">2</button>
+              </div>
+              <button type="button" class="pagination-btn">Siguiente</button>
+            </div>
+          </div>
+        </div>
+        <pre class="dc-code"><code>{{ snip.pagination }}</code></pre>
+        <p class="dc-label">{{ snip.paginationCss }}</p>
+      </article>
+    </div>
+
+    <!-- ——— Camas y áreas ——— -->
+    <div id="cat-camas" class="dc-category">
+      <h2 class="dc-category-title">Camas, áreas y formularios</h2>
+
+      <article class="dc-section">
+        <h2>Camas — filtros y <code>area-section</code></h2>
+        <div class="dc-preview dc-preview--column">
+          <div class="dc-preview-row">
+            <button type="button" class="filter-btn">Todos</button>
+            <button type="button" class="filter-btn active">Ocupadas</button>
+          </div>
+          <div class="area-section" style="margin-top: 1rem">
+            <p style="margin: 0; font-size: 0.9rem">Contenedor <code>area-section</code>.</p>
+          </div>
+        </div>
+        <pre class="dc-code"><code>{{ snip.bedsFilters }}</code></pre>
+        <pre class="dc-code" style="margin-top: 0.75rem"><code>{{ snip.areaSectionBeds }}</code></pre>
+        <p class="dc-label">{{ snip.bedsCss }}</p>
+      </article>
+
+      <article class="dc-section">
+        <h2>Áreas — <code>neuro-status</code></h2>
+        <div class="dc-preview dc-preview-row">
+          <span class="neuro-status active">Área activa</span>
+          <span class="neuro-status inactive">Área inactiva</span>
+        </div>
+        <pre class="dc-code"><code>{{ snip.areasStatus }}</code></pre>
+        <p class="dc-label">{{ snip.areasCss }}</p>
+      </article>
+    </div>
+
+    <!-- ——— Farmacia ——— -->
+    <div id="cat-farmacia" class="dc-category">
+      <h2 class="dc-category-title">Farmacia</h2>
+
+      <article class="dc-section">
+        <h2>Peligro, stock y badges de fila</h2>
+        <p class="dc-lead"><code>btn-danger-neuro</code> y <code>stock-info-badge</code> están en <code>design-catalog.component.css</code>; el resto en CSS de farmacia.</p>
+        <div class="dc-preview dc-preview-row" style="flex-wrap: wrap; gap: 0.75rem">
+          <button type="button" class="btn-danger-neuro">Rechazar</button>
+          <span class="stock-info-badge available">En stock</span>
+          <span class="stock-info-badge unavailable">Sin stock</span>
+          <span class="priority-badge high">Alta</span>
+          <span class="priority-badge urgent">Urgente</span>
+          <span class="status-badge pending">Pendiente</span>
+          <span class="status-badge ready">Lista</span>
+        </div>
+        <div class="dc-preview dc-preview-row" style="margin-top: 0.75rem">
+          <div class="action-buttons-pharmacy">
+            <button type="button" class="action-btn-compact">👁</button>
+            <button type="button" class="action-btn-compact accept-btn">✓</button>
+            <button type="button" class="action-btn-compact reject-btn">✕</button>
+          </div>
+        </div>
+        <pre class="dc-code"><code>{{ snip.pharmacyDanger }}</code></pre>
+        <pre class="dc-code" style="margin-top: 0.75rem"><code>{{ snip.pharmacyRowBadges }}</code></pre>
+        <p class="dc-label">{{ snip.pharmacyCss }}</p>
+      </article>
+    </div>
+
+    <!-- ——— Modales ——— -->
+    <div id="cat-modales" class="dc-category">
+      <h2 class="dc-category-title">Modales neumórficos (pacientes)</h2>
+      <article class="dc-section">
+        <h2>Backdrop, contenido, pestañas y cierre</h2>
+        <p class="dc-lead">Vista acotada para no cubrir toda la ventana (<code>dc-modal-sandbox</code> en <code>design-catalog.component.css</code>).</p>
+        <div class="dc-modal-sandbox">
+          <div class="modal-backdrop">
+            <div class="modal-content" (click)="$event.stopPropagation()">
+              <div class="modal-header">
+                <h3>Vista previa modal</h3>
+                <button type="button" class="close-btn" aria-label="Cerrar">×</button>
+              </div>
+              <div class="tabs-container">
+                <button type="button" class="tab active">Datos</button>
+                <button type="button" class="tab">Historial</button>
+              </div>
+              <div class="modal-body scrollable">
+                <p style="margin: 0; color: #718096; font-size: 0.9rem">Cuerpo con scroll. Inputs <code>neuro-input</code> en el modal real.</p>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="neuro-btn outlined">Cancelar</button>
+                <button type="button" class="neuro-btn">Guardar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <pre class="dc-code"><code>{{ snip.modalPatientTabs }}</code></pre>
+        <p class="dc-label">{{ snip.patientsCss }}</p>
+      </article>
+    </div>
+
+    <!-- ——— Tokens ——— -->
+    <div id="cat-tokens" class="dc-category">
+      <h2 class="dc-category-title">Tokens y base (repo)</h2>
+      <article class="dc-section">
+        <ul style="margin: 0 0 1rem 1.25rem; color: #718096; font-size: 0.95rem">
+          <li><code>{{ snip.designTokens }}</code></li>
+          <li><code>{{ snip.neuroBase }}</code></li>
+        </ul>
+        <pre class="dc-code"><code>@import 'design-catalog/css/design-tokens.css';\n@import 'design-catalog/css/neuro-base.css';</code></pre>
+      </article>
+    </div>
+  </main>
+</div>

@@ -4,9 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { forkJoin, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { AdminService, Area, Bed, Patient } from '../../../services/admin.service';
-import { AuthService, User } from '../../../services/auth.service';
+import { User } from '../../../services/auth.service';
 import { environment } from '../../../../environments/environment';
-import { HttpClient } from '@angular/common/http';
 
 interface NurseWithPatients extends User {
   assignedPatients: Patient[];
@@ -43,11 +42,7 @@ export class StaffManagementComponent implements OnInit {
   searchQuery: string = '';
   selectedArea: number | null = null;
 
-  constructor(
-    private adminService: AdminService,
-    private authService: AuthService,
-    private http: HttpClient
-  ) {}
+  constructor(private adminService: AdminService) {}
 
   ngOnInit(): void {
     console.log('🚀 Staff Management Component inicializado');
@@ -64,7 +59,7 @@ export class StaffManagementComponent implements OnInit {
     console.log('🌐 Endpoints que se llamarán:');
     console.log('  - Areas:', `${environment.apiUrl}/areas`);
     console.log('  - Beds:', `${environment.apiUrl}/beds`);
-    console.log('  - Patients:', `${environment.apiUrl}/patients?limit=1000`);
+    console.log('  - Patients:', `${environment.apiUrl}/patients (página admin)`);
     console.log('  - Users:', `${environment.apiUrl}/users?page=1&limit=200`);
 
     // Cargar datos en paralelo con manejo de errores mejorado
@@ -81,11 +76,7 @@ export class StaffManagementComponent implements OnInit {
           return of([]);
         })
       ),
-      patients: this.http.get<any>(`${environment.apiUrl}/patients?limit=1000`).pipe(
-        map((response) => {
-          // Manejar respuesta paginada o array directo
-          return response.items || response || [];
-        }),
+      patients: this.adminService.getPatients(false).pipe(
         catchError((err) => {
           console.error('Error cargando pacientes:', err);
           return of([]);
@@ -190,44 +181,74 @@ export class StaffManagementComponent implements OnInit {
             } as NurseWithPatients;
           }
 
-          // LÓGICA IGUAL QUE NURSE-DASHBOARD: pacientes asignados por área
-          // Si la enfermera tiene un área asignada, buscar pacientes en camas de esa área
-          let assignedPatients: Patient[] = [];
-          
-          if (nurseAreaId && !isNaN(nurseAreaId)) {
-            // Buscar camas del área de la enfermera que tienen pacientes
-            const bedsInNurseArea = this.beds.filter((bed: any) => {
-              const bedAreaId = typeof bed.areaId === 'number' ? bed.areaId : parseInt(bed.areaId);
-              return !isNaN(bedAreaId) && bedAreaId === nurseAreaId && bed.patientId && bed.isActive !== false;
-            });
-            
-            console.log(`  🛏️ Camas en área ${nurseAreaId} para ${nurse.firstName} ${nurse.lastName}:`, bedsInNurseArea.length);
-            
-            // Obtener IDs de pacientes de esas camas
-            const assignedPatientIds = new Set(
-              bedsInNurseArea
-                .map((bed: any) => {
-                  const patientId = typeof bed.patientId === 'number' ? bed.patientId : parseInt(bed.patientId);
-                  return isNaN(patientId) ? null : patientId;
-                })
-                .filter((id: any) => id !== null)
+          // Pacientes con assignedToId = enfermera (persistido en BD)
+          const byNurseColumn = this.patients.filter((p: any) => {
+            const patientId = typeof p.id === 'number' ? p.id : parseInt(p.id, 10);
+            const raw = p.assignedToId ?? p.assignedTo?.id;
+            const aid =
+              raw == null || raw === ''
+                ? NaN
+                : typeof raw === 'number'
+                  ? raw
+                  : parseInt(String(raw), 10);
+            return (
+              !isNaN(patientId) &&
+              !isNaN(aid) &&
+              aid === nurseId &&
+              p.isActive !== false
             );
-            
-            // Filtrar pacientes que están en esas camas y están activos
-            assignedPatients = this.patients.filter((p: any) => {
-              const patientId = typeof p.id === 'number' ? p.id : parseInt(p.id);
-              return !isNaN(patientId) && assignedPatientIds.has(patientId) && p.isActive !== false;
+          });
+
+          // Compatibilidad: pacientes en camas del área de la enfermera (sin assignedToId previo)
+          let byArea: Patient[] = [];
+          if (nurseAreaId && !isNaN(nurseAreaId)) {
+            const bedsInNurseArea = this.beds.filter((bed: any) => {
+              const bedAreaId = typeof bed.areaId === 'number' ? bed.areaId : parseInt(bed.areaId, 10);
+              return (
+                !isNaN(bedAreaId) &&
+                bedAreaId === nurseAreaId &&
+                bed.patientId &&
+                bed.isActive !== false
+              );
             });
-            
-            console.log(`  👩‍⚕️ ${nurse.firstName} ${nurse.lastName} (ID: ${nurseId}, Área: ${nurseAreaId}):`, {
-              camasEnArea: bedsInNurseArea.length,
-              patientIds: Array.from(assignedPatientIds),
-              pacientes: assignedPatients.length,
-              pacientesDetalle: assignedPatients.map((p: any) => `${p.firstName} ${p.lastName} (ID: ${p.id})`),
+            const areaPatientIds = new Set<number>();
+            bedsInNurseArea.forEach((bed: any) => {
+              const pid =
+                typeof bed.patientId === 'number'
+                  ? bed.patientId
+                  : parseInt(String(bed.patientId), 10);
+              if (!isNaN(pid)) {
+                areaPatientIds.add(pid);
+              }
             });
-          } else {
-            console.log(`  ⚠️ ${nurse.firstName} ${nurse.lastName} no tiene área asignada`);
+            byArea = this.patients.filter((p: any) => {
+              const patientId = typeof p.id === 'number' ? p.id : parseInt(p.id, 10);
+              const raw = p.assignedToId ?? p.assignedTo?.id;
+              const hasNurse =
+                raw != null &&
+                String(raw) !== '' &&
+                !isNaN(parseInt(String(raw), 10));
+              return (
+                !isNaN(patientId) &&
+                areaPatientIds.has(patientId) &&
+                p.isActive !== false &&
+                !hasNurse
+              );
+            });
           }
+
+          const merged = new Map<number, Patient>();
+          byNurseColumn.forEach((p) => {
+            if (p.id != null) merged.set(Number(p.id), p);
+          });
+          byArea.forEach((p) => {
+            if (p.id != null) merged.set(Number(p.id), p);
+          });
+          const assignedPatients = Array.from(merged.values());
+
+          console.log(
+            `  👩‍⚕️ ${nurse.firstName} ${nurse.lastName} (ID: ${nurseId}): asignados por BD=${byNurseColumn.length}, por área=${byArea.length}, total=${assignedPatients.length}`
+          );
 
           return {
             ...nurse,
@@ -389,34 +410,32 @@ export class StaffManagementComponent implements OnInit {
     this.selectedNurse = nurse;
     this.selectedNursePatients = [...(nurse.assignedPatients || [])];
     
-    // Obtener pacientes disponibles (no están en el área de esta enfermera)
-    const nurseAreaId = nurse.assignedAreaId 
-      ? (typeof nurse.assignedAreaId === 'number' 
-          ? nurse.assignedAreaId 
-          : parseInt(String(nurse.assignedAreaId)))
-      : null;
-    
-    if (nurseAreaId && !isNaN(nurseAreaId)) {
-      // Pacientes que están en otras áreas o sin cama
-      const assignedIds = new Set(this.selectedNursePatients.map((p) => p.id).filter((id) => id !== null && id !== undefined));
-      
-      this.availablePatients = (this.patients || []).filter((p: any) => {
-        const patientId = typeof p.id === 'number' ? p.id : parseInt(p.id);
-        if (!patientId || assignedIds.has(patientId)) return false;
-        
-        // Verificar si el paciente está en otra área
-        const patientBed = this.beds.find((bed: any) => bed.patientId === patientId);
-        if (!patientBed) return true; // Paciente sin cama, disponible
-        
-        const bedAreaId = typeof patientBed.areaId === 'number' ? patientBed.areaId : parseInt(patientBed.areaId);
-        return bedAreaId !== nurseAreaId; // Paciente en otra área
-      });
-    } else {
-      // Si la enfermera no tiene área, mostrar todos los pacientes disponibles
-      const assignedIds = new Set(this.selectedNursePatients.map((p) => p.id).filter((id) => id !== null && id !== undefined));
-      this.availablePatients = (this.patients || []).filter((p) => p.id && !assignedIds.has(p.id));
-    }
-    
+    const assignedIds = new Set(
+      this.selectedNursePatients
+        .map((p) => (typeof p.id === 'number' ? p.id : parseInt(String(p.id), 10)))
+        .filter((id) => !isNaN(id))
+    );
+    const nurseIdNum =
+      typeof nurse.id === 'number' ? nurse.id : parseInt(String(nurse.id), 10);
+
+    this.availablePatients = (this.patients || []).filter((p: any) => {
+      const patientId = typeof p.id === 'number' ? p.id : parseInt(String(p.id), 10);
+      if (!patientId || isNaN(patientId) || assignedIds.has(patientId)) {
+        return false;
+      }
+      if (p.isActive === false || p.isActive === 0) {
+        return false;
+      }
+      const aidRaw = p.assignedToId ?? p.assignedTo?.id;
+      if (aidRaw != null && String(aidRaw) !== '') {
+        const aid = typeof aidRaw === 'number' ? aidRaw : parseInt(String(aidRaw), 10);
+        if (!isNaN(aid) && aid === nurseIdNum) {
+          return false;
+        }
+      }
+      return true;
+    });
+
     this.showPatientsModal = true;
   }
 
@@ -429,23 +448,25 @@ export class StaffManagementComponent implements OnInit {
 
   assignPatientToNurse(patient: Patient): void {
     if (!this.selectedNurse?.id || !patient.id) {
-      console.error('❌ Datos inválidos:', { nurseId: this.selectedNurse?.id, patientId: patient.id });
       return;
     }
-
-    console.log('🔄 Iniciando asignación de paciente:', {
-      paciente: `${patient.firstName} ${patient.lastName} (ID: ${patient.id})`,
-      enfermera: `${this.selectedNurse.firstName} ${this.selectedNurse.lastName} (ID: ${this.selectedNurse.id})`,
-      areaEnfermera: this.selectedNurse.assignedAreaId
-    });
-
-    // Verificar que la enfermera tenga un área asignada
-    if (!this.selectedNurse.assignedAreaId) {
-      alert('⚠️ La enfermera debe tener un área asignada antes de asignar pacientes. Por favor, edita la enfermera y asigna un área primero.');
+    const nurseId =
+      typeof this.selectedNurse.id === 'number'
+        ? this.selectedNurse.id
+        : parseInt(String(this.selectedNurse.id), 10);
+    const patientId =
+      typeof patient.id === 'number' ? patient.id : parseInt(String(patient.id), 10);
+    const rawAid = (patient as any).assignedToId ?? (patient as any).assignedTo?.id;
+    const currentAid =
+      rawAid == null || rawAid === ''
+        ? NaN
+        : typeof rawAid === 'number'
+          ? rawAid
+          : parseInt(String(rawAid), 10);
+    if (!isNaN(currentAid) && currentAid === nurseId) {
+      alert('Este paciente ya está asignado a esta enfermera.');
       return;
     }
-
-    // Verificar capacidad máxima
     if (
       this.selectedNurse.maxPatients &&
       this.selectedNursePatients.length >= this.selectedNurse.maxPatients
@@ -456,191 +477,102 @@ export class StaffManagementComponent implements OnInit {
       return;
     }
 
-    // Normalizar área de la enfermera
-    const nurseAreaId = this.selectedNurse.assignedAreaId 
-      ? (typeof this.selectedNurse.assignedAreaId === 'number' 
-          ? this.selectedNurse.assignedAreaId 
-          : parseInt(String(this.selectedNurse.assignedAreaId)))
-      : null;
-    
-    if (!nurseAreaId || isNaN(nurseAreaId)) {
-      console.error('❌ Área de enfermera inválida:', this.selectedNurse.assignedAreaId);
-      alert('⚠️ La enfermera no tiene un área válida asignada');
-      return;
-    }
-
-    console.log('📍 Área de enfermera normalizada:', nurseAreaId);
-
-    // LÓGICA IGUAL QUE NURSE-DASHBOARD: asignar paciente moviendo su cama al área de la enfermera
-    // Buscar la cama actual del paciente
-    const patientBed = this.beds.find((bed: any) => {
-      const bedPatientId = typeof bed.patientId === 'number' ? bed.patientId : parseInt(String(bed.patientId));
-      const patientIdNum = typeof patient.id === 'number' ? patient.id : parseInt(String(patient.id));
-      return bedPatientId === patientIdNum;
+    this.adminService.updatePatient(patientId, { assignedToId: nurseId }).subscribe({
+      next: () => {
+        alert('Paciente asignado a la enfermera correctamente.');
+        this.loadData();
+        this.closePatientsModal();
+      },
+      error: (error) => {
+        const msg = error.error?.message || error.message || 'Error desconocido';
+        alert(`No se pudo guardar la asignación: ${msg}`);
+      },
     });
-    
-    console.log('🛏️ Cama del paciente encontrada:', patientBed ? {
-      id: patientBed.id,
-      bedNumber: patientBed.bedNumber,
-      areaId: patientBed.areaId,
-      patientId: patientBed.patientId
-    } : 'No tiene cama');
-    
-    if (patientBed) {
-      // El paciente ya tiene una cama
-      const currentBedAreaId = typeof patientBed.areaId === 'number' 
-        ? patientBed.areaId 
-        : parseInt(String(patientBed.areaId));
-      
-      console.log('🔄 Paciente tiene cama. Comparando áreas:', {
-        areaCama: currentBedAreaId,
-        areaEnfermera: nurseAreaId
-      });
-      
-      if (currentBedAreaId === nurseAreaId) {
-        alert('✅ Este paciente ya está asignado a esta enfermera (está en el mismo área)');
-        return;
-      }
-      
-      // Confirmar reasignación si está en otra área
-      if (
-        !confirm(
-          `Este paciente está en otra área. ¿Deseas moverlo al área de ${this.selectedNurse.firstName} ${this.selectedNurse.lastName}?`
-        )
-      ) {
-        return;
-      }
-      
-      console.log('🔄 Moviendo cama al área de la enfermera:', {
-        bedId: patientBed.id,
-        newAreaId: nurseAreaId
-      });
-      
-      // Mover la cama al área de la enfermera
-      this.adminService.updateBed(patientBed.id!, {
-        areaId: nurseAreaId
-      }).subscribe({
-        next: (response) => {
-          console.log('✅ Cama actualizada exitosamente:', response);
-          alert('✅ Paciente reasignado exitosamente');
-          this.loadData();
-          this.closePatientsModal();
-        },
-        error: (error) => {
-          console.error('❌ Error reasignando paciente:', error);
-          console.error('Detalles del error:', {
-            status: error.status,
-            message: error.error?.message || error.message,
-            error: error.error
-          });
-          alert(`Error al reasignar el paciente: ${error.error?.message || error.message || 'Error desconocido'}`);
-        },
-      });
-    } else {
-      // El paciente no tiene cama, buscar una cama disponible en el área de la enfermera
-      console.log('🔍 Buscando camas disponibles en área:', nurseAreaId);
-      
-      const availableBeds = this.beds.filter((bed: any) => {
-        const bedAreaId = typeof bed.areaId === 'number' 
-          ? bed.areaId 
-          : parseInt(String(bed.areaId));
-        const hasPatient = bed.patientId !== null && bed.patientId !== undefined;
-        const isActive = bed.isActive !== false;
-        
-        const isAvailable = !isNaN(bedAreaId) && bedAreaId === nurseAreaId && !hasPatient && isActive;
-        
-        if (isAvailable) {
-          console.log('  ✅ Cama disponible encontrada:', {
-            id: bed.id,
-            bedNumber: bed.bedNumber,
-            areaId: bed.areaId
-          });
-        }
-        
-        return isAvailable;
-      });
-      
-      console.log(`📊 Camas disponibles encontradas: ${availableBeds.length}`);
-      
-      if (availableBeds.length === 0) {
-        alert('⚠️ No hay camas disponibles en el área de la enfermera. Por favor, crea una cama primero.');
-        return;
-      }
-      
-      // Asignar paciente a la primera cama disponible
-      const bedToAssign = availableBeds[0];
-      console.log('🔄 Asignando paciente a cama:', {
-        bedId: bedToAssign.id,
-        bedNumber: bedToAssign.bedNumber,
-        patientId: patient.id,
-        areaId: nurseAreaId
-      });
-      
-      this.adminService.assignPatientToBed(bedToAssign.id!, patient.id).subscribe({
-        next: (response) => {
-          console.log('✅ Paciente asignado exitosamente:', response);
-          alert('✅ Paciente asignado exitosamente');
-          this.loadData();
-          this.closePatientsModal();
-        },
-        error: (error) => {
-          console.error('❌ Error asignando paciente:', error);
-          console.error('Detalles del error:', {
-            status: error.status,
-            message: error.error?.message || error.message,
-            error: error.error,
-            bedId: bedToAssign.id,
-            patientId: patient.id
-          });
-          alert(`Error al asignar el paciente: ${error.error?.message || error.message || 'Error desconocido'}`);
-        },
-      });
-    }
   }
 
   removePatientFromNurse(patient: Patient, nurse?: NurseWithPatients): void {
     const targetNurse = nurse || this.selectedNurse;
-    if (!targetNurse?.id || !patient.id) return;
-
-    if (!confirm(`¿Estás seguro de que deseas remover a ${patient.firstName} ${patient.lastName} del área de ${targetNurse.firstName} ${targetNurse.lastName}? Esto liberará la cama del paciente.`)) {
+    if (!targetNurse?.id || !patient.id) {
       return;
     }
 
-    // LÓGICA IGUAL QUE NURSE-DASHBOARD: remover paciente liberando su cama
-    const patientBed = this.beds.find((bed: any) => bed.patientId === patient.id);
-    
-    if (!patientBed) {
-      alert('⚠️ No se encontró la cama del paciente');
+    if (
+      !confirm(
+        `¿Quitar a ${patient.firstName} ${patient.lastName} como paciente asignado a ${targetNurse.firstName} ${targetNurse.lastName}?`
+      )
+    ) {
       return;
     }
 
-    // Verificar que el paciente esté en el área de la enfermera
-    const bedAreaId = typeof patientBed.areaId === 'number' 
-      ? patientBed.areaId 
-      : parseInt(String(patientBed.areaId));
-    const nurseAreaId = targetNurse.assignedAreaId 
-      ? (typeof targetNurse.assignedAreaId === 'number' 
-          ? targetNurse.assignedAreaId 
-          : parseInt(String(targetNurse.assignedAreaId)))
-      : null;
-    
-    if (!nurseAreaId || bedAreaId !== nurseAreaId) {
-      alert('⚠️ Este paciente no está en el área de esta enfermera');
+    const nurseId =
+      typeof targetNurse.id === 'number' ? targetNurse.id : parseInt(String(targetNurse.id), 10);
+    const patientId =
+      typeof patient.id === 'number' ? patient.id : parseInt(String(patient.id), 10);
+    const rawAid = (patient as any).assignedToId ?? (patient as any).assignedTo?.id;
+    const currentAid =
+      rawAid == null || rawAid === ''
+        ? NaN
+        : typeof rawAid === 'number'
+          ? rawAid
+          : parseInt(String(rawAid), 10);
+
+    if (!isNaN(currentAid) && currentAid === nurseId) {
+      this.adminService.updatePatient(patientId, { assignedToId: null }).subscribe({
+        next: () => {
+          alert('Paciente desasignado de la enfermera.');
+          this.loadData();
+          if (this.showPatientsModal) {
+            this.closePatientsModal();
+          }
+        },
+        error: (error) => {
+          const msg = error.error?.message || error.message || 'Error desconocido';
+          alert(`Error al quitar la asignación: ${msg}`);
+        },
+      });
       return;
     }
 
-    // Liberar la cama del paciente
+    const patientBed = this.beds.find((bed: any) => {
+      const bid =
+        typeof bed.patientId === 'number'
+          ? bed.patientId
+          : parseInt(String(bed.patientId), 10);
+      return bid === patientId;
+    });
+
+    const nurseAreaId = targetNurse.assignedAreaId
+      ? typeof targetNurse.assignedAreaId === 'number'
+        ? targetNurse.assignedAreaId
+        : parseInt(String(targetNurse.assignedAreaId), 10)
+      : NaN;
+
+    if (!patientBed || isNaN(nurseAreaId)) {
+      alert('No hay cama en el área de esta enfermera para liberar.');
+      return;
+    }
+
+    const bedAreaId =
+      typeof patientBed.areaId === 'number'
+        ? patientBed.areaId
+        : parseInt(String(patientBed.areaId), 10);
+
+    if (bedAreaId !== nurseAreaId) {
+      alert('Este paciente no está en el área de esta enfermera.');
+      return;
+    }
+
     this.adminService.assignPatientToBed(patientBed.id!, null).subscribe({
       next: () => {
-        alert('✅ Paciente removido exitosamente (cama liberada)');
+        alert('Paciente removido del área (cama liberada).');
         this.loadData();
         if (this.showPatientsModal) {
           this.closePatientsModal();
         }
       },
       error: (error) => {
-        console.error('Error removiendo paciente:', error);
-        alert('Error al remover el paciente');
+        const msg = error.error?.message || error.message || 'Error desconocido';
+        alert(`Error al liberar la cama: ${msg}`);
       },
     });
   }

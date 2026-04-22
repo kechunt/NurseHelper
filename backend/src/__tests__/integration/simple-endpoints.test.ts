@@ -13,6 +13,7 @@ jest.mock('../../utils/sanitizer', () => ({
 
 // Importar app después del mock
 import app from '../../app-test';
+import { requestByMethod } from '../supertest-request';
 
 describe('Simple Endpoints Test', () => {
   describe('Health Endpoints', () => {
@@ -71,7 +72,7 @@ describe('Simple Endpoints Test', () => {
 
     publicRoutes.forEach(({ method, path }) => {
       it(`${method} ${path} debería responder`, async () => {
-        const response = await request(app)[method.toLowerCase()](path);
+        const response = await requestByMethod(app, method, path);
         console.log(`✅ ${method} ${path}: ${response.status}`);
         expect([200, 503]).toContain(response.status);
       });
@@ -92,7 +93,7 @@ describe('Simple Endpoints Test', () => {
 
     protectedRoutes.forEach(({ method, path }) => {
       it(`${method} ${path} debería requerir autenticación`, async () => {
-        const response = await request(app)[method.toLowerCase()](path);
+        const response = await requestByMethod(app, method, path);
         console.log(`✅ ${method} ${path}: ${response.status} (esperado: 401/403)`);
         expect([401, 403, 400]).toContain(response.status);
         expect(response.status).not.toBe(404);

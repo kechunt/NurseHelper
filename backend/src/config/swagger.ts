@@ -1,6 +1,10 @@
+import path from 'path';
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 import { Express } from 'express';
+
+/** En `dist/` las anotaciones están en `.js`; en desarrollo en `.ts`. */
+const docExt = __dirname.includes(`${path.sep}dist${path.sep}`) ? 'js' : 'ts';
 
 const options = {
   definition: {
@@ -8,7 +12,8 @@ const options = {
     info: {
       title: 'NurseHelper API',
       version: '1.0.0',
-      description: 'API REST para el sistema de gestión de enfermeras NurseHelper',
+      description:
+        'API REST para NurseHelper. Usa **Authorize** y pega el token JWT (sin prefijo "Bearer "). Los endpoints públicos indican seguridad vacía.',
       contact: {
         name: 'NurseHelper Support',
         email: 'support@nursehelper.com',
@@ -16,9 +21,32 @@ const options = {
     },
     servers: [
       {
-        url: 'http://localhost:3000',
-        description: 'Servidor de desarrollo',
+        url: '/',
+        description: 'Mismo origen que sirve esta documentación',
       },
+      {
+        url: 'http://localhost:3000',
+        description: 'Desarrollo local',
+      },
+    ],
+    tags: [
+      { name: 'Auth', description: 'Login, registro y sesión' },
+      { name: 'Users', description: 'Gestión de usuarios (admin/supervisor)' },
+      { name: 'Areas', description: 'Áreas hospitalarias' },
+      { name: 'Beds', description: 'Camas' },
+      { name: 'Patients', description: 'Pacientes' },
+      { name: 'Schedules', description: 'Horarios y tareas' },
+      { name: 'Nurse', description: 'Panel de enfermería' },
+      { name: 'Medications', description: 'Medicación por paciente' },
+      { name: 'Shifts', description: 'Turnos' },
+      { name: 'Pharmacy', description: 'Farmacia e inventario' },
+      { name: 'Reports', description: 'Informes y exportación' },
+      { name: 'Webhooks', description: 'Webhooks (admin)' },
+      { name: 'Notifications', description: 'Notificaciones' },
+      { name: 'Backup', description: 'Copias de seguridad (admin)' },
+      { name: 'Diagnostic', description: 'Diagnóstico de sistema / BD' },
+      { name: 'Health', description: 'Salud del servicio y métricas' },
+      { name: 'Root', description: 'Raíz de la API' },
     ],
     components: {
       securitySchemes: {
@@ -65,7 +93,6 @@ const options = {
             id: { type: 'integer' },
             bedNumber: { type: 'string' },
             areaId: { type: 'integer' },
-            patientId: { type: 'integer', nullable: true },
             notes: { type: 'string' },
             isActive: { type: 'boolean' },
             createdAt: { type: 'string', format: 'date-time' },
@@ -240,25 +267,32 @@ const options = {
         },
       },
     },
-    security: [
-      {
-        bearerAuth: [],
-      },
-    ],
   },
   apis: [
-    './src/routes/*.ts', 
-    './src/controllers/*.ts',
-    './src/app.ts'
+    path.join(__dirname, `../routes/*.${docExt}`),
+    path.join(__dirname, `../controllers/*.${docExt}`),
+    path.join(__dirname, `../app.${docExt}`),
   ],
 };
 
 const swaggerSpec = swaggerJsdoc(options);
 
 export const setupSwagger = (app: Express): void => {
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-    customCss: '.swagger-ui .topbar { display: none }',
-    customSiteTitle: 'NurseHelper API Documentation',
-  }) as any);
+  app.use(
+    '/api-docs',
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerSpec, {
+      customCss: '.swagger-ui .topbar { display: none }',
+      customSiteTitle: 'NurseHelper API Documentation',
+      swaggerOptions: {
+        persistAuthorization: true,
+        tryItOutEnabled: true,
+        displayRequestDuration: true,
+        docExpansion: 'list',
+        filter: true,
+        showRequestHeaders: true,
+      },
+    }) as any
+  );
 };
 

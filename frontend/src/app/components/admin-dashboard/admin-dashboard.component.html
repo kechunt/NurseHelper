@@ -71,38 +71,32 @@
     </nav>
 
     <div class="dashboard-content">
-      <!-- Resumen -->
-      <div *ngIf="activeTab === 'overview'" class="tab-content">
+      <!-- Resumen: *ngIf solo la primera vez; [hidden] evita destruir el componente al cambiar de pestaña -->
+      <div *ngIf="hasVisitedTab('overview')" [hidden]="activeTab !== 'overview'" class="tab-content">
         <app-overview [onNavigate]="setActiveTab.bind(this)"></app-overview>
       </div>
 
-      <!-- Gestión de Usuarios -->
-      <div *ngIf="activeTab === 'users'" class="tab-content">
+      <div *ngIf="hasVisitedTab('users')" [hidden]="activeTab !== 'users'" class="tab-content">
         <app-users-management></app-users-management>
       </div>
 
-      <!-- Gestión de Enfermeras -->
-      <div *ngIf="activeTab === 'staff'" class="tab-content">
+      <div *ngIf="hasVisitedTab('staff')" [hidden]="activeTab !== 'staff'" class="tab-content">
         <app-staff-management></app-staff-management>
       </div>
 
-      <!-- Gestión de Áreas -->
-      <div *ngIf="activeTab === 'areas'" class="tab-content">
+      <div *ngIf="hasVisitedTab('areas')" [hidden]="activeTab !== 'areas'" class="tab-content">
         <app-areas-management></app-areas-management>
       </div>
 
-      <!-- Gestión de Camas -->
-      <div *ngIf="activeTab === 'beds'" class="tab-content">
+      <div *ngIf="hasVisitedTab('beds')" [hidden]="activeTab !== 'beds'" class="tab-content">
         <app-beds-management></app-beds-management>
       </div>
 
-      <!-- Gestión de Pacientes -->
-      <div *ngIf="activeTab === 'patients'" class="tab-content">
+      <div *ngIf="hasVisitedTab('patients')" [hidden]="activeTab !== 'patients'" class="tab-content">
         <app-patients-management></app-patients-management>
       </div>
 
-      <!-- Gestión de Horarios -->
-      <div *ngIf="activeTab === 'schedules'" class="tab-content">
+      <div *ngIf="hasVisitedTab('schedules')" [hidden]="activeTab !== 'schedules'" class="tab-content">
         <app-schedules-management></app-schedules-management>
       </div>
     </div>

@@ -50,6 +50,20 @@ export interface VerifyEmailResponse {
   user: User;
 }
 
+/** Ruta por defecto del panel según rol (login y guards). */
+export function defaultDashboardPath(role: User['role']): string {
+  switch (role) {
+    case 'admin':
+      return '/admin';
+    case 'supervisor':
+      return '/supervisor';
+    case 'pharmacy':
+      return '/pharmacy';
+    default:
+      return '/nurse-dashboard';
+  }
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -66,9 +80,7 @@ export class AuthService {
 
   login(usernameOrEmail: string, password: string): Observable<LoginResponse> {
     const loginUrl = `${this.apiUrl}/login`;
-    console.log('🔐 Intentando login en:', loginUrl);
-    console.log('📍 API URL base:', environment.apiUrl);
-    
+
     return this.http
       .post<LoginResponse>(loginUrl, {
         usernameOrEmail,
@@ -76,7 +88,9 @@ export class AuthService {
       })
       .pipe(
         tap((response) => {
-          console.log('✅ Login exitoso');
+          if (!environment.production) {
+            console.log('🔐 Login OK', loginUrl);
+          }
           this.setToken(response.token);
           this.setUser(response.user);
         })

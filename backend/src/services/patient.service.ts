@@ -5,9 +5,9 @@
 
 import { AppDataSource } from '../data-source';
 import { Patient } from '../entities/Patient';
-import { Bed } from '../entities/Bed';
 import { Schedule } from '../entities/Schedule';
-import { NotFoundError, BusinessRuleError, ValidationError } from '../utils/errors';
+import { NotFoundError, BusinessRuleError, ValidationError, ForbiddenError } from '../utils/errors';
+import { User } from '../entities/User';
 import { PaginationDto, PaginatedResponse } from '../dto/common.dto';
 import { CreatePatientDto, UpdatePatientDto, SaveObservationDto } from '../dto/patient.dto';
 import { cacheService } from './cache.service';
@@ -16,8 +16,8 @@ import { logger } from '../utils/logger';
 
 export class PatientService {
   private patientRepository = AppDataSource.getRepository(Patient);
-  private bedRepository = AppDataSource.getRepository(Bed);
   private scheduleRepository = AppDataSource.getRepository(Schedule);
+  private userRepository = AppDataSource.getRepository(User);
 
   /**
    * Obtener todos los pacientes con paginación
@@ -119,11 +119,14 @@ export class PatientService {
   async updatePatient(id: number, dto: UpdatePatientDto, userId?: number, userRole?: string): Promise<Patient> {
     const patient = await this.getPatientById(id, false);
 
-    // Si es enfermera, verificar permisos
     if (userRole === 'nurse' && userId) {
-      const bed = await this.bedRepository.findOne({ where: { patientId: id } });
-      // Verificar que el paciente esté en el área de la enfermera
-      // Esta lógica se puede mover a un método separado
+      const nurse = await this.userRepository.findOne({ where: { id: userId } });
+      if (nurse?.assignedAreaId != null) {
+        const allowed = await this.verifyPatientInNurseArea(id, nurse.assignedAreaId);
+        if (!allowed) {
+          throw new ForbiddenError('No tienes permiso para editar este paciente');
+        }
+      }
     }
 
     // Actualizar campos solo si están presentes
@@ -188,12 +191,7 @@ export class PatientService {
   async deletePatient(id: number): Promise<void> {
     const patient = await this.getPatientById(id, false);
 
-    // Desasignar de cama
-    const bed = await this.bedRepository.findOne({ where: { patientId: id } });
-    if (bed) {
-      bed.patientId = null;
-      await this.bedRepository.save(bed);
-    }
+    await this.patientRepository.update({ id }, { bedId: null });
 
     // Eliminar schedules
     await this.scheduleRepository.delete({ patientId: id });
@@ -212,16 +210,16 @@ export class PatientService {
    * Verificar que paciente pertenece al área de la enfermera
    */
   async verifyPatientInNurseArea(patientId: number, nurseAreaId: number): Promise<boolean> {
-    const bed = await this.bedRepository.findOne({ 
-      where: { patientId },
-      relations: ['area']
+    const patient = await this.patientRepository.findOne({
+      where: { id: patientId },
+      relations: ['bed'],
     });
 
-    if (!bed || bed.areaId !== nurseAreaId) {
+    if (!patient?.bed) {
       return false;
     }
 
-    return true;
+    return patient.bed.areaId === nurseAreaId;
   }
 
   /**

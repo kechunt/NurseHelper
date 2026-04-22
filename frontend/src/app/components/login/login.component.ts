@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { AuthService } from '../../services/auth.service';
+import { AuthService, defaultDashboardPath } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
 
 @Component({
@@ -39,15 +39,7 @@ export class LoginComponent {
         const user = response.user;
         // Pequeño delay para asegurar que el usuario se haya cargado en el signal
         setTimeout(() => {
-          if (user.role === 'admin') {
-            this.router.navigate(['/admin']);
-          } else if (user.role === 'supervisor') {
-            this.router.navigate(['/supervisor']);
-          } else if (user.role === 'pharmacy') {
-            this.router.navigate(['/pharmacy']);
-          } else {
-            this.router.navigate(['/nurse-dashboard']);
-          }
+          this.router.navigate([defaultDashboardPath(user.role)]);
         }, 100);
       },
       error: (err) => {

@@ -5,7 +5,7 @@
 import request from 'supertest';
 import { AppDataSource } from '../../data-source';
 import app from '../../app-test';
-import { User } from '../../entities/User';
+import { User, UserRole } from '../../entities/User';
 import { generateToken } from '../../utils/jwt';
 
 describe('Patients API Integration Tests', () => {
@@ -26,7 +26,7 @@ describe('Patients API Integration Tests', () => {
       password: 'password123',
       firstName: 'Test',
       lastName: 'User',
-      role: 'admin',
+      role: UserRole.ADMIN,
       isActive: true,
     });
 

@@ -30,7 +30,8 @@ import { SchedulesManagementComponent } from '../admin-dashboard/schedules-manag
 })
 export class SupervisorDashboardComponent implements OnInit {
   activeTab: string = 'overview';
-  
+  private readonly visitedTabs = new Set<string>(['overview']);
+
   constructor(
     private authService: AuthService,
     private adminService: AdminService,
@@ -55,8 +56,13 @@ export class SupervisorDashboardComponent implements OnInit {
     }
   }
 
+  hasVisitedTab(tab: string): boolean {
+    return this.visitedTabs.has(tab);
+  }
+
   setActiveTab(tab: string): void {
     this.activeTab = tab;
+    this.visitedTabs.add(tab);
   }
 
   logout(): void {

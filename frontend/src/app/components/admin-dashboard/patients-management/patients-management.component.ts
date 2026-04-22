@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Subject } from 'rxjs';
+import { Subject, forkJoin } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 import { AdminService, Patient, Area, Bed } from '../../../services/admin.service';
 import { ToastService } from '../../../services/toast.service';
@@ -46,9 +46,8 @@ interface PendingTask {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PatientsManagementComponent implements OnInit, OnDestroy {
-  // Listado de pacientes
+  // Listado de pacientes (página actual desde el servidor)
   patients: Patient[] = [];
-  filteredPatients: Patient[] = [];
   paginatedPatients: Patient[] = [];
   loading = false;
   
@@ -139,7 +138,7 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
       takeUntil(this.destroy$)
     ).subscribe(searchTerm => {
       this.searchTerm = searchTerm;
-      this.filterPatients();
+      this.loadPatientList(true);
     });
   }
 
@@ -168,10 +167,23 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.loadPatients();
-    this.loadAreas();
-    this.loadBeds();
-    this.loadNurses();
+    forkJoin({
+      areas: this.adminService.getAreas(),
+      beds: this.adminService.getBeds(),
+      users: this.adminService.getUsers(),
+    }).subscribe({
+      next: ({ areas, beds, users }) => {
+        this.areas = areas.filter((a) => a.isActive);
+        this.allBeds = beds;
+        this.nurses = users.filter((u) => u.role === 'nurse' && u.isActive);
+        this.loadPatientList(false);
+      },
+      error: (error) => {
+        const errorMessage = error.error?.message || error.message || 'Error desconocido';
+        this.toastService.error(`No se pudieron cargar datos iniciales: ${errorMessage}`);
+        this.loadPatientList(false);
+      },
+    });
   }
 
   ngOnDestroy(): void {
@@ -180,66 +192,102 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
   }
 
   // ========== CARGA DE DATOS ==========
-  loadPatients(): void {
-    this.loading = true;
-    
-    this.adminService.getPatients().subscribe({
-      next: (patients) => {
-        // Asegurar que patients sea un array
-        const patientsArray = Array.isArray(patients) ? patients : [];
-        
-        // Enriquecer datos de pacientes con información de área y cama
-        this.patients = patientsArray.map((patient: any) => {
-          if (patient.bed) {
-            const bed = patient.bed;
-            const area = this.areas.find(a => a.id === bed.areaId);
-            return {
-              ...patient,
-              areaId: bed.areaId,
-              bedId: bed.id,
-              areaName: area?.name || 'Sin área',
-              bedNumber: bed.bedNumber
-            };
-          }
-          return {
-            ...patient,
-            areaId: null,
-            bedId: null,
-            areaName: 'Sin área',
-            bedNumber: 'Sin cama'
-          };
-        });
-        
-        this.filteredPatients = this.patients;
-        this.updatePagination();
-        this.loading = false;
-        this.cdr.markForCheck();
-      },
-      error: (error) => {
-        const errorMessage = error.error?.message || error.message || 'Error desconocido';
-        this.toastService.error(`No se pudieron cargar los pacientes: ${errorMessage}`);
-        this.patients = [];
-        this.filteredPatients = [];
-        this.loading = false;
-      },
-    });
+  /**
+   * Parámetros de filtro (servidor) compartidos entre listado y exportación.
+   */
+  private buildPatientListParams(): {
+    search?: string;
+    isActive?: boolean;
+    areaId?: number;
+    assignedToId?: number;
+    hasBed?: boolean;
+  } {
+    const st = this.selectedStatusFilter;
+    const isActive = st === 'active' ? true : st === 'inactive' ? false : undefined;
+    const areaId = this.selectedAreaFilter ? parseInt(this.selectedAreaFilter, 10) : undefined;
+    const assignedToId = this.selectedNurseFilter ? parseInt(this.selectedNurseFilter, 10) : undefined;
+    let hasBed: boolean | undefined;
+    if (this.selectedBedFilter === 'assigned') {
+      hasBed = true;
+    } else if (this.selectedBedFilter === 'unassigned') {
+      hasBed = false;
+    }
+    return {
+      search: this.searchTerm.trim() || undefined,
+      isActive,
+      areaId: areaId != null && !isNaN(areaId) ? areaId : undefined,
+      assignedToId: assignedToId != null && !isNaN(assignedToId) ? assignedToId : undefined,
+      hasBed,
+    };
   }
 
-  loadAreas(): void {
-    this.adminService.getAreas().subscribe({
-      next: (areas) => {
-        this.areas = areas.filter(a => a.isActive);
-      },
-      error: (error) => {
-        const errorMessage = error.error?.message || error.message || 'Error desconocido';
-        this.toastService.error(`No se pudieron cargar las áreas: ${errorMessage}`);
-        this.areas = [];
-      },
-    });
+  private enrichPatientRow(patient: any): Patient {
+    if (patient.bed) {
+      const bed = patient.bed;
+      const area = this.areas.find((a) => a.id === bed.areaId);
+      return {
+        ...patient,
+        areaId: bed.areaId,
+        bedId: bed.id,
+        areaName: area?.name || bed.area?.name || 'Sin área',
+        bedNumber: bed.bedNumber,
+      };
+    }
+    return {
+      ...patient,
+      areaId: patient.areaId ?? null,
+      bedId: patient.bedId ?? null,
+      areaName: 'Sin área',
+      bedNumber: 'Sin cama',
+    };
+  }
+
+  /**
+   * @param resetPage si true, vuelve a la página 1 (filtros, búsqueda o cambio de tamaño de página).
+   */
+  loadPatientList(resetPage = false): void {
+    if (resetPage) {
+      this.paginationConfig = { ...this.paginationConfig, currentPage: 1 };
+    }
+    this.loading = true;
+
+    this.adminService
+      .getPatientsPage({
+        ...this.buildPatientListParams(),
+        page: this.paginationConfig.currentPage,
+        limit: this.paginationConfig.itemsPerPage,
+      })
+      .subscribe({
+        next: (res) => {
+          this.patients = res.items.map((p) => this.enrichPatientRow(p));
+          this.paginatedPatients = this.patients;
+          this.paginationConfig = {
+            ...this.paginationConfig,
+            totalItems: res.total,
+            totalPages: Math.max(1, res.totalPages),
+            currentPage: res.page,
+          };
+          this.loading = false;
+          this.cdr.markForCheck();
+        },
+        error: (error) => {
+          const errorMessage = error.error?.message || error.message || 'Error desconocido';
+          this.toastService.error(`No se pudieron cargar los pacientes: ${errorMessage}`);
+          this.patients = [];
+          this.paginatedPatients = [];
+          this.paginationConfig = {
+            ...this.paginationConfig,
+            totalItems: 0,
+            totalPages: 1,
+          };
+          this.loading = false;
+          this.cdr.markForCheck();
+        },
+      });
   }
 
   loadBeds(): void {
-    this.adminService.getBeds().subscribe({
+    this.adminService.getBeds(false).subscribe({
       next: (beds) => {
         this.allBeds = beds;
       },
@@ -251,88 +299,12 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
     });
   }
 
-  loadNurses(): void {
-    this.adminService.getUsers().subscribe({
-      next: (users) => {
-        this.nurses = users.filter(u => u.role === 'nurse' && u.isActive);
-      },
-      error: (error) => {
-        const errorMessage = error.error?.message || error.message || 'Error desconocido';
-        this.toastService.warning(`No se pudieron cargar las enfermeras: ${errorMessage}`);
-        this.nurses = [];
-      },
-    });
-  }
-
   // ========== FILTROS Y BÚSQUEDA ==========
   /**
-   * Filtra los pacientes según los criterios seleccionados
+   * Aplica filtros en el servidor y reinicia a la página 1.
    */
   filterPatients(): void {
-    let filtered = [...this.patients];
-
-    // Filtro por búsqueda
-    if (this.searchTerm.trim()) {
-      const search = this.searchTerm.toLowerCase().trim();
-      filtered = filtered.filter(p => 
-        p.firstName?.toLowerCase().includes(search) ||
-        p.lastName?.toLowerCase().includes(search) ||
-        p.identificationNumber?.toLowerCase().includes(search)
-      );
-    }
-
-    // Filtro por área
-    if (this.selectedAreaFilter) {
-      filtered = filtered.filter(p => p.areaId === parseInt(this.selectedAreaFilter));
-    }
-
-    // Filtro por enfermera
-    if (this.selectedNurseFilter) {
-      filtered = filtered.filter(p => this.patientHasNurse(p, this.selectedNurseFilter));
-    }
-
-    // Filtro por estado
-    if (this.selectedStatusFilter) {
-      if (this.selectedStatusFilter === 'active') {
-        filtered = filtered.filter(p => p.isActive);
-      } else if (this.selectedStatusFilter === 'inactive') {
-        filtered = filtered.filter(p => !p.isActive);
-      }
-    }
-
-    // Filtro por asignación de cama
-    if (this.selectedBedFilter) {
-      if (this.selectedBedFilter === 'assigned') {
-        filtered = filtered.filter(p => p.bedId);
-      } else if (this.selectedBedFilter === 'unassigned') {
-        filtered = filtered.filter(p => !p.bedId);
-      }
-    }
-
-    this.filteredPatients = filtered;
-    this.paginationConfig.currentPage = 1; // Reset a primera página al filtrar
-    this.updatePagination();
-    this.cdr.markForCheck();
-  }
-
-  /**
-   * Actualiza la paginación y los pacientes paginados
-   */
-  updatePagination(): void {
-    const total = this.filteredPatients.length;
-    const itemsPerPage = this.paginationConfig.itemsPerPage;
-    const totalPages = Math.ceil(total / itemsPerPage);
-    
-    this.paginationConfig = {
-      ...this.paginationConfig,
-      totalItems: total,
-      totalPages: totalPages || 1,
-      currentPage: Math.min(this.paginationConfig.currentPage, totalPages || 1)
-    };
-
-    const start = (this.paginationConfig.currentPage - 1) * itemsPerPage;
-    const end = start + itemsPerPage;
-    this.paginatedPatients = this.filteredPatients.slice(start, end);
+    this.loadPatientList(true);
   }
 
   /**
@@ -340,8 +312,7 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
    */
   onPageChange(page: number): void {
     this.paginationConfig.currentPage = page;
-    this.updatePagination();
-    this.cdr.markForCheck();
+    this.loadPatientList(false);
   }
 
   /**
@@ -349,9 +320,7 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
    */
   onItemsPerPageChange(itemsPerPage: number): void {
     this.paginationConfig.itemsPerPage = itemsPerPage;
-    this.paginationConfig.currentPage = 1;
-    this.updatePagination();
-    this.cdr.markForCheck();
+    this.loadPatientList(true);
   }
 
   /**
@@ -362,81 +331,102 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Exporta los pacientes filtrados a CSV
+   * Exporta hasta 1000 filas con los mismos filtros que el listado (límite del API).
    */
   exportToCSV(): void {
-    try {
-      const data = this.filteredPatients.map(p => ({
-        ID: p.id,
-        'Nombre': p.firstName,
-        'Apellido': p.lastName,
-        'Cédula': p.identificationNumber || '',
-        'Fecha de Nacimiento': p.dateOfBirth ? new Date(p.dateOfBirth).toLocaleDateString('es-ES') : '',
-        'Género': p.gender || '',
-        'Teléfono': p.phone || '',
-        'Área': p.areaName || 'Sin área',
-        'Cama': p.bedNumber || 'Sin cama',
-        'Estado': p.isActive ? 'Activo' : 'Inactivo'
-      }));
+    this.adminService
+      .getPatientsPage({
+        ...this.buildPatientListParams(),
+        page: 1,
+        limit: 1000,
+      })
+      .subscribe({
+        next: (res) => {
+          try {
+            const rows = res.items.map((p) => this.enrichPatientRow(p));
+            const data = rows.map((p) => ({
+              ID: p.id,
+              Nombre: p.firstName,
+              Apellido: p.lastName,
+              Cédula: p.identificationNumber || '',
+              'Fecha de Nacimiento': p.dateOfBirth
+                ? new Date(p.dateOfBirth).toLocaleDateString('es-ES')
+                : '',
+              Género: p.gender || '',
+              Teléfono: p.phone || '',
+              Área: p.areaName || 'Sin área',
+              Cama: p.bedNumber || 'Sin cama',
+              Estado: p.isActive ? 'Activo' : 'Inactivo',
+            }));
 
-      this.exportService.exportToCSV(data, {
-        filename: `pacientes-${new Date().toISOString().split('T')[0]}.csv`
-      });
-      
-      this.toastService.success(`Exportados ${data.length} pacientes a CSV`);
-    } catch (error: any) {
-      this.toastService.error(`Error al exportar: ${error.message}`);
-    }
-  }
+            this.exportService.exportToCSV(data, {
+              filename: `pacientes-${new Date().toISOString().split('T')[0]}.csv`,
+            });
 
-  /**
-   * Exporta los pacientes filtrados a Excel
-   */
-  exportToExcel(): void {
-    try {
-      const data = this.filteredPatients.map(p => ({
-        ID: p.id,
-        'Nombre': p.firstName,
-        'Apellido': p.lastName,
-        'Cédula': p.identificationNumber || '',
-        'Fecha de Nacimiento': p.dateOfBirth ? new Date(p.dateOfBirth).toLocaleDateString('es-ES') : '',
-        'Género': p.gender || '',
-        'Teléfono': p.phone || '',
-        'Área': p.areaName || 'Sin área',
-        'Cama': p.bedNumber || 'Sin cama',
-        'Estado': p.isActive ? 'Activo' : 'Inactivo'
-      }));
-
-      this.exportService.exportToExcel(data, {
-        filename: `pacientes-${new Date().toISOString().split('T')[0]}.xlsx`
-      });
-      
-      this.toastService.success(`Exportados ${data.length} pacientes a Excel`);
-    } catch (error: any) {
-      this.toastService.error(`Error al exportar: ${error.message}`);
-    }
-  }
-
-  patientHasNurse(patient: Patient, nurseId: string): boolean {
-    // Verificar si el paciente tiene tareas asignadas a esta enfermera
-    try {
-      if (patient.pendingTasks) {
-        const tasks = typeof patient.pendingTasks === 'string' 
-          ? JSON.parse(patient.pendingTasks) 
-          : patient.pendingTasks;
-        
-        if (Array.isArray(tasks)) {
-          const nurse = this.nurses.find(n => n.id?.toString() === nurseId);
-          if (nurse) {
-            const nurseName = `${nurse.firstName} ${nurse.lastName}`;
-            return tasks.some((task: any) => task.assignedTo === nurseName);
+            if (res.total > data.length) {
+              this.toastService.warning(
+                `Exportadas ${data.length} filas de ${res.total} (máximo 1000 por exportación).`
+              );
+            } else {
+              this.toastService.success(`Exportados ${data.length} pacientes a CSV`);
+            }
+          } catch (error: any) {
+            this.toastService.error(`Error al exportar: ${error.message}`);
           }
-        }
-      }
-    } catch (error) {
-      console.error('Error parsing pending tasks:', error);
-    }
-    return false;
+        },
+        error: (error) => {
+          const errorMessage = error.error?.message || error.message || 'Error desconocido';
+          this.toastService.error(`No se pudo exportar: ${errorMessage}`);
+        },
+      });
+  }
+
+  exportToExcel(): void {
+    this.adminService
+      .getPatientsPage({
+        ...this.buildPatientListParams(),
+        page: 1,
+        limit: 1000,
+      })
+      .subscribe({
+        next: (res) => {
+          try {
+            const rows = res.items.map((p) => this.enrichPatientRow(p));
+            const data = rows.map((p) => ({
+              ID: p.id,
+              Nombre: p.firstName,
+              Apellido: p.lastName,
+              Cédula: p.identificationNumber || '',
+              'Fecha de Nacimiento': p.dateOfBirth
+                ? new Date(p.dateOfBirth).toLocaleDateString('es-ES')
+                : '',
+              Género: p.gender || '',
+              Teléfono: p.phone || '',
+              Área: p.areaName || 'Sin área',
+              Cama: p.bedNumber || 'Sin cama',
+              Estado: p.isActive ? 'Activo' : 'Inactivo',
+            }));
+
+            this.exportService.exportToExcel(data, {
+              filename: `pacientes-${new Date().toISOString().split('T')[0]}.xlsx`,
+            });
+
+            if (res.total > data.length) {
+              this.toastService.warning(
+                `Exportadas ${data.length} filas de ${res.total} (máximo 1000 por exportación).`
+              );
+            } else {
+              this.toastService.success(`Exportados ${data.length} pacientes a Excel`);
+            }
+          } catch (error: any) {
+            this.toastService.error(`Error al exportar: ${error.message}`);
+          }
+        },
+        error: (error) => {
+          const errorMessage = error.error?.message || error.message || 'Error desconocido';
+          this.toastService.error(`No se pudo exportar: ${errorMessage}`);
+        },
+      });
   }
 
   /**
@@ -448,8 +438,8 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
     this.selectedNurseFilter = '';
     this.selectedStatusFilter = '';
     this.selectedBedFilter = '';
-    this.searchSubject.next(''); // Limpiar también el debounce
-    this.filterPatients();
+    this.searchSubject.next('');
+    this.loadPatientList(true);
     this.cdr.markForCheck();
   }
 
@@ -534,7 +524,7 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
             next: () => {
               this.toastService.success(`Paciente ${formValue.firstName} ${formValue.lastName} ingresado exitosamente`);
               this.resetForm();
-              this.loadPatients();
+              this.loadPatientList(true);
               this.loadBeds();
               this.loading = false;
             },
@@ -542,19 +532,19 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
               const errorMessage = error.error?.message || error.message || 'Error desconocido';
               this.toastService.warning(`Paciente creado pero sin cama asignada: ${errorMessage}`);
               this.resetForm();
-              this.loadPatients();
+              this.loadPatientList(true);
               this.loading = false;
             },
           });
         } else if (formValue.selectedAreaId && this.availableBeds.length === 0) {
           this.toastService.warning(`Paciente ${formValue.firstName} ${formValue.lastName} creado, pero no hay camas disponibles en el área seleccionada`);
           this.resetForm();
-          this.loadPatients();
+          this.loadPatientList(true);
           this.loading = false;
         } else {
           this.toastService.success(`Paciente ${formValue.firstName} ${formValue.lastName} ingresado exitosamente (sin cama asignada)`);
           this.resetForm();
-          this.loadPatients();
+          this.loadPatientList(true);
           this.loading = false;
         }
       },
@@ -693,19 +683,19 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
                     next: () => {
                       alert('✅ Cambios guardados exitosamente');
                       this.closeEditModal();
-                      this.loadPatients();
+                      this.loadPatientList(false);
                       this.loadBeds();
                     },
                     error: (error) => {
                       alert('Datos actualizados pero error al asignar nueva cama');
                       this.closeEditModal();
-                      this.loadPatients();
+                      this.loadPatientList(false);
                     }
                   });
                 } else {
                   alert('✅ Cambios guardados exitosamente');
                   this.closeEditModal();
-                  this.loadPatients();
+                  this.loadPatientList(false);
                   this.loadBeds();
                 }
               },
@@ -719,20 +709,20 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
               next: () => {
                 alert('✅ Cambios guardados exitosamente');
                 this.closeEditModal();
-                this.loadPatients();
+                this.loadPatientList(false);
                 this.loadBeds();
               },
               error: (error) => {
                 alert('Datos actualizados pero error al asignar cama');
                 this.closeEditModal();
-                this.loadPatients();
+                this.loadPatientList(false);
               }
             });
           }
         } else {
           alert('✅ Cambios guardados exitosamente');
           this.closeEditModal();
-          this.loadPatients();
+          this.loadPatientList(false);
         }
       },
       error: (error) => {
@@ -869,7 +859,7 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
     if (confirmed) {
       // Aquí iría la llamada al servicio para cambiar el estado
       this.toastService.info('Funcionalidad de cambio de estado pendiente de implementar');
-      this.loadPatients();
+      this.loadPatientList(false);
     }
   }
 
@@ -892,7 +882,7 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
       this.adminService.deletePatient(patient.id).subscribe({
         next: () => {
           this.toastService.success(`Paciente ${patient.firstName} ${patient.lastName} eliminado exitosamente`);
-          this.loadPatients();
+          this.loadPatientList(false);
           this.loading = false;
         },
         error: (error) => {

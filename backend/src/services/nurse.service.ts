@@ -70,12 +70,12 @@ export class NurseService {
       if (area) areaName = area.name;
     }
 
-    // Obtener camas con pacientes en una sola query optimizada
-    const bedsWithPatientsCount = await this.bedRepository
-      .createQueryBuilder('bed')
+    const bedsWithPatientsCount = await this.patientRepository
+      .createQueryBuilder('patient')
+      .innerJoin('patient.bed', 'bed')
       .where('bed.areaId = :areaId', { areaId: user.assignedAreaId })
       .andWhere('bed.isActive = :isActive', { isActive: true })
-      .andWhere('bed.patientId IS NOT NULL')
+      .andWhere('patient.isActive = :pActive', { pActive: true })
       .getCount();
 
     const today = new Date();
@@ -83,18 +83,16 @@ export class NurseService {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    // Obtener IDs de pacientes en el área
-    const bedsInArea = await this.bedRepository.find({
-      where: {
-        areaId: user.assignedAreaId,
-        isActive: true
-      },
-      select: ['patientId']
-    });
+    const patientRows = await this.patientRepository
+      .createQueryBuilder('patient')
+      .select('patient.id', 'id')
+      .innerJoin('patient.bed', 'bed')
+      .where('bed.areaId = :areaId', { areaId: user.assignedAreaId })
+      .andWhere('bed.isActive = :isActive', { isActive: true })
+      .andWhere('patient.isActive = :pActive', { pActive: true })
+      .getRawMany();
 
-    const patientIdsInArea = bedsInArea
-      .filter(bed => bed.patientId !== null)
-      .map(bed => bed.patientId!);
+    const patientIdsInArea = patientRows.map((r) => Number(r.id));
 
     let pendingTasks = 0;
     let medicationsToday = 0;
@@ -152,30 +150,31 @@ export class NurseService {
       return [];
     }
 
-    // Optimización: Cargar camas con pacientes en una sola consulta usando JOIN
     const beds = await this.bedRepository
       .createQueryBuilder('bed')
-      .leftJoinAndSelect('bed.patient', 'patient')
+      .leftJoinAndSelect('bed.patients', 'patient')
       .where('bed.areaId = :areaId', { areaId: user.assignedAreaId })
       .andWhere('bed.isActive = :isActive', { isActive: true })
       .orderBy('bed.bedNumber', 'ASC')
       .getMany();
 
     const bedsWithPatients = beds.map((bed) => {
+      const occupants = (bed.patients || []).filter((p) => p.isActive);
+      const primary = occupants[0] ?? null;
       let patientInfo = null;
-      
-      if (bed.patient && bed.patient.isActive) {
-        const age = bed.patient.dateOfBirth
-          ? new Date().getFullYear() - new Date(bed.patient.dateOfBirth).getFullYear()
+
+      if (primary) {
+        const age = primary.dateOfBirth
+          ? new Date().getFullYear() - new Date(primary.dateOfBirth).getFullYear()
           : 0;
-        
+
         patientInfo = {
-          id: bed.patient.id,
-          firstName: bed.patient.firstName,
-          lastName: bed.patient.lastName,
+          id: primary.id,
+          firstName: primary.firstName,
+          lastName: primary.lastName,
           age,
-          medicalObservations: bed.patient.medicalObservations || '',
-          allergies: bed.patient.allergies || ''
+          medicalObservations: primary.medicalObservations || '',
+          allergies: primary.allergies || ''
         };
       }
 
@@ -209,25 +208,19 @@ export class NurseService {
       return [];
     }
 
-    // Obtener todas las camas del área en una sola query
-    const beds = await this.bedRepository
-      .createQueryBuilder('bed')
+    const patientsInArea = await this.patientRepository
+      .createQueryBuilder('patient')
+      .innerJoinAndSelect('patient.bed', 'bed')
       .where('bed.areaId = :areaId', { areaId: user.assignedAreaId })
       .andWhere('bed.isActive = :isActive', { isActive: true })
-      .andWhere('bed.patientId IS NOT NULL')
+      .andWhere('patient.isActive = :pActive', { pActive: true })
+      .orderBy('bed.bedNumber', 'ASC')
       .getMany();
 
-    const patientIds = beds.map(bed => bed.patientId!).filter(id => id !== null);
+    const patientIds = patientsInArea.map((p) => p.id);
     if (patientIds.length === 0) {
       return [];
     }
-
-    // Obtener todos los pacientes en una sola query
-    const allPatients = await this.patientRepository.find({
-      where: { id: In(patientIds), isActive: true }
-    });
-
-    const patientsMap = new Map(allPatients.map(p => [p.id, p]));
 
     // Obtener todos los schedules de hoy en una sola query
     const today = new Date();
@@ -270,12 +263,10 @@ export class NurseService {
       medicationsByPatient.get(med.patientId)!.push(med);
     });
 
-    // Procesar y formatear datos
-    const patients = beds
-      .map((bed) => {
-        if (!bed.patientId) return null;
-        const patient = patientsMap.get(bed.patientId);
-        if (!patient || !patient.isActive) return null;
+    const patients = patientsInArea
+      .map((patient) => {
+        const bed = patient.bed;
+        if (!bed || !patient.isActive) return null;
 
         const age = patient.dateOfBirth
           ? new Date().getFullYear() - new Date(patient.dateOfBirth).getFullYear()
@@ -397,18 +388,15 @@ export class NurseService {
       return [];
     }
 
-    // Obtener pacientes del área
-    const bedsInArea = await this.bedRepository.find({
-      where: {
-        areaId: user.assignedAreaId,
-        isActive: true
-      },
-      select: ['patientId']
-    });
+    const patientsInArea = await this.patientRepository
+      .createQueryBuilder('patient')
+      .innerJoinAndSelect('patient.bed', 'bed')
+      .where('bed.areaId = :areaId', { areaId: user.assignedAreaId })
+      .andWhere('bed.isActive = :ba', { ba: true })
+      .andWhere('patient.isActive = :pa', { pa: true })
+      .getMany();
 
-    const patientIdsInArea = bedsInArea
-      .filter(bed => bed.patientId !== null)
-      .map(bed => bed.patientId!);
+    const patientIdsInArea = patientsInArea.map((p) => p.id);
 
     if (patientIdsInArea.length === 0) {
       return [];
@@ -431,21 +419,19 @@ export class NurseService {
 
     // Obtener todos los pacientes y camas en consultas separadas (evitar N+1)
     const uniquePatientIds = [...new Set(schedules.map(s => s.patientId))];
-    const [allPatients, allBeds] = await Promise.all([
-      this.patientRepository.find({
-        where: { id: In(uniquePatientIds) }
-      }),
-      this.bedRepository.find({
-        where: { patientId: In(uniquePatientIds) }
-      })
-    ]);
+    const allPatients = await this.patientRepository.find({
+      where: { id: In(uniquePatientIds) },
+      relations: ['bed']
+    });
 
     const patientsMap = new Map(allPatients.map(p => [p.id, p]));
-    const bedsMap = new Map(allBeds.map(b => [b.patientId, b]));
+    const bedByPatient = new Map(
+      allPatients.filter(p => p.bed).map(p => [p.id, p.bed!])
+    );
 
     const tasks = schedules.map((schedule) => {
       const patient = patientsMap.get(schedule.patientId);
-      const bed = bedsMap.get(schedule.patientId);
+      const bed = bedByPatient.get(schedule.patientId);
 
       const time = new Date(schedule.scheduledTime);
       const timeStr = time.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });

@@ -30,7 +30,9 @@ import { SchedulesManagementComponent } from './schedules-management/schedules-m
 })
 export class AdminDashboardComponent implements OnInit {
   activeTab: string = 'overview';
-  
+  /** Pestañas ya visitadas: el componente se mantiene montado (oculto) para no repetir llamadas a la API al volver. */
+  private readonly visitedTabs = new Set<string>(['overview']);
+
   constructor(
     private authService: AuthService,
     private adminService: AdminService,
@@ -55,8 +57,13 @@ export class AdminDashboardComponent implements OnInit {
     }
   }
 
+  hasVisitedTab(tab: string): boolean {
+    return this.visitedTabs.has(tab);
+  }
+
   setActiveTab(tab: string): void {
     this.activeTab = tab;
+    this.visitedTabs.add(tab);
   }
 
   logout(): void {

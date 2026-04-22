@@ -12,6 +12,7 @@ const authController = new AuthController();
  *   post:
  *     summary: Iniciar sesión
  *     tags: [Auth]
+ *     security: []
  *     requestBody:
  *       required: true
  *       content:
@@ -57,6 +58,7 @@ router.post('/login', authRateLimitMiddleware(), authController.login.bind(authC
  *   post:
  *     summary: Registrar nuevo usuario
  *     tags: [Auth]
+ *     security: []
  *     requestBody:
  *       required: true
  *       content:
@@ -94,31 +96,11 @@ router.post('/register', authRateLimitMiddleware(), authController.register.bind
 
 /**
  * @swagger
- * /api/auth/me:
- *   get:
- *     summary: Obtener información del usuario actual
- *     tags: [Auth]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Información del usuario
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 user:
- *                   $ref: '#/components/schemas/User'
- *       401:
- *         description: No autenticado
- */
-/**
- * @swagger
  * /api/auth/verify-email:
  *   post:
  *     summary: Verificar correo electrónico con código
  *     tags: [Auth]
+ *     security: []
  *     requestBody:
  *       required: true
  *       content:
@@ -148,6 +130,7 @@ router.post('/verify-email', authRateLimitMiddleware(), authController.verifyEma
  *   post:
  *     summary: Reenviar código de verificación
  *     tags: [Auth]
+ *     security: []
  *     requestBody:
  *       required: true
  *       content:
@@ -167,6 +150,27 @@ router.post('/verify-email', authRateLimitMiddleware(), authController.verifyEma
  */
 router.post('/resend-verification', authRateLimitMiddleware(), authController.resendVerificationCode.bind(authController));
 
+/**
+ * @swagger
+ * /api/auth/me:
+ *   get:
+ *     summary: Obtener información del usuario actual
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Información del usuario
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *       401:
+ *         description: No autenticado
+ */
 router.get('/me', authMiddleware, authController.me.bind(authController));
 
 export default router;

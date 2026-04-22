@@ -1,0 +1,20 @@
+<!--
+  Paginación reutilizable.
+  Componente: frontend/src/app/shared/components/pagination/
+  TS: imports: [CommonModule, PaginationComponent]
+-->
+<app-pagination
+  [config]="paginationConfig"
+  (pageChange)="onPageChange($event)"
+  (itemsPerPageChange)="onItemsPerPageChange($event)"
+/>
+
+<!--
+  En el componente padre (ejemplo mínimo):
+  paginationConfig = {
+    currentPage: 1,
+    totalItems: 100,
+    itemsPerPage: 10,
+    totalPages: 10,
+  };
+-->

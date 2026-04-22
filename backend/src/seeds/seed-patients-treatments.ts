@@ -80,9 +80,9 @@ async function seedPatientsAndTreatments() {
 
     const allBeds = await bedRepo.find({
       where: { isActive: true },
-      relations: ['area']
+      relations: ['area', 'patients'],
     });
-    const availableBeds = allBeds.filter(bed => bed.patientId === null);
+    const availableBeds = allBeds.filter((bed) => !bed.patients || bed.patients.length === 0);
 
     console.log(`📊 Áreas disponibles: ${areas.length}`);
     console.log(`👩‍⚕️ Enfermeras disponibles: ${nurses.length}`);
@@ -109,9 +109,9 @@ async function seedPatientsAndTreatments() {
       patient.isActive = true;
 
       const savedPatient = await patientRepo.save(patient);
-      
-      bed.patientId = savedPatient.id!;
-      await bedRepo.save(bed);
+
+      savedPatient.bedId = bed.id;
+      await patientRepo.save(savedPatient);
 
       newPatients.push(savedPatient);
       console.log(`✅ Paciente creado: ${patient.firstName} ${patient.lastName} en cama ${bed.bedNumber}`);
@@ -125,12 +125,14 @@ async function seedPatientsAndTreatments() {
 
     for (const patient of allPatients) {
       // Obtener la cama del paciente para asignar a la enfermera del área
-      const patientBed = await bedRepo.findOne({ 
-        where: { patientId: patient.id },
-        relations: ['area']
+      const patientWithBed = await patientRepo.findOne({
+        where: { id: patient.id },
+        relations: ['bed', 'bed.area'],
       });
 
-      if (!patientBed) continue;
+      if (!patientWithBed?.bed) continue;
+
+      const patientBed = patientWithBed.bed;
 
       const areaNurses = nurses.filter(n => n.assignedAreaId === patientBed.areaId);
       const assignedNurse = areaNurses.length > 0 ? getRandomElement(areaNurses) : getRandomElement(nurses);

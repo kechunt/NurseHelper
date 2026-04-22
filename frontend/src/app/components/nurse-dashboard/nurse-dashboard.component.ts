@@ -2,8 +2,16 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { forkJoin } from 'rxjs';
-import { NurseService, PatientDetail, BedWithPatient, MedicationForPharmacy } from '../../services/nurse.service';
+import { forkJoin, Subject } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import {
+  NurseService,
+  PatientDetail,
+  BedWithPatient,
+  MedicationForPharmacy,
+  NurseStats,
+} from '../../services/nurse.service';
 import { AuthService } from '../../services/auth.service';
 import { PharmacyService } from '../../services/pharmacy.service';
 import { ToastService } from '../../services/toast.service';
@@ -204,6 +212,9 @@ export class NurseDashboardComponent implements OnInit {
   tasksHourFilter: string = 'current';
   tasksPatientFilter: string = '';
 
+  /** Evita solapar varias cargas completas si el usuario dispara refrescos muy seguido. */
+  private readonly reloadDashboard$ = new Subject<void>();
+
   constructor(
     private nurseService: NurseService,
     private authService: AuthService,
@@ -212,7 +223,56 @@ export class NurseDashboardComponent implements OnInit {
     private toastService: ToastService,
     private confirmationService: ConfirmationService,
     private adminService: AdminService
-  ) {}
+  ) {
+    this.reloadDashboard$
+      .pipe(
+        switchMap(() =>
+          forkJoin({
+            stats: this.nurseService.getNurseStats(),
+            beds: this.nurseService.getMyBeds(),
+            patients: this.nurseService.getMyPatients(),
+          })
+        ),
+        takeUntilDestroyed()
+      )
+      .subscribe({
+        next: ({ stats, beds, patients }) => {
+          this.applyPrimaryDashboardData(stats, beds, patients);
+          this.loadSecondaryData();
+        },
+        error: (error) => {
+          console.error('❌ Error cargando datos principales:', error);
+          console.error('Detalles del error:', {
+            status: error.status,
+            statusText: error.statusText,
+            message: error.message,
+            error: error.error,
+            url: error.url,
+          });
+
+          this.myBeds = [];
+          this.patients = [];
+          this.filteredPatients = [];
+          this.assignedPatientsCount = 0;
+          this.pendingTasksCount = 0;
+          this.medicationsToday = 0;
+
+          if (error.status === 0) {
+            this.toastService.error(
+              'No se puede conectar al servidor. Verifica que el backend esté corriendo en http://localhost:3000'
+            );
+          } else if (error.status === 401) {
+            this.toastService.error('Sesión expirada. Por favor inicia sesión nuevamente.');
+            this.logout();
+          } else if (error.status === 403) {
+            this.toastService.error('No tienes permisos para acceder a estos datos.');
+          } else {
+            const errorMsg = error.error?.message || error.message || 'Error desconocido';
+            this.toastService.error(`Error al cargar datos: ${errorMsg}. Por favor recarga la página.`);
+          }
+        },
+      });
+  }
 
   ngOnInit(): void {
     this.loadNurseData();
@@ -229,126 +289,63 @@ export class NurseDashboardComponent implements OnInit {
 
   loadNurseData(): void {
     const currentUser = this.authService.currentUser();
-    
     if (currentUser) {
       this.nurseName = `${currentUser.firstName} ${currentUser.lastName}`;
     }
+    this.reloadDashboard$.next();
+  }
 
-    console.log('🔄 Iniciando carga de datos del dashboard de enfermera...');
+  private applyPrimaryDashboardData(
+    stats: NurseStats | null,
+    beds: BedWithPatient[] | null,
+    patients: PatientDetail[] | null
+  ): void {
+    this.assignedArea = stats?.assignedArea || 'Sin asignar';
+    this.maxPatients = stats?.maxPatients || 0;
 
-    // Cargar datos críticos primero (estadísticas y pacientes)
-    // Luego cargar datos secundarios (tareas y medicamentos) en paralelo
-    forkJoin({
-      stats: this.nurseService.getNurseStats(),
-      beds: this.nurseService.getMyBeds(),
-      patients: this.nurseService.getMyPatients()
-    }).subscribe({
-      next: ({ stats, beds, patients }) => {
-        console.log('✅ Datos recibidos:', { 
-          stats: stats ? 'OK' : 'null', 
-          beds: beds?.length || 0, 
-          patients: patients?.length || 0 
-        });
-
-        // Procesar estadísticas
-        this.assignedArea = stats?.assignedArea || 'Sin asignar';
-        this.maxPatients = stats?.maxPatients || 0;
-
-        // Procesar camas - incluir ID y otros datos necesarios
-        this.myBeds = (beds || []).map(bed => {
-          const processedBed = {
-            id: bed.id,
-            bedNumber: bed.bedNumber || '',
-            areaId: bed.areaId,
-            patientId: bed.patient?.id || null,
-            isActive: true,
-            patient: bed.patient ? {
+    this.myBeds = (beds || []).map((bed) => {
+      const processedBed = {
+        id: bed.id,
+        bedNumber: bed.bedNumber || '',
+        areaId: bed.areaId,
+        patientId: bed.patient?.id || null,
+        isActive: true,
+        patient: bed.patient
+          ? {
               id: bed.patient.id?.toString() || '',
               name: `${bed.patient.firstName || ''} ${bed.patient.lastName || ''}`,
               age: bed.patient.age || 0,
-              conditions: this.parseConditions(bed.patient.medicalObservations || '')
-            } : null
-          };
-          
-          // Log para depuración
-          if (processedBed.patient) {
-            console.log(`🛏️ Cama ${processedBed.bedNumber} tiene paciente:`, {
-              bedId: processedBed.id,
-              patientId: processedBed.patientId,
-              patientName: processedBed.patient?.name || 'Sin nombre'
-            });
-          }
-          
-          return processedBed;
-        });
-
-        console.log(`🛏️ Camas procesadas: ${this.myBeds.length}`);
-        console.log(`📊 Camas con paciente: ${this.myBeds.filter(b => b.patient).length}`);
-        console.log(`📊 Camas disponibles: ${this.myBeds.filter(b => !b.patient).length}`);
-
-        // Procesar pacientes
-        this.patients = (patients || []).map(p => ({
-          id: p.id?.toString() || '',
-          name: `${p.firstName || ''} ${p.lastName || ''}`,
-          bedNumber: p.bedNumber || '',
-          age: p.age || 0,
-          diagnosis: p.diagnosis || 'Sin diagnóstico',
-          medications: p.medications || [],
-          medicationsDetail: p.medicationsDetail || [],
-          todaySchedule: p.todaySchedule || [],
-          treatmentHistory: p.treatmentHistory || [],
-          pendingTasks: p.pendingTasks || 0,
-          priority: p.priority || 'normal',
-          medicalObservations: p.medicalObservations !== undefined && p.medicalObservations !== null ? p.medicalObservations : '',
-          allergies: p.allergies !== undefined && p.allergies !== null ? p.allergies : '',
-          specialNeeds: p.specialNeeds !== undefined && p.specialNeeds !== null ? p.specialNeeds : '',
-          generalObservations: p.generalObservations !== undefined && p.generalObservations !== null ? p.generalObservations : ''
-        }));
-        this.filteredPatients = this.patients;
-        
-        console.log(`👥 Pacientes procesados: ${this.patients.length}`);
-
-        // Calcular estadísticas iniciales
-        this.assignedPatientsCount = this.patients.length;
-        this.pendingTasksCount = this.patients.reduce((sum, p) => sum + (p.pendingTasks || 0), 0);
-        this.medicationsToday = this.patients.reduce((sum, p) => sum + (p.medications.length || 0), 0);
-
-        // Cargar datos secundarios en paralelo después de los críticos
-        this.loadSecondaryData();
-      },
-      error: (error) => {
-        console.error('❌ Error cargando datos principales:', error);
-        console.error('Detalles del error:', {
-          status: error.status,
-          statusText: error.statusText,
-          message: error.message,
-          error: error.error,
-          url: error.url
-        });
-        
-        // Establecer valores por defecto en caso de error
-        this.myBeds = [];
-        this.patients = [];
-        this.filteredPatients = [];
-        this.assignedPatientsCount = 0;
-        this.pendingTasksCount = 0;
-        this.medicationsToday = 0;
-        
-        // Mostrar mensaje de error más descriptivo
-        if (error.status === 0) {
-          this.toastService.error('No se puede conectar al servidor. Verifica que el backend esté corriendo en http://localhost:3000');
-        } else if (error.status === 401) {
-          this.toastService.error('Sesión expirada. Por favor inicia sesión nuevamente.');
-          this.logout();
-        } else if (error.status === 403) {
-          this.toastService.error('No tienes permisos para acceder a estos datos.');
-        } else {
-          // Mostrar detalles completos del error en desarrollo
-          const errorMsg = error.error?.message || error.message || 'Error desconocido';
-          this.toastService.error(`Error al cargar datos: ${errorMsg}. Por favor recarga la página.`);
-        }
-      }
+              conditions: this.parseConditions(bed.patient.medicalObservations || ''),
+            }
+          : null,
+      };
+      return processedBed;
     });
+
+    this.patients = (patients || []).map((p) => ({
+      id: p.id?.toString() || '',
+      name: `${p.firstName || ''} ${p.lastName || ''}`,
+      bedNumber: p.bedNumber || '',
+      age: p.age || 0,
+      diagnosis: p.diagnosis || 'Sin diagnóstico',
+      medications: p.medications || [],
+      medicationsDetail: p.medicationsDetail || [],
+      todaySchedule: p.todaySchedule || [],
+      treatmentHistory: p.treatmentHistory || [],
+      pendingTasks: p.pendingTasks || 0,
+      priority: p.priority || 'normal',
+      medicalObservations:
+        p.medicalObservations !== undefined && p.medicalObservations !== null ? p.medicalObservations : '',
+      allergies: p.allergies !== undefined && p.allergies !== null ? p.allergies : '',
+      specialNeeds: p.specialNeeds !== undefined && p.specialNeeds !== null ? p.specialNeeds : '',
+      generalObservations:
+        p.generalObservations !== undefined && p.generalObservations !== null ? p.generalObservations : '',
+    }));
+    this.filteredPatients = this.patients;
+
+    this.assignedPatientsCount = this.patients.length;
+    this.pendingTasksCount = this.patients.reduce((sum, p) => sum + (p.pendingTasks || 0), 0);
+    this.medicationsToday = this.patients.reduce((sum, p) => sum + (p.medications.length || 0), 0);
   }
 
   private loadSecondaryData(): void {

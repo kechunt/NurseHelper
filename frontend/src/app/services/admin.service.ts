@@ -29,6 +29,14 @@ export interface Bed {
   isActive?: boolean;
 }
 
+export interface PatientsPageResult {
+  items: Patient[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export interface Patient {
   id?: number;
   firstName: string;
@@ -55,6 +63,9 @@ export interface Patient {
   areaId?: number | null;
   areaName?: string;
   bedNumber?: string;
+  /** Usuario (enfermera) responsable del paciente */
+  assignedToId?: number | null;
+  assignedTo?: { id: number; firstName?: string; lastName?: string; role?: string } | null;
 }
 
 export interface Schedule {
@@ -84,6 +95,7 @@ export class AdminService {
   private areasCache$: Observable<Area[]> | null = null;
   private usersCache$: Observable<User[]> | null = null;
   private bedsCache$: Observable<Bed[]> | null = null;
+  private patientsCache$: Observable<Patient[]> | null = null;
 
   constructor(private http: HttpClient) {}
 
@@ -272,19 +284,96 @@ export class AdminService {
     );
   }
 
-  // Patients - Manejar respuesta paginada igual que otros métodos
-  getPatients(): Observable<Patient[]> {
-    return this.http.get<any>(`${environment.apiUrl}/patients?limit=1000`).pipe(
-      map((response) => {
-        // Manejar respuesta paginada o array directo (misma lógica que en staff-management)
-        const patients = response.items || response || [];
-        return Array.isArray(patients) ? patients : [];
-      }),
+  /**
+   * Lista paginada de pacientes (filtros en servidor).
+   */
+  getPatientsPage(params: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    isActive?: boolean;
+    areaId?: number;
+    assignedToId?: number;
+    hasBed?: boolean;
+  }): Observable<PatientsPageResult> {
+    let p = new HttpParams()
+      .set('page', String(params.page ?? 1))
+      .set('limit', String(params.limit ?? 50));
+    if (params.search?.trim()) {
+      p = p.set('search', params.search.trim());
+    }
+    if (params.isActive === true) {
+      p = p.set('isActive', 'true');
+    }
+    if (params.isActive === false) {
+      p = p.set('isActive', 'false');
+    }
+    if (params.areaId != null && !isNaN(params.areaId)) {
+      p = p.set('areaId', String(params.areaId));
+    }
+    if (params.assignedToId != null && !isNaN(params.assignedToId)) {
+      p = p.set('assignedToId', String(params.assignedToId));
+    }
+    if (params.hasBed === true) {
+      p = p.set('hasBed', 'true');
+    }
+    if (params.hasBed === false) {
+      p = p.set('hasBed', 'false');
+    }
+
+    return this.http.get<any>(`${environment.apiUrl}/patients`, { params: p }).pipe(
+      timeout(DEFAULT_TIMEOUT),
+      map((res) => ({
+        items: Array.isArray(res.items) ? res.items : [],
+        total: typeof res.total === 'number' ? res.total : 0,
+        page: res.page ?? 1,
+        limit: res.limit ?? 50,
+        totalPages: Math.max(1, res.totalPages ?? 1),
+      })),
       catchError((error) => {
-        console.error('❌ Error cargando pacientes:', error);
+        if (error.name === 'TimeoutError') {
+          return throwError(() => ({
+            status: 0,
+            message: 'El servidor no responde.',
+            error: { message: 'Timeout' },
+          }));
+        }
         return throwError(() => error);
       })
     );
+  }
+
+  /** Total de pacientes (una petición mínima: page=1, limit=1). */
+  getPatientsTotal(): Observable<number> {
+    return this.getPatientsPage({ page: 1, limit: 1 }).pipe(map((r) => r.total));
+  }
+
+  /**
+   * Lista de pacientes con caché compartida (misma petición para varios componentes / pestañas).
+   * Limita a 500 filas para selects y vistas que aún no usan paginación.
+   * @param useCache false para forzar recarga desde el servidor
+   */
+  getPatients(useCache: boolean = true): Observable<Patient[]> {
+    if (!useCache || !this.patientsCache$) {
+      const params = new HttpParams().set('page', '1').set('limit', '500');
+      this.patientsCache$ = this.http.get<any>(`${environment.apiUrl}/patients`, { params }).pipe(
+        map((response) => {
+          const patients = response.items || response || [];
+          return Array.isArray(patients) ? patients : [];
+        }),
+        shareReplay(CACHE_SIZE),
+        catchError((error) => {
+          this.patientsCache$ = null;
+          console.error('❌ Error cargando pacientes:', error);
+          return throwError(() => error);
+        })
+      );
+    }
+    return this.patientsCache$;
+  }
+
+  clearPatientsCache(): void {
+    this.patientsCache$ = null;
   }
 
   getPatient(id: number): Observable<Patient> {
@@ -292,15 +381,21 @@ export class AdminService {
   }
 
   createPatient(patient: Patient): Observable<any> {
-    return this.http.post(`${environment.apiUrl}/patients`, patient);
+    return this.http.post(`${environment.apiUrl}/patients`, patient).pipe(
+      tap(() => this.clearPatientsCache())
+    );
   }
 
   updatePatient(id: number, patient: Partial<Patient>): Observable<any> {
-    return this.http.patch(`${environment.apiUrl}/patients/${id}`, patient);
+    return this.http.patch(`${environment.apiUrl}/patients/${id}`, patient).pipe(
+      tap(() => this.clearPatientsCache())
+    );
   }
 
   deletePatient(id: number): Observable<any> {
-    return this.http.delete(`${environment.apiUrl}/patients/${id}`);
+    return this.http.delete(`${environment.apiUrl}/patients/${id}`).pipe(
+      tap(() => this.clearPatientsCache())
+    );
   }
 
   // Schedules

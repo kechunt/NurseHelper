@@ -3,7 +3,7 @@
  * Incluye paginación basada en cursor para grandes volúmenes
  */
 
-import { SelectQueryBuilder } from 'typeorm';
+import { ObjectLiteral, SelectQueryBuilder } from 'typeorm';
 import { CursorPaginationDto, CursorResponse } from '../dto/common.dto';
 
 /**
@@ -14,7 +14,7 @@ export class CursorPaginationHelper {
   /**
    * Aplicar paginación con cursor a un query builder
    */
-  static async paginateWithCursor<T>(
+  static async paginateWithCursor<T extends ObjectLiteral>(
     queryBuilder: SelectQueryBuilder<T>,
     cursorDto: CursorPaginationDto,
     cursorField: string = 'id',
@@ -83,7 +83,7 @@ export class PaginationHelper {
   /**
    * Aplicar paginación a un query builder
    */
-  static applyPagination<T>(
+  static applyPagination<T extends ObjectLiteral>(
     queryBuilder: SelectQueryBuilder<T>,
     page: number = 1,
     limit: number = 50
