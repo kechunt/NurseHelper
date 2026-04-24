@@ -36,6 +36,7 @@ export class Medication {
   @Column({ length: 50, nullable: true })
   location: string;
 
+  /** Caducidad agregada por SKU; varios vencimientos requieren tabla de lotes enlazada a entradas. */
   @Column({ type: 'date', nullable: true })
   expiryDate: Date;
 

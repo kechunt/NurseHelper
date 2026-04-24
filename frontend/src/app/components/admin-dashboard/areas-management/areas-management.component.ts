@@ -16,10 +16,12 @@ export class AreasManagementComponent implements OnInit {
   areas: Area[] = [];
   beds: Bed[] = [];
   patients: any[] = [];
+  rawPatients: any[] = [];
   loading = false;
   showModal = false;
   showBedsSelectionModal = false;
   showEditBedModal = false;
+  showCreateBedModal = false;
   selectedArea: Area | null = null;
   selectedBed: Bed | null = null;
   areaForm: Partial<Area & { bedsCount: number }> = {};
@@ -30,9 +32,16 @@ export class AreasManagementComponent implements OnInit {
     patientId: null,
     isActive: true
   };
+  createBedForm: { bedNumber: string; areaId: number | null; notes: string } = {
+    bedNumber: '',
+    areaId: null,
+    notes: ''
+  };
 
   // Nuevas propiedades para gestión de pacientes por área
   patientsWithoutArea: any[] = [];
+  showPatientsWithoutAreaSection = true;
+  showPatientsByAreaSection = true;
   expandedAreas: Set<number> = new Set();
   showAssignAreaModal = false;
   selectedPatientForArea: any = null;
@@ -62,29 +71,51 @@ export class AreasManagementComponent implements OnInit {
   loadPatients(): void {
     this.adminService.getPatients().subscribe({
       next: (patients) => {
-        // Enriquecer pacientes con información de cama y área
-        this.patients = patients
-          .filter((p: any) => p.isActive)
-          .map((patient: any) => {
-            const patientBed = this.beds.find(bed => bed.patientId === patient.id);
-            return {
-              ...patient,
-              bedId: patientBed?.id || null,
-              areaId: patientBed?.areaId || null,
-              bedNumber: patientBed?.bedNumber || null,
-              areaName: patientBed?.areaId 
-                ? this.areas.find(a => a.id === patientBed.areaId)?.name || 'Sin área'
-                : 'Sin área'
-            };
-          });
-        
-        // Separar pacientes sin área asignada
-        this.patientsWithoutArea = this.patients.filter(p => !p.bedId || !p.areaId);
+        this.rawPatients = patients.filter((p: any) => p.isActive);
+        this.normalizePatientsData();
       },
       error: (error) => {
         console.error('Error loading patients:', error);
       },
     });
+  }
+
+  normalizePatientsData(): void {
+    this.patients = this.rawPatients.map((patient: any) => {
+      const bedFromBedsList = this.beds.find((bed) => bed.patientId === patient.id);
+      const bedFromPatient = patient.bed || null;
+
+      const resolvedBedId =
+        bedFromBedsList?.id ??
+        patient.bedId ??
+        bedFromPatient?.id ??
+        null;
+
+      const resolvedAreaId =
+        bedFromBedsList?.areaId ??
+        bedFromPatient?.areaId ??
+        patient.areaId ??
+        null;
+
+      const resolvedBedNumber =
+        bedFromBedsList?.bedNumber ??
+        bedFromPatient?.bedNumber ??
+        null;
+
+      const resolvedAreaName = resolvedAreaId
+        ? this.areas.find((a) => a.id === resolvedAreaId)?.name || patient.area?.name || 'Sin área'
+        : 'Sin área';
+
+      return {
+        ...patient,
+        bedId: resolvedBedId,
+        areaId: resolvedAreaId,
+        bedNumber: resolvedBedNumber,
+        areaName: resolvedAreaName
+      };
+    });
+
+    this.patientsWithoutArea = this.patients.filter((p) => !p.areaId);
   }
 
   getPatientsForBedSelection(): any[] {
@@ -100,6 +131,7 @@ export class AreasManagementComponent implements OnInit {
     this.adminService.getAreas().subscribe({
       next: (areas) => {
         this.areas = areas;
+        this.normalizePatientsData();
         this.loading = false;
       },
       error: (error) => {
@@ -113,10 +145,7 @@ export class AreasManagementComponent implements OnInit {
     this.adminService.getBeds().subscribe({
       next: (beds) => {
         this.beds = beds;
-        // Recargar pacientes para actualizar información de camas
-        if (this.patients.length > 0) {
-          this.loadPatients();
-        }
+        this.normalizePatientsData();
       },
       error: (error) => {
         console.error('Error loading beds:', error);
@@ -329,6 +358,60 @@ export class AreasManagementComponent implements OnInit {
     this.editBedForm = { bedNumber: '', patientId: null, isActive: true };
   }
 
+  openCreateBedModal(area?: Area): void {
+    const areaId = area?.id || this.selectedArea?.id || null;
+    this.createBedForm = {
+      bedNumber: '',
+      areaId,
+      notes: ''
+    };
+    this.showCreateBedModal = true;
+  }
+
+  closeCreateBedModal(): void {
+    this.showCreateBedModal = false;
+    this.createBedForm = {
+      bedNumber: '',
+      areaId: null,
+      notes: ''
+    };
+  }
+
+  createBed(): void {
+    if (!this.createBedForm.bedNumber.trim() || !this.createBedForm.areaId) {
+      this.toastService.warning('El número de cama y el área son requeridos');
+      return;
+    }
+
+    const newBed: Partial<Bed> = {
+      bedNumber: this.createBedForm.bedNumber.trim(),
+      areaId: this.createBedForm.areaId,
+      notes: this.createBedForm.notes || '',
+      isActive: true
+    };
+
+    const createdAreaId = this.createBedForm.areaId;
+
+    this.adminService.createBed(newBed as Bed).subscribe({
+      next: () => {
+        this.toastService.success(`Cama ${newBed.bedNumber} creada exitosamente`);
+        this.closeCreateBedModal();
+        this.loadBeds();
+        this.loadAreas();
+        this.loadPatients();
+
+        // Si estamos editando esta área, refrescar contador de camas del formulario
+        if (this.showModal && this.selectedArea?.id === createdAreaId) {
+          const currentBedsCount = this.getBedsForArea(this.selectedArea.id).length + 1;
+          this.areaForm.bedsCount = currentBedsCount;
+        }
+      },
+      error: (error) => {
+        this.toastService.error(error.error?.message || 'Error al crear la cama');
+      }
+    });
+  }
+
   saveBedChanges(): void {
     if (!this.selectedBed?.id || !this.editBedForm.bedNumber.trim()) {
       this.toastService.warning('El número de cama es requerido');
@@ -463,6 +546,14 @@ export class AreasManagementComponent implements OnInit {
    */
   getPatientsByArea(areaId: number): any[] {
     return this.patients.filter(p => p.areaId === areaId);
+  }
+
+  togglePatientsWithoutAreaSection(): void {
+    this.showPatientsWithoutAreaSection = !this.showPatientsWithoutAreaSection;
+  }
+
+  togglePatientsByAreaSection(): void {
+    this.showPatientsByAreaSection = !this.showPatientsByAreaSection;
   }
 
   /**

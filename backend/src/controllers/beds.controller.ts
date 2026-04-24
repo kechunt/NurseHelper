@@ -6,6 +6,27 @@ import { sendErrorResponse, handleControllerError, parseId } from '../utils/resp
 import { logger } from '../utils/logger';
 
 export class BedsController {
+  private normalizeBedForClient(bed: any): any {
+    const activePatients = Array.isArray(bed?.patients)
+      ? bed.patients.filter((p: any) => p?.isActive !== false)
+      : [];
+    const firstPatient = activePatients.length > 0 ? activePatients[0] : null;
+
+    return {
+      ...bed,
+      patientId: firstPatient?.id ?? null,
+      patient: firstPatient
+        ? {
+            id: firstPatient.id,
+            firstName: firstPatient.firstName,
+            lastName: firstPatient.lastName,
+            identificationNumber: firstPatient.identificationNumber ?? null,
+          }
+        : null,
+      isOccupied: !!firstPatient,
+    };
+  }
+
   async getAll(req: Request, res: Response): Promise<void> {
     try {
       const bedRepository = AppDataSource.getRepository(Bed);
@@ -40,7 +61,7 @@ export class BedsController {
         }
       }
 
-      res.json(beds);
+      res.json(beds.map((bed) => this.normalizeBedForClient(bed)));
     } catch (error) {
       handleControllerError(error, req, res, 'Error al obtener camas');
     }
@@ -86,7 +107,7 @@ export class BedsController {
         }
       }
 
-      res.json(beds);
+      res.json(beds.map((bed) => this.normalizeBedForClient(bed)));
     } catch (error) {
       handleControllerError(error, req, res, 'Error al obtener camas por área');
     }
@@ -210,8 +231,12 @@ export class BedsController {
           
           for (const patient of patientsInBed) {
             try {
-              patient.bedId = null;
-              await patientRepository.save(patient);
+              await patientRepository
+                .createQueryBuilder()
+                .update(Patient)
+                .set({ bedId: null })
+                .where('id = :id', { id: patient.id })
+                .execute();
             } catch (saveError: any) {
               if (saveError?.code === 'ER_BAD_FIELD_ERROR' && saveError?.sqlMessage?.includes('bedId')) {
                 // Si bedId no existe, simplemente continuar
@@ -296,8 +321,12 @@ export class BedsController {
 
           // Asignar el nuevo paciente a esta cama
           try {
-            patient.bedId = bed.id;
-            await patientRepository.save(patient);
+            await patientRepository
+              .createQueryBuilder()
+              .update(Patient)
+              .set({ bedId: bed.id, areaId: bed.areaId })
+              .where('id = :id', { id: patient.id })
+              .execute();
           } catch (saveError: any) {
             if (saveError?.code === 'ER_BAD_FIELD_ERROR' && saveError?.sqlMessage?.includes('bedId')) {
               logger.warn('Columna bedId no existe, omitiendo asignación', { bedId: bed.id, patientId });
@@ -365,7 +394,7 @@ export class BedsController {
         ? `Cama ${bed.bedNumber} liberada exitosamente`
         : `Paciente asignado exitosamente`;
 
-      res.json({ message, bed: updatedBed });
+      res.json({ message, bed: updatedBed ? this.normalizeBedForClient(updatedBed) : null });
     } catch (error) {
       handleControllerError(error, req, res, 'Error al asignar paciente a cama');
     }
@@ -507,7 +536,7 @@ export class BedsController {
               const updateResult = await patientRepository
                 .createQueryBuilder()
                 .update(Patient)
-                .set({ bedId: bed.id })
+                .set({ bedId: bed.id, areaId: bed.areaId })
                 .where('id = :id', { id: patientIdNum })
                 .execute();
               
@@ -569,83 +598,27 @@ export class BedsController {
 
       await bedRepository.save(bed);
 
-      // Recargar la cama con información actualizada del paciente
+      // Recargar cama actualizada con paciente activo relacionado
       let updatedBed: Bed | null;
       try {
         updatedBed = await bedRepository.findOne({
           where: { id: bed.id },
-          relations: ['area'],
+          relations: ['area', 'patients'],
         });
       } catch (relationError: any) {
         updatedBed = await bedRepository.findOne({
           where: { id: bed.id },
+          relations: ['area'],
         });
-      }
-
-      // Obtener el paciente asignado a esta cama si existe usando query builder
-      let patientInfo = null;
-      if (updatedBed) {
-        try {
-          logger.info('🔍 Buscando paciente en cama usando query builder', { bedId: updatedBed.id });
-          
-          // Usar query builder para seleccionar explícitamente bedId
-          const patientInBed = await patientRepository
-            .createQueryBuilder('patient')
-            .select([
-              'patient.id',
-              'patient.firstName',
-              'patient.lastName',
-              'patient.dateOfBirth',
-              'patient.medicalObservations',
-              'patient.allergies',
-              'patient.bedId'
-            ])
-            .where('patient.bedId = :bedId', { bedId: updatedBed.id })
-            .andWhere('patient.isActive = :isActive', { isActive: true })
-            .getOne();
-          
-          if (patientInBed) {
-            logger.info('✅ Paciente encontrado en cama después de actualizar', { 
-              bedId: updatedBed.id, 
-              patientId: patientInBed.id,
-              patientBedId: patientInBed.bedId,
-              patientName: `${patientInBed.firstName} ${patientInBed.lastName}`
-            });
-            
-            const age = patientInBed.dateOfBirth
-              ? new Date().getFullYear() - new Date(patientInBed.dateOfBirth).getFullYear()
-              : 0;
-            
-            patientInfo = {
-              id: patientInBed.id,
-              firstName: patientInBed.firstName,
-              lastName: patientInBed.lastName,
-              age,
-              medicalObservations: patientInBed.medicalObservations || '',
-              allergies: patientInBed.allergies || ''
-            };
-          } else {
-            logger.info('ℹ️ No hay paciente asignado a esta cama después de actualizar', { bedId: updatedBed.id });
-          }
-        } catch (patientError: any) {
-          // Si bedId no existe, simplemente continuar sin información del paciente
-          if (patientError?.code === 'ER_BAD_FIELD_ERROR' && patientError?.sqlMessage?.includes('bedId')) {
-            logger.warn('Columna bedId no existe, omitiendo información del paciente', { bedId: updatedBed.id });
-          } else {
-            logger.error('❌ Error obteniendo información del paciente:', patientError);
-          }
+        if (updatedBed) {
+          (updatedBed as any).patients = [];
         }
       }
 
-      // Construir respuesta con formato compatible con getMyBeds
-      const responseBed = {
-        id: updatedBed?.id,
-        bedNumber: updatedBed?.bedNumber,
-        areaId: updatedBed?.areaId,
-        patient: patientInfo
-      };
-
-      res.json({ message: 'Cama actualizada exitosamente', bed: responseBed });
+      res.json({
+        message: 'Cama actualizada exitosamente',
+        bed: updatedBed ? this.normalizeBedForClient(updatedBed) : null,
+      });
     } catch (error) {
       handleControllerError(error, req, res, 'Error al actualizar cama');
     }

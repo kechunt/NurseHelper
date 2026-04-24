@@ -6,6 +6,8 @@ import {
   deliverMedication,
   getDeliveryHistory,
   getInventory,
+  getInventoryMovements,
+  postInventoryMovement,
   updateMedicationStock,
   createMedicationRequest,
   createMedication,
@@ -249,6 +251,42 @@ router.get('/deliveries', getDeliveryHistory);
  *                     enum: [available, low_stock, out_of_stock, expired]
  */
 router.get('/inventory', getInventory);
+
+/**
+ * @swagger
+ * /api/pharmacy/inventory/movements:
+ *   get:
+ *     summary: Kardex / historial de movimientos de un medicamento
+ *     tags: [Pharmacy]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: medicationId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 100
+ *     responses:
+ *       200:
+ *         description: Lista de movimientos
+ */
+router.get('/inventory/movements', getInventoryMovements);
+
+/**
+ * @swagger
+ * /api/pharmacy/inventory/{id}/movements:
+ *   post:
+ *     summary: Registrar movimiento de inventario (entrada, salida o ajuste)
+ *     tags: [Pharmacy]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.post('/inventory/:id/movements', postInventoryMovement);
 
 /**
  * @swagger

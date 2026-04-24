@@ -1,0 +1,202 @@
+/* Pantallas de autenticación (login, verificar correo, etc.) — estilo neumórfico unificado */
+
+.auth-page-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e0e5ec;
+  padding: 2rem;
+}
+
+.auth-card {
+  background: #e0e5ec;
+  border-radius: 30px;
+  padding: 3rem;
+  max-width: 450px;
+  width: 100%;
+  box-shadow: 20px 20px 60px #bebebe, -20px -20px 60px #ffffff;
+}
+
+.auth-logo-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.auth-logo {
+  width: 120px;
+  height: 120px;
+  border-radius: 25px;
+  object-fit: cover;
+  box-shadow: 12px 12px 24px #bebebe, -12px -12px 24px #ffffff;
+}
+
+.auth-title {
+  text-align: center;
+  color: #4a5568;
+  font-size: 2rem;
+  font-weight: 300;
+  margin-bottom: 0.5rem;
+  text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.8),
+    -2px -2px 4px rgba(174, 174, 192, 0.4);
+}
+
+.auth-subtitle {
+  text-align: center;
+  color: #718096;
+  font-size: 1rem;
+  margin-bottom: 1.25rem;
+  line-height: 1.45;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.auth-input-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.auth-input-group label {
+  color: #4a5568;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.neuro-input {
+  padding: 14px 18px;
+  background: #e0e5ec;
+  border: none;
+  border-radius: 15px;
+  font-size: 16px;
+  color: #4a5568;
+  transition: all 0.2s ease;
+  box-shadow: inset 6px 6px 12px #bebebe, inset -6px -6px 12px #ffffff;
+  font-family: inherit;
+}
+
+.neuro-input:focus {
+  outline: none;
+  box-shadow: inset 8px 8px 16px #bebebe, inset -8px -8px 16px #ffffff;
+}
+
+.neuro-input::placeholder {
+  color: #a0aec0;
+}
+
+.neuro-btn {
+  background: #e0e5ec;
+  color: #4a5568;
+  border: none;
+  padding: 14px 24px;
+  border-radius: 50px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 8px 8px 16px #bebebe, -8px -8px 16px #ffffff;
+  margin-top: 0.5rem;
+}
+
+.neuro-btn:hover:not(:disabled) {
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+}
+
+.neuro-btn:active:not(:disabled),
+.neuro-btn.pressed {
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+}
+
+.neuro-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.neuro-btn-secondary {
+  margin-top: 0;
+  font-size: 0.9rem;
+  padding: 10px 18px;
+  border-radius: 20px;
+}
+
+.auth-error {
+  background: #fed7d7;
+  color: #c53030;
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 14px;
+  text-align: center;
+  box-shadow: inset 4px 4px 8px #feb2b2, inset -4px -4px 8px #ffffff;
+}
+
+.auth-footer {
+  margin-top: 2rem;
+  text-align: center;
+}
+
+.auth-footer p {
+  color: #718096;
+  font-size: 0.9rem;
+}
+
+.auth-link {
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.auth-link:hover {
+  color: #764ba2;
+}
+
+.auth-info-banner {
+  background: #ebf8ff;
+  color: #2c5282;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  margin-bottom: 1.25rem;
+  border: 1px solid #bee3f8;
+  box-shadow: inset 2px 2px 6px rgba(255, 255, 255, 0.6), inset -2px -2px 6px rgba(174, 174, 192, 0.15);
+}
+
+.auth-info-banner--warn {
+  background: #fffaf0;
+  color: #744210;
+  border-color: #fbd38d;
+}
+
+.auth-email-highlight {
+  text-align: center;
+  font-weight: 600;
+  color: #4a5568;
+  font-size: 0.95rem;
+  margin: 0 0 1rem;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #d1d9e6;
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+  word-break: break-all;
+}
+
+@media (max-width: 480px) {
+  .auth-card {
+    padding: 2rem 1.5rem;
+  }
+
+  .auth-logo {
+    width: 100px;
+    height: 100px;
+  }
+
+  .auth-title {
+    font-size: 1.5rem;
+  }
+}

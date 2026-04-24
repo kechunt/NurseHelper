@@ -37,6 +37,8 @@ export interface RegisterResponse {
   email?: string;
   token?: string;
   user?: User;
+  /** false si el backend no tiene EMAIL_USER/EMAIL_PASSWORD (no se envía correo real) */
+  smtpConfigured?: boolean;
 }
 
 export interface VerifyEmailRequest {
@@ -112,8 +114,13 @@ export class AuthService {
       );
   }
 
-  resendVerificationCode(email: string): Observable<{ message: string; email: string }> {
-    return this.http.post<{ message: string; email: string }>(`${this.apiUrl}/resend-verification`, { email });
+  resendVerificationCode(
+    email: string
+  ): Observable<{ message: string; email: string; smtpConfigured?: boolean }> {
+    return this.http.post<{ message: string; email: string; smtpConfigured?: boolean }>(
+      `${this.apiUrl}/resend-verification`,
+      { email }
+    );
   }
 
   logout(): void {

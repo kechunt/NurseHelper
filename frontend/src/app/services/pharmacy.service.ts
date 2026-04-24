@@ -3,6 +3,18 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
+export interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface PagedResult<T> {
+  data: T[];
+  pagination: PaginationMeta;
+}
+
 export interface MedicationRequest {
   id: number;
   requestId: string;
@@ -30,6 +42,30 @@ export interface DeliveryHistoryItem {
   deliveredAt: string;
 }
 
+export interface DeliveryHistoryResponse {
+  deliveries: any[];
+  cancelled: any[];
+}
+
+export interface DeliveryHistoryPagedResponse extends DeliveryHistoryResponse {
+  pagination: PaginationMeta;
+  /** Totales reales (p. ej. entregas del día en BD), independientes de la página del listado */
+  summary?: {
+    deliveredTodayCount: number;
+  };
+}
+
+/** Respuesta paginada de solicitudes con conteos globales para KPI */
+export interface MedicationRequestsPagedResult extends PagedResult<MedicationRequest> {
+  openByStatus?: {
+    pending: number;
+    in_preparation: number;
+    ready: number;
+  };
+}
+
+export type InventoryExpiryClassification = 'none' | 'expired' | 'expiring_soon';
+
 export interface InventoryItem {
   id: number;
   name: string;
@@ -40,6 +76,28 @@ export interface InventoryItem {
   location: string;
   expiryDate: string;
   status: 'available' | 'low_stock' | 'out_of_stock' | 'expired';
+  expiryClassification: InventoryExpiryClassification;
+  daysToExpiry: number | null;
+  expiringSoonDays: number;
+}
+
+export type InventoryMovementTypeApi =
+  | 'entry'
+  | 'exit'
+  | 'adjustment'
+  | 'delivery';
+
+export interface InventoryMovementRow {
+  id: number;
+  medicationId: number;
+  movementType: InventoryMovementTypeApi;
+  quantityDelta: number;
+  stockBefore: number;
+  stockAfter: number;
+  reason: string | null;
+  createdAt: string;
+  performedByName: string | null;
+  medicationRequestId: number | null;
 }
 
 @Injectable({
@@ -54,6 +112,12 @@ export class PharmacyService {
     const params: any = {};
     if (status) params.status = status;
     return this.http.get<MedicationRequest[]>(`${this.apiUrl}/requests`, { params });
+  }
+
+  getMedicationRequestsPaged(page: number, limit: number, status?: string): Observable<MedicationRequestsPagedResult> {
+    const params: any = { page: String(page), limit: String(limit) };
+    if (status) params.status = status;
+    return this.http.get<MedicationRequestsPagedResult>(`${this.apiUrl}/requests`, { params });
   }
 
   updateRequestStatus(id: number, status: string, rejectionReason?: string, notes?: string): Observable<any> {
@@ -79,12 +143,67 @@ export class PharmacyService {
     return this.http.get<any>(`${this.apiUrl}/deliveries`, { params });
   }
 
+  getDeliveryHistoryPaged(
+    page: number,
+    limit: number,
+    includeCancelled: boolean = false,
+    startDate?: string,
+    endDate?: string
+  ): Observable<DeliveryHistoryPagedResponse> {
+    const params: any = { page: String(page), limit: String(limit) };
+    if (includeCancelled) params.includeCancelled = 'true';
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    return this.http.get<DeliveryHistoryPagedResponse>(`${this.apiUrl}/deliveries`, { params });
+  }
+
   getInventory(): Observable<InventoryItem[]> {
     return this.http.get<InventoryItem[]>(`${this.apiUrl}/inventory`);
   }
 
+  getInventoryPaged(page: number, limit: number): Observable<PagedResult<InventoryItem>> {
+    return this.http.get<PagedResult<InventoryItem>>(`${this.apiUrl}/inventory`, {
+      params: { page: String(page), limit: String(limit) },
+    });
+  }
+
   updateMedicationStock(id: number, stock: number): Observable<any> {
     return this.http.put(`${this.apiUrl}/inventory/${id}/stock`, { stock });
+  }
+
+  postInventoryMovement(
+    medicationId: number,
+    body: {
+      type: 'entry' | 'exit' | 'adjustment';
+      quantity: number;
+      reason?: string;
+      /** Solo entradas: actualiza caducidad del SKU (referencia de lote hasta tabla de lotes). */
+      expiryDate?: string;
+    }
+  ): Observable<{ medication: InventoryItem; movement: InventoryMovementRow }> {
+    return this.http.post<{ medication: InventoryItem; movement: InventoryMovementRow }>(
+      `${this.apiUrl}/inventory/${medicationId}/movements`,
+      body
+    );
+  }
+
+  getInventoryMovements(
+    medicationId: number,
+    limit: number = 100
+  ): Observable<InventoryMovementRow[]> {
+    return this.http.get<InventoryMovementRow[]>(`${this.apiUrl}/inventory/movements`, {
+      params: { medicationId: String(medicationId), limit: String(limit) },
+    });
+  }
+
+  getInventoryMovementsPaged(
+    medicationId: number,
+    page: number,
+    limit: number = 50
+  ): Observable<PagedResult<InventoryMovementRow>> {
+    return this.http.get<PagedResult<InventoryMovementRow>>(`${this.apiUrl}/inventory/movements`, {
+      params: { medicationId: String(medicationId), page: String(page), limit: String(limit) },
+    });
   }
 
   createMedication(data: {

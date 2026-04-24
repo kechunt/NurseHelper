@@ -2,8 +2,15 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
-import { PharmacyService } from '../../services/pharmacy.service';
+import {
+  PharmacyService,
+  InventoryMovementRow,
+  PaginationMeta,
+} from '../../services/pharmacy.service';
+import { ToastService } from '../../services/toast.service';
+import { ConfirmationService } from '../../services/confirmation.service';
 
 interface MedicationRequest {
   id: number;
@@ -56,15 +63,27 @@ interface DeliveryHistoryItem {
   type: 'delivery' | 'cancelled';
 }
 
+interface CombinedHistoryItem extends DeliveryHistoryItem {
+  sortDate: Date;
+}
+
+type ExpiryClassification = 'none' | 'expired' | 'expiring_soon';
+
 interface InventoryItem {
   id?: number;
   medication: string;
   dosage: string;
+  description?: string;
   stock: number;
   minStock: number;
   location: string;
   expiryDate: string;
+  expiryDateRaw?: string | null;
   status: 'available' | 'low_stock' | 'expired' | 'out_of_stock';
+  /** Alineado con backend (`medications.expiryDate`). */
+  expiryClassification: ExpiryClassification;
+  daysToExpiry: number | null;
+  expiringSoonDays: number;
 }
 
 @Component({
@@ -72,7 +91,11 @@ interface InventoryItem {
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './pharmacy-dashboard.component.html',
-  styleUrl: './pharmacy-dashboard.component.css',
+  styleUrls: [
+    '../../shared/styles/admin-table-unified.css',
+    '../../shared/styles/admin-panel-responsive.css',
+    './pharmacy-dashboard.component.css',
+  ],
 })
 export class PharmacyDashboardComponent implements OnInit {
   pharmacyUserName: string = 'Farmacia Central';
@@ -86,7 +109,7 @@ export class PharmacyDashboardComponent implements OnInit {
   filteredRequests: MedicationRequest[] = [];
 
   deliveryHistory: DeliveryHistoryItem[] = [];
-  filteredHistory: DeliveryHistoryItem[] = [];
+  filteredHistory: CombinedHistoryItem[] = [];
 
   inventory: InventoryItem[] = [];
   filteredInventory: InventoryItem[] = [];
@@ -95,8 +118,30 @@ export class PharmacyDashboardComponent implements OnInit {
   searchTerm: string = '';
   historySearchTerm: string = '';
   inventorySearchTerm: string = '';
+  inventoryStatusFilter: 'all' | 'available' | 'low_stock' | 'out_of_stock' | 'expired' | 'expiring_soon' = 'all';
 
   activeSection: string = 'requests';
+  private readonly storageKey = 'pharmacy-dashboard-ui-v1';
+
+  loadingInventory = false;
+  loadingRequests = false;
+  loadingHistory = false;
+  loadingKardex = false;
+
+  inventoryError = '';
+  requestsError = '';
+  historyError = '';
+  kardexError = '';
+
+  inventoryPagination: PaginationMeta = { page: 1, limit: 20, total: 0, totalPages: 1 };
+  requestsPagination: PaginationMeta = { page: 1, limit: 20, total: 0, totalPages: 1 };
+  historyPagination: PaginationMeta = { page: 1, limit: 20, total: 0, totalPages: 1 };
+  kardexPagination: PaginationMeta = { page: 1, limit: 15, total: 0, totalPages: 1 };
+
+  /** Conteos globales de solicitudes abiertas (BD); evita KPI erróneos al paginar */
+  private lastOpenByStatus: { pending: number; in_preparation: number; ready: number } | null = null;
+  /** Entregas hoy según BD (independiente de la página del historial) */
+  private lastDeliveredTodayCount: number | null = null;
 
   showDeliveryModal: boolean = false;
   selectedRequest: MedicationRequest | null = null;
@@ -109,7 +154,26 @@ export class PharmacyDashboardComponent implements OnInit {
   // Gestión de inventario
   showAddMedicationModal = false;
   showDeleteMedicationModal = false;
+  showStockMovementModal = false;
   selectedMedicationForDelete: InventoryItem | null = null;
+  selectedInventoryItem: InventoryItem | null = null;
+  stockMovementForm: {
+    type: 'entry' | 'exit' | 'adjustment';
+    quantity: number;
+    reason: string;
+    /** Solo entradas: actualiza `expiryDate` del SKU (hasta existir tabla de lotes). */
+    entryExpiryDate: string;
+  } = {
+    type: 'adjustment',
+    quantity: 0,
+    reason: '',
+    entryExpiryDate: '',
+  };
+
+  showKardexModal = false;
+  kardexItem: InventoryItem | null = null;
+  kardexMovements: InventoryMovementRow[] = [];
+  kardexLoading = false;
   newMedicationForm: {
     name: string;
     dosage: string;
@@ -129,11 +193,16 @@ export class PharmacyDashboardComponent implements OnInit {
   };
   
   // Historial completo (entregas y rechazos)
-  fullHistory: any[] = [];
+  fullHistory: CombinedHistoryItem[] = [];
+  private requestSearchDebounce: ReturnType<typeof setTimeout> | null = null;
+  private historySearchDebounce: ReturnType<typeof setTimeout> | null = null;
+  private inventorySearchDebounce: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     private authService: AuthService,
     private pharmacyService: PharmacyService,
+    private toastService: ToastService,
+    private confirmationService: ConfirmationService,
     private router: Router
   ) {}
 
@@ -142,30 +211,64 @@ export class PharmacyDashboardComponent implements OnInit {
     if (currentUser) {
       this.pharmacyUserName = `${currentUser.firstName} ${currentUser.lastName}`;
     }
+    this.restoreUiState();
     this.loadData();
   }
 
+  private notifySuccess(message: string): void {
+    this.toastService.success(message.replace(/^✅\s*/, ''));
+  }
+
+  private notifyError(message: string): void {
+    this.toastService.error(message.replace(/^❌\s*/, ''));
+  }
+
+  private notifyWarning(message: string): void {
+    this.toastService.warning(message.replace(/^⚠️\s*/, ''));
+  }
+
+  private notifyInfo(message: string): void {
+    this.toastService.info(message);
+  }
+
   loadData(): void {
-    this.pharmacyService.getInventory().subscribe({
-      next: (inventory) => {
-        this.inventory = inventory.map(i => ({
-          id: i.id,
-          medication: i.name,
-          dosage: i.dosage,
-          stock: i.stock,
-          minStock: i.minStock,
-          location: i.location || 'N/A',
-          expiryDate: i.expiryDate ? new Date(i.expiryDate).toLocaleDateString('es-ES') : 'N/A',
-          status: i.status
-        }));
+    this.loadingInventory = true;
+    this.inventoryError = '';
+    this.pharmacyService
+      .getInventoryPaged(this.inventoryPagination.page, this.inventoryPagination.limit)
+      .subscribe({
+      next: (result) => {
+        this.inventoryPagination = result.pagination;
+        this.inventory = result.data.map((i) => {
+          const expiryClassification =
+            i.expiryClassification ?? (i.status === 'expired' ? 'expired' : 'none');
+          return {
+            id: i.id,
+            medication: i.name,
+            dosage: i.dosage,
+            description: i.description || '',
+            stock: i.stock,
+            minStock: i.minStock,
+            location: i.location || 'N/A',
+            expiryDate: i.expiryDate ? new Date(i.expiryDate).toLocaleDateString('es-ES') : 'N/A',
+            expiryDateRaw: i.expiryDate || null,
+            status: i.status,
+            expiryClassification,
+            daysToExpiry: i.daysToExpiry ?? null,
+            expiringSoonDays: i.expiringSoonDays ?? 30,
+          };
+        });
         
-        this.filteredInventory = this.inventory;
+        this.filterInventory();
         
         this.loadRequests();
         this.loadHistory();
+        this.loadingInventory = false;
       },
       error: (error) => {
         console.error('Error cargando inventario:', error);
+        this.loadingInventory = false;
+        this.inventoryError = error?.error?.message || 'No se pudo cargar el inventario';
         this.inventory = [];
         this.filteredInventory = [];
         this.loadRequests();
@@ -175,17 +278,30 @@ export class PharmacyDashboardComponent implements OnInit {
   }
 
   loadRequests(): void {
-    this.pharmacyService.getMedicationRequests().subscribe({
-      next: (requests) => {
-        this.medicationRequests = requests.map(r => {
-          // Verificar disponibilidad REAL en inventario desde BD
-          const medicationInInventory = this.inventory.find(
-            inv => inv.medication === r.medication.name && inv.dosage === r.dosage
+    this.loadingRequests = true;
+    this.requestsError = '';
+    const status = this.requestFilter !== 'all' ? this.requestFilter : undefined;
+    forkJoin({
+      reqs: this.pharmacyService.getMedicationRequestsPaged(
+        this.requestsPagination.page,
+        this.requestsPagination.limit,
+        status
+      ),
+      invAll: this.pharmacyService.getInventory(),
+    }).subscribe({
+      next: ({ reqs, invAll }) => {
+        this.requestsPagination = reqs.pagination;
+        this.lastOpenByStatus = reqs.openByStatus ?? null;
+
+        this.medicationRequests = reqs.data.map((r) => {
+          const medicationInInventory = invAll.find(
+            (inv) => inv.name === r.medication.name && inv.dosage === r.dosage
           );
-          const isAvailable = medicationInInventory ? 
-            (medicationInInventory.stock >= r.quantity && medicationInInventory.status !== 'out_of_stock') : 
-            false;
-          
+          const isAvailable = medicationInInventory
+            ? medicationInInventory.stock >= r.quantity &&
+              medicationInInventory.status !== 'out_of_stock'
+            : false;
+
           return {
             id: r.id,
             requestId: r.requestId,
@@ -200,30 +316,40 @@ export class PharmacyDashboardComponent implements OnInit {
             notes: r.notes || '',
             medicationId: r.medication.id,
             availableInStock: isAvailable,
-            stockAvailable: medicationInInventory?.stock || 0
+            stockAvailable: medicationInInventory?.stock ?? 0,
           };
         });
-        
+
         this.filteredRequests = this.medicationRequests;
-        
-        // Actualizar contadores después de cargar solicitudes
+        this.filterRequests();
+
         this.updateCounters();
-        
-        console.log('✅ Solicitudes cargadas:', this.medicationRequests.length);
+
+        this.loadingRequests = false;
       },
       error: (error) => {
         console.error('Error cargando solicitudes:', error);
-        alert('Error al cargar las solicitudes. Por favor, recarga la página.');
+        this.notifyError('Error al cargar las solicitudes. Por favor, recarga la página.');
+        this.loadingRequests = false;
+        this.requestsError = error?.error?.message || 'No se pudieron cargar las solicitudes';
         this.medicationRequests = [];
         this.filteredRequests = [];
+        this.lastOpenByStatus = null;
         this.updateCounters();
-      }
+      },
     });
   }
 
   loadHistory(): void {
-    this.pharmacyService.getDeliveryHistory(true).subscribe({
-      next: (historyData: any) => {
+    this.loadingHistory = true;
+    this.historyError = '';
+    this.pharmacyService
+      .getDeliveryHistoryPaged(this.historyPagination.page, this.historyPagination.limit, true)
+      .subscribe({
+      next: (historyData) => {
+        this.historyPagination = historyData.pagination;
+        this.lastDeliveredTodayCount =
+          historyData.summary?.deliveredTodayCount ?? null;
         // Procesar entregas
         const deliveries = (historyData.deliveries || []).map((h: any) => {
           const deliveredDate = h.deliveredAt ? new Date(h.deliveredAt) : new Date();
@@ -239,49 +365,52 @@ export class PharmacyDashboardComponent implements OnInit {
             deliveredBy: `${h.deliveredBy.firstName} ${h.deliveredBy.lastName}`,
             patients: h.patients || [],
             notes: h.notes || 'Sin observaciones',
-            type: 'delivery'
-          };
+            type: 'delivery',
+            sortDate: deliveredDate,
+          } as CombinedHistoryItem;
         });
         
         // Procesar rechazos
-        const cancelled = (historyData.cancelled || []).map((r: any) => ({
-          id: r.id,
-          requestId: r.requestId,
-          medication: r.medication.name,
-          dosage: r.dosage,
-          quantity: r.quantity,
-          requestedBy: `${r.requestedBy.firstName} ${r.requestedBy.lastName}`,
-          cancelledAt: new Date(r.cancelledAt).toLocaleString('es-ES'),
-          notes: r.notes || '',
-          patientsInfo: r.patientsInfo || [],
-          type: 'cancelled'
-        }));
+        const cancelled = (historyData.cancelled || []).map((r: any) => {
+          const cancelledDate = new Date(r.cancelledAt);
+          return {
+            id: r.id,
+            requestId: r.requestId,
+            medication: r.medication.name,
+            dosage: r.dosage,
+            quantity: r.quantity,
+            requestedBy: `${r.requestedBy.firstName} ${r.requestedBy.lastName}`,
+            cancelledAt: cancelledDate.toLocaleString('es-ES'),
+            notes: r.notes || '',
+            patientsInfo: r.patientsInfo || [],
+            type: 'cancelled',
+            sortDate: cancelledDate,
+          } as CombinedHistoryItem;
+        });
         
         // Combinar y ordenar por fecha
-        this.fullHistory = [...deliveries, ...cancelled].sort((a, b) => {
-          const dateA = a.deliveredAt || a.cancelledAt;
-          const dateB = b.deliveredAt || b.cancelledAt;
-          return new Date(dateB).getTime() - new Date(dateA).getTime();
-        });
+        this.fullHistory = [...deliveries, ...cancelled].sort(
+          (a, b) => b.sortDate.getTime() - a.sortDate.getTime()
+        );
         
         // Mantener compatibilidad con código existente
         this.deliveryHistory = deliveries;
         this.filteredHistory = this.fullHistory;
+        this.filterHistory();
         
         // Actualizar contadores después de cargar historial
         this.updateCounters();
         
-        console.log('✅ Historial cargado:', {
-          entregas: deliveries.length,
-          rechazos: cancelled.length,
-          total: this.fullHistory.length
-        });
+        this.loadingHistory = false;
       },
       error: (error) => {
         console.error('Error cargando historial:', error);
+        this.loadingHistory = false;
+        this.historyError = error?.error?.message || 'No se pudo cargar el historial';
         this.deliveryHistory = [];
         this.filteredHistory = [];
         this.fullHistory = [];
+        this.lastDeliveredTodayCount = null;
         this.updateCounters();
       }
     });
@@ -289,61 +418,30 @@ export class PharmacyDashboardComponent implements OnInit {
 
 
   updateCounters(): void {
-    // Contar solicitudes por estado
-    this.pendingRequestsCount = this.medicationRequests.filter(r => r.status === 'pending').length;
-    this.inPreparationCount = this.medicationRequests.filter(r => r.status === 'in_preparation').length;
-    this.readyForDeliveryCount = this.medicationRequests.filter(r => r.status === 'ready').length;
+    if (this.lastOpenByStatus) {
+      this.pendingRequestsCount = this.lastOpenByStatus.pending;
+      this.inPreparationCount = this.lastOpenByStatus.in_preparation;
+      this.readyForDeliveryCount = this.lastOpenByStatus.ready;
+    } else {
+      this.pendingRequestsCount = this.medicationRequests.filter((r) => r.status === 'pending').length;
+      this.inPreparationCount = this.medicationRequests.filter((r) => r.status === 'in_preparation').length;
+      this.readyForDeliveryCount = this.medicationRequests.filter((r) => r.status === 'ready').length;
+    }
+
+    if (this.lastDeliveredTodayCount != null) {
+      this.deliveredTodayCount = this.lastDeliveredTodayCount;
+    } else {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      this.deliveredTodayCount = this.fullHistory
+        .filter((h) => h.type === 'delivery')
+        .filter((h) => {
+          const d = new Date(h.sortDate);
+          d.setHours(0, 0, 0, 0);
+          return d.getTime() === today.getTime();
+        }).length;
+    }
     
-    // Contar entregas del día actual desde el historial completo
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    this.deliveredTodayCount = this.fullHistory.filter(h => {
-      if (h.type !== 'delivery') return false;
-      
-      try {
-        // Usar deliveredAtRaw si está disponible (fecha original), sino parsear deliveredAt
-        let deliveryDate: Date;
-        if ((h as any).deliveredAtRaw) {
-          deliveryDate = new Date((h as any).deliveredAtRaw);
-        } else if (h.deliveredAt) {
-          // Si viene como string formateado (ej: "17/12/2025, 19:30:00")
-          if (typeof h.deliveredAt === 'string') {
-            const dateStr = h.deliveredAt.split(',')[0]; // Tomar solo la parte de la fecha
-            const parts = dateStr.split('/');
-            if (parts.length === 3) {
-              // Formato DD/MM/YYYY
-              deliveryDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
-            } else {
-              // Intentar parseo directo
-              deliveryDate = new Date(h.deliveredAt);
-            }
-          } else {
-            deliveryDate = new Date(h.deliveredAt);
-          }
-        } else {
-          return false;
-        }
-        
-        deliveryDate.setHours(0, 0, 0, 0);
-        const isToday = deliveryDate.getTime() === today.getTime();
-        
-        return isToday;
-      } catch (e) {
-        console.error('Error parseando fecha de entrega:', h.deliveredAt, e);
-        return false;
-      }
-    }).length;
-    
-    console.log('📊 Contadores actualizados:', {
-      pendientes: this.pendingRequestsCount,
-      enPreparacion: this.inPreparationCount,
-      listas: this.readyForDeliveryCount,
-      entregadasHoy: this.deliveredTodayCount,
-      totalHistorial: this.fullHistory.length,
-      entregasEnHistorial: this.fullHistory.filter(h => h.type === 'delivery').length,
-      fechaHoy: today.toDateString()
-    });
   }
 
   filterRequests(): void {
@@ -356,6 +454,7 @@ export class PharmacyDashboardComponent implements OnInit {
 
       return matchesSearch && matchesStatus;
     });
+    this.persistUiState();
   }
 
   filterHistory(): void {
@@ -365,18 +464,167 @@ export class PharmacyDashboardComponent implements OnInit {
         item.requestedBy.toLowerCase().includes(this.historySearchTerm.toLowerCase());
       return matchesSearch;
     });
+    this.persistUiState();
   }
 
   filterInventory(): void {
-    this.filteredInventory = this.inventory.filter(item => {
-      return !this.inventorySearchTerm ||
-        item.medication.toLowerCase().includes(this.inventorySearchTerm.toLowerCase()) ||
-        item.location.toLowerCase().includes(this.inventorySearchTerm.toLowerCase());
+    const search = this.inventorySearchTerm.trim().toLowerCase();
+    this.filteredInventory = this.inventory.filter((item) => {
+      const expirySearch =
+        item.expiryDateRaw &&
+        String(item.expiryDateRaw).slice(0, 10).toLowerCase().includes(search);
+      const matchesSearch =
+        !search ||
+        item.medication.toLowerCase().includes(search) ||
+        item.location.toLowerCase().includes(search) ||
+        (item.description || '').toLowerCase().includes(search) ||
+        item.expiryDate.toLowerCase().includes(search) ||
+        !!expirySearch;
+
+      if (!matchesSearch) return false;
+
+      if (this.inventoryStatusFilter === 'all') return true;
+      if (this.inventoryStatusFilter === 'expired') {
+        return item.expiryClassification === 'expired';
+      }
+      if (this.inventoryStatusFilter === 'expiring_soon') {
+        return item.expiryClassification === 'expiring_soon';
+      }
+      return item.status === this.inventoryStatusFilter;
     });
+    this.persistUiState();
+  }
+
+  onRequestFilterChange(): void {
+    this.requestsPagination.page = 1;
+    this.loadRequests();
+  }
+
+  setInventoryStatusFilter(filter: 'all' | 'available' | 'low_stock' | 'out_of_stock' | 'expired' | 'expiring_soon'): void {
+    this.inventoryStatusFilter = filter;
+    this.inventoryPagination.page = 1;
+    this.filterInventory();
+    this.persistUiState();
   }
 
   changeSection(section: string): void {
     this.activeSection = section;
+    this.persistUiState();
+  }
+
+  /** KPI de solicitudes: mismo módulo, filtro y recarga desde servidor */
+  selectRequestKpi(filter: 'pending' | 'in_preparation' | 'ready'): void {
+    this.changeSection('requests');
+    this.requestFilter = filter;
+    this.onRequestFilterChange();
+  }
+
+  /** Entregadas hoy: métrica en Solicitudes; acceso al detalle en Historial */
+  goToDeliveredTodayDetail(): void {
+    this.changeSection('history');
+  }
+
+  onRequestSearchChange(value: string): void {
+    this.searchTerm = value;
+    if (this.requestSearchDebounce) clearTimeout(this.requestSearchDebounce);
+    this.requestSearchDebounce = setTimeout(() => {
+      this.filterRequests();
+      this.persistUiState();
+    }, 180);
+  }
+
+  onHistorySearchChange(value: string): void {
+    this.historySearchTerm = value;
+    if (this.historySearchDebounce) clearTimeout(this.historySearchDebounce);
+    this.historySearchDebounce = setTimeout(() => {
+      this.filterHistory();
+      this.persistUiState();
+    }, 180);
+  }
+
+  onInventorySearchChange(value: string): void {
+    this.inventorySearchTerm = value;
+    if (this.inventorySearchDebounce) clearTimeout(this.inventorySearchDebounce);
+    this.inventorySearchDebounce = setTimeout(() => {
+      this.filterInventory();
+      this.persistUiState();
+    }, 180);
+  }
+
+  nextRequestsPage(): void {
+    if (this.requestsPagination.page >= this.requestsPagination.totalPages) return;
+    this.requestsPagination.page += 1;
+    this.loadRequests();
+  }
+
+  prevRequestsPage(): void {
+    if (this.requestsPagination.page <= 1) return;
+    this.requestsPagination.page -= 1;
+    this.loadRequests();
+  }
+
+  nextHistoryPage(): void {
+    if (this.historyPagination.page >= this.historyPagination.totalPages) return;
+    this.historyPagination.page += 1;
+    this.loadHistory();
+  }
+
+  prevHistoryPage(): void {
+    if (this.historyPagination.page <= 1) return;
+    this.historyPagination.page -= 1;
+    this.loadHistory();
+  }
+
+  nextInventoryPage(): void {
+    if (this.inventoryPagination.page >= this.inventoryPagination.totalPages) return;
+    this.inventoryPagination.page += 1;
+    this.loadData();
+  }
+
+  prevInventoryPage(): void {
+    if (this.inventoryPagination.page <= 1) return;
+    this.inventoryPagination.page -= 1;
+    this.loadData();
+  }
+
+  nextKardexPage(): void {
+    if (this.kardexPagination.page >= this.kardexPagination.totalPages) return;
+    this.kardexPagination.page += 1;
+    this.refreshKardexIfOpen();
+  }
+
+  prevKardexPage(): void {
+    if (this.kardexPagination.page <= 1) return;
+    this.kardexPagination.page -= 1;
+    this.refreshKardexIfOpen();
+  }
+
+  private persistUiState(): void {
+    const state = {
+      activeSection: this.activeSection,
+      requestFilter: this.requestFilter,
+      inventoryStatusFilter: this.inventoryStatusFilter,
+      searchTerm: this.searchTerm,
+      historySearchTerm: this.historySearchTerm,
+      inventorySearchTerm: this.inventorySearchTerm,
+    };
+    localStorage.setItem(this.storageKey, JSON.stringify(state));
+  }
+
+  private restoreUiState(): void {
+    const raw = localStorage.getItem(this.storageKey);
+    if (!raw) return;
+    try {
+      const state = JSON.parse(raw);
+      if (typeof state.activeSection === 'string') this.activeSection = state.activeSection;
+      if (typeof state.requestFilter === 'string') this.requestFilter = state.requestFilter;
+      if (typeof state.inventoryStatusFilter === 'string') this.inventoryStatusFilter = state.inventoryStatusFilter;
+      if (typeof state.searchTerm === 'string') this.searchTerm = state.searchTerm;
+      if (typeof state.historySearchTerm === 'string') this.historySearchTerm = state.historySearchTerm;
+      if (typeof state.inventorySearchTerm === 'string') this.inventorySearchTerm = state.inventorySearchTerm;
+    } catch {
+      localStorage.removeItem(this.storageKey);
+    }
   }
 
   // Usar disponibilidad REAL del inventario (sin simulaciones)
@@ -384,7 +632,7 @@ export class PharmacyDashboardComponent implements OnInit {
     return request.availableInStock || false;
   }
 
-  changeRequestStatus(request: MedicationRequest, newStatus: 'pending' | 'in_preparation' | 'ready' | 'delivered' | 'cancelled'): void {
+  async changeRequestStatus(request: MedicationRequest, newStatus: 'pending' | 'in_preparation' | 'ready' | 'delivered' | 'cancelled'): Promise<void> {
     // Si es rechazo, abrir modal para razón
     if (newStatus === 'cancelled') {
       this.openRejectModal(request);
@@ -395,8 +643,14 @@ export class PharmacyDashboardComponent implements OnInit {
     const isAvailable = this.isMedicationAvailable(request);
     
     if (!isAvailable && (newStatus === 'in_preparation' || newStatus === 'ready')) {
-      const confirmMessage = `⚠️ Este medicamento no está disponible en inventario (Stock: ${request.stockAvailable || 0}).\n\n¿Deseas continuar marcándolo como "${newStatus === 'in_preparation' ? 'En Preparación' : 'Listo'}" de todas formas?\n\nNota: Deberás solicitar el medicamento externamente o agregarlo al inventario primero.`;
-      if (!confirm(confirmMessage)) {
+      const proceed = await this.confirmationService.confirm({
+        title: 'Stock no disponible',
+        message: `Este medicamento no está disponible en inventario (Stock: ${request.stockAvailable || 0}). ¿Deseas continuar marcándolo como "${newStatus === 'in_preparation' ? 'En Preparación' : 'Listo'}"?`,
+        confirmText: 'Continuar',
+        cancelText: 'Cancelar',
+        type: 'warning',
+      });
+      if (!proceed) {
         return;
       }
     }
@@ -411,19 +665,19 @@ export class PharmacyDashboardComponent implements OnInit {
           'delivered': '📦 Solicitud marcada como entregada'
         };
 
-        alert(statusMessages[newStatus] || 'Estado actualizado');
+        this.notifySuccess(statusMessages[newStatus] || 'Estado actualizado');
         
         // Recargar datos y actualizar contadores
         this.loadRequests();
         this.loadHistory();
 
         if (newStatus === 'ready') {
-          alert('✅ Medicamento listo. Puede entregarse cuando la enfermera lo recoja.');
+          this.notifyInfo('Medicamento listo. Puede entregarse cuando la enfermera lo recoja.');
         }
       },
       error: (error) => {
         console.error('Error actualizando estado:', error);
-        alert(error.error?.message || 'Error al actualizar el estado');
+        this.notifyError(error.error?.message || 'Error al actualizar el estado');
       }
     });
   }
@@ -444,7 +698,7 @@ export class PharmacyDashboardComponent implements OnInit {
     if (!this.selectedRequest) return;
     
     if (!this.rejectionReason.trim()) {
-      alert('Por favor ingresa una razón para rechazar la solicitud');
+      this.notifyWarning('Por favor ingresa una razón para rechazar la solicitud');
       return;
     }
 
@@ -454,7 +708,7 @@ export class PharmacyDashboardComponent implements OnInit {
       this.rejectionReason
     ).subscribe({
       next: () => {
-        alert('❌ Solicitud rechazada exitosamente');
+        this.notifySuccess('Solicitud rechazada exitosamente');
         this.closeRejectModal();
         this.loadRequests();
         this.loadHistory();
@@ -462,9 +716,22 @@ export class PharmacyDashboardComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error rechazando solicitud:', error);
-        alert(error.error?.message || 'Error al rechazar la solicitud');
+        this.notifyError(error.error?.message || 'Error al rechazar la solicitud');
       }
     });
+  }
+
+  /** Partes de `requestedAt` (toLocaleString) para columnas Solicitado por / Fecha-Hora */
+  getRequestDatePart(request: MedicationRequest): string {
+    const s = request.requestedAt || '';
+    const i = s.indexOf(',');
+    return i >= 0 ? s.slice(0, i).trim() : s.trim();
+  }
+
+  getRequestTimePart(request: MedicationRequest): string {
+    const s = request.requestedAt || '';
+    const i = s.indexOf(',');
+    return i >= 0 ? s.slice(i + 1).trim() : '';
   }
 
   getHistoryTypeLabel(type: string): string {
@@ -492,17 +759,15 @@ export class PharmacyDashboardComponent implements OnInit {
 
     this.pharmacyService.deliverMedication(this.selectedRequest.id, this.deliveryNotes).subscribe({
       next: (response) => {
-        alert(`✅ Entrega confirmada\nID: ${response.deliveryId}`);
+        this.notifySuccess(`Entrega confirmada. ID: ${response.deliveryId}`);
         
-        // Recargar datos para actualizar todo
-        this.loadRequests();
-        this.loadHistory();
-        this.updateCounters();
+        // Recargar datos para actualizar todo (incluye inventario y kardex en BD)
+        this.loadData();
         this.closeDeliveryModal();
       },
       error: (error) => {
         console.error('Error registrando entrega:', error);
-        alert('Error al registrar la entrega');
+        this.notifyError('Error al registrar la entrega');
       }
     });
   }
@@ -512,55 +777,181 @@ export class PharmacyDashboardComponent implements OnInit {
       `${p.patientName} (${p.bedNumber}):\n${p.doses.map(d => `  - ${d.time}: ${d.quantity}`).join('\n')}`
     ).join('\n\n');
 
-    alert(`📋 Detalles de Solicitud\n\nID: ${request.requestId}\nMedicamento: ${request.medication} ${request.dosage}\nCantidad Total: ${request.quantity}\n\nPacientes:\n${patientsInfo}\n\nNotas: ${request.notes}`);
+    this.notifyInfo(`Solicitud ${request.requestId}: ${request.medication} ${request.dosage}, cantidad ${request.quantity}. Pacientes: ${request.patients.length}.`);
   }
 
   updateStock(item: InventoryItem): void {
-    if (!item.id) {
-      alert('Error: No se pudo identificar el medicamento');
-      return;
-    }
-
-    const newStock = prompt(`Actualizar stock de ${item.medication} ${item.dosage}\nStock actual: ${item.stock}`, item.stock.toString());
-    
-    if (newStock && !isNaN(parseInt(newStock)) && parseInt(newStock) >= 0) {
-      this.pharmacyService.updateMedicationStock(item.id, parseInt(newStock)).subscribe({
-        next: () => {
-          this.pharmacyService.getInventory().subscribe({
-            next: (inventory) => {
-              this.inventory = inventory.map(i => ({
-                id: i.id,
-                medication: i.name,
-                dosage: i.dosage,
-                stock: i.stock,
-                minStock: i.minStock,
-                location: i.location || 'N/A',
-                expiryDate: i.expiryDate ? new Date(i.expiryDate).toLocaleDateString('es-ES') : 'N/A',
-                status: i.status
-              }));
-              
-              this.filteredInventory = this.inventory;
-              
-              this.loadRequests();
-              
-              alert(`✅ Stock actualizado: ${newStock} unidades`);
-            },
-            error: (error) => {
-              console.error('Error recargando inventario:', error);
-              alert('✅ Stock actualizado, pero hubo un error al recargar la vista');
-            }
-          });
-        },
-        error: (error) => {
-          console.error('Error actualizando stock:', error);
-          alert('Error al actualizar el stock');
-        }
-      });
-    }
+    this.openStockMovementModal(item, 'adjustment');
   }
 
-  printReport(): void {
-    window.print();
+  /** Base para nombre de archivo: incluye fecha y hora de creación del export. */
+  private buildExportFilename(base: string): string {
+    const d = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${base}_${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+  }
+
+  private triggerDownload(content: string, filename: string, mime: string): void {
+    const blob = new Blob(['\ufeff' + content], { type: `${mime};charset=utf-8;` });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.rel = 'noopener';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  private escapeCsvCell(value: string | number | null | undefined): string {
+    const s = String(value ?? '');
+    if (/[",\n\r]/.test(s)) {
+      return `"${s.replace(/"/g, '""')}"`;
+    }
+    return s;
+  }
+
+  private formatHistoryPatients(item: DeliveryHistoryItem): string {
+    if (item.patients?.length) {
+      return item.patients.join('; ');
+    }
+    if (item.patientsInfo?.length) {
+      return item.patientsInfo.map((p) => `${p.patientName} (${p.bedNumber})`).join('; ');
+    }
+    return '';
+  }
+
+  private historyDeliveredOrReason(item: DeliveryHistoryItem): string {
+    if (item.type === 'delivery') {
+      return item.deliveredBy || '';
+    }
+    return (item.notes || '').replace(/\n/g, ' ');
+  }
+
+  exportHistoryCsv(): void {
+    if (!this.filteredHistory.length) {
+      this.notifyWarning('No hay registros en el historial para exportar.');
+      return;
+    }
+    const headers = [
+      'Tipo',
+      'ID',
+      'Fecha',
+      'Medicamento',
+      'Dosis',
+      'Cantidad',
+      'Solicitado por',
+      'Pacientes',
+      'Entregado por / Motivo',
+      'Notas',
+    ];
+    const lines = [headers.join(',')];
+    for (const item of this.filteredHistory) {
+      const tipo = item.type === 'delivery' ? 'Entrega' : 'Rechazo';
+      const id = item.deliveryId || item.requestId || '';
+      const row = [
+        this.escapeCsvCell(tipo),
+        this.escapeCsvCell(id),
+        this.escapeCsvCell(this.getHistoryDate(item)),
+        this.escapeCsvCell(item.medication),
+        this.escapeCsvCell(item.dosage),
+        this.escapeCsvCell(item.quantity),
+        this.escapeCsvCell(item.requestedBy),
+        this.escapeCsvCell(this.formatHistoryPatients(item)),
+        this.escapeCsvCell(this.historyDeliveredOrReason(item)),
+        this.escapeCsvCell(item.type === 'delivery' ? item.notes || '' : ''),
+      ];
+      lines.push(row.join(','));
+    }
+    this.triggerDownload(lines.join('\n'), `${this.buildExportFilename('historial_farmacia')}.csv`, 'text/csv');
+    this.notifySuccess('Historial exportado a CSV');
+  }
+
+  async exportHistoryExcel(): Promise<void> {
+    if (!this.filteredHistory.length) {
+      this.notifyWarning('No hay registros en el historial para exportar.');
+      return;
+    }
+    const rows = this.filteredHistory.map((item) => ({
+      Tipo: item.type === 'delivery' ? 'Entrega' : 'Rechazo',
+      ID: item.deliveryId || item.requestId || '',
+      Fecha: this.getHistoryDate(item),
+      Medicamento: item.medication,
+      Dosis: item.dosage,
+      Cantidad: item.quantity,
+      'Solicitado por': item.requestedBy,
+      Pacientes: this.formatHistoryPatients(item),
+      'Entregado por / Motivo': this.historyDeliveredOrReason(item),
+      Notas: item.type === 'delivery' ? item.notes || '' : '',
+    }));
+    const XLSX = await import('xlsx');
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Historial');
+    XLSX.writeFile(wb, `${this.buildExportFilename('historial_farmacia')}.xlsx`);
+    this.notifySuccess('Historial exportado a Excel');
+  }
+
+  exportInventoryCsv(): void {
+    if (!this.filteredInventory.length) {
+      this.notifyWarning('No hay filas de inventario para exportar (revisa filtros).');
+      return;
+    }
+    const headers = [
+      'Medicamento',
+      'Dosis',
+      'Descripcion',
+      'Stock actual',
+      'Stock minimo',
+      'Ubicacion',
+      'Caducidad',
+      'Estado',
+      'Clasificacion caducidad',
+      'Dias a caducidad',
+    ];
+    const lines = [headers.join(',')];
+    for (const item of this.filteredInventory) {
+      const cad = item.expiryDateRaw ? String(item.expiryDateRaw).slice(0, 10) : '';
+      const row = [
+        this.escapeCsvCell(item.medication),
+        this.escapeCsvCell(item.dosage),
+        this.escapeCsvCell(item.description || ''),
+        this.escapeCsvCell(item.stock),
+        this.escapeCsvCell(item.minStock),
+        this.escapeCsvCell(item.location),
+        this.escapeCsvCell(cad),
+        this.escapeCsvCell(this.getInventoryStatusLabel(item)),
+        this.escapeCsvCell(item.expiryClassification),
+        this.escapeCsvCell(item.daysToExpiry ?? ''),
+      ];
+      lines.push(row.join(','));
+    }
+    this.triggerDownload(lines.join('\n'), `${this.buildExportFilename('bodega_inventario')}.csv`, 'text/csv');
+    this.notifySuccess('Inventario de bodega exportado a CSV');
+  }
+
+  async exportInventoryExcel(): Promise<void> {
+    if (!this.filteredInventory.length) {
+      this.notifyWarning('No hay filas de inventario para exportar (revisa filtros).');
+      return;
+    }
+    const rows = this.filteredInventory.map((item) => ({
+      Medicamento: item.medication,
+      Dosis: item.dosage,
+      Descripcion: item.description || '',
+      'Stock actual': item.stock,
+      'Stock mínimo': item.minStock,
+      Ubicación: item.location,
+      Caducidad: item.expiryDateRaw ? String(item.expiryDateRaw).slice(0, 10) : '',
+      Estado: this.getInventoryStatusLabel(item),
+      'Clasificación caducidad': item.expiryClassification,
+      'Días a caducidad': item.daysToExpiry ?? '',
+    }));
+    const XLSX = await import('xlsx');
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Bodega');
+    XLSX.writeFile(wb, `${this.buildExportFilename('bodega_inventario')}.xlsx`);
+    this.notifySuccess('Inventario de bodega exportado a Excel');
   }
 
   getStatusLabel(status: string): string {
@@ -573,14 +964,82 @@ export class PharmacyDashboardComponent implements OnInit {
     return labels[status] || status;
   }
 
-  getInventoryStatusLabel(status: string): string {
-    const labels: { [key: string]: string } = {
-      'available': '✓ Disponible',
-      'low_stock': '⚠️ Stock Bajo',
-      'expired': '🚫 Vencido',
-      'out_of_stock': '❌ Sin Stock'
+  getInventoryStatusLabel(item: InventoryItem): string {
+    if (item.expiryClassification === 'expired') {
+      return '🚫 Vencido (caducidad)';
+    }
+    if (item.expiryClassification === 'expiring_soon') {
+      const d = item.daysToExpiry;
+      const w = item.expiringSoonDays;
+      return d != null
+        ? `⚠️ Por caducar (${d} días · ventana ${w}d)`
+        : `⚠️ Por caducar (ventana ${w}d)`;
+    }
+    const labels: Record<string, string> = {
+      available: '✓ Disponible',
+      low_stock: '⚠️ Stock bajo',
+      expired: '🚫 Vencido',
+      out_of_stock: '❌ Sin stock',
     };
-    return labels[status] || status;
+    return labels[item.status] || item.status;
+  }
+
+  expiringSoonWindowLabel(): number {
+    return this.inventory[0]?.expiringSoonDays ?? 30;
+  }
+
+  getMovementTypeLabel(type: string): string {
+    const labels: Record<string, string> = {
+      entry: 'Entrada',
+      exit: 'Salida',
+      adjustment: 'Ajuste',
+      delivery: 'Entrega (solicitud)',
+    };
+    return labels[type] || type;
+  }
+
+  openKardexModal(item: InventoryItem): void {
+    if (!item.id) {
+      this.notifyError('No se pudo identificar el medicamento');
+      return;
+    }
+    this.kardexItem = item;
+    this.showKardexModal = true;
+    this.kardexMovements = [];
+    this.kardexPagination.page = 1;
+    this.refreshKardexIfOpen();
+  }
+
+  closeKardexModal(): void {
+    this.showKardexModal = false;
+    this.kardexItem = null;
+    this.kardexMovements = [];
+    this.kardexLoading = false;
+  }
+
+  private refreshKardexIfOpen(): void {
+    if (!this.showKardexModal || !this.kardexItem?.id) {
+      return;
+    }
+    const id = this.kardexItem.id;
+    this.kardexLoading = true;
+    this.loadingKardex = true;
+    this.kardexError = '';
+    this.pharmacyService
+      .getInventoryMovementsPaged(id, this.kardexPagination.page, this.kardexPagination.limit)
+      .subscribe({
+        next: (result) => {
+          this.kardexMovements = result.data;
+          this.kardexPagination = result.pagination;
+          this.kardexLoading = false;
+          this.loadingKardex = false;
+        },
+        error: (err) => {
+          this.kardexLoading = false;
+          this.loadingKardex = false;
+          this.kardexError = err?.error?.message || 'No se pudo cargar el kardex';
+        },
+      });
   }
 
   logout(): void {
@@ -618,24 +1077,24 @@ export class PharmacyDashboardComponent implements OnInit {
 
   createMedication(): void {
     if (!this.newMedicationForm.name || !this.newMedicationForm.dosage) {
-      alert('El nombre y la dosis son requeridos');
+      this.notifyWarning('El nombre y la dosis son requeridos');
       return;
     }
 
     if (this.newMedicationForm.stock < 0) {
-      alert('El stock no puede ser negativo');
+      this.notifyWarning('El stock no puede ser negativo');
       return;
     }
 
     this.pharmacyService.createMedication(this.newMedicationForm).subscribe({
       next: () => {
-        alert('✅ Medicamento agregado al inventario exitosamente');
+        this.notifySuccess('Medicamento agregado al inventario exitosamente');
         this.closeAddMedicationModal();
         this.loadData();
       },
       error: (error) => {
         console.error('Error creando medicamento:', error);
-        alert(error.error?.message || 'Error al crear el medicamento');
+        this.notifyError(error.error?.message || 'Error al crear el medicamento');
       }
     });
   }
@@ -650,27 +1109,132 @@ export class PharmacyDashboardComponent implements OnInit {
     this.selectedMedicationForDelete = null;
   }
 
-  confirmDeleteMedication(): void {
+  async confirmDeleteMedication(): Promise<void> {
     if (!this.selectedMedicationForDelete?.id) {
-      alert('Error: No se pudo identificar el medicamento');
+      this.notifyError('No se pudo identificar el medicamento');
       return;
     }
 
-    if (!confirm(`¿Estás seguro de eliminar "${this.selectedMedicationForDelete.medication} ${this.selectedMedicationForDelete.dosage}" del inventario?\n\nEsta acción marcará el medicamento como inactivo.`)) {
+    const confirmed = await this.confirmationService.confirm({
+      title: 'Eliminar medicamento',
+      message: `¿Estás seguro de eliminar "${this.selectedMedicationForDelete.medication} ${this.selectedMedicationForDelete.dosage}" del inventario? Esta acción lo marcará como inactivo.`,
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+      type: 'danger',
+    });
+    if (!confirmed) {
       return;
     }
 
     this.pharmacyService.deleteMedication(this.selectedMedicationForDelete.id).subscribe({
       next: () => {
-        alert('✅ Medicamento eliminado del inventario exitosamente');
+        this.notifySuccess('Medicamento eliminado del inventario exitosamente');
         this.closeDeleteMedicationModal();
         this.loadData();
       },
       error: (error) => {
         console.error('Error eliminando medicamento:', error);
-        alert(error.error?.message || 'Error al eliminar el medicamento');
+        this.notifyError(error.error?.message || 'Error al eliminar el medicamento');
       }
     });
+  }
+
+  openStockMovementModal(item: InventoryItem, type: 'entry' | 'exit' | 'adjustment'): void {
+    if (!item.id) {
+      this.notifyError('No se pudo identificar el medicamento');
+      return;
+    }
+    this.selectedInventoryItem = item;
+    this.stockMovementForm = {
+      type,
+      quantity: 0,
+      reason: '',
+      entryExpiryDate: '',
+    };
+    this.showStockMovementModal = true;
+  }
+
+  closeStockMovementModal(): void {
+    this.showStockMovementModal = false;
+    this.selectedInventoryItem = null;
+    this.stockMovementForm = {
+      type: 'adjustment',
+      quantity: 0,
+      reason: '',
+      entryExpiryDate: '',
+    };
+  }
+
+  applyStockMovement(): void {
+    if (!this.selectedInventoryItem?.id) {
+      this.notifyError('No se encontró el medicamento seleccionado');
+      return;
+    }
+
+    const qty = Number(this.stockMovementForm.quantity);
+    if (!Number.isFinite(qty) || qty < 0) {
+      this.notifyWarning('Cantidad inválida');
+      return;
+    }
+
+    let newStock = this.selectedInventoryItem.stock;
+    if (this.stockMovementForm.type === 'entry') newStock += qty;
+    if (this.stockMovementForm.type === 'exit') newStock -= qty;
+    if (this.stockMovementForm.type === 'adjustment') newStock = qty;
+
+    if (newStock < 0) {
+      this.notifyWarning('No puedes dejar stock negativo');
+      return;
+    }
+
+    const payload: {
+      type: 'entry' | 'exit' | 'adjustment';
+      quantity: number;
+      reason?: string;
+      expiryDate?: string;
+    } = {
+      type: this.stockMovementForm.type,
+      quantity: qty,
+      reason: this.stockMovementForm.reason?.trim() || undefined,
+    };
+    if (this.stockMovementForm.type === 'entry' && this.stockMovementForm.entryExpiryDate?.trim()) {
+      payload.expiryDate = this.stockMovementForm.entryExpiryDate.trim().slice(0, 10);
+    }
+
+    this.pharmacyService
+      .postInventoryMovement(this.selectedInventoryItem.id, payload)
+      .subscribe({
+        next: () => {
+          this.notifySuccess('Movimiento de inventario aplicado');
+          this.closeStockMovementModal();
+          this.loadData();
+          this.refreshKardexIfOpen();
+        },
+        error: (error) => {
+          console.error('Error aplicando movimiento:', error);
+          this.notifyError(error.error?.message || 'Error al aplicar movimiento de inventario');
+        },
+      });
+  }
+
+  get totalInventoryItems(): number {
+    return this.inventory.length;
+  }
+
+  get lowStockItems(): number {
+    return this.inventory.filter(i => i.status === 'low_stock').length;
+  }
+
+  get outOfStockItems(): number {
+    return this.inventory.filter(i => i.status === 'out_of_stock').length;
+  }
+
+  get expiredItems(): number {
+    return this.inventory.filter((i) => i.expiryClassification === 'expired').length;
+  }
+
+  get expiringSoonItems(): number {
+    return this.inventory.filter((i) => i.expiryClassification === 'expiring_soon').length;
   }
 }
 

@@ -18,79 +18,81 @@
     </div>
   </div>
 
-  <!-- Quick Stats -->
-  <div class="quick-stats-section">
-    <div class="quick-stats">
-      <div class="stat-card" [class.has-pending]="pendingRequestsCount > 0" (click)="changeSection('requests'); requestFilter = 'pending'; filterRequests()">
-        <div class="stat-icon">⏳</div>
-        <div class="stat-content">
-          <div class="stat-label">Solicitudes Pendientes</div>
-          <div class="stat-value">{{ pendingRequestsCount }}</div>
-        </div>
-      </div>
-      
-      <div class="stat-card" (click)="changeSection('requests'); requestFilter = 'in_preparation'; filterRequests()">
-        <div class="stat-icon">🔄</div>
-        <div class="stat-content">
-          <div class="stat-label">En Preparación</div>
-          <div class="stat-value">{{ inPreparationCount }}</div>
-        </div>
-      </div>
-      
-      <div class="stat-card" [class.ready]="readyForDeliveryCount > 0" (click)="changeSection('requests'); requestFilter = 'ready'; filterRequests()">
-        <div class="stat-icon">✅</div>
-        <div class="stat-content">
-          <div class="stat-label">Listas para Entregar</div>
-          <div class="stat-value">{{ readyForDeliveryCount }}</div>
-        </div>
-      </div>
-      
-      <div class="stat-card" (click)="changeSection('history')">
-        <div class="stat-icon">📦</div>
-        <div class="stat-content">
-          <div class="stat-label">Entregadas Hoy</div>
-          <div class="stat-value">{{ deliveredTodayCount }}</div>
-        </div>
-      </div>
-    </div>
-  </div>
+  <div class="dashboard-body">
+    <nav class="dashboard-nav" aria-label="Módulos de farmacia">
+      <button type="button" class="nav-link" [class.active]="activeSection === 'requests'" (click)="changeSection('requests')">
+        📝 Solicitudes
+      </button>
+      <button type="button" class="nav-link" [class.active]="activeSection === 'history'" (click)="changeSection('history')">
+        📜 Historial
+      </button>
+      <button type="button" class="nav-link" [class.active]="activeSection === 'inventory'" (click)="changeSection('inventory')">
+        📊 Inventario
+      </button>
+    </nav>
 
-  <!-- Navegación por Tabs -->
-  <div class="main-tabs">
-    <button class="main-tab-btn" [class.active]="activeSection === 'requests'" (click)="changeSection('requests')">
-      📝 Solicitudes
-    </button>
-    <button class="main-tab-btn" [class.active]="activeSection === 'history'" (click)="changeSection('history')">
-      📜 Historial de Entregas
-    </button>
-    <button class="main-tab-btn" [class.active]="activeSection === 'inventory'" (click)="changeSection('inventory')">
-      📊 Inventario
-    </button>
-  </div>
+    <div class="dashboard-content">
+      <!-- Módulo: Solicitudes (KPI + tabla en un solo recuadro) -->
+      <div *ngIf="activeSection === 'requests'" class="tab-content">
+        <div class="section-card pharmacy-module">
+          <div class="section-header pharmacy-module-header">
+            <h2 class="section-title">📝 Solicitudes de Medicamentos</h2>
+            <div class="section-actions">
+              <input
+                type="text"
+                class="search-input"
+                [(ngModel)]="searchTerm"
+                placeholder="🔍 Buscar medicamento o enfermera..."
+                (ngModelChange)="onRequestSearchChange($event)"
+              />
+              <select class="filter-select" [(ngModel)]="requestFilter" (change)="onRequestFilterChange()">
+                <option value="all">Todas</option>
+                <option value="pending">Pendientes</option>
+                <option value="in_preparation">En Preparación</option>
+                <option value="ready">Listas</option>
+              </select>
+            </div>
+          </div>
 
-  <!-- SECCIÓN: Solicitudes de Medicamentos -->
-  <div *ngIf="activeSection === 'requests'" class="section-container">
-    <div class="section-header">
-      <h2 class="section-title">📝 Solicitudes de Medicamentos</h2>
-      <div class="section-actions">
-        <input 
-          type="text" 
-          class="search-input" 
-          [(ngModel)]="searchTerm" 
-          placeholder="🔍 Buscar medicamento o enfermera..."
-          (input)="filterRequests()"
-        />
-        <select class="filter-select" [(ngModel)]="requestFilter" (change)="filterRequests()">
-          <option value="all">Todas</option>
-          <option value="pending">Pendientes</option>
-          <option value="in_preparation">En Preparación</option>
-          <option value="ready">Listas</option>
-        </select>
-      </div>
-    </div>
+          <div class="summary-unified-neuro pharmacy-requests-kpis" aria-label="Resumen del flujo de solicitudes">
+            <p class="pharmacy-kpis-title">Estado del día</p>
+            <div class="quick-stats pharmacy-quick-stats">
+              <div class="stat-card" [class.has-pending]="pendingRequestsCount > 0" (click)="selectRequestKpi('pending')">
+                <div class="stat-icon">⏳</div>
+                <div class="stat-content">
+                  <div class="stat-label">Pendientes</div>
+                  <div class="stat-value">{{ pendingRequestsCount }}</div>
+                </div>
+              </div>
+              <div class="stat-card" (click)="selectRequestKpi('in_preparation')">
+                <div class="stat-icon">🔄</div>
+                <div class="stat-content">
+                  <div class="stat-label">En preparación</div>
+                  <div class="stat-value">{{ inPreparationCount }}</div>
+                </div>
+              </div>
+              <div class="stat-card" [class.ready]="readyForDeliveryCount > 0" (click)="selectRequestKpi('ready')">
+                <div class="stat-icon">✅</div>
+                <div class="stat-content">
+                  <div class="stat-label">Listas para entregar</div>
+                  <div class="stat-value">{{ readyForDeliveryCount }}</div>
+                </div>
+              </div>
+              <div class="stat-card" (click)="goToDeliveredTodayDetail()" title="Ver historial de entregas">
+                <div class="stat-icon">📦</div>
+                <div class="stat-content">
+                  <div class="stat-label">Entregadas hoy</div>
+                  <div class="stat-value">{{ deliveredTodayCount }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
 
-    <div class="unified-table-container">
-      <table class="unified-tasks-table">
+    <div *ngIf="loadingRequests" class="module-feedback loading">Cargando solicitudes...</div>
+    <div *ngIf="!loadingRequests && requestsError" class="module-feedback error">{{ requestsError }}</div>
+
+    <div class="table-container table-wrapper-neuro">
+      <table class="unified-tasks-table neuro-table">
         <thead>
           <tr>
             <th>ID Solicitud</th>
@@ -112,10 +114,12 @@
             </td>
             <td>
               <div class="nurse-name-compact">{{ request.requestedBy }}</div>
-              <div class="request-time-small">{{ request.requestedAt }}</div>
             </td>
             <td>
-              <div class="time-badge">{{ request.requestedAt.split(' ')[1] }}</div>
+              <div class="datetime-cell-unified">
+                <span class="datetime-date">{{ getRequestDatePart(request) }}</span>
+                <span class="datetime-time" *ngIf="getRequestTimePart(request)">{{ getRequestTimePart(request) }}</span>
+              </div>
             </td>
             <td>
               <div class="med-info-compact">
@@ -173,36 +177,41 @@
                 {{ getStatusLabel(request.status) }}
               </span>
             </td>
-            <td>
-              <div class="action-buttons-pharmacy">
-                <button class="action-btn-compact" 
-                        (click)="viewRequestDetails(request)" 
-                        title="Ver detalles">
-                  👁️
+            <td class="table-cell-actions">
+              <div class="unified-table-actions">
+                <button type="button" class="action-btn view-btn"
+                        (click)="viewRequestDetails(request)"
+                        [attr.aria-label]="'Ver detalles de solicitud ' + request.requestId"
+                        title="Ver detalles de la solicitud">
+                  Ver
                 </button>
-                <button class="action-btn-compact accept-btn" 
-                        (click)="changeRequestStatus(request, 'in_preparation')" 
+                <button type="button" class="action-btn assign-btn"
+                        (click)="changeRequestStatus(request, 'in_preparation')"
+                        [attr.aria-label]="'Aceptar solicitud ' + request.requestId"
                         [disabled]="request.status !== 'pending'"
                         title="Aceptar y poner en preparación">
-                  ✅ Aceptar
+                  Aceptar
                 </button>
-                <button class="action-btn-compact" 
-                        (click)="changeRequestStatus(request, 'ready')" 
+                <button type="button" class="action-btn change-btn"
+                        (click)="changeRequestStatus(request, 'ready')"
+                        [attr.aria-label]="'Marcar solicitud ' + request.requestId + ' como surtida'"
                         [disabled]="request.status !== 'in_preparation'"
-                        title="Marcar como surtido/lista">
-                  📦 Surtido
+                        title="Marcar como surtido / listo para entregar">
+                  Surtido
                 </button>
-                <button class="action-btn-compact success" 
-                        (click)="openDeliveryModal(request)" 
+                <button type="button" class="action-btn success-btn"
+                        (click)="openDeliveryModal(request)"
+                        [attr.aria-label]="'Entregar solicitud ' + request.requestId"
                         [disabled]="request.status !== 'ready'"
-                        title="Entregar">
-                  🚚 Entregar
+                        title="Registrar entrega a enfermería">
+                  Entregar
                 </button>
-                <button class="action-btn-compact reject-btn" 
-                        (click)="changeRequestStatus(request, 'cancelled')" 
+                <button type="button" class="action-btn danger-btn"
+                        (click)="changeRequestStatus(request, 'cancelled')"
+                        [attr.aria-label]="'Rechazar solicitud ' + request.requestId"
                         [disabled]="request.status === 'delivered' || request.status === 'cancelled'"
                         title="Rechazar solicitud">
-                  ❌ Rechazar
+                  Rechazar
                 </button>
               </div>
             </td>
@@ -210,14 +219,21 @@
         </tbody>
       </table>
     </div>
+    <div class="pagination-bar" *ngIf="requestsPagination.totalPages > 1">
+      <button type="button" class="pagination-btn" (click)="prevRequestsPage()" [disabled]="requestsPagination.page <= 1">← Anterior</button>
+      <span class="pagination-info">Página {{ requestsPagination.page }} de {{ requestsPagination.totalPages }} · {{ requestsPagination.total }} registros</span>
+      <button type="button" class="pagination-btn" (click)="nextRequestsPage()" [disabled]="requestsPagination.page >= requestsPagination.totalPages">Siguiente →</button>
+    </div>
 
     <p *ngIf="filteredRequests.length === 0" class="empty-message">
       No hay solicitudes que coincidan con los filtros seleccionados
     </p>
-  </div>
+        </div>
+      </div>
 
-  <!-- SECCIÓN: Historial de Entregas y Rechazos -->
-  <div *ngIf="activeSection === 'history'" class="section-container">
+      <!-- Módulo: Historial -->
+      <div *ngIf="activeSection === 'history'" class="tab-content">
+        <div class="section-card pharmacy-module pharmacy-module--history">
     <div class="section-header">
       <h2 class="section-title">📜 Historial de Entregas y Rechazos</h2>
       <div class="section-actions">
@@ -226,16 +242,30 @@
           class="search-input" 
           [(ngModel)]="historySearchTerm" 
           placeholder="🔍 Buscar en historial..."
-          (input)="filterHistory()"
+          (ngModelChange)="onHistorySearchChange($event)"
         />
-        <button class="print-btn" (click)="printReport()">
-          🖨️ Imprimir Reporte
-        </button>
       </div>
     </div>
 
-    <div class="unified-table-container">
-      <table class="unified-tasks-table">
+    <div *ngIf="loadingHistory" class="module-feedback loading">Cargando historial...</div>
+    <div *ngIf="!loadingHistory && historyError" class="module-feedback error">{{ historyError }}</div>
+
+    <div class="export-panel export-panel--history" aria-label="Exportar historial">
+      <div class="export-panel__icon" aria-hidden="true">📑</div>
+      <div class="export-panel__body">
+        <div class="export-panel__title">Exportar historial</div>
+        <p class="export-panel__hint">
+          Se exportan los registros <strong>visibles</strong> con el buscador actual. El nombre del archivo incluye la fecha y hora en que se genera.
+        </p>
+        <div class="export-panel__actions">
+          <button type="button" class="export-btn export-btn--csv" (click)="exportHistoryCsv()">Guardar CSV</button>
+          <button type="button" class="export-btn export-btn--excel" (click)="exportHistoryExcel()">Guardar Excel</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-container table-wrapper-neuro">
+      <table class="unified-tasks-table neuro-table">
         <thead>
           <tr>
             <th>Tipo</th>
@@ -302,14 +332,40 @@
         </tbody>
       </table>
     </div>
+    <div class="pagination-bar" *ngIf="historyPagination.totalPages > 1">
+      <button type="button" class="pagination-btn" (click)="prevHistoryPage()" [disabled]="historyPagination.page <= 1">← Anterior</button>
+      <span class="pagination-info">Página {{ historyPagination.page }} de {{ historyPagination.totalPages }} · {{ historyPagination.total }} entregas</span>
+      <button type="button" class="pagination-btn" (click)="nextHistoryPage()" [disabled]="historyPagination.page >= historyPagination.totalPages">Siguiente →</button>
+    </div>
 
     <p *ngIf="filteredHistory.length === 0" class="empty-message">
       No hay registros en el historial
     </p>
-  </div>
+        </div>
+      </div>
 
-  <!-- SECCIÓN: Inventario -->
-  <div *ngIf="activeSection === 'inventory'" class="section-container">
+      <!-- Módulo: Inventario -->
+      <div *ngIf="activeSection === 'inventory'" class="tab-content">
+        <div class="section-card pharmacy-module pharmacy-module--inventory">
+    <div class="inventory-stats-grid">
+      <button class="inventory-stat-card" (click)="setInventoryStatusFilter('all')">
+        <span class="inventory-stat-label">Medicamentos</span>
+        <span class="inventory-stat-value">{{ totalInventoryItems }}</span>
+      </button>
+      <button class="inventory-stat-card warning" (click)="setInventoryStatusFilter('low_stock')">
+        <span class="inventory-stat-label">Stock Bajo</span>
+        <span class="inventory-stat-value">{{ lowStockItems }}</span>
+      </button>
+      <button class="inventory-stat-card danger" (click)="setInventoryStatusFilter('out_of_stock')">
+        <span class="inventory-stat-label">Sin Stock</span>
+        <span class="inventory-stat-value">{{ outOfStockItems }}</span>
+      </button>
+      <button class="inventory-stat-card alert" (click)="setInventoryStatusFilter('expiring_soon')">
+        <span class="inventory-stat-label">Por caducar ({{ expiringSoonWindowLabel() }}d)</span>
+        <span class="inventory-stat-value">{{ expiringSoonItems }}</span>
+      </button>
+    </div>
+
     <div class="section-header">
       <h2 class="section-title">📊 Gestión de Inventario</h2>
       <div class="section-actions">
@@ -317,8 +373,8 @@
           type="text" 
           class="search-input" 
           [(ngModel)]="inventorySearchTerm" 
-          placeholder="🔍 Buscar medicamento o ubicación..."
-          (input)="filterInventory()"
+          placeholder="🔍 Medicamento, ubicación o fecha de caducidad (AAAA-MM-DD)…"
+          (ngModelChange)="onInventorySearchChange($event)"
         />
         <button class="neuro-btn" (click)="openAddMedicationModal()">
           ➕ Agregar Medicamento
@@ -326,8 +382,34 @@
       </div>
     </div>
 
-    <div class="unified-table-container">
-      <table class="unified-tasks-table">
+    <div class="inventory-filter-chips">
+      <button class="chip-btn" [class.active]="inventoryStatusFilter === 'all'" (click)="setInventoryStatusFilter('all')">Todos</button>
+      <button class="chip-btn" [class.active]="inventoryStatusFilter === 'available'" (click)="setInventoryStatusFilter('available')">Disponibles</button>
+      <button class="chip-btn" [class.active]="inventoryStatusFilter === 'low_stock'" (click)="setInventoryStatusFilter('low_stock')">Stock bajo</button>
+      <button class="chip-btn" [class.active]="inventoryStatusFilter === 'out_of_stock'" (click)="setInventoryStatusFilter('out_of_stock')">Sin stock</button>
+      <button class="chip-btn" [class.active]="inventoryStatusFilter === 'expired'" (click)="setInventoryStatusFilter('expired')">Vencidos</button>
+      <button class="chip-btn" [class.active]="inventoryStatusFilter === 'expiring_soon'" (click)="setInventoryStatusFilter('expiring_soon')">Por caducar ({{ expiringSoonWindowLabel() }}d)</button>
+    </div>
+
+    <div class="export-panel export-panel--bodega" aria-label="Exportar inventario de bodega">
+      <div class="export-panel__icon" aria-hidden="true">📦</div>
+      <div class="export-panel__body">
+        <div class="export-panel__title">Exportar bodega / stock</div>
+        <p class="export-panel__hint">
+          Incluye medicamento, dosis, stock, mínimos, ubicación, caducidad y estado. Respeta <strong>filtros y búsqueda</strong> actuales. El archivo lleva fecha y hora de generación en el nombre.
+        </p>
+        <div class="export-panel__actions">
+          <button type="button" class="export-btn export-btn--csv" (click)="exportInventoryCsv()">Guardar CSV</button>
+          <button type="button" class="export-btn export-btn--excel" (click)="exportInventoryExcel()">Guardar Excel</button>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="loadingInventory" class="module-feedback loading">Cargando inventario...</div>
+    <div *ngIf="!loadingInventory && inventoryError" class="module-feedback error">{{ inventoryError }}</div>
+
+    <div class="table-container table-wrapper-neuro">
+      <table class="unified-tasks-table neuro-table">
         <thead>
           <tr>
             <th>Medicamento</th>
@@ -342,8 +424,10 @@
         </thead>
         <tbody>
           <tr *ngFor="let item of filteredInventory" class="inventory-row" 
-              [class.low-stock]="item.status === 'low_stock'"
-              [class.out-of-stock]="item.status === 'out_of_stock'">
+              [class.low-stock]="item.status === 'low_stock' && item.expiryClassification !== 'expired'"
+              [class.out-of-stock]="item.status === 'out_of_stock' && item.expiryClassification !== 'expired'"
+              [class.inventory-expired]="item.expiryClassification === 'expired'"
+              [class.inventory-expiring]="item.expiryClassification === 'expiring_soon'">
             <td>
               <div class="med-name-strong">{{ item.medication }}</div>
             </td>
@@ -368,17 +452,28 @@
               <span class="inventory-status" 
                     [class.available]="item.status === 'available'"
                     [class.low]="item.status === 'low_stock'"
-                    [class.out]="item.status === 'out_of_stock'">
-                {{ getInventoryStatusLabel(item.status) }}
+                    [class.out]="item.status === 'out_of_stock'"
+                    [class.expired]="item.expiryClassification === 'expired'"
+                    [class.expiring]="item.expiryClassification === 'expiring_soon'">
+                {{ getInventoryStatusLabel(item) }}
               </span>
             </td>
-            <td>
-              <div class="action-buttons-pharmacy">
-                <button class="action-btn-compact" (click)="updateStock(item)" title="Actualizar stock">
-                  ✏️
+            <td class="table-cell-actions">
+              <div class="unified-table-actions">
+                <button type="button" class="action-btn assign-btn" (click)="openStockMovementModal(item, 'entry')" [attr.aria-label]="'Registrar entrada para ' + item.medication" title="Registrar entrada de stock">
+                  Entrada
                 </button>
-                <button class="action-btn-compact reject-btn" (click)="openDeleteMedicationModal(item)" title="Eliminar del inventario">
-                  🗑️
+                <button type="button" class="action-btn change-btn" (click)="openStockMovementModal(item, 'exit')" [attr.aria-label]="'Registrar salida para ' + item.medication" title="Registrar salida de stock">
+                  Salida
+                </button>
+                <button type="button" class="action-btn view-btn" (click)="updateStock(item)" [attr.aria-label]="'Ajustar stock de ' + item.medication" title="Ajustar stock a un valor fijo">
+                  Ajuste
+                </button>
+                <button type="button" class="action-btn view-btn" (click)="openKardexModal(item)" [attr.aria-label]="'Abrir kardex de ' + item.medication" title="Kardex / movimientos">
+                  Kardex
+                </button>
+                <button type="button" class="action-btn danger-btn" (click)="openDeleteMedicationModal(item)" [attr.aria-label]="'Eliminar ' + item.medication + ' del inventario'" title="Dar de baja del inventario">
+                  Eliminar
                 </button>
               </div>
             </td>
@@ -386,10 +481,18 @@
         </tbody>
       </table>
     </div>
+    <div class="pagination-bar" *ngIf="inventoryPagination.totalPages > 1">
+      <button type="button" class="pagination-btn" (click)="prevInventoryPage()" [disabled]="inventoryPagination.page <= 1">← Anterior</button>
+      <span class="pagination-info">Página {{ inventoryPagination.page }} de {{ inventoryPagination.totalPages }} · {{ inventoryPagination.total }} medicamentos</span>
+      <button type="button" class="pagination-btn" (click)="nextInventoryPage()" [disabled]="inventoryPagination.page >= inventoryPagination.totalPages">Siguiente →</button>
+    </div>
 
     <p *ngIf="filteredInventory.length === 0" class="empty-message">
       No hay medicamentos en inventario
     </p>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Modal de Entrega -->
@@ -631,6 +734,112 @@
         <button class="btn-danger-neuro" (click)="confirmDeleteMedication()">
           🗑️ Confirmar Eliminación
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Movimiento de Stock -->
+  <div *ngIf="showStockMovementModal" class="modal-backdrop" (click)="closeStockMovementModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>📦 Movimiento de Inventario</h3>
+        <button class="close-btn" (click)="closeStockMovementModal()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="delivery-summary">
+          <div class="summary-row">
+            <span class="summary-label">Medicamento:</span>
+            <span class="summary-value">{{ selectedInventoryItem?.medication }} {{ selectedInventoryItem?.dosage }}</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Stock actual:</span>
+            <span class="summary-value">{{ selectedInventoryItem?.stock }}</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Tipo de movimiento</label>
+          <select class="filter-select" [(ngModel)]="stockMovementForm.type">
+            <option value="entry">Entrada (+)</option>
+            <option value="exit">Salida (-)</option>
+            <option value="adjustment">Ajuste (valor final)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>{{ stockMovementForm.type === 'adjustment' ? 'Stock final' : 'Cantidad' }}</label>
+          <input type="number" class="neuro-input" min="0" [(ngModel)]="stockMovementForm.quantity" />
+        </div>
+
+        <div class="form-group" *ngIf="stockMovementForm.type === 'entry'">
+          <label>Caducidad del lote (opcional)</label>
+          <input type="date" class="neuro-input" [(ngModel)]="stockMovementForm.entryExpiryDate" />
+          <small class="field-hint">Actualiza la fecha de caducidad del artículo en inventario. Varias fechas por lote requerirán una tabla de lotes en backend.</small>
+        </div>
+
+        <div class="form-group">
+          <label>Motivo (opcional)</label>
+          <textarea class="neuro-input" rows="3" [(ngModel)]="stockMovementForm.reason" placeholder="Compra, consumo, merma, ajuste físico, etc."></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary-neuro" (click)="closeStockMovementModal()">Cancelar</button>
+        <button class="btn-primary-neuro" (click)="applyStockMovement()">Guardar movimiento</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Kardex -->
+  <div *ngIf="showKardexModal" class="modal-backdrop" (click)="closeKardexModal()">
+    <div class="modal-content modal-delivery modal-kardex" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>📋 Kardex — {{ kardexItem?.medication }} {{ kardexItem?.dosage }}</h3>
+        <button type="button" class="close-btn" (click)="closeKardexModal()">✕</button>
+      </div>
+      <div class="modal-body kardex-modal-body">
+        <p *ngIf="kardexLoading" class="kardex-loading">Cargando historial…</p>
+        <p *ngIf="!kardexLoading && kardexError" class="module-feedback error">{{ kardexError }}</p>
+        <div *ngIf="!kardexLoading && kardexMovements.length > 0" class="table-container table-wrapper-neuro kardex-table-wrap">
+          <table class="unified-tasks-table kardex-table neuro-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Tipo</th>
+                <th>Δ</th>
+                <th>Antes</th>
+                <th>Después</th>
+                <th>Usuario</th>
+                <th>Motivo</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let m of kardexMovements">
+                <td>{{ m.createdAt | date:'dd/MM/yyyy, HH:mm' }}</td>
+                <td>{{ getMovementTypeLabel(m.movementType) }}</td>
+                <td [class.kardex-pos]="m.quantityDelta > 0" [class.kardex-neg]="m.quantityDelta < 0">
+                  {{ m.quantityDelta > 0 ? '+' : '' }}{{ m.quantityDelta }}
+                </td>
+                <td>{{ m.stockBefore }}</td>
+                <td>{{ m.stockAfter }}</td>
+                <td>{{ m.performedByName || '—' }}</td>
+                <td class="kardex-reason">{{ m.reason || '—' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination-bar" *ngIf="!kardexLoading && kardexPagination.totalPages > 1">
+          <button type="button" class="pagination-btn" (click)="prevKardexPage()" [disabled]="kardexPagination.page <= 1">← Anterior</button>
+          <span class="pagination-info">Página {{ kardexPagination.page }} de {{ kardexPagination.totalPages }} · {{ kardexPagination.total }} movimientos</span>
+          <button type="button" class="pagination-btn" (click)="nextKardexPage()" [disabled]="kardexPagination.page >= kardexPagination.totalPages">Siguiente →</button>
+        </div>
+        <p *ngIf="!kardexLoading && kardexMovements.length === 0" class="empty-message">
+          No hay movimientos registrados para este medicamento.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary-neuro" (click)="closeKardexModal()">Cerrar</button>
       </div>
     </div>
   </div>

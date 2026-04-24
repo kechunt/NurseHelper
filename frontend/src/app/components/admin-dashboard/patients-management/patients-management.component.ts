@@ -237,7 +237,7 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
       ...patient,
       areaId: patient.areaId ?? null,
       bedId: patient.bedId ?? null,
-      areaName: 'Sin área',
+      areaName: patient.area?.name || this.areas.find((a) => a.id === patient.areaId)?.name || 'Sin área',
       bedNumber: 'Sin cama',
     };
   }
@@ -574,38 +574,49 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
 
   // ========== MODAL DE EDICIÓN ==========
   openEditModal(patient: Patient): void {
-    this.selectedPatient = patient;
-    this.activeTab = 'personal';
-    
-    this.editForm = {
-      firstName: patient.firstName || '',
-      lastName: patient.lastName || '',
-      identificationNumber: patient.identificationNumber || '',
-      dateOfBirth: patient.dateOfBirth ? new Date(patient.dateOfBirth).toISOString().split('T')[0] : '',
-      gender: patient.gender || '',
-      phone: patient.phone || '',
-      address: patient.address || '',
-      emergencyContact: patient.emergencyContact || '',
-      emergencyPhone: patient.emergencyPhone || '',
-      emergencyRelation: patient.emergencyRelation || '',
-      areaId: patient.areaId || '',
-      bedId: patient.bedId || '',
-      medicalObservations: patient.medicalObservations || '',
-      specialNeeds: patient.specialNeeds || '',
-      allergies: patient.allergies || '',
-      medicalHistory: patient.medicalHistory || '',
-      generalObservations: patient.generalObservations || '',
-      medications: this.loadMedications(patient),
-      treatmentHistory: this.loadTreatmentHistory(patient),
-      pendingTasks: this.loadPendingTasks(patient)
-    };
-    
-    // Cargar camas disponibles del área seleccionada
-    if (this.editForm.areaId) {
-      this.loadBedsForAreaEdit(this.editForm.areaId);
-    }
-    
-    this.showEditModal = true;
+    this.adminService.getPatient(patient.id!).subscribe({
+      next: (fullPatient) => {
+        const normalized = this.enrichPatientRow(fullPatient as any);
+        this.selectedPatient = normalized;
+        this.activeTab = 'personal';
+
+        this.editForm = {
+          firstName: normalized.firstName || '',
+          lastName: normalized.lastName || '',
+          identificationNumber: normalized.identificationNumber || '',
+          dateOfBirth: normalized.dateOfBirth ? new Date(normalized.dateOfBirth).toISOString().split('T')[0] : '',
+          gender: normalized.gender || '',
+          phone: normalized.phone || '',
+          address: normalized.address || '',
+          emergencyContact: normalized.emergencyContact || '',
+          emergencyPhone: normalized.emergencyPhone || '',
+          emergencyRelation: normalized.emergencyRelation || '',
+          areaId: normalized.areaId || '',
+          bedId: normalized.bedId || '',
+          medicalObservations: normalized.medicalObservations || '',
+          specialNeeds: normalized.specialNeeds || '',
+          allergies: normalized.allergies || '',
+          medicalHistory: normalized.medicalHistory || '',
+          generalObservations: normalized.generalObservations || '',
+          medications: this.loadMedications(normalized),
+          treatmentHistory: this.loadTreatmentHistory(normalized),
+          pendingTasks: this.loadPendingTasks(normalized)
+        };
+
+        if (this.editForm.areaId) {
+          this.loadBedsForAreaEdit(Number(this.editForm.areaId));
+        } else {
+          this.availableBeds = [];
+        }
+
+        this.showEditModal = true;
+        this.cdr.markForCheck();
+      },
+      error: (error) => {
+        const errorMessage = error.error?.message || error.message || 'No se pudo cargar el paciente';
+        this.toastService.error(errorMessage);
+      }
+    });
   }
 
   closeEditModal(): void {
@@ -644,6 +655,10 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
     if (!this.selectedPatient?.id) return;
 
     // Preparar datos para actualizar
+    const desiredAreaId = this.normalizeToNumberOrNull(this.editForm.areaId);
+    const desiredBedId = this.normalizeToNumberOrNull(this.editForm.bedId);
+    const currentBedId = this.normalizeToNumberOrNull(this.selectedPatient.bedId);
+
     const updateData: any = {
       firstName: this.editForm.firstName,
       lastName: this.editForm.lastName,
@@ -660,76 +675,100 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
       allergies: this.editForm.allergies,
       medicalHistory: this.editForm.medicalHistory,
       generalObservations: this.editForm.generalObservations,
-      medications: JSON.stringify(this.editForm.medications),
-      treatmentHistory: JSON.stringify(this.editForm.treatmentHistory),
-      pendingTasks: JSON.stringify(this.editForm.pendingTasks),
+      medications: this.editForm.medications,
+      treatmentHistory: this.editForm.treatmentHistory,
+      pendingTasks: this.editForm.pendingTasks,
+      areaId: desiredAreaId,
     };
 
-    // Actualizar el paciente
     this.adminService.updatePatient(this.selectedPatient.id, updateData).subscribe({
       next: () => {
-        // Si cambió la cama, actualizar asignación
-        const oldBedId = this.selectedPatient?.bedId;
-        const newBedId = this.editForm.bedId;
-        
-        if (oldBedId !== newBedId) {
-          // Primero liberar la cama anterior si existe
-          if (oldBedId) {
-            this.adminService.assignPatientToBed(oldBedId, null).subscribe({
+        const assignBedAndFinish = (bedIdToAssign: number | null): void => {
+          if (bedIdToAssign === currentBedId) {
+            this.toastService.success('Cambios guardados exitosamente');
+            this.closeEditModal();
+            this.loadPatientList(false);
+            this.loadBeds();
+            return;
+          }
+
+          const releaseAndAssign = () => {
+            if (!bedIdToAssign) {
+              this.toastService.success('Cambios guardados exitosamente');
+              this.closeEditModal();
+              this.loadPatientList(false);
+              this.loadBeds();
+              return;
+            }
+
+            this.adminService.assignPatientToBed(bedIdToAssign, this.selectedPatient!.id!).subscribe({
               next: () => {
-                // Luego asignar la nueva cama si existe
-                if (newBedId) {
-                  this.adminService.assignPatientToBed(newBedId, this.selectedPatient!.id!).subscribe({
-                    next: () => {
-                      alert('✅ Cambios guardados exitosamente');
-                      this.closeEditModal();
-                      this.loadPatientList(false);
-                      this.loadBeds();
-                    },
-                    error: (error) => {
-                      alert('Datos actualizados pero error al asignar nueva cama');
-                      this.closeEditModal();
-                      this.loadPatientList(false);
-                    }
-                  });
-                } else {
-                  alert('✅ Cambios guardados exitosamente');
-                  this.closeEditModal();
-                  this.loadPatientList(false);
-                  this.loadBeds();
-                }
-              },
-              error: (error) => {
-                console.error('Error liberando cama anterior:', error);
-              }
-            });
-          } else if (newBedId) {
-            // Solo asignar nueva cama
-            this.adminService.assignPatientToBed(newBedId, this.selectedPatient!.id!).subscribe({
-              next: () => {
-                alert('✅ Cambios guardados exitosamente');
+                this.toastService.success('Cambios guardados exitosamente');
                 this.closeEditModal();
                 this.loadPatientList(false);
                 this.loadBeds();
               },
               error: (error) => {
-                alert('Datos actualizados pero error al asignar cama');
+                const errorMessage = error.error?.message || 'Datos guardados, pero hubo error al asignar cama';
+                this.toastService.warning(errorMessage);
                 this.closeEditModal();
                 this.loadPatientList(false);
+                this.loadBeds();
               }
             });
+          };
+
+          if (currentBedId) {
+            this.adminService.assignPatientToBed(currentBedId, null).subscribe({
+              next: () => releaseAndAssign(),
+              error: (error) => {
+                const errorMessage = error.error?.message || 'No se pudo liberar la cama anterior';
+                this.toastService.warning(errorMessage);
+                releaseAndAssign();
+              }
+            });
+          } else {
+            releaseAndAssign();
           }
-        } else {
-          alert('✅ Cambios guardados exitosamente');
-          this.closeEditModal();
-          this.loadPatientList(false);
+        };
+
+        if (!desiredBedId && desiredAreaId) {
+          this.adminService.getBedsByArea(desiredAreaId).subscribe({
+            next: (beds) => {
+              const selectedBed = beds.find((bed) => bed.id === currentBedId);
+              if (selectedBed && selectedBed.areaId === desiredAreaId) {
+                assignBedAndFinish(currentBedId);
+                return;
+              }
+
+              const firstAvailable = beds.find((bed) => bed.isActive && !bed.patientId);
+              if (firstAvailable?.id) {
+                assignBedAndFinish(firstAvailable.id);
+              } else {
+                this.toastService.warning('Área guardada, pero no hay camas disponibles para asignar');
+                assignBedAndFinish(null);
+              }
+            },
+            error: () => assignBedAndFinish(desiredBedId)
+          });
+          return;
         }
+
+        assignBedAndFinish(desiredBedId);
       },
       error: (error) => {
-        console.error('Error updating patient:', error);
-        alert(error.error?.message || 'Error al guardar los cambios');
+        const errorMessage = error.error?.message || 'Error al guardar los cambios';
+        this.toastService.error(errorMessage);
       },
     });
+  }
+
+  private normalizeToNumberOrNull(value: any): number | null {
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+    const parsed = Number(value);
+    return Number.isNaN(parsed) ? null : parsed;
   }
 
   // ========== MEDICAMENTOS ==========

@@ -1,0 +1,194 @@
+/* Unified admin table style based on "Pacientes sin Área Asignada" */
+
+.table-container,
+.patients-table-container,
+.patients-table-container-modal,
+.table-wrapper-neuro {
+  overflow-x: auto;
+  border-radius: 15px;
+  background: #d1d9e6;
+  box-shadow: inset 5px 5px 10px #bebebe, inset -5px -5px 10px #ffffff;
+  padding: 1rem;
+}
+
+.neuro-table,
+.patients-table,
+.shifts-table-neuro,
+.unified-tasks-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #e0e5ec;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.neuro-table thead,
+.patients-table thead,
+.shifts-table-neuro thead,
+.unified-tasks-table thead {
+  background: #d1d9e6;
+}
+
+.neuro-table th,
+.patients-table th,
+.shifts-table-neuro th,
+.unified-tasks-table th {
+  padding: 1rem;
+  text-align: left;
+  color: #4a5568;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.neuro-table td,
+.patients-table td,
+.shifts-table-neuro td,
+.unified-tasks-table td {
+  padding: 0.35rem 0.4rem !important;
+  color: #4a5568;
+  border-top: 1px solid rgba(174, 174, 192, 0.3);
+  vertical-align: middle !important;
+  line-height: 1 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  font-size: 0.8rem;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.neuro-table tbody tr:hover,
+.patients-table tbody tr:hover,
+.shifts-table-neuro tbody tr:hover,
+.unified-tasks-table tbody tr:hover {
+  background: #d1d9e6;
+}
+
+.action-btn.assign-btn,
+.assign-btn,
+.action-btn-small.assign {
+  background: #bee3f8;
+  color: #2c5282;
+}
+
+.action-btn.assign-btn:hover,
+.assign-btn:hover,
+.action-btn-small.assign:hover {
+  box-shadow: 2px 2px 4px #bebebe, -2px -2px 4px #ffffff;
+}
+
+.toggle-btn-neuro {
+  background: #e0e5ec;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #4a5568;
+  cursor: pointer;
+  box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #ffffff;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.toggle-btn-neuro:hover {
+  box-shadow: 3px 3px 6px #bebebe, -3px -3px 6px #ffffff;
+}
+
+/* —— Fecha/hora en columna dedicada (tablas unificadas) —— */
+.datetime-cell-unified {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  line-height: 1.25;
+  text-align: left;
+}
+
+.datetime-cell-unified .datetime-date {
+  font-weight: 600;
+  color: #4a5568;
+  font-size: 0.8rem;
+}
+
+.datetime-cell-unified .datetime-time {
+  font-size: 0.78rem;
+  color: #718096;
+  font-variant-numeric: tabular-nums;
+}
+
+/* —— Acciones en fila: mismo lenguaje visual que panel admin —— */
+.unified-table-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.unified-tasks-table td.table-cell-actions,
+.patients-table td.table-cell-actions {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  vertical-align: middle;
+  min-width: 260px;
+  max-width: 28rem;
+}
+
+.unified-table-actions .action-btn {
+  padding: 8px 14px;
+  border-radius: 12px;
+  border: none;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #4a5568;
+  background: #e0e5ec;
+  cursor: pointer;
+  box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #ffffff;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.unified-table-actions .action-btn:hover:not(:disabled) {
+  box-shadow: 3px 3px 6px #bebebe, -3px -3px 6px #ffffff;
+  transform: translateY(-1px);
+}
+
+.unified-table-actions .action-btn:active:not(:disabled) {
+  box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
+  transform: translateY(0);
+}
+
+.unified-table-actions .action-btn:disabled {
+  opacity: 0.48;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: inset 2px 2px 4px #bebebe, inset -2px -2px 4px #ffffff;
+}
+
+.unified-table-actions .action-btn.view-btn {
+  background: #e2e8f0;
+  color: #2d3748;
+}
+
+.unified-table-actions .action-btn.assign-btn {
+  background: #bee3f8;
+  color: #2c5282;
+}
+
+.unified-table-actions .action-btn.change-btn {
+  background: #fbd38d;
+  color: #744210;
+}
+
+.unified-table-actions .action-btn.success-btn {
+  background: #c6f6d5;
+  color: #22543d;
+}
+
+.unified-table-actions .action-btn.danger-btn {
+  background: #fed7d7;
+  color: #9b2c2c;
+}

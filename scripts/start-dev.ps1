@@ -1,5 +1,5 @@
 # NurseHelper — arranque en desarrollo (Windows)
-# Equivale a scripts/start-dev.sh pero con APIs de Windows.
+# Equivale a scripts/start-dev.js pero con APIs de Windows.
 # Uso:
 #   Desde la raíz del repo: npm run dev:win
 #   O:  powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start-dev.ps1

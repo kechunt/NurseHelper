@@ -1,3 +1,6 @@
+@import '../../../shared/styles/admin-table-unified.css';
+@import '../../../shared/styles/admin-panel-responsive.css';
+
 .staff-management {
   width: 100%;
   padding: 1rem;
@@ -384,8 +387,9 @@
 }
 
 .patients-table-container {
-  max-height: 200px;
+  max-height: 220px;
   overflow-y: auto;
+  overflow-x: hidden !important;
   border-radius: 12px;
   background: #d1d9e6;
   box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
@@ -394,7 +398,9 @@
 .patients-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.85rem;
+  table-layout: fixed;
+  font-size: 0.82rem;
+  min-width: 0 !important;
 }
 
 .patients-table thead {
@@ -405,16 +411,17 @@
 }
 
 .patients-table th {
-  padding: 0.75rem;
+  padding: 0.55rem 0.5rem;
   text-align: left;
   color: #4a5568;
   font-weight: 600;
-  font-size: 0.8rem;
+  font-size: 0.76rem;
   border-bottom: 2px solid rgba(174, 174, 192, 0.3);
+  letter-spacing: 0.2px;
 }
 
 .patients-table td {
-  padding: 0.35rem 0.4rem !important;
+  padding: 0.3rem 0.35rem !important;
   color: #4a5568;
   border-bottom: 1px solid rgba(174, 174, 192, 0.2);
   vertical-align: middle !important;
@@ -425,6 +432,23 @@
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
+}
+
+.patients-table th:nth-child(1),
+.patients-table td:nth-child(1) {
+  width: 64%;
+}
+
+.patients-table th:nth-child(2),
+.patients-table td:nth-child(2) {
+  width: 22%;
+  text-align: left;
+}
+
+.patients-table th:nth-child(3),
+.patients-table td:nth-child(3) {
+  width: 14%;
+  text-align: center;
 }
 
 .patients-table td > div,
@@ -441,12 +465,13 @@
 }
 
 .patients-table td:last-child {
-  height: 30px !important;
-  min-height: 30px !important;
-  max-height: 30px !important;
-  padding: 0.2rem 0.3rem !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  max-height: 28px !important;
+  padding: 0.15rem 0.2rem !important;
   white-space: nowrap !important;
   overflow: visible !important;
+  text-align: center;
 }
 
 .patients-table tr {
@@ -497,28 +522,31 @@
 }
 
 .action-btn-small {
-  padding: 6px 12px;
+  padding: 3px 8px;
   border: none;
   border-radius: 8px;
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   font-weight: 500;
+  line-height: 1;
+  min-height: 20px;
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: 3px 3px 6px #bebebe, -3px -3px 6px #ffffff;
 }
 
 .action-btn-small.remove {
-  background: #fed7d7;
-  color: #c53030;
+  background: #c8d2e1;
+  color: #4a5568;
 }
 
 .action-btn-small.assign {
-  background: #c6f6d5;
-  color: #22543d;
+  background: #c8d2e1;
+  color: #4a5568;
 }
 
 .action-btn-small:hover {
-  box-shadow: 2px 2px 4px #bebebe, -2px -2px 4px #ffffff;
+  background: #bec9d9;
+  box-shadow: 2px 2px 4px #b3bdcb, -2px -2px 4px #dbe4f0;
   transform: translateY(-1px);
 }
 
@@ -567,8 +595,8 @@
 }
 
 .action-btn.primary {
-  background: #bee3f8;
-  color: #2c5282;
+  background: #fce7f3;
+  color: #702459;
 }
 
 .action-btn.schedule {

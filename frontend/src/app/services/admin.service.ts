@@ -59,6 +59,7 @@ export interface Patient {
   pendingTasks?: string | any;
   isActive?: boolean;
   bed?: Bed | null;
+  area?: Area | null;
   bedId?: number | null;
   areaId?: number | null;
   areaName?: string;

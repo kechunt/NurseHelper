@@ -1,3 +1,5 @@
+@import '../../../shared/styles/admin-panel-responsive.css';
+
 .beds-management {
   width: 100%;
 }
@@ -212,6 +214,24 @@
   line-height: 1;
 }
 
+.patient-info-btn {
+  background: #e0e5ec;
+  border: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: 14px;
+  color: #4a5568;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+  transition: all 0.2s ease;
+  padding: 0;
+  line-height: 1;
+}
+
 .edit-bed-btn {
   color: #4a5568;
 }
@@ -221,13 +241,15 @@
 }
 
 .edit-bed-btn:hover,
-.delete-bed-btn:hover {
+.delete-bed-btn:hover,
+.patient-info-btn:hover {
   box-shadow: 2px 2px 4px #bebebe, -2px -2px 4px #ffffff;
   transform: scale(1.1);
 }
 
 .edit-bed-btn:active,
-.delete-bed-btn:active {
+.delete-bed-btn:active,
+.patient-info-btn:active {
   box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
 }
 
@@ -260,6 +282,10 @@
   width: 100%;
   box-shadow: 30px 30px 60px rgba(0, 0, 0, 0.3),
     -30px -30px 60px rgba(255, 255, 255, 0.1);
+}
+
+.modal-content.modal-extra-large {
+  max-width: 1100px;
 }
 
 .modal-header {
@@ -298,6 +324,55 @@
 
 .modal-body {
   padding: 2rem;
+}
+
+.tabs-container {
+  display: flex;
+  gap: 0.5rem;
+  padding: 1rem 2rem;
+  border-bottom: 1px solid rgba(174, 174, 192, 0.2);
+  overflow-x: auto;
+}
+
+.tab {
+  background: #e0e5ec;
+  border: none;
+  padding: 0.6rem 1rem;
+  border-radius: 10px;
+  color: #718096;
+  font-size: 0.9rem;
+  cursor: pointer;
+  box-shadow: 3px 3px 6px #bebebe, -3px -3px 6px #ffffff;
+}
+
+.tab.active {
+  color: #4a5568;
+  font-weight: 600;
+  box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
+}
+
+.patient-summary-card,
+.list-card {
+  background: #d1d9e6;
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 0.75rem;
+}
+
+.detail-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.list-card {
+  margin-bottom: 0.75rem;
 }
 
 .input-group {
@@ -402,6 +477,26 @@
   padding: 2rem;
   color: #718096;
   font-style: italic;
+}
+
+.empty-state-actions {
+  margin-top: 1rem;
+}
+
+.patient-select-item {
+  padding: 0.75rem;
+  border-radius: 10px;
+  margin-bottom: 0.5rem;
+  background: #e0e5ec;
+  box-shadow: 3px 3px 6px #bebebe, -3px -3px 6px #ffffff;
+}
+
+.patient-select-item label {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  color: #4a5568;
+  font-weight: 500;
 }
 
 /* Paciente actual y botón liberar */

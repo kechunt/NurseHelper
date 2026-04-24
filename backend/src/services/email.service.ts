@@ -30,6 +30,11 @@ export class EmailService {
   /**
    * Inicializa el transporter de nodemailer
    */
+  /** true si hay credenciales SMTP y se pueden enviar correos reales */
+  isSmtpConfigured(): boolean {
+    return this.transporter !== null;
+  }
+
   private initializeTransporter(): void {
     // Configuración desde variables de entorno
     const emailHost = process.env.EMAIL_HOST || 'smtp.gmail.com';
@@ -74,15 +79,16 @@ export class EmailService {
 
     // Si no hay transporter configurado, solo loggear (modo desarrollo)
     if (!this.transporter) {
-      logger.info('📧 Email (modo desarrollo - no enviado):', {
-        to: options.to,
-        from: emailFrom,
-        subject: options.subject,
-        // No loggear contenido completo por seguridad
-      });
-      logger.info('📧 Contenido del email:', {
-        text: options.text || 'Ver HTML',
-        htmlPreview: options.html.substring(0, 200) + '...',
+      logger.warn(
+        '📧 Correo NO enviado: falta configuración SMTP (EMAIL_USER y EMAIL_PASSWORD en .env). Destinatario:',
+        options.to,
+        '| Asunto:',
+        options.subject
+      );
+      logger.info('📧 Vista previa (no enviada):', {
+        text: options.text || '(HTML)',
+        htmlPreview:
+          options.html.length > 220 ? `${options.html.substring(0, 220)}…` : options.html,
       });
       return;
     }

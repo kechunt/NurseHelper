@@ -1,3 +1,5 @@
+@import '../../../shared/styles/admin-panel-responsive.css';
+
 .overview-container {
   width: 100%;
 }

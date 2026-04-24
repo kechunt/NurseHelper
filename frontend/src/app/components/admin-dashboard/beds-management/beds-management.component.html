@@ -83,6 +83,14 @@
             👤 {{ bed.patient.firstName }} {{ bed.patient.lastName }}
           </div>
           <div class="bed-actions">
+            <button
+              *ngIf="bed.patientId"
+              class="patient-info-btn"
+              (click)="openOccupiedPatientModal(bed)"
+              title="Ver paciente asignado"
+            >
+              👤
+            </button>
             <button class="edit-bed-btn" (click)="openEditBedModal(bed)" title="Editar cama">✏️</button>
             <button class="delete-bed-btn" (click)="deleteBed(bed)" title="Eliminar cama">🗑️</button>
           </div>
@@ -180,6 +188,9 @@
               <div *ngIf="filteredPatients.length === 0 && !patientSearchTerm" class="no-patients-message">
                 <p>No hay pacientes asignados a camas del área <strong>{{ getAreaName(editBedForm.areaId || undefined) }}</strong></p>
                 <small>Los pacientes aparecerán aquí cuando se les asigne una cama de esta área específica</small>
+                <div class="empty-state-actions">
+                  <button class="neuro-btn" type="button" (click)="openAssignPatientModal()">➕ Asignar Paciente</button>
+                </div>
               </div>
               
               <div *ngIf="filteredPatients.length === 0 && patientSearchTerm" class="no-patients-message">
@@ -237,6 +248,154 @@
       <div class="modal-footer">
         <button class="neuro-btn outlined" (click)="closeCreateBedModal()">Cancelar</button>
         <button class="neuro-btn" (click)="createBed()">Crear Cama</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal resumen paciente de cama ocupada -->
+  <div *ngIf="showOccupiedPatientModal" class="modal-backdrop" (click)="closeOccupiedPatientModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Paciente en Cama {{ selectedBedForPatientInfo?.bedNumber }}</h3>
+        <button class="close-btn" (click)="closeOccupiedPatientModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="patient-summary-card">
+          <p><strong>Nombre:</strong> {{ selectedBedForPatientInfo ? getPatientNameForBed(selectedBedForPatientInfo) : 'Sin paciente' }}</p>
+          <p><strong>Área:</strong> {{ getAreaName(selectedBedForPatientInfo?.areaId) }}</p>
+          <p><strong>Cama:</strong> {{ selectedBedForPatientInfo?.bedNumber }}</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="neuro-btn outlined" (click)="closeOccupiedPatientModal()">Cerrar</button>
+        <button class="neuro-btn" (click)="openPatientDetailModalFromBed()">📋 Información Detallada</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal detallado del paciente reutilizando estructura de pacientes -->
+  <div *ngIf="showPatientDetailModal" class="modal-backdrop" (click)="closePatientDetailModal()">
+    <div class="modal-content modal-extra-large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>📋 {{ detailedPatient?.firstName }} {{ detailedPatient?.lastName }}</h3>
+        <button class="close-btn" (click)="closePatientDetailModal()">✕</button>
+      </div>
+
+      <div class="tabs-container">
+        <button class="tab" [class.active]="patientDetailTab === 'personal'" (click)="patientDetailTab = 'personal'">👤 Datos</button>
+        <button class="tab" [class.active]="patientDetailTab === 'medical'" (click)="patientDetailTab = 'medical'">🩺 Médico</button>
+        <button class="tab" [class.active]="patientDetailTab === 'medications'" (click)="patientDetailTab = 'medications'">💊 Medicamentos</button>
+        <button class="tab" [class.active]="patientDetailTab === 'history'" (click)="patientDetailTab = 'history'">📜 Tratamientos</button>
+        <button class="tab" [class.active]="patientDetailTab === 'tasks'" (click)="patientDetailTab = 'tasks'">📌 Tareas</button>
+      </div>
+
+      <div class="modal-body">
+        <div *ngIf="patientDetailTab === 'personal'" class="detail-grid">
+          <p><strong>Nombre:</strong> {{ detailedPatient?.firstName }} {{ detailedPatient?.lastName }}</p>
+          <p><strong>Cédula:</strong> {{ detailedPatient?.identificationNumber || 'N/A' }}</p>
+          <p><strong>Fecha Nacimiento:</strong> {{ detailedPatient?.dateOfBirth ? (detailedPatient.dateOfBirth | date:'yyyy-MM-dd') : 'N/A' }}</p>
+          <p><strong>Género:</strong> {{ detailedPatient?.gender || 'N/A' }}</p>
+          <p><strong>Teléfono:</strong> {{ detailedPatient?.phone || 'N/A' }}</p>
+          <p><strong>Dirección:</strong> {{ detailedPatient?.address || 'N/A' }}</p>
+          <p><strong>Contacto emergencia:</strong> {{ detailedPatient?.emergencyContact || 'N/A' }}</p>
+          <p><strong>Tel. emergencia:</strong> {{ detailedPatient?.emergencyPhone || 'N/A' }}</p>
+        </div>
+
+        <div *ngIf="patientDetailTab === 'medical'" class="detail-stack">
+          <p><strong>Observaciones médicas:</strong></p>
+          <p>{{ detailedPatient?.medicalObservations || 'Sin datos' }}</p>
+          <p><strong>Necesidades especiales:</strong></p>
+          <p>{{ detailedPatient?.specialNeeds || 'Sin datos' }}</p>
+          <p><strong>Alergias:</strong></p>
+          <p>{{ detailedPatient?.allergies || 'Sin datos' }}</p>
+          <p><strong>Historial médico:</strong></p>
+          <p>{{ detailedPatient?.medicalHistory || 'Sin datos' }}</p>
+          <p><strong>Observaciones generales:</strong></p>
+          <p>{{ detailedPatient?.generalObservations || 'Sin datos' }}</p>
+        </div>
+
+        <div *ngIf="patientDetailTab === 'medications'">
+          <div *ngIf="patientDetailForm.medications.length === 0" class="empty-message">No hay medicamentos registrados</div>
+          <div *ngFor="let med of patientDetailForm.medications" class="list-card">
+            <p><strong>{{ med.name || 'Medicamento' }}</strong></p>
+            <p>Dosis: {{ med.dosage || 'N/A' }}</p>
+            <p>Frecuencia: {{ med.frequency || 'N/A' }}</p>
+            <p>Horarios: {{ med.schedules || 'N/A' }}</p>
+            <p>Notas: {{ med.notes || 'N/A' }}</p>
+          </div>
+        </div>
+
+        <div *ngIf="patientDetailTab === 'history'">
+          <div *ngIf="patientDetailForm.treatmentHistory.length === 0" class="empty-message">No hay historial de tratamientos</div>
+          <div *ngFor="let treatment of patientDetailForm.treatmentHistory" class="list-card">
+            <p><strong>{{ treatment.type || 'Tratamiento' }}</strong></p>
+            <p>Fecha: {{ treatment.date || 'N/A' }} {{ treatment.time || '' }}</p>
+            <p>Enfermera: {{ treatment.nurseName || 'N/A' }}</p>
+            <p>{{ treatment.description || 'Sin descripción' }}</p>
+          </div>
+        </div>
+
+        <div *ngIf="patientDetailTab === 'tasks'">
+          <div *ngIf="patientDetailForm.pendingTasks.length === 0" class="empty-message">No hay tareas pendientes</div>
+          <div *ngFor="let task of patientDetailForm.pendingTasks" class="list-card">
+            <p><strong>{{ task.title || 'Tarea' }}</strong></p>
+            <p>Tipo: {{ task.type || 'N/A' }}</p>
+            <p>Programada: {{ task.scheduledDate || 'N/A' }}</p>
+            <p>Prioridad: {{ task.priority || 'N/A' }}</p>
+            <p>Asignada a: {{ task.assignedTo || 'N/A' }}</p>
+            <p>{{ task.description || 'Sin descripción' }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="neuro-btn outlined" (click)="closePatientDetailModal()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para asignar paciente desde estado vacío -->
+  <div *ngIf="showAssignPatientModal" class="modal-backdrop" (click)="closeAssignPatientModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Asignar Paciente a Cama {{ selectedBed?.bedNumber }}</h3>
+        <button class="close-btn" (click)="closeAssignPatientModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="input-group">
+          <label for="assign-patient-search">Buscar paciente del área</label>
+          <input
+            id="assign-patient-search"
+            type="text"
+            class="neuro-input"
+            [(ngModel)]="assignPatientSearchTerm"
+            (input)="filterAssignablePatients()"
+            placeholder="Nombre o cédula..."
+          />
+        </div>
+
+        <div class="patients-list-container">
+          <div *ngIf="assignablePatients.length === 0" class="no-patients-message">
+            No hay pacientes disponibles en esta área.
+          </div>
+          <div *ngFor="let patient of assignablePatients" class="patient-select-item">
+            <label>
+              <input
+                type="radio"
+                name="selectedPatientToAssign"
+                [value]="patient.id"
+                [(ngModel)]="selectedPatientToAssign"
+              />
+              {{ patient.firstName }} {{ patient.lastName }} - {{ patient.identificationNumber || 'Sin cédula' }}
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="neuro-btn outlined" (click)="closeAssignPatientModal()">Cancelar</button>
+        <button class="neuro-btn" (click)="assignPatientToCurrentBed()" [disabled]="!selectedPatientToAssign">
+          Asignar Paciente
+        </button>
       </div>
     </div>
   </div>

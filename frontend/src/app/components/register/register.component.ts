@@ -69,10 +69,17 @@ export class RegisterComponent {
         
         if (response.requiresVerification) {
           // Redirigir a página de verificación
-          this.router.navigate(['/verify-email'], {
-            queryParams: { email: response.email }
-          });
+          const q: Record<string, string> = { email: response.email || '' };
+          if (typeof response.smtpConfigured === 'boolean') {
+            q['mailOk'] = response.smtpConfigured ? '1' : '0';
+          }
+          void this.router.navigate(['/verify-email'], { queryParams: q });
           this.toastService.success('Registro exitoso. Por favor verifica tu correo electrónico.');
+          if (response.smtpConfigured === false) {
+            this.toastService.warning(
+              'El servidor no tiene SMTP configurado: no llegará correo hasta configurar EMAIL_USER y EMAIL_PASSWORD en el backend.'
+            );
+          }
         } else if (response.token && response.user) {
           // Si ya viene verificado (caso especial), hacer login automático
           const user = response.user;

@@ -1,3 +1,6 @@
+@import '../../../shared/styles/admin-table-unified.css';
+@import '../../../shared/styles/admin-panel-responsive.css';
+
 .users-management {
   width: 100%;
 }
@@ -112,19 +115,22 @@
 
 .table-container {
   overflow-x: auto;
-  background: #e0e5ec;
+  background: #d1d9e6;
   border-radius: 15px;
   padding: 1rem;
-  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+  box-shadow: inset 5px 5px 10px #bebebe, inset -5px -5px 10px #ffffff;
 }
 
 .neuro-table {
   width: 100%;
   border-collapse: collapse;
+  background: #e0e5ec;
+  border-radius: 12px;
+  overflow: hidden;
 }
 
 .neuro-table thead {
-  background: #e0e5ec;
+  background: #d1d9e6;
 }
 
 .neuro-table th {

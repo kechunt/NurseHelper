@@ -1,3 +1,5 @@
+@import '../../shared/styles/admin-panel-responsive.css';
+
 .admin-dashboard {
   min-height: 100vh;
   background: #e0e5ec;

@@ -1,62 +1,73 @@
-<div class="verify-container">
-  <div class="verify-card">
-    <div class="logo-container">
+<div class="auth-page-container">
+  <div class="auth-card">
+    <div class="auth-logo-wrap">
       <img
         src="/nursehelper.png"
         alt="NurseHelper Logo"
-        class="logo"
+        class="auth-logo"
       />
     </div>
 
-    <h1 class="verify-title">Verificar Correo Electrónico</h1>
-    <p class="verify-subtitle">Ingresa el código de verificación que enviamos a:</p>
-    <p class="email-display">{{ email }}</p>
+    <h1 class="auth-title">Verificar correo</h1>
+    <p class="auth-subtitle">
+      Introduce el código de 6 dígitos que enviamos a tu bandeja (revisa también spam).
+    </p>
 
-    <form (ngSubmit)="onSubmit()" class="verify-form">
-      <div class="input-group">
-        <label for="code">Código de Verificación</label>
+    <div *ngIf="smtpLikelyConfigured === false" class="auth-info-banner auth-info-banner--warn" role="status">
+      <strong>Servidor sin correo SMTP configurado.</strong>
+      No se enviará email real hasta que en el backend existan <code>EMAIL_USER</code> y <code>EMAIL_PASSWORD</code>
+      (por ejemplo en <code>.env</code>). Puedes usar «Reenviar código» para generar uno nuevo; el código queda guardado en la base de datos.
+    </div>
+
+    <p class="auth-email-highlight">{{ email }}</p>
+
+    <form (ngSubmit)="onSubmit()" class="auth-form">
+      <div class="auth-input-group">
+        <label for="code">Código de verificación</label>
         <input
           type="text"
           id="code"
-          class="neuro-input code-input"
+          class="neuro-input verify-code-input"
+          inputmode="numeric"
+          pattern="[0-9]*"
           placeholder="000000"
           [(ngModel)]="code"
           name="code"
           (input)="onCodeInput($event)"
           maxlength="6"
           required
-          autocomplete="off"
+          autocomplete="one-time-code"
         />
-        <small class="help-text">Ingresa el código de 6 dígitos que recibiste por correo</small>
+        <span class="verify-help-text">6 dígitos numéricos</span>
       </div>
 
-      <div *ngIf="error" class="error-message">{{ error }}</div>
+      <div *ngIf="error" class="auth-error">{{ error }}</div>
 
       <button
         type="submit"
         class="neuro-btn"
         [disabled]="loading || code.length !== 6"
       >
-        {{ loading ? 'Verificando...' : 'Verificar' }}
+        {{ loading ? 'Verificando...' : 'Verificar e iniciar sesión' }}
       </button>
     </form>
 
-    <div class="resend-section">
-      <p>¿No recibiste el código?</p>
+    <div class="verify-resend-block">
+      <p class="verify-resend-label">¿No recibiste el código?</p>
       <button
         type="button"
-        class="link-button"
+        class="neuro-btn neuro-btn-secondary"
         (click)="resendCode()"
-        [disabled]="resending"
+        [disabled]="resending || !email"
       >
-        {{ resending ? 'Reenviando...' : 'Reenviar código' }}
+        {{ resending ? 'Enviando...' : 'Reenviar código' }}
       </button>
     </div>
 
-    <div class="verify-footer">
+    <div class="auth-footer">
       <p>
-        ¿Ya tienes cuenta?
-        <a routerLink="/login" class="link">Inicia sesión aquí</a>
+        ¿Ya verificaste?
+        <a routerLink="/login" class="auth-link">Volver al inicio de sesión</a>
       </p>
     </div>
   </div>

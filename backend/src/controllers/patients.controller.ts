@@ -24,6 +24,7 @@ export class PatientsController {
         .createQueryBuilder('patient')
         .leftJoinAndSelect('patient.bed', 'bed')
         .leftJoinAndSelect('bed.area', 'area')
+        .leftJoinAndSelect('patient.area', 'patientArea')
         .orderBy('patient.lastName', 'ASC');
 
       if (search) {
@@ -46,9 +47,9 @@ export class PatientsController {
         const aid = parseInt(areaIdQ, 10);
         if (!isNaN(aid)) {
           if (search || isActiveQ === 'true' || isActiveQ === 'false') {
-            queryBuilder.andWhere('bed.areaId = :areaId', { areaId: aid });
+            queryBuilder.andWhere('(bed.areaId = :areaId OR patient.areaId = :areaId)', { areaId: aid });
           } else {
-            queryBuilder.where('bed.areaId = :areaId', { areaId: aid });
+            queryBuilder.where('(bed.areaId = :areaId OR patient.areaId = :areaId)', { areaId: aid });
           }
         }
       }
@@ -177,7 +178,7 @@ export class PatientsController {
       try {
         patient = await patientRepository.findOne({
           where: { id },
-          relations: ['bed', 'bed.area', 'schedules'],
+          relations: ['bed', 'bed.area', 'area', 'schedules'],
         });
       } catch (error: any) {
         // Si falla por falta de columna bedId o assignedToId, intentar sin las relaciones
@@ -362,6 +363,7 @@ export class PatientsController {
         treatmentHistory,
         pendingTasks,
         isActive,
+        areaId,
       } = req.body;
 
       const assignedToIdBody = req.body.assignedToId;
@@ -440,6 +442,13 @@ export class PatientsController {
       if (treatmentHistory !== undefined) patient.treatmentHistory = treatmentHistory;
       if (pendingTasks !== undefined) patient.pendingTasks = pendingTasks;
       if (isActive !== undefined) patient.isActive = isActive;
+      if (areaId !== undefined) {
+        const normalizedAreaId =
+          areaId === null || areaId === '' || Number.isNaN(parseInt(String(areaId), 10))
+            ? null
+            : parseInt(String(areaId), 10);
+        patient.areaId = normalizedAreaId;
+      }
 
       if (assignedToIdBody !== undefined) {
         if (
@@ -472,7 +481,7 @@ export class PatientsController {
       try {
         updatedPatient = await patientRepository.findOne({
           where: { id: patient.id },
-          relations: ['bed', 'bed.area'],
+          relations: ['bed', 'bed.area', 'area'],
         });
       } catch (error: any) {
         // Si falla por falta de columna bedId o assignedToId, intentar sin las relaciones

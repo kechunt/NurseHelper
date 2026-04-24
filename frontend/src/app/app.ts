@@ -7,6 +7,7 @@ import { ToastContainerComponent } from './components/toast-container/toast-cont
 import { LoadingSpinnerComponent } from './components/loading-spinner/loading-spinner.component';
 import { ConfirmationWrapperComponent } from './components/confirmation-wrapper/confirmation-wrapper.component';
 import { LoadingService } from './services/loading.service';
+import { ToastService } from './services/toast.service';
 
 @Component({
   selector: 'app-root',
@@ -16,13 +17,17 @@ import { LoadingService } from './services/loading.service';
 })
 export class App implements OnInit {
   protected readonly title = signal('NurseHelper');
+  private originalAlert: ((message?: any) => void) | null = null;
 
   constructor(
     private router: Router,
-    public loadingService: LoadingService
+    public loadingService: LoadingService,
+    private toastService: ToastService
   ) {}
 
   ngOnInit(): void {
+    this.patchNativeAlertForAdmin();
+
     // Verificar que el router esté funcionando (solo en desarrollo)
     if (!environment.production) {
       this.router.events
@@ -31,5 +36,41 @@ export class App implements OnInit {
           console.log('📍 Navegación a:', event.url);
         });
     }
+  }
+
+  private patchNativeAlertForAdmin(): void {
+    if (this.originalAlert) {
+      return;
+    }
+
+    this.originalAlert = window.alert.bind(window);
+
+    window.alert = (message?: any): void => {
+      const text = typeof message === 'string' ? message : String(message ?? '');
+      const normalized = text.replace(/\n+/g, ' ').trim();
+      const onAdminRoute = this.router.url.includes('/admin');
+
+      if (!onAdminRoute) {
+        this.originalAlert?.(message);
+        return;
+      }
+
+      if (text.includes('❌') || /^error/i.test(normalized)) {
+        this.toastService.error(normalized.replace(/^❌\s*/, ''));
+        return;
+      }
+
+      if (text.includes('⚠️') || /^advertencia/i.test(normalized) || /^warning/i.test(normalized)) {
+        this.toastService.warning(normalized.replace(/^⚠️\s*/, ''));
+        return;
+      }
+
+      if (text.includes('✅')) {
+        this.toastService.success(normalized.replace(/^✅\s*/, ''));
+        return;
+      }
+
+      this.toastService.info(normalized);
+    };
   }
 }

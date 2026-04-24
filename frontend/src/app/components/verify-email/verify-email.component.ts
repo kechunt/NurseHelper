@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterModule, ActivatedRoute } from '@angular/router';
+import { Router, RouterModule, ActivatedRoute, ParamMap } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
 
@@ -10,7 +10,7 @@ import { ToastService } from '../../services/toast.service';
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './verify-email.component.html',
-  styleUrl: './verify-email.component.css',
+  styleUrls: ['../../shared/styles/auth-pages.css', './verify-email.component.css'],
 })
 export class VerifyEmailComponent implements OnInit {
   email: string = '';
@@ -18,6 +18,8 @@ export class VerifyEmailComponent implements OnInit {
   loading: boolean = false;
   resending: boolean = false;
   error: string = '';
+  /** null = desconocido; false = backend indicó que no hay SMTP */
+  smtpLikelyConfigured: boolean | null = null;
 
   constructor(
     private authService: AuthService,
@@ -27,14 +29,26 @@ export class VerifyEmailComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // Obtener email de query params
-    this.route.queryParams.subscribe(params => {
-      this.email = params['email'] || '';
-    });
+    const qp = this.route.snapshot.queryParamMap;
+    this.applyQueryParams(qp);
 
-    // Si no hay email, redirigir al registro
+    this.route.queryParams.subscribe(() => {
+      this.applyQueryParams(this.route.snapshot.queryParamMap);
+    });
+  }
+
+  private applyQueryParams(qp: ParamMap): void {
+    this.email = (qp.get('email') || '').trim();
+    const mailOk = qp.get('mailOk');
+    if (mailOk === '0') {
+      this.smtpLikelyConfigured = false;
+    } else if (mailOk === '1') {
+      this.smtpLikelyConfigured = true;
+    }
+
     if (!this.email) {
-      this.router.navigate(['/register']);
+      this.toastService.warning('Indica tu correo desde el registro o el inicio de sesión.');
+      void this.router.navigate(['/login']);
     }
   }
 
@@ -90,9 +104,18 @@ export class VerifyEmailComponent implements OnInit {
     this.error = '';
 
     this.authService.resendVerificationCode(this.email).subscribe({
-      next: () => {
+      next: (res) => {
         this.resending = false;
-        this.toastService.success('Código de verificación reenviado. Revisa tu correo electrónico.');
+        if (typeof res.smtpConfigured === 'boolean') {
+          this.smtpLikelyConfigured = res.smtpConfigured;
+        }
+        if (res.smtpConfigured === false) {
+          this.toastService.warning(
+            'Código renovado en el servidor, pero no hay SMTP configurado: no llegará correo. Revisa EMAIL_USER / EMAIL_PASSWORD en el backend.'
+          );
+        } else {
+          this.toastService.success('Código reenviado. Revisa tu correo (y la carpeta de spam).');
+        }
       },
       error: (err) => {
         this.resending = false;

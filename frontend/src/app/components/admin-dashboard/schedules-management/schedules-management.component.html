@@ -1,98 +1,16 @@
 <div class="schedules-management">
-  <div class="section-header-neuro">
-    <h2 class="section-title-neuro">⏰ Gestión de Turnos</h2>
-    <button class="btn-save-neuro" (click)="saveAllSchedules()" [disabled]="loading">
-      💾 Guardar Todos los Cambios
-    </button>
-  </div>
-
-  <!-- Filtros -->
-  <div class="filters-neuro">
-    <div class="filter-item-neuro">
-      <label>📍 Área:</label>
-      <select class="select-neuro" [(ngModel)]="selectedAreaFilter" (change)="applyFilters()">
-        <option value="">Todas</option>
-        <option *ngFor="let area of areas" [value]="area.id">{{ area.name }}</option>
-      </select>
+  <!-- Resumen arriba -->
+  <div class="summary-unified-neuro">
+    <div class="section-header-neuro compact-header-neuro">
+      <h2 class="section-title-neuro">📊 Resumen: Enfermeras por Área y Turno</h2>
+      <button class="toggle-btn-neuro" (click)="toggleSummarySection()">
+        {{ showSummarySection ? '▼ Ocultar' : '▶ Mostrar' }}
+      </button>
     </div>
-    <div class="filter-item-neuro">
-      <label>📅 Semana:</label>
-      <input type="date" class="input-neuro" [value]="weekStartDate" (change)="changeWeek($any($event.target).value)" />
-    </div>
-  </div>
 
-  <!-- Tabla Principal de Turnos -->
-  <div class="table-wrapper-neuro" *ngIf="!loading">
-    <table class="shifts-table-neuro">
-      <thead>
-        <tr>
-          <th>👤 Enfermera</th>
-          <th>📍 Área</th>
-          <th>🌅 Lunes</th>
-          <th>🌅 Martes</th>
-          <th>🌅 Miércoles</th>
-          <th>🌅 Jueves</th>
-          <th>🌅 Viernes</th>
-          <th>🌅 Sábado</th>
-          <th>🌅 Domingo</th>
-          <th>⏱️ Horas</th>
-          <th>⚙️</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let schedule of filteredSchedules" class="row-neuro">
-          <td class="cell-nurse-neuro">
-            <strong>{{ schedule.nurseName }}</strong>
-          </td>
-          <td class="cell-area-neuro">
-            <span class="badge-area-neuro" *ngIf="getNurseArea(schedule.nurseId)">
-              {{ getNurseArea(schedule.nurseId)?.name }}
-            </span>
-            <span class="badge-no-area" *ngIf="!getNurseArea(schedule.nurseId)">Sin área</span>
-          </td>
-          <td *ngFor="let day of days" class="cell-day-neuro">
-            <select 
-              class="select-day-neuro"
-              [ngModel]="getShiftValueForSelect(schedule.nurseId, day)"
-              (ngModelChange)="assignShiftToDay(schedule, day, $event)"
-              [ngClass]="getShiftForNurseDay(schedule.nurseId, day) ? 'shift-' + getShiftForNurseDay(schedule.nurseId, day) : ''">
-              <option [value]="''">-</option>
-              <option *ngFor="let shift of shifts" [value]="shift.type || shift.id">
-                {{ shift.icon }} {{ shift.name }}
-              </option>
-            </select>
-          </td>
-          <td class="cell-hours-neuro">
-            <span class="badge-hours-neuro">{{ getTotalHoursForNurse(schedule.nurseId) }}h</span>
-          </td>
-          <td class="cell-actions-neuro">
-            <button 
-              class="btn-save-nurse-neuro" 
-              (click)="saveNurseSchedule(schedule.nurseId)" 
-              title="Guardar cambios"
-              [disabled]="loading">
-              💾 Guardar
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <div *ngIf="loading" class="loading-neuro">
-    <p>⏳ Cargando turnos...</p>
-  </div>
-
-  <div *ngIf="!loading && filteredSchedules.length === 0" class="empty-neuro">
-    <p>No hay enfermeras para mostrar</p>
-  </div>
-
-  <!-- Resumen por Área y Turno -->
-  <div class="summary-section-neuro">
-    <h3 class="title-summary-neuro">📊 Resumen: Enfermeras por Área y Turno</h3>
-    
-    <div class="areas-container-neuro" *ngIf="nursesByAreaAndShift.length > 0">
-      <div *ngFor="let areaData of nursesByAreaAndShift" class="area-box-neuro">
+    <div class="summary-section-neuro" *ngIf="showSummarySection">
+      <div class="areas-container-neuro" *ngIf="nursesByAreaAndShift.length > 0">
+        <div *ngFor="let areaData of nursesByAreaAndShift" class="area-box-neuro">
         <div class="area-title-box-neuro">
           <h4>🏥 {{ areaData.areaName }}</h4>
         </div>
@@ -108,6 +26,9 @@
               <div class="nurse-top-neuro">
                 <span class="name-neuro">{{ nurse.firstName }} {{ nurse.lastName }}</span>
                 <span class="info-neuro">{{ nurse.daysCount }} días | {{ nurse.totalHours }}h</span>
+              </div>
+              <div class="nurse-actions-summary-neuro">
+                <button class="btn-edit-summary-neuro" (click)="openEditNurseSummaryModal(nurse)">✏️ Editar Área/Turno</button>
               </div>
               <div *ngIf="nurse.patients && nurse.patients.length > 0" class="nurse-patients-box-neuro">
                 <span class="label-patients-neuro">👥 {{ nurse.patientsCount }} pacientes:</span>
@@ -133,6 +54,9 @@
                 <span class="name-neuro">{{ nurse.firstName }} {{ nurse.lastName }}</span>
                 <span class="info-neuro">{{ nurse.daysCount }} días | {{ nurse.totalHours }}h</span>
               </div>
+              <div class="nurse-actions-summary-neuro">
+                <button class="btn-edit-summary-neuro" (click)="openEditNurseSummaryModal(nurse)">✏️ Editar Área/Turno</button>
+              </div>
               <div *ngIf="nurse.patients && nurse.patients.length > 0" class="nurse-patients-box-neuro">
                 <span class="label-patients-neuro">👥 {{ nurse.patientsCount }} pacientes:</span>
                 <span class="list-patients-neuro">
@@ -157,6 +81,9 @@
                 <span class="name-neuro">{{ nurse.firstName }} {{ nurse.lastName }}</span>
                 <span class="info-neuro">{{ nurse.daysCount }} días | {{ nurse.totalHours }}h</span>
               </div>
+              <div class="nurse-actions-summary-neuro">
+                <button class="btn-edit-summary-neuro" (click)="openEditNurseSummaryModal(nurse)">✏️ Editar Área/Turno</button>
+              </div>
               <div *ngIf="nurse.patients && nurse.patients.length > 0" class="nurse-patients-box-neuro">
                 <span class="label-patients-neuro">👥 {{ nurse.patientsCount }} pacientes:</span>
                 <span class="list-patients-neuro">
@@ -180,11 +107,114 @@
               <div class="nurse-top-neuro">
                 <span class="name-neuro">{{ nurse.firstName }} {{ nurse.lastName }}</span>
               </div>
+              <div class="nurse-actions-summary-neuro">
+                <button class="btn-edit-summary-neuro" (click)="openEditNurseSummaryModal(nurse)">✏️ Editar Área/Turno</button>
+              </div>
             </div>
           </div>
         </div>
+        </div>
       </div>
     </div>
+  </div>
+
+  <!-- Gestión de turnos agrupada -->
+  <div class="management-unified-neuro">
+    <div class="section-header-neuro compact-header-neuro">
+      <h2 class="section-title-neuro">⏰ Gestión de Turnos</h2>
+      <button class="toggle-btn-neuro" (click)="toggleManagementSection()">
+        {{ showManagementSection ? '▼ Ocultar' : '▶ Mostrar' }}
+      </button>
+    </div>
+
+    <div class="management-module-neuro" *ngIf="showManagementSection">
+    <!-- Filtros -->
+    <div class="filters-neuro">
+      <div class="filter-item-neuro">
+        <label>📍 Área:</label>
+        <select class="select-neuro" [(ngModel)]="selectedAreaFilter" (change)="applyFilters()">
+          <option value="">Todas</option>
+          <option *ngFor="let area of areas" [value]="area.id">{{ area.name }}</option>
+        </select>
+      </div>
+      <div class="filter-item-neuro">
+        <label>📅 Semana:</label>
+        <input type="date" class="input-neuro" [value]="weekStartDate" (change)="changeWeek($any($event.target).value)" />
+      </div>
+    </div>
+
+    <!-- Tabla Principal de Turnos -->
+    <div class="table-wrapper-neuro" *ngIf="!loading">
+      <table class="shifts-table-neuro">
+        <thead>
+          <tr>
+            <th>👤 Enfermera</th>
+            <th>📍 Área</th>
+            <th>🌅 Lunes</th>
+            <th>🌅 Martes</th>
+            <th>🌅 Miércoles</th>
+            <th>🌅 Jueves</th>
+            <th>🌅 Viernes</th>
+            <th>🌅 Sábado</th>
+            <th>🌅 Domingo</th>
+            <th>⏱️ Horas</th>
+            <th>⚙️</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let schedule of filteredSchedules" class="row-neuro">
+            <td class="cell-nurse-neuro">
+              <strong>{{ schedule.nurseName }}</strong>
+            </td>
+            <td class="cell-area-neuro">
+              <span class="badge-area-neuro" *ngIf="getNurseArea(schedule.nurseId)">
+                {{ getNurseArea(schedule.nurseId)?.name }}
+              </span>
+              <span class="badge-no-area" *ngIf="!getNurseArea(schedule.nurseId)">Sin área</span>
+            </td>
+            <td *ngFor="let day of days" class="cell-day-neuro">
+              <select 
+                class="select-day-neuro"
+                [ngModel]="getShiftValueForSelect(schedule.nurseId, day)"
+                (ngModelChange)="assignShiftToDay(schedule, day, $event)"
+                [ngClass]="getShiftForNurseDay(schedule.nurseId, day) ? 'shift-' + getShiftForNurseDay(schedule.nurseId, day) : ''">
+                <option [value]="''">-</option>
+                <option *ngFor="let shift of shifts" [value]="shift.type || shift.id">
+                  {{ shift.icon }} {{ shift.name }}
+                </option>
+              </select>
+            </td>
+            <td class="cell-hours-neuro">
+              <span class="badge-hours-neuro">{{ getTotalHoursForNurse(schedule.nurseId) }}h</span>
+            </td>
+            <td class="cell-actions-neuro">
+              <button 
+                class="btn-save-nurse-neuro" 
+                (click)="saveNurseSchedule(schedule.nurseId)" 
+                title="Guardar cambios"
+                [disabled]="loading">
+                💾 Guardar
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="loading" class="loading-neuro">
+      <p>⏳ Cargando turnos...</p>
+    </div>
+
+    <div *ngIf="!loading && filteredSchedules.length === 0" class="empty-neuro">
+      <p>No hay enfermeras para mostrar</p>
+    </div>
+
+    <div class="management-footer-neuro">
+      <button class="btn-save-neuro" (click)="saveAllSchedules()" [disabled]="loading">
+        💾 Guardar Todos los Cambios
+      </button>
+    </div>
+  </div>
   </div>
 
   <!-- Modal Editar Turno -->
@@ -207,6 +237,38 @@
       <div class="modal-footer-neuro">
         <button class="btn-cancel-neuro" (click)="closeEditShiftModal()">Cancelar</button>
         <button class="btn-save-neuro" (click)="saveShiftTimes()">💾 Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal editar enfermera desde resumen -->
+  <div class="modal-backdrop-neuro" *ngIf="showEditNurseSummaryModal" (click)="closeEditNurseSummaryModal()">
+    <div class="modal-content-neuro" (click)="$event.stopPropagation()">
+      <div class="modal-header-neuro">
+        <h3>👩‍⚕️ Editar {{ selectedNurseForSummaryEdit?.firstName }} {{ selectedNurseForSummaryEdit?.lastName }}</h3>
+        <button class="btn-close-neuro" (click)="closeEditNurseSummaryModal()">✕</button>
+      </div>
+      <div class="modal-body-neuro">
+        <div class="form-group-neuro">
+          <label>📍 Área asignada</label>
+          <select class="select-neuro" [(ngModel)]="nurseSummaryEditForm.assignedAreaId">
+            <option [ngValue]="null">Sin área</option>
+            <option *ngFor="let area of areas" [ngValue]="area.id">{{ area.name }}</option>
+          </select>
+        </div>
+        <div class="form-group-neuro">
+          <label>⏰ Turno base semanal (opcional)</label>
+          <select class="select-neuro" [(ngModel)]="nurseSummaryEditForm.defaultShift">
+            <option value="">No cambiar turnos</option>
+            <option *ngFor="let shift of shifts" [value]="shift.type || shift.id">
+              {{ shift.icon }} {{ shift.name }}
+            </option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer-neuro">
+        <button class="btn-cancel-neuro" (click)="closeEditNurseSummaryModal()">Cancelar</button>
+        <button class="btn-save-neuro" (click)="saveNurseSummaryChanges()">💾 Guardar</button>
       </div>
     </div>
   </div>

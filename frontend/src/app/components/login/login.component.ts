@@ -10,7 +10,7 @@ import { ToastService } from '../../services/toast.service';
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './login.component.html',
-  styleUrl: './login.component.css',
+  styleUrls: ['../../shared/styles/auth-pages.css', './login.component.css'],
 })
 export class LoginComponent {
   usernameOrEmail: string = '';
@@ -52,9 +52,11 @@ export class LoginComponent {
           this.toastService.warning(this.error);
           // Redirigir a página de verificación
           setTimeout(() => {
-            this.router.navigate(['/verify-email'], {
-              queryParams: { email: err.error?.email }
-            });
+            const q: Record<string, string> = { email: err.error?.email || '' };
+            if (typeof err.error?.smtpConfigured === 'boolean') {
+              q['mailOk'] = err.error.smtpConfigured ? '1' : '0';
+            }
+            void this.router.navigate(['/verify-email'], { queryParams: q });
           }, 2000);
           return;
         }

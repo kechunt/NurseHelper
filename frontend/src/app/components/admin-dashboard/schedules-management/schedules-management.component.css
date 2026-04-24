@@ -1,3 +1,6 @@
+@import '../../../shared/styles/admin-table-unified.css';
+@import '../../../shared/styles/admin-panel-responsive.css';
+
 /* ========== GESTIÓN DE TURNOS - DISEÑO NEUMÓRFICO ========== */
 
 .schedules-management {
@@ -5,6 +8,24 @@
   background: #e0e5ec;
   width: 100%;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 2.25rem;
+}
+
+.summary-unified-neuro,
+.management-unified-neuro {
+  background: #e0e5ec;
+  border-radius: 20px;
+  box-shadow: 10px 10px 20px #bebebe, -10px -10px 20px #ffffff;
+  margin: 0;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid rgba(174, 174, 192, 0.22);
+}
+
+.management-unified-neuro {
+  margin-top: 0;
 }
 
 /* ========== HEADER ========== */
@@ -12,16 +33,21 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: 0;
   padding: 1.5rem 2rem;
   background: #e0e5ec;
-  border-radius: 20px;
-  box-shadow: 8px 8px 16px #bebebe, -8px -8px 16px #ffffff;
+  border-bottom: none;
+}
+
+.compact-header-neuro {
+  margin-bottom: 0;
+  padding: 1.75rem 2rem;
+  min-height: 96px;
 }
 
 .section-title-neuro {
   color: #4a5568;
-  font-size: 2rem;
+  font-size: 1.9rem;
   font-weight: 700;
   margin: 0;
   text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.8);
@@ -351,11 +377,22 @@
 
 /* ========== RESUMEN POR ÁREA ========== */
 .summary-section-neuro {
-  margin-top: 2rem;
-  padding: 2rem;
+  margin-top: 0;
+  padding: 1.5rem;
   background: #e0e5ec;
-  border-radius: 20px;
-  box-shadow: 8px 8px 16px #bebebe, -8px -8px 16px #ffffff;
+  border-top: 1px solid rgba(174, 174, 192, 0.28);
+}
+
+.management-module-neuro {
+  padding: 1.5rem;
+  background: #e0e5ec;
+  border-top: 1px solid rgba(174, 174, 192, 0.28);
+}
+
+.management-footer-neuro {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
 }
 
 .title-summary-neuro {
@@ -376,7 +413,14 @@
   padding: 1.5rem;
   background: #e0e5ec;
   border-radius: 15px;
-  box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
+  box-shadow: inset 5px 5px 10px #bebebe, inset -5px -5px 10px #ffffff;
+  border: 1px solid rgba(174, 174, 192, 0.22);
+  transition: all 0.3s ease;
+}
+
+.area-box-neuro:hover {
+  box-shadow: 8px 8px 16px #bebebe, -8px -8px 16px #ffffff;
+  transform: translateY(-2px);
 }
 
 .area-title-box-neuro {
@@ -395,10 +439,11 @@
 
 .shift-box-neuro {
   margin-bottom: 1.5rem;
-  padding: 1rem;
-  background: #e0e5ec;
+  padding: 0.75rem 0;
+  background: transparent;
   border-radius: 12px;
-  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+  box-shadow: none;
+  border-top: 1px solid rgba(174, 174, 192, 0.25);
 }
 
 .shift-header-box-neuro {
@@ -453,19 +498,39 @@
 }
 
 .nurse-box-neuro {
-  padding: 12px;
+  padding: 1rem;
   background: #e0e5ec;
   border-radius: 10px;
-  box-shadow: 3px 3px 6px #bebebe, -3px -3px 6px #ffffff;
+  box-shadow: inset 5px 5px 10px #bebebe, inset -5px -5px 10px #ffffff;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
+}
+
+.nurse-actions-summary-neuro {
+  margin-top: 0.25rem;
+}
+
+.btn-edit-summary-neuro {
+  padding: 6px 12px;
+  background: #e0e5ec;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #4a5568;
+  box-shadow: 3px 3px 6px #bebebe, -3px -3px 6px #ffffff;
+}
+
+.btn-edit-summary-neuro:hover {
+  box-shadow: 2px 2px 4px #bebebe, -2px -2px 4px #ffffff;
 }
 
 .nurse-box-neuro:hover {
-  box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #ffffff;
-  transform: translateX(3px);
+  box-shadow: 8px 8px 16px #bebebe, -8px -8px 16px #ffffff;
+  transform: translateY(-2px);
 }
 
 .nurse-top-neuro {
@@ -517,25 +582,23 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  backdrop-filter: blur(4px);
 }
 
 .modal-content-neuro {
   background: #e0e5ec;
-  border-radius: 20px;
-  padding: 2rem;
-  max-width: 500px;
-  width: 90%;
-  box-shadow: 20px 20px 40px #bebebe, -20px -20px 40px #ffffff;
+  border-radius: 30px;
+  padding: 0;
+  max-width: 600px;
+  width: 100%;
+  box-shadow: 30px 30px 60px rgba(0, 0, 0, 0.3), -30px -30px 60px rgba(255, 255, 255, 0.1);
 }
 
 .modal-header-neuro {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 3px solid #cbd5e0;
+  padding: 2rem 2rem 1rem;
+  border-bottom: 1px solid rgba(174, 174, 192, 0.3);
 }
 
 .modal-header-neuro h3 {
@@ -562,7 +625,7 @@
 }
 
 .modal-body-neuro {
-  margin-bottom: 1.5rem;
+  padding: 2rem;
 }
 
 .form-group-neuro {
@@ -581,8 +644,8 @@
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
-  padding-top: 1rem;
-  border-top: 3px solid #cbd5e0;
+  padding: 1rem 2rem 2rem;
+  border-top: 1px solid rgba(174, 174, 192, 0.3);
 }
 
 .btn-cancel-neuro {

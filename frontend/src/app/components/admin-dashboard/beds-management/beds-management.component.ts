@@ -13,6 +13,22 @@ import { ConfirmationService } from '../../../services/confirmation.service';
   styleUrl: './beds-management.component.css',
 })
 export class BedsManagementComponent implements OnInit {
+  showOccupiedPatientModal = false;
+  showPatientDetailModal = false;
+  selectedBedForPatientInfo: Bed | null = null;
+  selectedPatientSummary: any | null = null;
+  detailedPatient: any | null = null;
+  patientDetailTab: 'personal' | 'medical' | 'medications' | 'history' | 'tasks' = 'personal';
+  patientDetailForm: {
+    medications: any[];
+    treatmentHistory: any[];
+    pendingTasks: any[];
+  } = {
+    medications: [],
+    treatmentHistory: [],
+    pendingTasks: []
+  };
+
   beds: Bed[] = [];
   areas: Area[] = [];
   patients: any[] = [];
@@ -29,7 +45,12 @@ export class BedsManagementComponent implements OnInit {
   };
   patientSearchTerm: string = '';
   filteredPatients: any[] = [];
+  patientsFromCurrentArea: any[] = [];
   showCreateBedModal = false;
+  showAssignPatientModal = false;
+  assignPatientSearchTerm: string = '';
+  assignablePatients: any[] = [];
+  selectedPatientToAssign: number | null = null;
   createBedForm: { bedNumber: string; areaId: number | null; notes: string } = {
     bedNumber: '',
     areaId: null,
@@ -66,7 +87,11 @@ export class BedsManagementComponent implements OnInit {
           return {
             ...bed,
             isActive: isActiveValue,
-            patientId: bed.patientId !== undefined && bed.patientId !== null ? bed.patientId : null
+            patientId:
+              bed.patientId !== undefined && bed.patientId !== null
+                ? bed.patientId
+                : (bed as any).patient?.id ?? null,
+            patient: (bed as any).patient ?? null
           };
         });
         
@@ -195,6 +220,7 @@ export class BedsManagementComponent implements OnInit {
     this.editBedForm = { bedNumber: '', patientId: null, isActive: true, areaId: null };
     this.patientSearchTerm = '';
     this.filteredPatients = [];
+    this.patientsFromCurrentArea = [];
   }
 
   openCreateBedModal(): void {
@@ -246,43 +272,28 @@ export class BedsManagementComponent implements OnInit {
   loadPatientsForBedArea(areaId: number | null | undefined): void {
     if (!areaId) {
       this.filteredPatients = [];
+      this.patientsFromCurrentArea = [];
       return;
     }
-
-    // Filtrar SOLO pacientes que tienen una cama asignada en esta área específica
-    // O que son el paciente actual de esta cama (para permitir mantener la asignación)
-    this.filteredPatients = this.patients.filter(patient => {
-      // Verificar si el paciente está activo
-      if (patient.isActive === false) {
-        return false;
+    this.adminService.getPatientsPage({
+      areaId,
+      isActive: true,
+      page: 1,
+      limit: 500
+    }).subscribe({
+      next: (res) => {
+        const areaPatients = (res.items || []).filter((patient: any) => patient.isActive !== false);
+        this.patientsFromCurrentArea = areaPatients.sort((a: any, b: any) => {
+          const nameA = `${a.firstName} ${a.lastName}`.toLowerCase();
+          const nameB = `${b.firstName} ${b.lastName}`.toLowerCase();
+          return nameA.localeCompare(nameB);
+        });
+        this.filteredPatients = [...this.patientsFromCurrentArea];
+      },
+      error: () => {
+        this.filteredPatients = [];
+        this.patientsFromCurrentArea = [];
       }
-
-      // Si es el paciente actual de esta cama, siempre mostrarlo (para poder mantenerlo o cambiarlo)
-      const isCurrentBedPatient = patient.id === this.editBedForm.patientId;
-      if (isCurrentBedPatient) {
-        return true;
-      }
-
-      // Para otros pacientes, SOLO mostrarlos si tienen una cama asignada en esta área específica
-      // Verificar usando el áreaId del paciente (que se calcula desde su cama)
-      if (patient.areaId === areaId) {
-        return true;
-      }
-
-      // También verificar directamente desde las camas por si acaso
-      const patientBed = this.beds.find(bed => bed.patientId === patient.id);
-      if (patientBed && patientBed.areaId === areaId) {
-        return true;
-      }
-
-      return false;
-    });
-
-    // Ordenar por nombre
-    this.filteredPatients.sort((a, b) => {
-      const nameA = `${a.firstName} ${a.lastName}`.toLowerCase();
-      const nameB = `${b.firstName} ${b.lastName}`.toLowerCase();
-      return nameA.localeCompare(nameB);
     });
   }
 
@@ -299,19 +310,9 @@ export class BedsManagementComponent implements OnInit {
         this.filteredPatients = [];
         return;
       }
-
-      // Obtener todos los pacientes del área
-      const allPatientsInArea = this.patients.filter(patient => {
-        if (patient.isActive === false) return false;
-        
-        const isCurrentBedPatient = patient.id === this.editBedForm.patientId;
-        if (isCurrentBedPatient) return true;
-        
-        return patient.areaId === areaId;
-      });
       
       // Luego filtrar por búsqueda
-      this.filteredPatients = allPatientsInArea.filter(patient => {
+      this.filteredPatients = this.patientsFromCurrentArea.filter(patient => {
         const fullName = `${patient.firstName} ${patient.lastName}`.toLowerCase();
         const identification = (patient.identificationNumber || '').toLowerCase();
         return fullName.includes(searchLower) || identification.includes(searchLower);
@@ -335,6 +336,58 @@ export class BedsManagementComponent implements OnInit {
     this.filteredPatients = [];
   }
 
+  openAssignPatientModal(): void {
+    if (!this.editBedForm.areaId || !this.selectedBed?.id) {
+      this.toastService.warning('No se pudo identificar el área o cama');
+      return;
+    }
+
+    this.assignPatientSearchTerm = '';
+    this.selectedPatientToAssign = null;
+    this.assignablePatients = [...this.patientsFromCurrentArea];
+    this.showAssignPatientModal = true;
+  }
+
+  closeAssignPatientModal(): void {
+    this.showAssignPatientModal = false;
+    this.assignPatientSearchTerm = '';
+    this.selectedPatientToAssign = null;
+    this.assignablePatients = [];
+  }
+
+  filterAssignablePatients(): void {
+    const search = this.assignPatientSearchTerm.trim().toLowerCase();
+    if (!search) {
+      this.assignablePatients = [...this.patientsFromCurrentArea];
+      return;
+    }
+    this.assignablePatients = this.patientsFromCurrentArea.filter((patient) => {
+      const fullName = `${patient.firstName} ${patient.lastName}`.toLowerCase();
+      const identification = (patient.identificationNumber || '').toLowerCase();
+      return fullName.includes(search) || identification.includes(search);
+    });
+  }
+
+  assignPatientToCurrentBed(): void {
+    if (!this.selectedBed?.id || !this.selectedPatientToAssign) {
+      this.toastService.warning('Selecciona un paciente para asignar');
+      return;
+    }
+
+    this.adminService.assignPatientToBed(this.selectedBed.id, this.selectedPatientToAssign).subscribe({
+      next: () => {
+        const patient = this.patientsFromCurrentArea.find((p) => p.id === this.selectedPatientToAssign);
+        this.editBedForm.patientId = this.selectedPatientToAssign;
+        this.toastService.success(`Paciente ${patient?.firstName || ''} ${patient?.lastName || ''} asignado a la cama`);
+        this.closeAssignPatientModal();
+        this.loadData();
+      },
+      error: (error) => {
+        this.toastService.error(error.error?.message || 'Error al asignar el paciente a la cama');
+      }
+    });
+  }
+
   releaseBed(): void {
     if (confirm('¿Estás seguro de liberar esta cama? El paciente quedará sin cama asignada.')) {
       this.editBedForm.patientId = null;
@@ -345,6 +398,85 @@ export class BedsManagementComponent implements OnInit {
     if (!this.editBedForm.patientId) return '';
     const patient = this.patients.find(p => p.id === this.editBedForm.patientId);
     return patient ? `${patient.firstName} ${patient.lastName}` : '';
+  }
+
+  getPatientNameForBed(bed: Bed): string {
+    if (!bed.patientId) {
+      return 'Sin paciente';
+    }
+    const patientFromList = this.patients.find((p) => p.id === bed.patientId);
+    if (patientFromList) {
+      return `${patientFromList.firstName} ${patientFromList.lastName}`;
+    }
+    if (bed.patient?.firstName || bed.patient?.lastName) {
+      return `${bed.patient.firstName || ''} ${bed.patient.lastName || ''}`.trim();
+    }
+    return `Paciente #${bed.patientId}`;
+  }
+
+  openOccupiedPatientModal(bed: Bed): void {
+    if (!bed.patientId) {
+      this.toastService.warning('Esta cama no tiene paciente asignado');
+      return;
+    }
+
+    this.selectedBedForPatientInfo = bed;
+    const patientFromList = this.patients.find((p) => p.id === bed.patientId) || null;
+    this.selectedPatientSummary = patientFromList || bed.patient || { id: bed.patientId };
+    this.showOccupiedPatientModal = true;
+  }
+
+  closeOccupiedPatientModal(): void {
+    this.showOccupiedPatientModal = false;
+    this.selectedBedForPatientInfo = null;
+    this.selectedPatientSummary = null;
+  }
+
+  openPatientDetailModalFromBed(): void {
+    const patientId = this.selectedPatientSummary?.id || this.selectedBedForPatientInfo?.patientId;
+    if (!patientId) {
+      this.toastService.warning('No se pudo identificar el paciente de esta cama');
+      return;
+    }
+
+    this.adminService.getPatient(patientId).subscribe({
+      next: (patient) => {
+        this.detailedPatient = patient;
+        this.patientDetailForm = {
+          medications: this.parseJsonArray(patient?.medications),
+          treatmentHistory: this.parseJsonArray(patient?.treatmentHistory),
+          pendingTasks: this.parseJsonArray(patient?.pendingTasks)
+        };
+        this.patientDetailTab = 'personal';
+        this.showPatientDetailModal = true;
+      },
+      error: (error) => {
+        const errorMessage = error.error?.message || 'No se pudo cargar la información detallada del paciente';
+        this.toastService.error(errorMessage);
+      }
+    });
+  }
+
+  closePatientDetailModal(): void {
+    this.showPatientDetailModal = false;
+    this.detailedPatient = null;
+    this.patientDetailForm = {
+      medications: [],
+      treatmentHistory: [],
+      pendingTasks: []
+    };
+  }
+
+  private parseJsonArray(value: any): any[] {
+    if (!value) {
+      return [];
+    }
+    try {
+      const parsed = typeof value === 'string' ? JSON.parse(value) : value;
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
   }
 
   /**

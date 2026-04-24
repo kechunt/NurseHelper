@@ -2,7 +2,6 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
-import { AdminService } from '../../services/admin.service';
 import { OverviewComponent } from './overview/overview.component';
 import { UsersManagementComponent } from './users-management/users-management.component';
 import { StaffManagementComponent } from './staff-management/staff-management.component';
@@ -35,7 +34,6 @@ export class AdminDashboardComponent implements OnInit {
 
   constructor(
     private authService: AuthService,
-    private adminService: AdminService,
     private router: Router
   ) {}
   

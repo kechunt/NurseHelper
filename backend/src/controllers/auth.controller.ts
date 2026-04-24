@@ -51,10 +51,11 @@ export class AuthController {
 
       // Verificar que el email esté verificado
       if (!user.emailVerified) {
-        res.status(403).json({ 
+        res.status(403).json({
           message: 'Por favor verifica tu correo electrónico antes de iniciar sesión',
           requiresVerification: true,
-          email: user.email
+          email: user.email,
+          smtpConfigured: emailService.isSmtpConfigured(),
         });
         return;
       }
@@ -183,6 +184,7 @@ export class AuthController {
         message: 'Usuario registrado exitosamente. Por favor verifica tu correo electrónico.',
         requiresVerification: true,
         email: user.email,
+        smtpConfigured: emailService.isSmtpConfigured(),
         // NO enviar token hasta que verifique el email
         user: {
           id: user.id,
@@ -324,9 +326,13 @@ export class AuthController {
         return;
       }
 
+      const smtpConfigured = emailService.isSmtpConfigured();
       res.json({
-        message: 'Código de verificación reenviado exitosamente',
+        message: smtpConfigured
+          ? 'Código de verificación reenviado exitosamente'
+          : 'Código actualizado. El servidor no tiene SMTP configurado: no se envió correo (revisa EMAIL_USER y EMAIL_PASSWORD).',
         email: user.email,
+        smtpConfigured,
       });
     } catch (error) {
       console.error('Error en resendVerificationCode:', error);

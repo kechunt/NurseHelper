@@ -1,0 +1,138 @@
+/* Shared admin panel consistency + responsive rules */
+
+.users-management,
+.patients-management,
+.schedules-management,
+.beds-management,
+.areas-management,
+.staff-management {
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Collapsible/admin module cards with consistent collapsed size */
+.patient-form-section,
+.patients-list-section,
+.summary-unified-neuro,
+.management-unified-neuro,
+.section-card {
+  background: #e0e5ec;
+  border-radius: 20px;
+  box-shadow: 10px 10px 20px #bebebe, -10px -10px 20px #ffffff;
+  border: 1px solid rgba(174, 174, 192, 0.22);
+}
+
+.section-header,
+.section-header-neuro {
+  min-height: 76px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Keep tables and wrappers inside viewport */
+.table-container,
+.patients-table-container,
+.patients-table-container-modal,
+.table-wrapper-neuro {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.neuro-table,
+.patients-table,
+.shifts-table-neuro,
+.unified-tasks-table {
+  min-width: 720px;
+}
+
+/* Responsive modal safety for admin components */
+.modal-backdrop,
+.modal-backdrop-neuro {
+  padding: 1rem;
+}
+
+.modal-content,
+.modal-content-neuro,
+.modal-content.modal-large,
+.modal-content.modal-extra-large,
+.modal-content-neuro.modal-large,
+.modal-content-neuro.modal-extra-large {
+  width: min(100%, 1100px);
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+}
+
+@media (max-width: 992px) {
+  .section-header,
+  .section-header-neuro {
+    min-height: 68px;
+    padding: 0.9rem 1.1rem;
+  }
+
+  .filters-container,
+  .filters-neuro {
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .section-header,
+  .section-header-neuro {
+    min-height: 60px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .patient-form-section,
+  .patients-list-section,
+  .summary-unified-neuro,
+  .management-unified-neuro,
+  .section-card,
+  .filters-container {
+    border-radius: 15px;
+  }
+
+  .neuro-table,
+  .patients-table,
+  .shifts-table-neuro,
+  .unified-tasks-table {
+    min-width: 640px;
+  }
+
+  .modal-content,
+  .modal-content-neuro,
+  .modal-content.modal-large,
+  .modal-content.modal-extra-large,
+  .modal-content-neuro.modal-large,
+  .modal-content-neuro.modal-extra-large {
+    width: 100%;
+    max-height: calc(100vh - 1.5rem);
+    border-radius: 18px;
+  }
+}
+
+@media (max-width: 576px) {
+  .neuro-table,
+  .patients-table,
+  .shifts-table-neuro,
+  .unified-tasks-table {
+    min-width: 560px;
+  }
+
+  .modal-backdrop,
+  .modal-backdrop-neuro {
+    padding: 0.5rem;
+  }
+
+  .modal-content,
+  .modal-content-neuro,
+  .modal-content.modal-large,
+  .modal-content.modal-extra-large,
+  .modal-content-neuro.modal-large,
+  .modal-content-neuro.modal-extra-large {
+    max-height: calc(100vh - 1rem);
+    border-radius: 14px;
+  }
+}

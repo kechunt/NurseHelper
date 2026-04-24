@@ -145,6 +145,11 @@ export class UpdatePatientDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  areaId?: number | null;
 }
 
 export class SaveObservationDto {

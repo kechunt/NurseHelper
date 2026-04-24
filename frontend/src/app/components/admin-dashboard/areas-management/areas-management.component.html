@@ -24,6 +24,7 @@
         </span>
       </div>
       <div class="card-actions">
+        <button class="neuro-btn-icon" (click)="openCreateBedModal(area)" title="Agregar cama">➕</button>
         <button class="neuro-btn-icon" (click)="openModal(area)" title="Editar">✏️</button>
         <button class="neuro-btn-icon" (click)="deleteArea(area)" title="Eliminar">🗑️</button>
       </div>
@@ -66,10 +67,18 @@
           <small *ngIf="!selectedArea">Deja en 0 si no deseas asignar camas ahora</small>
           <small *ngIf="selectedArea">Aumenta el número para agregar más camas</small>
         </div>
+        <div class="input-group" *ngIf="selectedArea">
+          <button class="neuro-btn add-bed-inline-btn" (click)="openCreateBedModal(selectedArea)">
+            ➕ Agregar Cama Directamente
+          </button>
+        </div>
 
         <!-- Sección de gestión de camas cuando se edita un área -->
         <div *ngIf="selectedArea && getBedsForArea(selectedArea.id).length > 0" class="beds-section">
-          <h4 class="beds-section-title">Camas Actuales</h4>
+          <div class="beds-section-header">
+            <h4 class="beds-section-title">Camas Actuales</h4>
+            <button class="neuro-btn add-bed-inline-btn" (click)="openCreateBedModal(selectedArea)">➕ Agregar Cama</button>
+          </div>
           <div class="current-beds-grid">
             <div *ngFor="let bed of getBedsForArea(selectedArea.id)" class="current-bed-item">
               <span class="bed-number-display">{{ bed.bedNumber }}</span>
@@ -98,6 +107,51 @@
       <div class="modal-footer">
         <button class="neuro-btn outlined" (click)="closeModal()">Cancelar</button>
         <button class="neuro-btn" (click)="saveArea()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para crear cama desde gestión de áreas -->
+  <div *ngIf="showCreateBedModal" class="modal-backdrop" (click)="closeCreateBedModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Agregar Nueva Cama</h3>
+        <button class="close-btn" (click)="closeCreateBedModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="input-group">
+          <label for="create-bed-number">Número/Nombre de Cama *</label>
+          <input
+            type="text"
+            id="create-bed-number"
+            class="neuro-input"
+            [(ngModel)]="createBedForm.bedNumber"
+            placeholder="Ej: SAL-001, Cama-1, etc."
+          />
+        </div>
+        <div class="input-group">
+          <label for="create-bed-area">Área *</label>
+          <select id="create-bed-area" class="neuro-select" [(ngModel)]="createBedForm.areaId">
+            <option [value]="null">Selecciona un área</option>
+            <option *ngFor="let area of areas" [value]="area.id">
+              {{ area.name }}
+            </option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label for="create-bed-notes">Notas (opcional)</label>
+          <textarea
+            id="create-bed-notes"
+            class="neuro-input"
+            [(ngModel)]="createBedForm.notes"
+            placeholder="Notas adicionales sobre la cama..."
+            rows="3"
+          ></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="neuro-btn outlined" (click)="closeCreateBedModal()">Cancelar</button>
+        <button class="neuro-btn" (click)="createBed()">Crear Cama</button>
       </div>
     </div>
   </div>
@@ -199,12 +253,17 @@
   </div>
 
   <!-- Tabla de Pacientes sin Área Asignada -->
-  <div class="patients-section">
-    <h3 class="section-subtitle">👤 Pacientes sin Área Asignada</h3>
-    <div *ngIf="patientsWithoutArea.length === 0" class="no-data-message">
+  <div class="patients-section section-card">
+    <div class="section-card-header">
+      <h3 class="section-subtitle">👤 Pacientes sin Área Asignada</h3>
+      <button class="toggle-btn-neuro" (click)="togglePatientsWithoutAreaSection()">
+        {{ showPatientsWithoutAreaSection ? '▼ Ocultar' : '▶ Mostrar' }}
+      </button>
+    </div>
+    <div *ngIf="showPatientsWithoutAreaSection && patientsWithoutArea.length === 0" class="no-data-message">
       <p>No hay pacientes sin área asignada</p>
     </div>
-    <div *ngIf="patientsWithoutArea.length > 0" class="patients-table-container">
+    <div *ngIf="showPatientsWithoutAreaSection && patientsWithoutArea.length > 0" class="patients-table-container">
       <table class="patients-table">
         <thead>
           <tr>
@@ -237,12 +296,17 @@
   </div>
 
   <!-- Tabla Desplegable de Áreas con Pacientes -->
-  <div class="areas-patients-section">
-    <h3 class="section-subtitle">🏥 Pacientes por Área</h3>
-    <div *ngIf="areas.length === 0" class="no-data-message">
+  <div class="areas-patients-section section-card">
+    <div class="section-card-header">
+      <h3 class="section-subtitle">🏥 Pacientes por Área</h3>
+      <button class="toggle-btn-neuro" (click)="togglePatientsByAreaSection()">
+        {{ showPatientsByAreaSection ? '▼ Ocultar' : '▶ Mostrar' }}
+      </button>
+    </div>
+    <div *ngIf="showPatientsByAreaSection && areas.length === 0" class="no-data-message">
       <p>No hay áreas creadas</p>
     </div>
-    <div *ngIf="areas.length > 0" class="areas-patients-list">
+    <div *ngIf="showPatientsByAreaSection && areas.length > 0" class="areas-patients-list">
       <div *ngFor="let area of areas" class="area-patients-item">
         <div class="area-patients-header" (click)="toggleAreaExpansion(area.id!)">
           <div class="area-header-info">

@@ -10,6 +10,7 @@ import {
   Index,
 } from 'typeorm';
 import { Bed } from './Bed';
+import { Area } from './Area';
 import { Schedule } from './Schedule';
 import { User } from './User';
 import { AdministrationHistory } from './AdministrationHistory';
@@ -20,6 +21,7 @@ import { AdministrationHistory } from './AdministrationHistory';
 @Index(['firstName', 'lastName'])
 // @Index(['bedId']) // Comentado temporalmente hasta que se ejecute la migración
 // @Index(['assignedToId']) // Comentado temporalmente hasta que se ejecute la migración
+// @Index(['areaId']) // Comentado temporalmente hasta que se ejecute la migración
 export class Patient {
   @PrimaryGeneratedColumn()
   id: number;
@@ -87,6 +89,13 @@ export class Patient {
   @ManyToOne(() => Bed, (bed) => bed.patients, { nullable: true })
   @JoinColumn({ name: 'bedId' })
   bed: Bed | null;
+
+  @Column({ type: 'int', nullable: true })
+  areaId?: number | null;
+
+  @ManyToOne(() => Area, { nullable: true })
+  @JoinColumn({ name: 'areaId' })
+  area: Area | null;
 
   /** Visible en API para asignación enfermera–paciente (gestión de personal). */
   @Column({ type: 'int', nullable: true })

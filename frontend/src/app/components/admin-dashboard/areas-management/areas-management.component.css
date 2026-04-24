@@ -1,3 +1,6 @@
+@import '../../../shared/styles/admin-table-unified.css';
+@import '../../../shared/styles/admin-panel-responsive.css';
+
 .areas-management {
   width: 100%;
 }
@@ -392,6 +395,20 @@
   margin: 0 0 1rem 0;
 }
 
+.beds-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.add-bed-inline-btn {
+  padding: 8px 14px;
+  font-size: 0.8rem;
+  border-radius: 12px;
+}
+
 .current-beds-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -519,6 +536,43 @@
   margin-bottom: 1.5rem;
   text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8),
     -1px -1px 2px rgba(174, 174, 192, 0.4);
+}
+
+.section-card {
+  background: #e0e5ec;
+  border-radius: 20px;
+  padding: 1.5rem;
+  box-shadow: 10px 10px 20px #bebebe, -10px -10px 20px #ffffff;
+}
+
+.section-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.toggle-btn-neuro {
+  background: #e0e5ec;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #4a5568;
+  cursor: pointer;
+  box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #ffffff;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.toggle-btn-neuro:hover {
+  box-shadow: 3px 3px 6px #bebebe, -3px -3px 6px #ffffff;
+}
+
+.toggle-btn-neuro:active {
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
 }
 
 .no-data-message {

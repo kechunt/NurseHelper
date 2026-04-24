@@ -10,6 +10,7 @@ import { Medication } from './entities/Medication';
 import { MedicationRequest } from './entities/MedicationRequest';
 import { DeliveryHistory } from './entities/DeliveryHistory';
 import { AdministrationHistory } from './entities/AdministrationHistory';
+import { MedicationInventoryMovement } from './entities/MedicationInventoryMovement';
 import { loadEnv } from './utils/env';
 
 loadEnv();
@@ -44,6 +45,7 @@ export const AppDataSource = new DataSource({
     MedicationRequest,
     DeliveryHistory,
     AdministrationHistory,
+    MedicationInventoryMovement,
   ],
   migrations: ['src/migrations/**/*.ts'],
   subscribers: ['src/subscribers/**/*.ts'],

@@ -33,6 +33,14 @@ export class SchedulesManagementComponent implements OnInit {
   
   selectedShift: any = null;
   showEditShiftModal = false;
+  showSummarySection = true;
+  showManagementSection = true;
+  showEditNurseSummaryModal = false;
+  selectedNurseForSummaryEdit: User | null = null;
+  nurseSummaryEditForm: { assignedAreaId: number | null; defaultShift: string } = {
+    assignedAreaId: null,
+    defaultShift: '',
+  };
   
   // Programación semanal
   weeklySchedules: WeeklySchedule[] = [];
@@ -318,6 +326,69 @@ export class SchedulesManagementComponent implements OnInit {
   closeEditShiftModal(): void {
     this.showEditShiftModal = false;
     this.selectedShift = null;
+  }
+
+  toggleSummarySection(): void {
+    this.showSummarySection = !this.showSummarySection;
+  }
+
+  toggleManagementSection(): void {
+    this.showManagementSection = !this.showManagementSection;
+  }
+
+  openEditNurseSummaryModal(nurse: User): void {
+    this.selectedNurseForSummaryEdit = nurse;
+    this.nurseSummaryEditForm = {
+      assignedAreaId: nurse.assignedAreaId || null,
+      defaultShift: '',
+    };
+    this.showEditNurseSummaryModal = true;
+  }
+
+  closeEditNurseSummaryModal(): void {
+    this.showEditNurseSummaryModal = false;
+    this.selectedNurseForSummaryEdit = null;
+    this.nurseSummaryEditForm = { assignedAreaId: null, defaultShift: '' };
+  }
+
+  saveNurseSummaryChanges(): void {
+    if (!this.selectedNurseForSummaryEdit?.id) {
+      return;
+    }
+
+    const nurseId = this.selectedNurseForSummaryEdit.id;
+    const updatePayload: Partial<User> = {
+      assignedAreaId: this.nurseSummaryEditForm.assignedAreaId ?? null,
+    };
+
+    this.loading = true;
+    this.adminService.updateUser(nurseId, updatePayload).subscribe({
+      next: () => {
+        const nurseRef = this.nurses.find((n) => n.id === nurseId);
+        if (nurseRef) {
+          nurseRef.assignedAreaId = this.nurseSummaryEditForm.assignedAreaId ?? null;
+        }
+
+        if (this.nurseSummaryEditForm.defaultShift) {
+          const schedule = this.weeklySchedules.find((s) => s.nurseId === nurseId);
+          if (schedule) {
+            this.days.forEach((day) => {
+              (schedule as any)[day] = this.nurseSummaryEditForm.defaultShift;
+            });
+          }
+        }
+
+        this.applyFilters();
+        this.generateNursesByAreaAndShift();
+        this.loading = false;
+        alert('✅ Área y turno base actualizados para la enfermera');
+        this.closeEditNurseSummaryModal();
+      },
+      error: (error) => {
+        this.loading = false;
+        alert(`❌ Error al actualizar enfermera: ${error.error?.message || error.message}`);
+      },
+    });
   }
 
   saveShiftTimes(): void {

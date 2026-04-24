@@ -3,14 +3,82 @@ import { AppDataSource } from '../data-source';
 import { MedicationRequest, RequestStatus, RequestPriority } from '../entities/MedicationRequest';
 import { DeliveryHistory } from '../entities/DeliveryHistory';
 import { Medication, MedicationStatus } from '../entities/Medication';
+import {
+  MedicationInventoryMovement,
+  InventoryMovementType,
+} from '../entities/MedicationInventoryMovement';
 import { Bed } from '../entities/Bed';
 import { Patient } from '../entities/Patient';
 import { Area } from '../entities/Area';
 import { AuthRequest } from '../middleware/auth.middleware';
+import {
+  classifyMedicationExpiry,
+  daysToExpiry,
+  EXPIRING_SOON_DAYS,
+} from '../utils/inventory-expiry';
+import { Between } from 'typeorm';
+
+/** Stock + caducidad (columna `expiryDate`). Lotes futuros: tabla aparte por entrada. */
+function applyMedicationStockAndStatus(medication: Medication, stock: number): void {
+  medication.stock = stock;
+  if (classifyMedicationExpiry(medication.expiryDate) === 'expired') {
+    medication.status = MedicationStatus.EXPIRED;
+    return;
+  }
+  if (stock === 0) {
+    medication.status = MedicationStatus.OUT_OF_STOCK;
+  } else if (stock < medication.minStock) {
+    medication.status = MedicationStatus.LOW_STOCK;
+  } else {
+    medication.status = MedicationStatus.AVAILABLE;
+  }
+}
+
+function serializeInventoryMedication(m: Medication) {
+  const expiryClassification = classifyMedicationExpiry(m.expiryDate);
+  const stock = m.stock;
+  let status: MedicationStatus;
+  if (expiryClassification === 'expired') {
+    status = MedicationStatus.EXPIRED;
+  } else if (stock === 0) {
+    status = MedicationStatus.OUT_OF_STOCK;
+  } else if (stock < m.minStock) {
+    status = MedicationStatus.LOW_STOCK;
+  } else {
+    status = MedicationStatus.AVAILABLE;
+  }
+  return {
+    id: m.id,
+    name: m.name,
+    dosage: m.dosage,
+    description: m.description,
+    stock: m.stock,
+    minStock: m.minStock,
+    location: m.location,
+    expiryDate: m.expiryDate,
+    status,
+    isActive: m.isActive,
+    createdAt: m.createdAt,
+    updatedAt: m.updatedAt,
+    expiryClassification,
+    daysToExpiry: daysToExpiry(m.expiryDate),
+    expiringSoonDays: EXPIRING_SOON_DAYS,
+  };
+}
+
+function parsePagination(query: Request['query']) {
+  const pageRaw = parseInt(String(query.page || ''), 10);
+  const limitRaw = parseInt(String(query.limit || ''), 10);
+  const paged = Number.isFinite(pageRaw) && Number.isFinite(limitRaw) && pageRaw > 0 && limitRaw > 0;
+  const page = paged ? pageRaw : 1;
+  const limit = paged ? Math.min(Math.max(limitRaw, 1), 200) : 0;
+  return { paged, page, limit, skip: paged ? (page - 1) * limit : 0 };
+}
 
 export const getMedicationRequests = async (req: Request, res: Response) => {
   try {
     const { status } = req.query;
+    const { paged, page, limit, skip } = parsePagination(req.query);
     
     const requestRepo = AppDataSource.getRepository(MedicationRequest);
     const bedRepo = AppDataSource.getRepository(Bed);
@@ -26,7 +94,13 @@ export const getMedicationRequests = async (req: Request, res: Response) => {
       query.where('mr.status = :status', { status });
     }
 
-    const requests = await query.getMany();
+    if (paged) {
+      query.skip(skip).take(limit);
+    }
+
+    const [requests, total] = paged
+      ? await query.getManyAndCount()
+      : [await query.getMany(), 0];
     
     // Actualizar información de pacientes con datos actualizados de camas y áreas
     const updatedRequests = await Promise.all(requests.map(async (request) => {
@@ -80,7 +154,50 @@ export const getMedicationRequests = async (req: Request, res: Response) => {
       return request;
     }));
     
-    res.json(updatedRequests);
+    if (!paged) {
+      res.json(updatedRequests);
+      return;
+    }
+
+    /** Totales reales en BD (no solo la página actual) — para KPI del panel de farmacia */
+    const pipelineStatuses = [
+      RequestStatus.PENDING,
+      RequestStatus.IN_PREPARATION,
+      RequestStatus.READY,
+    ] as const;
+    const summaryRaw = await requestRepo
+      .createQueryBuilder('mr')
+      .select('mr.status', 'status')
+      .addSelect('COUNT(mr.id)', 'cnt')
+      .where('mr.status IN (:...sts)', { sts: [...pipelineStatuses] })
+      .groupBy('mr.status')
+      .getRawMany();
+    const openByStatus: Record<string, number> = {
+      pending: 0,
+      in_preparation: 0,
+      ready: 0,
+    };
+    for (const row of summaryRaw) {
+      const st = String(row.status);
+      if (st in openByStatus) {
+        openByStatus[st] = parseInt(String(row.cnt), 10) || 0;
+      }
+    }
+
+    res.json({
+      data: updatedRequests,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / limit)),
+      },
+      openByStatus: {
+        pending: openByStatus.pending,
+        in_preparation: openByStatus.in_preparation,
+        ready: openByStatus.ready,
+      },
+    });
   } catch (error) {
     console.error('Error al obtener solicitudes:', error);
     res.status(500).json({ message: 'Error al obtener solicitudes' });
@@ -189,13 +306,23 @@ export const deliverMedication = async (req: Request, res: Response) => {
 
     const medication = await medicationRepo.findOne({ where: { id: request.medicationId } });
     if (medication) {
-      medication.stock = Math.max(0, medication.stock - request.quantity);
-      if (medication.stock === 0) {
-        medication.status = MedicationStatus.OUT_OF_STOCK;
-      } else if (medication.stock < medication.minStock) {
-        medication.status = MedicationStatus.LOW_STOCK;
-      }
+      const stockBefore = medication.stock;
+      const newStock = Math.max(0, medication.stock - request.quantity);
+      applyMedicationStockAndStatus(medication, newStock);
       await medicationRepo.save(medication);
+
+      const movementRepo = AppDataSource.getRepository(MedicationInventoryMovement);
+      const movement = movementRepo.create({
+        medicationId: medication.id,
+        movementType: InventoryMovementType.DELIVERY,
+        quantityDelta: -request.quantity,
+        stockBefore,
+        stockAfter: medication.stock,
+        reason: notes?.trim() || `Entrega solicitud ${request.requestId}`,
+        performedById: pharmacistId,
+        medicationRequestId: request.id,
+      });
+      await movementRepo.save(movement);
     }
 
     res.json({ 
@@ -212,6 +339,7 @@ export const deliverMedication = async (req: Request, res: Response) => {
 export const getDeliveryHistory = async (req: Request, res: Response) => {
   try {
     const { startDate, endDate, includeCancelled } = req.query;
+    const { paged, page, limit, skip } = parsePagination(req.query);
     
     const deliveryRepo = AppDataSource.getRepository(DeliveryHistory);
     const requestRepo = AppDataSource.getRepository(MedicationRequest);
@@ -227,7 +355,14 @@ export const getDeliveryHistory = async (req: Request, res: Response) => {
       deliveryQuery.where('dh.deliveredAt BETWEEN :startDate AND :endDate', { startDate, endDate });
     }
 
-    const deliveries = await deliveryQuery.limit(100).getMany();
+    if (paged) {
+      deliveryQuery.skip(skip).take(limit);
+    } else {
+      deliveryQuery.limit(100);
+    }
+    const [deliveries, deliveriesTotal] = paged
+      ? await deliveryQuery.getManyAndCount()
+      : [await deliveryQuery.getMany(), 0];
     
     // Obtener solicitudes rechazadas si se solicita
     let cancelledRequests: MedicationRequest[] = [];
@@ -242,7 +377,12 @@ export const getDeliveryHistory = async (req: Request, res: Response) => {
         cancelledQuery.andWhere('mr.updatedAt BETWEEN :startDate AND :endDate', { startDate, endDate });
       }
       
-      cancelledRequests = await cancelledQuery.limit(100).getMany();
+      if (paged) {
+        cancelledQuery.skip(skip).take(limit);
+      } else {
+        cancelledQuery.limit(100);
+      }
+      cancelledRequests = await cancelledQuery.getMany();
     }
     
     // Formatear respuesta con entregas y rechazos
@@ -265,7 +405,31 @@ export const getDeliveryHistory = async (req: Request, res: Response) => {
       }))
     };
     
-    res.json(history);
+    if (!paged) {
+      res.json(history);
+      return;
+    }
+
+    const dayStart = new Date();
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date();
+    dayEnd.setHours(23, 59, 59, 999);
+    const deliveredTodayCount = await deliveryRepo.count({
+      where: { deliveredAt: Between(dayStart, dayEnd) },
+    });
+
+    res.json({
+      ...history,
+      pagination: {
+        page,
+        limit,
+        total: deliveriesTotal,
+        totalPages: Math.max(1, Math.ceil(deliveriesTotal / limit)),
+      },
+      summary: {
+        deliveredTodayCount,
+      },
+    });
   } catch (error) {
     console.error('Error al obtener historial:', error);
     res.status(500).json({ message: 'Error al obtener historial' });
@@ -274,12 +438,32 @@ export const getDeliveryHistory = async (req: Request, res: Response) => {
 
 export const getInventory = async (req: Request, res: Response) => {
   try {
+    const { paged, page, limit, skip } = parsePagination(req.query);
     const medicationRepo = AppDataSource.getRepository(Medication);
-    const medications = await medicationRepo.find({
+    if (!paged) {
+      const medications = await medicationRepo.find({
+        where: { isActive: true },
+        order: { name: 'ASC' },
+      });
+      res.json(medications.map(serializeInventoryMedication));
+      return;
+    }
+
+    const [medications, total] = await medicationRepo.findAndCount({
       where: { isActive: true },
-      order: { name: 'ASC' }
+      order: { name: 'ASC' },
+      skip,
+      take: limit,
     });
-    res.json(medications);
+    res.json({
+      data: medications.map(serializeInventoryMedication),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / limit)),
+      },
+    });
   } catch (error) {
     console.error('Error al obtener inventario:', error);
     res.status(500).json({ message: 'Error al obtener inventario' });
@@ -302,21 +486,174 @@ export const updateMedicationStock = async (req: Request, res: Response) => {
       return res.status(404).json({ message: 'Medicamento no encontrado' });
     }
 
-    medication.stock = stock;
-
-    if (stock === 0) {
-      medication.status = MedicationStatus.OUT_OF_STOCK;
-    } else if (stock < medication.minStock) {
-      medication.status = MedicationStatus.LOW_STOCK;
-    } else {
-      medication.status = MedicationStatus.AVAILABLE;
-    }
+    applyMedicationStockAndStatus(medication, stock);
 
     await medicationRepo.save(medication);
     res.json({ message: 'Stock actualizado', medication });
   } catch (error) {
     console.error('Error al actualizar stock:', error);
     res.status(500).json({ message: 'Error al actualizar stock' });
+  }
+};
+
+export const postInventoryMovement = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { type, quantity, reason, expiryDate: expiryDateInput } = req.body;
+    const authReq = req as AuthRequest;
+    const userId = authReq.user?.id ?? null;
+
+    if (!['entry', 'exit', 'adjustment'].includes(type)) {
+      return res.status(400).json({ message: 'Tipo de movimiento inválido' });
+    }
+
+    const qty = Number(quantity);
+    if (!Number.isFinite(qty) || qty < 0) {
+      return res.status(400).json({ message: 'Cantidad inválida' });
+    }
+
+    const queryRunner = AppDataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const medicationRepo = queryRunner.manager.getRepository(Medication);
+      const medication = await medicationRepo.findOne({ where: { id: parseInt(id) } });
+
+      if (!medication) {
+        await queryRunner.rollbackTransaction();
+        return res.status(404).json({ message: 'Medicamento no encontrado' });
+      }
+
+      const stockBefore = medication.stock;
+      let stockAfter = stockBefore;
+      let quantityDelta = 0;
+      let movementType: InventoryMovementType;
+
+      if (type === 'entry') {
+        movementType = InventoryMovementType.ENTRY;
+        stockAfter = stockBefore + qty;
+        quantityDelta = qty;
+      } else if (type === 'exit') {
+        movementType = InventoryMovementType.EXIT;
+        stockAfter = stockBefore - qty;
+        quantityDelta = -qty;
+        if (stockAfter < 0) {
+          await queryRunner.rollbackTransaction();
+          return res.status(400).json({ message: 'Stock insuficiente para esta salida' });
+        }
+      } else {
+        movementType = InventoryMovementType.ADJUSTMENT;
+        stockAfter = qty;
+        quantityDelta = stockAfter - stockBefore;
+      }
+
+      let entryExpiryApplied = false;
+      if (type === 'entry' && expiryDateInput) {
+        const raw = String(expiryDateInput).slice(0, 10);
+        const parsed = new Date(`${raw}T12:00:00.000Z`);
+        if (!Number.isNaN(parsed.getTime())) {
+          medication.expiryDate = parsed;
+          entryExpiryApplied = true;
+        }
+      }
+
+      applyMedicationStockAndStatus(medication, stockAfter);
+      await medicationRepo.save(medication);
+
+      let reasonText = typeof reason === 'string' && reason.trim() ? reason.trim() : null;
+      if (entryExpiryApplied) {
+        const ymd = String(expiryDateInput).slice(0, 10);
+        reasonText = reasonText
+          ? `${reasonText} · Caducidad referida: ${ymd}`
+          : `Caducidad referida (entrada): ${ymd}`;
+      }
+
+      const movementRepo = queryRunner.manager.getRepository(MedicationInventoryMovement);
+      const movement = movementRepo.create({
+        medicationId: medication.id,
+        movementType,
+        quantityDelta,
+        stockBefore,
+        stockAfter,
+        reason: reasonText,
+        performedById: userId,
+        medicationRequestId: null,
+      });
+      await movementRepo.save(movement);
+
+      await queryRunner.commitTransaction();
+      res.json({ message: 'Movimiento registrado', medication, movement });
+    } catch (inner) {
+      await queryRunner.rollbackTransaction();
+      throw inner;
+    } finally {
+      await queryRunner.release();
+    }
+  } catch (error) {
+    console.error('Error al registrar movimiento de inventario:', error);
+    res.status(500).json({ message: 'Error al registrar movimiento de inventario' });
+  }
+};
+
+export const getInventoryMovements = async (req: Request, res: Response) => {
+  try {
+    const medicationId = parseInt(String(req.query.medicationId || ''), 10);
+    const { paged, page, limit, skip } = parsePagination(req.query);
+    const fallbackLimitRaw = parseInt(String(req.query.limit || '100'), 10);
+    const fallbackLimit = Number.isFinite(fallbackLimitRaw)
+      ? Math.min(Math.max(fallbackLimitRaw, 1), 500)
+      : 100;
+
+    if (!medicationId || medicationId < 1) {
+      return res.status(400).json({ message: 'medicationId es requerido' });
+    }
+
+    const movementRepo = AppDataSource.getRepository(MedicationInventoryMovement);
+    const qb = movementRepo
+      .createQueryBuilder('m')
+      .leftJoinAndSelect('m.performedBy', 'performedBy')
+      .where('m.medicationId = :medicationId', { medicationId })
+      .orderBy('m.createdAt', 'DESC');
+    if (paged) {
+      qb.skip(skip).take(limit);
+    } else {
+      qb.take(fallbackLimit);
+    }
+    const [rows, total] = paged ? await qb.getManyAndCount() : [await qb.getMany(), 0];
+
+    const payload = rows.map((m) => ({
+      id: m.id,
+      medicationId: m.medicationId,
+      movementType: m.movementType,
+      quantityDelta: m.quantityDelta,
+      stockBefore: m.stockBefore,
+      stockAfter: m.stockAfter,
+      reason: m.reason,
+      createdAt: m.createdAt,
+      performedByName: m.performedBy
+        ? `${m.performedBy.firstName} ${m.performedBy.lastName}`.trim()
+        : null,
+      medicationRequestId: m.medicationRequestId,
+    }));
+
+    if (!paged) {
+      res.json(payload);
+      return;
+    }
+
+    res.json({
+      data: payload,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / limit)),
+      },
+    });
+  } catch (error) {
+    console.error('Error al obtener movimientos de inventario:', error);
+    res.status(500).json({ message: 'Error al obtener movimientos de inventario' });
   }
 };
 
@@ -349,17 +686,14 @@ export const createMedication = async (req: Request, res: Response) => {
     medication.isActive = true;
 
     if (expiryDate) {
-      medication.expiryDate = new Date(expiryDate);
+      const raw = String(expiryDate).slice(0, 10);
+      const parsed = new Date(`${raw}T12:00:00.000Z`);
+      if (!Number.isNaN(parsed.getTime())) {
+        medication.expiryDate = parsed;
+      }
     }
 
-    // Determinar estado inicial
-    if (medication.stock === 0) {
-      medication.status = MedicationStatus.OUT_OF_STOCK;
-    } else if (medication.stock < medication.minStock) {
-      medication.status = MedicationStatus.LOW_STOCK;
-    } else {
-      medication.status = MedicationStatus.AVAILABLE;
-    }
+    applyMedicationStockAndStatus(medication, medication.stock);
 
     await medicationRepo.save(medication);
     res.json({ message: 'Medicamento creado exitosamente', medication });
