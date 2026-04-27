@@ -156,10 +156,28 @@
 }
 
 .stat {
-  background: #d1d9e6;
+  background: #e0e5ec;
   padding: 0.5rem 0.75rem;
   border-radius: 10px;
-  box-shadow: inset 5px 5px 10px #bebebe, inset -5px -5px 10px #ffffff;
+  box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
+  border: none;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.stat:hover {
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+  transform: translateY(-1px);
+}
+
+.stat:active {
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+  transform: translateY(0);
 }
 
 .card-actions {

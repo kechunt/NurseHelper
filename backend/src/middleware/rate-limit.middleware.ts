@@ -81,6 +81,25 @@ class RateLimiter {
   }
 }
 
+function isLocalDevelopmentRequest(req: Request): boolean {
+  if (process.env.NODE_ENV !== 'development') {
+    return false;
+  }
+
+  const ip = req.ip || req.socket.remoteAddress || '';
+  const forwardedFor = String(req.headers['x-forwarded-for'] || '');
+  const host = String(req.headers.host || '');
+
+  return (
+    ip.includes('127.0.0.1') ||
+    ip.includes('::1') ||
+    forwardedFor.includes('127.0.0.1') ||
+    forwardedFor.includes('::1') ||
+    host.startsWith('localhost') ||
+    host.startsWith('127.0.0.1')
+  );
+}
+
 // Rate limiters para diferentes endpoints
 const generalLimiter = new RateLimiter(15 * 60 * 1000, 100); // 100 requests por 15 minutos
 const authLimiter = new RateLimiter(15 * 60 * 1000, 5); // 5 intentos de login por 15 minutos
@@ -96,6 +115,12 @@ export function rateLimitMiddleware(
   const limiter = new RateLimiter(windowMs, maxRequests);
 
   return (req: Request, res: Response, next: NextFunction): void => {
+    // En desarrollo local, no bloquear peticiones desde localhost.
+    if (isLocalDevelopmentRequest(req)) {
+      next();
+      return;
+    }
+
     const result = limiter.check(req);
 
     // Agregar headers de rate limit
@@ -123,6 +148,9 @@ export function rateLimitMiddleware(
  * Rate limiting para autenticación (más estricto)
  */
 export function authRateLimitMiddleware() {
+  if (process.env.NODE_ENV === 'development') {
+    return rateLimitMiddleware(15 * 60 * 1000, 200);
+  }
   return rateLimitMiddleware(15 * 60 * 1000, 5);
 }
 

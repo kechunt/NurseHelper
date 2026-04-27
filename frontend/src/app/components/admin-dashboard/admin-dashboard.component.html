@@ -1,15 +1,17 @@
 <div class="admin-dashboard">
   <div class="dashboard-header">
     <div class="header-content">
-      <div class="logo-section">
+      <div class="logo-section" (click)="goToOverviewFromLogo()" role="button" tabindex="0" (keydown.enter)="goToOverviewFromLogo()" (keydown.space)="goToOverviewFromLogo(); $event.preventDefault()">
         <img src="/nursehelper.png" alt="NurseHelper" class="header-logo" />
-        <h1 class="dashboard-title">Panel de Administración</h1>
+        <div class="title-section">
+          <h1 class="dashboard-title">Panel de Administración</h1>
+        </div>
       </div>
       <div class="user-section">
-        <div class="user-info">
+        <button class="user-info profile-trigger-btn" (click)="openProfileModal()" title="Editar mi información">
           <span class="user-name">{{ currentUser()?.firstName || '' }} {{ currentUser()?.lastName || '' }}</span>
           <span class="user-role">Administrador</span>
-        </div>
+        </button>
         <button class="neuro-btn-icon logout-btn" (click)="logout()" title="Cerrar Sesión">
           🚪
         </button>
@@ -99,6 +101,65 @@
       <div *ngIf="hasVisitedTab('schedules')" [hidden]="activeTab !== 'schedules'" class="tab-content">
         <app-schedules-management></app-schedules-management>
       </div>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="showProfileModal" class="modal-backdrop" (click)="closeProfileModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>✏️ Editar Usuario</h3>
+      <button class="close-btn" (click)="closeProfileModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="input-group">
+          <label for="profile-firstName">Nombre *</label>
+          <input
+            type="text"
+            id="profile-firstName"
+            class="neuro-input"
+            [(ngModel)]="profileForm.firstName"
+            placeholder="Ingrese el nombre"
+          />
+        </div>
+        <div class="input-group">
+          <label for="profile-lastName">Apellido *</label>
+          <input
+            type="text"
+            id="profile-lastName"
+            class="neuro-input"
+            [(ngModel)]="profileForm.lastName"
+            placeholder="Ingrese el apellido"
+          />
+        </div>
+        <div class="input-group">
+          <label for="profile-username">Usuario *</label>
+          <input
+            type="text"
+            id="profile-username"
+            class="neuro-input"
+            [(ngModel)]="profileForm.username"
+            placeholder="Ingrese el nombre de usuario"
+          />
+        </div>
+        <div class="input-group">
+          <label for="profile-email">Email *</label>
+          <input
+            type="email"
+            id="profile-email"
+            class="neuro-input"
+            [(ngModel)]="profileForm.email"
+            placeholder="usuario@ejemplo.com"
+          />
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="neuro-btn outlined" (click)="closeProfileModal()">Cancelar</button>
+      <button class="neuro-btn" (click)="saveProfile()" [disabled]="savingProfile">
+        {{ savingProfile ? 'Guardando...' : 'Guardar cambios' }}
+      </button>
     </div>
   </div>
 </div>

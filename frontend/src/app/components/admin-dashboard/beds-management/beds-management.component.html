@@ -42,7 +42,7 @@
           Disponibles
         </button>
         <button
-          class="neuro-btn filter-btn"
+          class="neuro-btn filter-btn state-unavailable-btn"
           [class.active]="filterStatus === 'unavailable'"
           (click)="filterStatus = 'unavailable'"
         >
@@ -79,12 +79,12 @@
               {{ getBedStatusLabel(bed) }}
             </span>
           </div>
-          <div *ngIf="bed.patientId && bed.patient" class="bed-patient">
-            👤 {{ bed.patient.firstName }} {{ bed.patient.lastName }}
+          <div *ngIf="getBedStatusLabel(bed) === 'Ocupada'" class="bed-patient">
+            👤 {{ getPatientNameForBed(bed) }}
           </div>
           <div class="bed-actions">
             <button
-              *ngIf="bed.patientId"
+              *ngIf="getBedStatusLabel(bed) === 'Ocupada'"
               class="patient-info-btn"
               (click)="openOccupiedPatientModal(bed)"
               title="Ver paciente asignado"

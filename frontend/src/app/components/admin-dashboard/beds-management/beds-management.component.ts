@@ -64,6 +64,41 @@ export class BedsManagementComponent implements OnInit {
     private confirmationService: ConfirmationService
   ) {}
 
+  private toId(value: any): number | null {
+    if (value === null || value === undefined || value === '') return null;
+    const parsed = typeof value === 'number' ? value : parseInt(String(value), 10);
+    return Number.isNaN(parsed) ? null : parsed;
+  }
+
+  private isBedOccupied(bed: Bed): boolean {
+    return this.toId((bed as any).patientId) !== null;
+  }
+
+  private syncBedsOccupancyFromPatients(): void {
+    const bedById = new Map<number, Bed>();
+    this.beds.forEach((bed) => {
+      const bedId = this.toId((bed as any).id);
+      if (bedId !== null) {
+        (bed as any).patientId = this.toId((bed as any).patientId);
+        bedById.set(bedId, bed);
+      }
+    });
+
+    this.patients.forEach((patient: any) => {
+      const bedId = this.toId(patient?.bed?.id) ?? this.toId(patient?.bedId);
+      if (bedId === null) return;
+      const bed = bedById.get(bedId);
+      if (!bed) return;
+      (bed as any).patientId = this.toId(patient.id);
+      (bed as any).patient = {
+        id: this.toId(patient.id),
+        firstName: patient.firstName,
+        lastName: patient.lastName,
+        identificationNumber: patient.identificationNumber ?? null,
+      };
+    });
+  }
+
   ngOnInit(): void {
     this.loadData();
   }
@@ -87,10 +122,7 @@ export class BedsManagementComponent implements OnInit {
           return {
             ...bed,
             isActive: isActiveValue,
-            patientId:
-              bed.patientId !== undefined && bed.patientId !== null
-                ? bed.patientId
-                : (bed as any).patient?.id ?? null,
+            patientId: this.toId((bed as any).patientId) ?? this.toId((bed as any).patient?.id),
             patient: (bed as any).patient ?? null
           };
         });
@@ -122,21 +154,27 @@ export class BedsManagementComponent implements OnInit {
    * Carga pacientes y los relaciona con sus camas para obtener el área
    */
   private loadPatientsWithBedInfo(): void {
-    this.adminService.getPatients().subscribe({
+    this.adminService.getPatients(false).subscribe({
       next: (patients) => {
         // Cargar pacientes activos con información de su cama y área
         this.patients = patients
           .filter((p: any) => p.isActive)
           .map((patient: any) => {
-            // Encontrar la cama del paciente si tiene una asignada
-            const patientBed = this.beds.find(bed => bed.patientId === patient.id);
+            const patientId = this.toId(patient.id);
+            const patientBedId = this.toId(patient?.bed?.id) ?? this.toId(patient?.bedId);
+            const patientBed = patientBedId
+              ? this.beds.find(bed => this.toId(bed.id) === patientBedId)
+              : this.beds.find(bed => this.toId((bed as any).patientId) === patientId);
             return {
               ...patient,
+              id: patientId,
               bedId: patientBed?.id || null,
               areaId: patientBed?.areaId || null,
               bedNumber: patientBed?.bedNumber || null
             };
           });
+
+        this.syncBedsOccupancyFromPatients();
         
         // Si hay un modal abierto, recargar los pacientes filtrados
         if (this.showEditBedModal && this.editBedForm.areaId) {
@@ -159,9 +197,9 @@ export class BedsManagementComponent implements OnInit {
 
     // Filtrar por estado
     if (this.filterStatus === 'occupied') {
-      filtered = filtered.filter((bed) => bed.patientId && bed.isActive !== false);
+      filtered = filtered.filter((bed) => this.isBedOccupied(bed) && bed.isActive !== false);
     } else if (this.filterStatus === 'available') {
-      filtered = filtered.filter((bed) => !bed.patientId && bed.isActive !== false);
+      filtered = filtered.filter((bed) => !this.isBedOccupied(bed) && bed.isActive !== false);
     } else if (this.filterStatus === 'unavailable') {
       filtered = filtered.filter((bed) => bed.isActive === false);
     }
@@ -279,10 +317,23 @@ export class BedsManagementComponent implements OnInit {
       areaId,
       isActive: true,
       page: 1,
-      limit: 500
+      limit: 1000
     }).subscribe({
       next: (res) => {
-        const areaPatients = (res.items || []).filter((patient: any) => patient.isActive !== false);
+        const responsePatients = (res.items || []).filter((patient: any) => patient.isActive !== false);
+        const fallbackPatients = this.patients.filter((patient: any) => {
+          const patientAreaId = this.toId(patient?.areaId);
+          return patient.isActive !== false && patientAreaId === this.toId(areaId);
+        });
+
+        const mergedById = new Map<number, any>();
+        [...responsePatients, ...fallbackPatients].forEach((patient: any) => {
+          const patientId = this.toId(patient?.id);
+          if (patientId === null) return;
+          mergedById.set(patientId, patient);
+        });
+
+        const areaPatients = Array.from(mergedById.values());
         this.patientsFromCurrentArea = areaPatients.sort((a: any, b: any) => {
           const nameA = `${a.firstName} ${a.lastName}`.toLowerCase();
           const nameB = `${b.firstName} ${b.lastName}`.toLowerCase();
@@ -395,34 +446,37 @@ export class BedsManagementComponent implements OnInit {
   }
 
   getCurrentPatientName(): string {
-    if (!this.editBedForm.patientId) return '';
-    const patient = this.patients.find(p => p.id === this.editBedForm.patientId);
+    const currentPatientId = this.toId(this.editBedForm.patientId);
+    if (!currentPatientId) return '';
+    const patient = this.patients.find(p => this.toId((p as any).id) === currentPatientId);
     return patient ? `${patient.firstName} ${patient.lastName}` : '';
   }
 
   getPatientNameForBed(bed: Bed): string {
-    if (!bed.patientId) {
+    const patientId = this.toId((bed as any).patientId);
+    if (!patientId) {
       return 'Sin paciente';
     }
-    const patientFromList = this.patients.find((p) => p.id === bed.patientId);
+    const patientFromList = this.patients.find((p) => this.toId((p as any).id) === patientId);
     if (patientFromList) {
       return `${patientFromList.firstName} ${patientFromList.lastName}`;
     }
     if (bed.patient?.firstName || bed.patient?.lastName) {
       return `${bed.patient.firstName || ''} ${bed.patient.lastName || ''}`.trim();
     }
-    return `Paciente #${bed.patientId}`;
+    return `Paciente #${patientId}`;
   }
 
   openOccupiedPatientModal(bed: Bed): void {
-    if (!bed.patientId) {
+    if (!this.isBedOccupied(bed)) {
       this.toastService.warning('Esta cama no tiene paciente asignado');
       return;
     }
 
     this.selectedBedForPatientInfo = bed;
-    const patientFromList = this.patients.find((p) => p.id === bed.patientId) || null;
-    this.selectedPatientSummary = patientFromList || bed.patient || { id: bed.patientId };
+    const patientId = this.toId((bed as any).patientId);
+    const patientFromList = this.patients.find((p) => this.toId((p as any).id) === patientId) || null;
+    this.selectedPatientSummary = patientFromList || (bed as any).patient || { id: patientId };
     this.showOccupiedPatientModal = true;
   }
 
@@ -483,8 +537,9 @@ export class BedsManagementComponent implements OnInit {
    * Obtiene la cama asignada a un paciente
    */
   getPatientBed(patientId: number | null | undefined): Bed | undefined {
-    if (!patientId) return undefined;
-    return this.beds.find(bed => bed.patientId === patientId);
+    const normalizedPatientId = this.toId(patientId);
+    if (!normalizedPatientId) return undefined;
+    return this.beds.find(bed => this.toId((bed as any).patientId) === normalizedPatientId);
   }
 
   saveBedChanges(): void {
@@ -565,7 +620,7 @@ export class BedsManagementComponent implements OnInit {
   }
 
   async deleteBed(bed: Bed): Promise<void> {
-    if (bed.patientId) {
+    if (this.isBedOccupied(bed)) {
       this.toastService.warning('No se puede eliminar una cama que tiene un paciente asignado. Por favor, libera primero la cama.');
       return;
     }
@@ -606,7 +661,7 @@ export class BedsManagementComponent implements OnInit {
    */
   getBedClass(bed: Bed): string {
     const isUnavailable = bed.isActive === false;
-    const isOccupied = bed.patientId !== null && bed.patientId !== undefined;
+    const isOccupied = this.isBedOccupied(bed);
     
     return isUnavailable ? 'unavailable' : isOccupied ? 'occupied' : 'available';
   }
@@ -618,7 +673,7 @@ export class BedsManagementComponent implements OnInit {
     if (bed.isActive === false) {
       return 'No Disponible';
     }
-    if (bed.patientId !== null && bed.patientId !== undefined) {
+    if (this.isBedOccupied(bed)) {
       return 'Ocupada';
     }
     return 'Disponible';

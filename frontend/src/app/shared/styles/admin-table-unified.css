@@ -192,3 +192,70 @@
   background: #fed7d7;
   color: #9b2c2c;
 }
+
+/* ===== Normalizacion forzada: todas las tablas del panel admin ===== */
+:host .table-container,
+:host .patients-table-container,
+:host .patients-table-container-modal,
+:host .table-wrapper-neuro {
+  overflow-x: auto !important;
+  border-radius: 15px !important;
+  background: #d1d9e6 !important;
+  box-shadow: inset 5px 5px 10px #bebebe, inset -5px -5px 10px #ffffff !important;
+  padding: 1rem !important;
+}
+
+:host .neuro-table,
+:host .patients-table,
+:host .shifts-table-neuro,
+:host .unified-tasks-table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  background: #e0e5ec !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+}
+
+:host .neuro-table thead,
+:host .patients-table thead,
+:host .shifts-table-neuro thead,
+:host .unified-tasks-table thead {
+  background: #d1d9e6 !important;
+}
+
+:host .neuro-table th,
+:host .patients-table th,
+:host .shifts-table-neuro th,
+:host .unified-tasks-table th {
+  padding: 1rem !important;
+  text-align: left !important;
+  color: #4a5568 !important;
+  font-weight: 600 !important;
+  font-size: 0.9rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  border-bottom: 1px solid rgba(174, 174, 192, 0.3) !important;
+}
+
+:host .neuro-table td,
+:host .patients-table td,
+:host .shifts-table-neuro td,
+:host .unified-tasks-table td {
+  padding: 0.35rem 0.4rem !important;
+  color: #4a5568 !important;
+  border-top: 1px solid rgba(174, 174, 192, 0.3) !important;
+  vertical-align: middle !important;
+  line-height: 1 !important;
+  min-height: 0 !important;
+  font-size: 0.8rem !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+:host .neuro-table tbody tr:hover,
+:host .patients-table tbody tr:hover,
+:host .shifts-table-neuro tbody tr:hover,
+:host .unified-tasks-table tbody tr:hover {
+  background: #d1d9e6 !important;
+}

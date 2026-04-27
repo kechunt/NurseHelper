@@ -1,15 +1,18 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { forkJoin, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { AdminService, Area, Bed, Patient } from '../../../services/admin.service';
 import { User } from '../../../services/auth.service';
+import { ShiftsService } from '../../../services/shifts.service';
 import { environment } from '../../../../environments/environment';
 
 interface NurseWithPatients extends User {
   assignedPatients: Patient[];
   assignedPatientsCount: number;
+  onCurrentShift?: boolean;
+  currentShiftStatus?: 'present' | 'late' | 'justified' | 'missing' | 'absent' | 'unknown';
 }
 
 @Component({
@@ -19,7 +22,7 @@ interface NurseWithPatients extends User {
   templateUrl: './staff-management.component.html',
   styleUrl: './staff-management.component.css',
 })
-export class StaffManagementComponent implements OnInit {
+export class StaffManagementComponent implements OnInit, OnDestroy {
   nurses: NurseWithPatients[] = [];
   areas: Area[] = [];
   beds: Bed[] = [];
@@ -30,10 +33,14 @@ export class StaffManagementComponent implements OnInit {
   // Modales
   showEditModal = false;
   showPatientsModal = false;
+  showAssignBedModal = false;
   
   selectedNurse: NurseWithPatients | null = null;
   selectedNursePatients: Patient[] = [];
   availablePatients: Patient[] = [];
+  patientPendingAssign: Patient | null = null;
+  bedsForPendingAssign: Bed[] = [];
+  selectedBedIdForAssign: number | null = null;
 
   // Formularios
   editForm: Partial<User> = {};
@@ -41,13 +48,50 @@ export class StaffManagementComponent implements OnInit {
   // Filtros
   searchQuery: string = '';
   selectedArea: number | null = null;
+  selectedShiftPresenceFilter: 'all' | 'onShift' = 'all';
+  liveShiftName = 'Sin turno activo';
+  private operationalStatusTimer: ReturnType<typeof setInterval> | null = null;
 
-  constructor(private adminService: AdminService) {}
+  constructor(
+    private adminService: AdminService,
+    private shiftsService: ShiftsService
+  ) {}
+
+  private toNumber(value: any): number | null {
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+    const parsed = typeof value === 'number' ? value : parseInt(String(value), 10);
+    return Number.isNaN(parsed) ? null : parsed;
+  }
+
+  private resolvePatientBedInfo(patient: any): { bedId: number | null; bedNumber: string | null } {
+    const fromRelationId = this.toNumber(patient?.bed?.id);
+    const fromColumnId = this.toNumber(patient?.bedId);
+    const resolvedBedId = fromRelationId ?? fromColumnId;
+
+    if (patient?.bed?.bedNumber) {
+      return { bedId: resolvedBedId, bedNumber: patient.bed.bedNumber };
+    }
+    if (resolvedBedId) {
+      const bed = this.beds.find((b: any) => this.toNumber(b.id) === resolvedBedId);
+      return { bedId: resolvedBedId, bedNumber: bed?.bedNumber || null };
+    }
+    return { bedId: null, bedNumber: null };
+  }
 
   ngOnInit(): void {
     console.log('🚀 Staff Management Component inicializado');
     console.log('🌐 API URL:', environment.apiUrl);
     this.loadData();
+    this.startOperationalStatusPolling();
+  }
+
+  ngOnDestroy(): void {
+    if (this.operationalStatusTimer) {
+      clearInterval(this.operationalStatusTimer);
+      this.operationalStatusTimer = null;
+    }
   }
 
   loadData(): void {
@@ -133,10 +177,18 @@ export class StaffManagementComponent implements OnInit {
           : [];
         
         // Normalizar pacientes para asegurar que tengan id numérico
-        this.patients = processedPatients.map((p: any) => ({
-          ...p,
-          id: p.id ? (typeof p.id === 'number' ? p.id : parseInt(p.id)) : null,
-        })).filter((p: any) => p.id !== null);
+        this.patients = processedPatients
+          .map((p: any) => {
+            const normalizedId = this.toNumber(p.id);
+            const bedInfo = this.resolvePatientBedInfo(p);
+            return {
+              ...p,
+              id: normalizedId,
+              bedId: bedInfo.bedId,
+              bedNumber: bedInfo.bedNumber,
+            };
+          })
+          .filter((p: any) => p.id !== null);
 
         // Filtrar solo enfermeras activas
         const allUsers = Array.isArray(users.users) ? users.users : (Array.isArray(users) ? users : []);
@@ -305,6 +357,7 @@ export class StaffManagementComponent implements OnInit {
           this.error = null; // Limpiar error si hay enfermeras
         }
 
+        this.loadOperationalShiftStatus();
         this.loading = false;
       },
       error: (error) => {
@@ -338,7 +391,103 @@ export class StaffManagementComponent implements OnInit {
       filtered = filtered.filter((n) => n.assignedAreaId === this.selectedArea);
     }
 
+    if (this.selectedShiftPresenceFilter === 'onShift') {
+      filtered = filtered.filter((n) => n.onCurrentShift === true);
+    }
+
     return filtered;
+  }
+
+  private loadOperationalShiftStatus(): void {
+    this.shiftsService.getAllShifts().subscribe({
+      next: (shifts) => {
+        const currentShift = this.getCurrentShift(shifts || []);
+        const currentShiftId = currentShift ? this.toNumber(currentShift.id) : null;
+        this.liveShiftName = currentShift ? `${currentShift.name} (${currentShift.startTime} - ${currentShift.endTime})` : 'Sin turno activo';
+        if (!currentShiftId) {
+          this.applyUnknownOperationalStatus();
+          return;
+        }
+
+        const today = new Date().toISOString().split('T')[0];
+        this.shiftsService.getShiftAttendance(today, currentShiftId).subscribe({
+          next: (rows) => {
+            const statusByNurse = new Map<number, string>();
+            (rows || []).forEach((row: any) => {
+              const nurseId = this.toNumber(row?.nurseId);
+              if (!nurseId) return;
+              statusByNurse.set(nurseId, String(row?.status || 'absent'));
+            });
+
+            this.nurses = this.nurses.map((nurse) => {
+              const status = (statusByNurse.get(nurse.id!) || 'absent') as NurseWithPatients['currentShiftStatus'];
+              const onCurrentShift = status === 'present' || status === 'late';
+              return {
+                ...nurse,
+                currentShiftStatus: status,
+                onCurrentShift,
+              };
+            });
+          },
+          error: () => {
+            this.applyUnknownOperationalStatus();
+          },
+        });
+      },
+      error: () => {
+        this.applyUnknownOperationalStatus();
+      },
+    });
+  }
+
+  private applyUnknownOperationalStatus(): void {
+    this.nurses = this.nurses.map((nurse) => ({
+      ...nurse,
+      currentShiftStatus: 'unknown',
+      onCurrentShift: false,
+    }));
+  }
+
+  private getCurrentShift(shifts: any[]): any | null {
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+    for (const shift of shifts) {
+      const [startH, startM] = String(shift.startTime || '00:00').split(':').map(Number);
+      const [endH, endM] = String(shift.endTime || '00:00').split(':').map(Number);
+      const start = startH * 60 + startM;
+      const end = endH * 60 + endM;
+
+      if (start < end && currentMinutes >= start && currentMinutes < end) {
+        return shift;
+      }
+
+      if (start > end && (currentMinutes >= start || currentMinutes < end)) {
+        return shift;
+      }
+    }
+
+    return null;
+  }
+
+  private startOperationalStatusPolling(): void {
+    if (this.operationalStatusTimer) {
+      clearInterval(this.operationalStatusTimer);
+    }
+    this.operationalStatusTimer = setInterval(() => {
+      if (!this.loading && this.nurses.length > 0) {
+        this.loadOperationalShiftStatus();
+      }
+    }, 30000);
+  }
+
+  getOperationalStatusLabel(nurse: NurseWithPatients): string {
+    if (nurse.currentShiftStatus === 'present') return 'En turno';
+    if (nurse.currentShiftStatus === 'late') return 'En turno (tarde)';
+    if (nurse.currentShiftStatus === 'justified') return 'Ausencia justificada';
+    if (nurse.currentShiftStatus === 'missing') return 'Falta en turno';
+    if (nurse.currentShiftStatus === 'absent') return 'Fuera de turno';
+    return 'Sin registro de turno';
   }
 
   // ========== GESTIÓN DE ENFERMERA ==========
@@ -477,15 +626,83 @@ export class StaffManagementComponent implements OnInit {
       return;
     }
 
-    this.adminService.updatePatient(patientId, { assignedToId: nurseId }).subscribe({
-      next: () => {
-        alert('Paciente asignado a la enfermera correctamente.');
-        this.loadData();
-        this.closePatientsModal();
+    const nurseAreaId = this.toNumber(this.selectedNurse.assignedAreaId);
+    if (!nurseAreaId) {
+      alert('La enfermera no tiene área asignada. Asigna un área antes de asignar pacientes.');
+      return;
+    }
+
+    this.patientPendingAssign = patient;
+    this.selectedBedIdForAssign = null;
+    this.bedsForPendingAssign = [];
+
+    this.adminService.getBedsByArea(nurseAreaId).subscribe({
+      next: (beds) => {
+        const pid = this.toNumber(patient.id);
+        this.bedsForPendingAssign = (beds || []).filter((bed: any) => {
+          const bedPatientId = this.toNumber(bed.patientId);
+          return bed.isActive !== false && (bedPatientId === null || bedPatientId === pid);
+        });
+
+        const currentBedId = this.toNumber((patient as any).bedId);
+        if (
+          currentBedId &&
+          this.bedsForPendingAssign.some((bed: any) => this.toNumber(bed.id) === currentBedId)
+        ) {
+          this.selectedBedIdForAssign = currentBedId;
+        }
+
+        this.showAssignBedModal = true;
       },
       error: (error) => {
-        const msg = error.error?.message || error.message || 'Error desconocido';
-        alert(`No se pudo guardar la asignación: ${msg}`);
+        const msg = error.error?.message || error.message || 'Error cargando camas del área';
+        alert(msg);
+      },
+    });
+  }
+
+  closeAssignBedModal(): void {
+    this.showAssignBedModal = false;
+    this.patientPendingAssign = null;
+    this.bedsForPendingAssign = [];
+    this.selectedBedIdForAssign = null;
+  }
+
+  confirmAssignPatientToNurseWithBed(): void {
+    if (!this.selectedNurse?.id || !this.patientPendingAssign?.id || !this.selectedBedIdForAssign) {
+      alert('Selecciona una cama para continuar.');
+      return;
+    }
+
+    const nurseId = this.toNumber(this.selectedNurse.id);
+    const patientId = this.toNumber(this.patientPendingAssign.id);
+    const bedId = this.toNumber(this.selectedBedIdForAssign);
+    if (!nurseId || !patientId || !bedId) {
+      alert('Datos inválidos para asignación.');
+      return;
+    }
+
+    this.adminService.assignPatientToBed(bedId, patientId).subscribe({
+      next: () => {
+        this.adminService.updatePatient(patientId, { assignedToId: nurseId }).subscribe({
+          next: () => {
+            alert('Paciente asignado con cama correctamente.');
+            this.closeAssignBedModal();
+            this.loadData();
+            this.closePatientsModal();
+          },
+          error: (error) => {
+            const msg = error.error?.message || error.message || 'No se pudo asignar enfermera';
+            alert(`La cama se asignó, pero faltó asignar enfermera: ${msg}`);
+            this.closeAssignBedModal();
+            this.loadData();
+            this.closePatientsModal();
+          },
+        });
+      },
+      error: (error) => {
+        const msg = error.error?.message || error.message || 'No se pudo asignar cama';
+        alert(`No se pudo guardar la cama seleccionada: ${msg}`);
       },
     });
   }
@@ -584,15 +801,25 @@ export class StaffManagementComponent implements OnInit {
     return area?.name || 'Área desconocida';
   }
 
-  getPatientBed(patientId: number | undefined): string {
+  getPatientBed(patient: Patient | undefined): string {
+    if (!patient) return 'Sin cama';
+
+    const fromPatient = (patient as any).bedNumber || (patient as any).bed?.bedNumber;
+    if (fromPatient) {
+      return fromPatient;
+    }
+
+    const patientId = this.toNumber((patient as any).id);
     if (!patientId) return 'Sin cama';
-    const bed = this.beds.find((b) => b.patientId === patientId);
+
+    const bed = this.beds.find((b: any) => this.toNumber(b.patientId) === patientId);
     return bed?.bedNumber || 'Sin cama';
   }
 
   clearFilters(): void {
     this.searchQuery = '';
     this.selectedArea = null;
+    this.selectedShiftPresenceFilter = 'all';
   }
 
   trackByNurseId(index: number, nurse: NurseWithPatients): any {

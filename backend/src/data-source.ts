@@ -1,11 +1,13 @@
 import { DataSource } from 'typeorm';
 import { User } from './entities/User';
+import { PendingRegistration } from './entities/PendingRegistration';
 import { Area } from './entities/Area';
 import { Bed } from './entities/Bed';
 import { Patient } from './entities/Patient';
 import { Schedule } from './entities/Schedule';
 import { Shift } from './entities/Shift';
 import { NurseShift } from './entities/NurseShift';
+import { ShiftAttendance } from './entities/ShiftAttendance';
 import { Medication } from './entities/Medication';
 import { MedicationRequest } from './entities/MedicationRequest';
 import { DeliveryHistory } from './entities/DeliveryHistory';
@@ -35,12 +37,14 @@ export const AppDataSource = new DataSource({
   logging: false,
   entities: [
     User,
+    PendingRegistration,
     Area,
     Bed,
     Patient,
     Schedule,
     Shift,
     NurseShift,
+    ShiftAttendance,
     Medication,
     MedicationRequest,
     DeliveryHistory,

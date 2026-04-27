@@ -55,6 +55,10 @@ export class AreasManagementComponent implements OnInit {
     areaId: null,
     bedId: null
   };
+  showAreaBedsModal = false;
+  selectedAreaForBeds: Area | null = null;
+  showAreaPatientsModal = false;
+  selectedAreaForPatients: Area | null = null;
 
   constructor(
     private adminService: AdminService,
@@ -69,7 +73,7 @@ export class AreasManagementComponent implements OnInit {
   }
 
   loadPatients(): void {
-    this.adminService.getPatients().subscribe({
+    this.adminService.getPatients(false).subscribe({
       next: (patients) => {
         this.rawPatients = patients.filter((p: any) => p.isActive);
         this.normalizePatientsData();
@@ -529,6 +533,66 @@ export class AreasManagementComponent implements OnInit {
   getOccupiedBedsForArea(areaId?: number): number {
     if (!areaId) return 0;
     return this.beds.filter((bed) => bed.areaId === areaId && bed.patientId).length;
+  }
+
+  getPatientsCountForArea(areaId?: number): number {
+    if (!areaId) return 0;
+    return this.getPatientsByArea(areaId).length;
+  }
+
+  openAreaBedsModal(area: Area): void {
+    this.selectedAreaForBeds = area;
+    this.showAreaBedsModal = true;
+  }
+
+  closeAreaBedsModal(): void {
+    this.showAreaBedsModal = false;
+    this.selectedAreaForBeds = null;
+  }
+
+  openAreaPatientsModal(area: Area): void {
+    this.selectedAreaForPatients = area;
+    this.showAreaPatientsModal = true;
+  }
+
+  closeAreaPatientsModal(): void {
+    this.showAreaPatientsModal = false;
+    this.selectedAreaForPatients = null;
+  }
+
+  getBedsDetailsForArea(areaId?: number): Array<{
+    bed: Bed;
+    patient: any | null;
+  }> {
+    if (!areaId) return [];
+    const bedsForArea = this.getBedsForArea(areaId);
+    return bedsForArea
+      .map((bed) => {
+        const patient =
+          this.patients.find((p: any) => p.id === bed.patientId) ||
+          (bed as any).patient ||
+          null;
+        return { bed, patient };
+      })
+      .sort((a, b) => (a.bed.bedNumber || '').localeCompare(b.bed.bedNumber || ''));
+  }
+
+  releasePatientFromBed(bed: Bed): void {
+    if (!bed.id || !bed.patientId) {
+      this.toastService.warning('Esta cama no tiene paciente asignado');
+      return;
+    }
+
+    this.adminService.assignPatientToBed(bed.id, null).subscribe({
+      next: () => {
+        this.toastService.success(`Paciente liberado de la cama ${bed.bedNumber}`);
+        this.loadBeds();
+        this.loadPatients();
+      },
+      error: (error) => {
+        this.toastService.error(error.error?.message || 'Error al liberar cama');
+      }
+    });
   }
 
   getValidBedNumbersCount(): number {

@@ -9,6 +9,8 @@ export interface NurseStats {
   pendingTasksCount: number;
   medicationsToday: number;
   assignedArea: string;
+  /** Id del área asignada a la enfermera; null si no tiene área */
+  assignedAreaId?: number | null;
 }
 
 export interface BedWithPatient {

@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
+import { LessThan } from 'typeorm';
 import { AppDataSource } from '../data-source';
 import { User, UserRole } from '../entities/User';
+import { PendingRegistration } from '../entities/PendingRegistration';
 import { generateToken } from '../utils/jwt';
 import { auditService, AuditService } from '../services/audit.service';
 import { emailService } from '../services/email.service';
@@ -127,12 +129,15 @@ export class AuthController {
       }
 
       const userRepository = AppDataSource.getRepository(User);
+      const pendingRepository = AppDataSource.getRepository(PendingRegistration);
 
-      // Verificar si el username ya existe
+      await pendingRepository.delete({
+        verificationCodeExpires: LessThan(new Date()),
+      });
+
       const existingUsername = await userRepository.findOne({
         where: { username },
       });
-
       if (existingUsername) {
         res.status(400).json({
           message: 'El nombre de usuario ya está en uso',
@@ -140,11 +145,9 @@ export class AuthController {
         return;
       }
 
-      // Verificar si el email ya existe
       const existingEmail = await userRepository.findOne({
         where: { email },
       });
-
       if (existingEmail) {
         res.status(400).json({
           message: 'El correo electrónico ya está en uso',
@@ -152,47 +155,58 @@ export class AuthController {
         return;
       }
 
-      // Generar código de verificación de 6 dígitos
+      const pendingWithUsername = await pendingRepository.findOne({
+        where: { username },
+      });
+      if (pendingWithUsername && pendingWithUsername.email !== email) {
+        res.status(400).json({
+          message:
+            'El nombre de usuario está reservado por otro registro pendiente de verificación. Prueba con otro usuario o espera a que expire (15 min).',
+        });
+        return;
+      }
+
+      const pendingSameEmail = await pendingRepository.findOne({
+        where: { email },
+      });
+      if (pendingSameEmail) {
+        await pendingRepository.remove(pendingSameEmail);
+      }
+
       const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
       const verificationCodeExpires = new Date();
-      verificationCodeExpires.setMinutes(verificationCodeExpires.getMinutes() + 15); // Expira en 15 minutos
+      verificationCodeExpires.setMinutes(verificationCodeExpires.getMinutes() + 15);
 
-      const user = new User();
-      user.username = username;
-      user.email = email;
-      user.password = password; // Se hasheará automáticamente en el hook BeforeInsert
-      user.firstName = firstName;
-      user.lastName = lastName;
-      user.role = role;
-      user.emailVerified = false; // No verificado hasta que confirme el código
-      user.verificationCode = verificationCode;
-      user.verificationCodeExpires = verificationCodeExpires;
-      user.isActive = true; // Activo pero sin verificar email
+      const pending = new PendingRegistration();
+      pending.username = username;
+      pending.email = email;
+      pending.password = password;
+      pending.firstName = firstName;
+      pending.lastName = lastName;
+      pending.role = role;
+      pending.verificationCode = verificationCode;
+      pending.verificationCodeExpires = verificationCodeExpires;
 
-      await userRepository.save(user);
+      await pendingRepository.save(pending);
 
-      // Enviar código de verificación por email
       try {
         await emailService.sendVerificationCode(email, verificationCode, firstName);
       } catch (error) {
         console.error('Error enviando código de verificación:', error);
-        // No fallar el registro si falla el email, pero loggear el error
-        // En producción, podrías querer manejar esto de manera diferente
       }
 
       res.status(201).json({
-        message: 'Usuario registrado exitosamente. Por favor verifica tu correo electrónico.',
+        message:
+          'Registro pendiente de verificación. Revisa tu correo e introduce el código; tu usuario se creará al confirmar.',
         requiresVerification: true,
-        email: user.email,
+        email: pending.email,
         smtpConfigured: emailService.isSmtpConfigured(),
-        // NO enviar token hasta que verifique el email
         user: {
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          role: user.role,
+          username: pending.username,
+          email: pending.email,
+          firstName: pending.firstName,
+          lastName: pending.lastName,
+          role: pending.role,
           emailVerified: false,
         },
       });
@@ -214,13 +228,82 @@ export class AuthController {
       }
 
       const userRepository = AppDataSource.getRepository(User);
+      const pendingRepository = AppDataSource.getRepository(PendingRegistration);
+
+      const pending = await pendingRepository.findOne({
+        where: { email },
+      });
+
+      if (pending) {
+        if (pending.verificationCode !== String(code).trim()) {
+          res.status(400).json({
+            message: 'Código de verificación inválido',
+          });
+          return;
+        }
+
+        if (!pending.verificationCodeExpires || pending.verificationCodeExpires < new Date()) {
+          res.status(400).json({
+            message: 'El código de verificación ha expirado. Por favor solicita uno nuevo.',
+          });
+          return;
+        }
+
+        const conflict = await userRepository.findOne({
+          where: [{ username: pending.username }, { email: pending.email }],
+        });
+        if (conflict) {
+          await pendingRepository.remove(pending);
+          res.status(409).json({
+            message:
+              'Ese correo o usuario ya existe en el sistema. Solicita ayuda al administrador o regístrate con otros datos.',
+          });
+          return;
+        }
+
+        const savedUser = await AppDataSource.transaction(async (manager) => {
+          const u = new User();
+          u.username = pending.username;
+          u.email = pending.email;
+          u.password = pending.password;
+          u.firstName = pending.firstName;
+          u.lastName = pending.lastName;
+          u.role = pending.role;
+          u.emailVerified = true;
+          u.verificationCode = null;
+          u.verificationCodeExpires = null;
+          u.isActive = true;
+
+          const created = await manager.save(u);
+          await manager.delete(PendingRegistration, { id: pending.id });
+          return created;
+        });
+
+        const token = generateToken(savedUser.id, savedUser.role);
+
+        res.json({
+          message: 'Correo electrónico verificado exitosamente',
+          token,
+          user: {
+            id: savedUser.id,
+            username: savedUser.username,
+            email: savedUser.email,
+            firstName: savedUser.firstName,
+            lastName: savedUser.lastName,
+            role: savedUser.role,
+            emailVerified: true,
+          },
+        });
+        return;
+      }
+
       const user = await userRepository.findOne({
         where: { email },
       });
 
       if (!user) {
         res.status(404).json({
-          message: 'Usuario no encontrado',
+          message: 'No hay registro pendiente ni usuario con ese correo. Verifica el email o vuelve a registrarte.',
         });
         return;
       }
@@ -232,15 +315,13 @@ export class AuthController {
         return;
       }
 
-      // Verificar código
-      if (user.verificationCode !== code) {
+      if (user.verificationCode !== String(code).trim()) {
         res.status(400).json({
           message: 'Código de verificación inválido',
         });
         return;
       }
 
-      // Verificar expiración
       if (!user.verificationCodeExpires || user.verificationCodeExpires < new Date()) {
         res.status(400).json({
           message: 'El código de verificación ha expirado. Por favor solicita uno nuevo.',
@@ -248,13 +329,11 @@ export class AuthController {
         return;
       }
 
-      // Verificar email
       user.emailVerified = true;
       user.verificationCode = null;
       user.verificationCodeExpires = null;
       await userRepository.save(user);
 
-      // Generar token después de verificar
       const token = generateToken(user.id, user.role);
 
       res.json({
@@ -288,13 +367,49 @@ export class AuthController {
       }
 
       const userRepository = AppDataSource.getRepository(User);
+      const pendingRepository = AppDataSource.getRepository(PendingRegistration);
+
+      const pending = await pendingRepository.findOne({
+        where: { email },
+      });
+
+      if (pending) {
+        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const verificationCodeExpires = new Date();
+        verificationCodeExpires.setMinutes(verificationCodeExpires.getMinutes() + 15);
+
+        pending.verificationCode = verificationCode;
+        pending.verificationCodeExpires = verificationCodeExpires;
+        await pendingRepository.save(pending);
+
+        try {
+          await emailService.sendVerificationCode(email, verificationCode, pending.firstName);
+        } catch (error) {
+          console.error('Error enviando código de verificación:', error);
+          res.status(500).json({
+            message: 'Error al enviar el código de verificación. Por favor intenta más tarde.',
+          });
+          return;
+        }
+
+        const smtpConfigured = emailService.isSmtpConfigured();
+        res.json({
+          message: smtpConfigured
+            ? 'Código de verificación reenviado exitosamente'
+            : 'Código actualizado. El servidor no tiene SMTP configurado: no se envió correo (revisa EMAIL_USER y EMAIL_PASSWORD).',
+          email: pending.email,
+          smtpConfigured,
+        });
+        return;
+      }
+
       const user = await userRepository.findOne({
         where: { email },
       });
 
       if (!user) {
         res.status(404).json({
-          message: 'Usuario no encontrado',
+          message: 'No hay registro pendiente con ese correo',
         });
         return;
       }
@@ -306,7 +421,6 @@ export class AuthController {
         return;
       }
 
-      // Generar nuevo código de verificación
       const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
       const verificationCodeExpires = new Date();
       verificationCodeExpires.setMinutes(verificationCodeExpires.getMinutes() + 15);
@@ -315,7 +429,6 @@ export class AuthController {
       user.verificationCodeExpires = verificationCodeExpires;
       await userRepository.save(user);
 
-      // Enviar código por email
       try {
         await emailService.sendVerificationCode(email, verificationCode, user.firstName);
       } catch (error) {

@@ -190,205 +190,119 @@ export class BedsController {
       const { patientId } = req.body;
       const bedRepository = AppDataSource.getRepository(Bed);
       const patientRepository = AppDataSource.getRepository(Patient);
-
-      let bed: Bed | null;
-      try {
-        bed = await bedRepository.findOne({
-          where: { id: bedId },
-          relations: ['patients', 'area'],
-        });
-      } catch (relationError: any) {
-        // Si falla por la relación patients (bedId o assignedToId no existe), cargar sin esa relación
-        const errorMessage = relationError?.message || relationError?.sqlMessage || '';
-        if (relationError?.code === 'ER_BAD_FIELD_ERROR' && 
-            (errorMessage.includes('bedId') || errorMessage.includes('bed') || 
-             errorMessage.includes('assignedToId') || errorMessage.includes('assignedTo') ||
-             errorMessage.includes('Patient'))) {
-          bed = await bedRepository.findOne({
-            where: { id: bedId },
-            relations: ['area'],
-          });
-          if (bed) {
-            bed.patients = [];
-          }
-        } else {
-          throw relationError;
-        }
-      }
+      const bed = await bedRepository.findOne({
+        where: { id: bedId },
+        relations: ['area'],
+      });
 
       if (!bed) {
         sendErrorResponse(res, 404, 'Cama no encontrada', 'BED_NOT_FOUND');
         return;
       }
 
-      if (patientId === null || patientId === undefined) {
-        // Liberar cama - encontrar pacientes en esta cama y desasignarlos
-        // Intentar encontrar y desasignar pacientes
-        try {
-          const patientsInBed = await patientRepository.find({ 
-            where: { bedId: bed.id as any, isActive: true } 
-          });
-          
-          for (const patient of patientsInBed) {
-            try {
-              await patientRepository
-                .createQueryBuilder()
-                .update(Patient)
-                .set({ bedId: null })
-                .where('id = :id', { id: patient.id })
-                .execute();
-            } catch (saveError: any) {
-              if (saveError?.code === 'ER_BAD_FIELD_ERROR' && saveError?.sqlMessage?.includes('bedId')) {
-                // Si bedId no existe, simplemente continuar
-                logger.warn('Columna bedId no existe, omitiendo desasignación', { patientId: patient.id });
-              } else {
-                throw saveError;
-              }
-            }
-          }
-        } catch (findError: any) {
-          if (findError?.code === 'ER_BAD_FIELD_ERROR' && findError?.sqlMessage?.includes('bedId')) {
-            // Si bedId no existe, simplemente continuar sin desasignar
-            logger.warn('Columna bedId no existe, omitiendo búsqueda de pacientes', { bedId });
-          } else {
-            throw findError;
-          }
-        }
-        
-        // Actualizar estado de ocupación (si la columna existe)
-        try {
-          bed.isOccupied = false;
-          await bedRepository.save(bed);
-        } catch (error: any) {
-          // Si la columna isOccupied no existe, ignorar el error
-          if (error?.code !== 'ER_BAD_FIELD_ERROR' && !error?.message?.includes('isOccupied')) {
-            throw error;
-          }
-          logger.warn('Columna isOccupied no existe, se omitirá la actualización', { bedId });
-        }
-        
-        logger.info('Cama liberada', { bedId, bedNumber: bed.bedNumber });
-      } 
-      // Si se está asignando un paciente
-      else if (patientId) {
-        const patientIdNum = typeof patientId === 'number' ? patientId : parseId(String(patientId));
-        if (!patientIdNum) {
-          sendErrorResponse(res, 400, 'ID de paciente inválido', 'INVALID_ID');
-          return;
-        }
+      const queryRunner = AppDataSource.createQueryRunner();
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
 
-        const patient = await patientRepository.findOne({ where: { id: patientIdNum } });
-        if (!patient) {
-          sendErrorResponse(res, 404, 'Paciente no encontrado', 'PATIENT_NOT_FOUND');
-          return;
-        }
-
-        // Desasignar paciente de otra cama si tiene una asignada
-        try {
-          if (patient.bedId && patient.bedId !== bed.id) {
-            const currentBed = await bedRepository.findOne({ where: { id: patient.bedId } });
-            if (currentBed) {
-              // Verificar si hay otros pacientes en esa cama
-              try {
-                const otherPatients = await patientRepository.count({ 
-                  where: { bedId: currentBed.id as any, isActive: true } 
-                });
-                if (otherPatients <= 1) {
-                  try {
-                    currentBed.isOccupied = false;
-                    await bedRepository.save(currentBed);
-                  } catch (error: any) {
-                    // Si la columna isOccupied no existe, ignorar el error
-                    if (error?.code !== 'ER_BAD_FIELD_ERROR' && !error?.message?.includes('isOccupied')) {
-                      throw error;
-                    }
-                  }
-                }
-              } catch (countError: any) {
-                if (countError?.code === 'ER_BAD_FIELD_ERROR' && countError?.sqlMessage?.includes('bedId')) {
-                  // Si bedId no existe, simplemente continuar
-                  logger.warn('Columna bedId no existe, omitiendo verificación', { bedId: currentBed.id });
-                } else {
-                  throw countError;
-                }
-              }
-            }
-            logger.info('Cama anterior liberada', { 
-              previousBedId: patient.bedId, 
-              patientId 
-            });
-          }
-
-          // Asignar el nuevo paciente a esta cama
-          try {
-            await patientRepository
-              .createQueryBuilder()
-              .update(Patient)
-              .set({ bedId: bed.id, areaId: bed.areaId })
-              .where('id = :id', { id: patient.id })
-              .execute();
-          } catch (saveError: any) {
-            if (saveError?.code === 'ER_BAD_FIELD_ERROR' && saveError?.sqlMessage?.includes('bedId')) {
-              logger.warn('Columna bedId no existe, omitiendo asignación', { bedId: bed.id, patientId });
-            } else {
-              throw saveError;
-            }
-          }
-        } catch (bedIdError: any) {
-          if (bedIdError?.code === 'ER_BAD_FIELD_ERROR' && bedIdError?.sqlMessage?.includes('bedId')) {
-            logger.warn('Columna bedId no existe, omitiendo operación de asignación', { bedId, patientId });
-          } else {
-            throw bedIdError;
-          }
-        }
-        
-        // Actualizar estado de ocupación de la cama (si la columna existe)
-        try {
-          bed.isOccupied = true;
-          await bedRepository.save(bed);
-        } catch (error: any) {
-          // Si la columna isOccupied no existe, ignorar el error
-          if (error?.code !== 'ER_BAD_FIELD_ERROR' && !error?.message?.includes('isOccupied')) {
-            throw error;
-          }
-          logger.warn('Columna isOccupied no existe, se omitirá la actualización', { bedId });
-        }
-        
-        logger.info('Paciente asignado a cama', { 
-          bedId: bed.id, 
-          bedNumber: bed.bedNumber, 
-          patientId: patientIdNum 
-        });
-      }
-
-      // Forzar recarga desde BD sin caché
-      let updatedBed: Bed | null;
       try {
-        updatedBed = await bedRepository
-          .createQueryBuilder('bed')
-          .leftJoinAndSelect('bed.area', 'area')
-          .leftJoinAndSelect('bed.patients', 'patients')
-          .where('bed.id = :id', { id: bed.id })
-          .getOne();
-      } catch (queryError: any) {
-        // Si falla por la relación patients (bedId o assignedToId no existe), cargar sin esa relación
-        const errorMessage = queryError?.message || queryError?.sqlMessage || '';
-        if (queryError?.code === 'ER_BAD_FIELD_ERROR' && 
-            (errorMessage.includes('bedId') || errorMessage.includes('bed') || 
-             errorMessage.includes('assignedToId') || errorMessage.includes('assignedTo') ||
-             errorMessage.includes('Patient'))) {
-          updatedBed = await bedRepository
-            .createQueryBuilder('bed')
-            .leftJoinAndSelect('bed.area', 'area')
-            .where('bed.id = :id', { id: bed.id })
-            .getOne();
-          if (updatedBed) {
-            updatedBed.patients = [];
-          }
+        if (patientId === null || patientId === undefined) {
+          await queryRunner.manager
+            .createQueryBuilder()
+            .update(Patient)
+            .set({ bedId: null })
+            .where('bedId = :bedId', { bedId: bed.id })
+            .andWhere('isActive = :isActive', { isActive: true })
+            .execute();
+
+          try {
+            bed.isOccupied = false;
+            await queryRunner.manager.getRepository(Bed).save(bed);
+          } catch {}
+
+          logger.info('Cama liberada', { bedId, bedNumber: bed.bedNumber });
         } else {
-          throw queryError;
+          const patientIdNum = typeof patientId === 'number' ? patientId : parseId(String(patientId));
+          if (!patientIdNum) {
+            await queryRunner.rollbackTransaction();
+            sendErrorResponse(res, 400, 'ID de paciente inválido', 'INVALID_ID');
+            return;
+          }
+
+          const patient = await queryRunner.manager.getRepository(Patient).findOne({ where: { id: patientIdNum } });
+          if (!patient) {
+            await queryRunner.rollbackTransaction();
+            sendErrorResponse(res, 404, 'Paciente no encontrado', 'PATIENT_NOT_FOUND');
+            return;
+          }
+
+          // Verificación estricta: una cama NO puede tener más de un paciente activo.
+          const existingOccupant = await queryRunner.manager
+            .createQueryBuilder(Patient, 'patient')
+            .select(['patient.id'])
+            .where('patient.bedId = :bedId', { bedId: bed.id })
+            .andWhere('patient.id != :patientId', { patientId: patientIdNum })
+            .andWhere('patient.isActive = :isActive', { isActive: true })
+            .getRawOne();
+
+          if (existingOccupant?.patient_id) {
+            await queryRunner.rollbackTransaction();
+            sendErrorResponse(
+              res,
+              409,
+              `La cama ${bed.bedNumber} ya está ocupada por otro paciente`,
+              'BED_ALREADY_OCCUPIED'
+            );
+            return;
+          }
+
+          // Asignar paciente objetivo a la cama/área seleccionada.
+          const updateResult = await queryRunner.manager
+            .createQueryBuilder()
+            .update(Patient)
+            .set({ bedId: bed.id, areaId: bed.areaId })
+            .where('id = :id', { id: patientIdNum })
+            .execute();
+
+          if (!updateResult.affected || updateResult.affected < 1) {
+            throw new Error('No se pudo persistir la asignación de la cama en la base de datos');
+          }
+
+          const verified = await queryRunner.manager
+            .createQueryBuilder(Patient, 'patient')
+            .select(['patient.id', 'patient.bedId'])
+            .where('patient.id = :id', { id: patientIdNum })
+            .getRawOne();
+
+          if (Number(verified?.patient_bedId || 0) !== Number(bed.id)) {
+            throw new Error('La asignación no quedó guardada correctamente en la base de datos');
+          }
+
+          try {
+            bed.isOccupied = true;
+            await queryRunner.manager.getRepository(Bed).save(bed);
+          } catch {}
+
+          logger.info('Paciente asignado a cama', {
+            bedId: bed.id,
+            bedNumber: bed.bedNumber,
+            patientId: patientIdNum,
+          });
         }
+
+        await queryRunner.commitTransaction();
+      } catch (txError) {
+        await queryRunner.rollbackTransaction();
+        throw txError;
+      } finally {
+        await queryRunner.release();
       }
+
+      const updatedBed = await bedRepository
+        .createQueryBuilder('bed')
+        .leftJoinAndSelect('bed.area', 'area')
+        .leftJoinAndSelect('bed.patients', 'patients')
+        .where('bed.id = :id', { id: bed.id })
+        .getOne();
 
       const message = patientId === null || patientId === undefined
         ? `Cama ${bed.bedNumber} liberada exitosamente`

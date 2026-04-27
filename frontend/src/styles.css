@@ -146,3 +146,92 @@ app-root {
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   }
 }
+
+/* ===== Normalizacion global tablas panel admin ===== */
+.admin-dashboard .dashboard-content .table-container,
+.admin-dashboard .dashboard-content .patients-table-container,
+.admin-dashboard .dashboard-content .patients-table-container-modal,
+.admin-dashboard .dashboard-content .table-wrapper-neuro {
+  overflow-x: auto !important;
+  border-radius: 15px !important;
+  background: #d1d9e6 !important;
+  box-shadow: inset 5px 5px 10px #bebebe, inset -5px -5px 10px #ffffff !important;
+  padding: 1rem !important;
+}
+
+.admin-dashboard .dashboard-content .neuro-table,
+.admin-dashboard .dashboard-content .patients-table,
+.admin-dashboard .dashboard-content .shifts-table-neuro,
+.admin-dashboard .dashboard-content .unified-tasks-table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  background: #e0e5ec !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+}
+
+.admin-dashboard .dashboard-content .neuro-table thead,
+.admin-dashboard .dashboard-content .patients-table thead,
+.admin-dashboard .dashboard-content .shifts-table-neuro thead,
+.admin-dashboard .dashboard-content .unified-tasks-table thead {
+  background: #d1d9e6 !important;
+}
+
+.admin-dashboard .dashboard-content .neuro-table th,
+.admin-dashboard .dashboard-content .patients-table th,
+.admin-dashboard .dashboard-content .shifts-table-neuro th,
+.admin-dashboard .dashboard-content .unified-tasks-table th {
+  padding: 1rem !important;
+  text-align: left !important;
+  color: #4a5568 !important;
+  font-weight: 600 !important;
+  font-size: 0.9rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  border-bottom: 1px solid rgba(174, 174, 192, 0.3) !important;
+}
+
+.admin-dashboard .dashboard-content .neuro-table td,
+.admin-dashboard .dashboard-content .patients-table td,
+.admin-dashboard .dashboard-content .shifts-table-neuro td,
+.admin-dashboard .dashboard-content .unified-tasks-table td {
+  padding: 0.35rem 0.4rem !important;
+  color: #4a5568 !important;
+  border-top: 1px solid rgba(174, 174, 192, 0.3) !important;
+  vertical-align: middle !important;
+  line-height: 1 !important;
+  min-height: 0 !important;
+  font-size: 0.8rem !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.admin-dashboard .dashboard-content .neuro-table tbody tr:hover,
+.admin-dashboard .dashboard-content .patients-table tbody tr:hover,
+.admin-dashboard .dashboard-content .shifts-table-neuro tbody tr:hover,
+.admin-dashboard .dashboard-content .unified-tasks-table tbody tr:hover {
+  background: #d1d9e6 !important;
+}
+
+/* Estado unificado en todas las tablas del panel admin */
+.admin-dashboard .dashboard-content table td [class*="status"],
+.admin-dashboard .dashboard-content table td [class*="estado"],
+.admin-dashboard .dashboard-content table td [class*="role"],
+.admin-dashboard .dashboard-content table td .badge-status-attendance,
+.admin-dashboard .dashboard-content table td .status-badge,
+.admin-dashboard .dashboard-content table td .bed-status,
+.admin-dashboard .dashboard-content table td .badge-shift-neuro,
+.admin-dashboard .dashboard-content table td .neuro-status {
+  display: inline !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  font-size: 0.8rem !important;
+  font-weight: 700 !important;
+  color: #4a5568 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+}

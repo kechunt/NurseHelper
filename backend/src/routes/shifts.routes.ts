@@ -1,7 +1,16 @@
 import { Router } from 'express';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { requireAdminOrSupervisor } from '../middleware/role.middleware';
-import { getShifts, updateShift, getWeeklySchedule, saveWeeklySchedule } from '../controllers/shifts.controller';
+import {
+  getShifts,
+  updateShift,
+  getWeeklySchedule,
+  saveWeeklySchedule,
+  getShiftAttendance,
+  saveShiftAttendance,
+  getPresentNursesByShift,
+  getShiftAttendanceHistory,
+} from '../controllers/shifts.controller';
 
 const router = Router();
 
@@ -158,5 +167,9 @@ router.get('/weekly', getWeeklySchedule);
  *         description: Horario semanal guardado exitosamente
  */
 router.post('/weekly', saveWeeklySchedule);
+router.get('/attendance', getShiftAttendance);
+router.post('/attendance', saveShiftAttendance);
+router.get('/attendance/present', getPresentNursesByShift);
+router.get('/attendance/history', getShiftAttendanceHistory);
 
 export default router;

@@ -25,6 +25,34 @@ export interface WeeklySchedule {
   sunday: string;
 }
 
+export type ShiftAttendanceStatus = 'present' | 'absent' | 'late' | 'justified' | 'missing';
+
+export interface ShiftAttendanceItem {
+  nurseId: number;
+  nurseName: string;
+  status: ShiftAttendanceStatus;
+  checkInAt?: string | null;
+  checkOutAt?: string | null;
+  notes?: string | null;
+  assignedAreaId?: number | null;
+}
+
+export interface ShiftAttendanceHistoryItem {
+  id: number;
+  date: string;
+  shiftId: number;
+  shiftName: string;
+  shiftTime: string;
+  nurseId: number;
+  nurseName: string;
+  status: ShiftAttendanceStatus;
+  checkInAt?: string | null;
+  checkOutAt?: string | null;
+  notes?: string | null;
+  recordedBy?: string | null;
+  recordedAt?: string | null;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -73,6 +101,52 @@ export class ShiftsService {
     return this.http.post(`${this.apiUrl}/weekly`, { schedules, weekStartDate }).pipe(
       tap(response => console.log('✅ Respuesta del backend:', response))
     );
+  }
+
+  getShiftAttendance(date: string, shiftId: number): Observable<ShiftAttendanceItem[]> {
+    return this.http.get<ShiftAttendanceItem[]>(`${this.apiUrl}/attendance`, {
+      params: {
+        date,
+        shiftId: String(shiftId),
+      },
+    });
+  }
+
+  saveShiftAttendance(
+    date: string,
+    shiftId: number,
+    attendance: ShiftAttendanceItem[]
+  ): Observable<{ message: string; saved: number }> {
+    return this.http.post<{ message: string; saved: number }>(`${this.apiUrl}/attendance`, {
+      date,
+      shiftId,
+      attendance,
+    });
+  }
+
+  getPresentNursesByShift(date: string, shiftId: number): Observable<ShiftAttendanceItem[]> {
+    return this.http.get<ShiftAttendanceItem[]>(`${this.apiUrl}/attendance/present`, {
+      params: {
+        date,
+        shiftId: String(shiftId),
+      },
+    });
+  }
+
+  getShiftAttendanceHistory(params: {
+    dateFrom?: string;
+    dateTo?: string;
+    shiftId?: number | null;
+    limit?: number;
+  }): Observable<ShiftAttendanceHistoryItem[]> {
+    const query: any = {};
+    if (params.dateFrom) query.dateFrom = params.dateFrom;
+    if (params.dateTo) query.dateTo = params.dateTo;
+    if (params.shiftId) query.shiftId = String(params.shiftId);
+    if (params.limit) query.limit = String(params.limit);
+    return this.http.get<ShiftAttendanceHistoryItem[]>(`${this.apiUrl}/attendance/history`, {
+      params: query,
+    });
   }
 }
 

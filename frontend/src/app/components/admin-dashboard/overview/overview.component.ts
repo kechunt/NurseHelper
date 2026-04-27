@@ -1,7 +1,9 @@
-import { Component, OnInit, Input } from '@angular/core';
+import { Component, OnDestroy, OnInit, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AdminService } from '../../../services/admin.service';
 import { ToastService } from '../../../services/toast.service';
+import { ShiftsService, Shift } from '../../../services/shifts.service';
+import { ShiftRealtimeService } from '../../../shared/services/shift-realtime.service';
 import { forkJoin } from 'rxjs';
 
 @Component({
@@ -11,7 +13,7 @@ import { forkJoin } from 'rxjs';
   templateUrl: './overview.component.html',
   styleUrl: './overview.component.css',
 })
-export class OverviewComponent implements OnInit {
+export class OverviewComponent implements OnInit, OnDestroy {
   @Input() onNavigate?: (tab: string) => void;
 
   stats = {
@@ -20,15 +22,20 @@ export class OverviewComponent implements OnInit {
     beds: 0,
     patients: 0,
     nurses: 0,
-    nurseShifts: 0,
     availableBeds: 0,
   };
 
   loading = true;
+  liveDateTimeLabel = '';
+  liveCurrentShiftLabel = 'Sin turno activo';
+  private shifts: Shift[] = [];
+  private clockTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor(
     private adminService: AdminService,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private shiftsService: ShiftsService,
+    private shiftRealtimeService: ShiftRealtimeService
   ) {}
 
   navigate(tab: string): void {
@@ -39,6 +46,15 @@ export class OverviewComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadStats();
+    this.loadShiftsForRealtimeCard();
+    this.startLiveClock();
+  }
+
+  ngOnDestroy(): void {
+    if (this.clockTimer) {
+      clearInterval(this.clockTimer);
+      this.clockTimer = null;
+    }
   }
 
   loadStats(): void {
@@ -56,7 +72,6 @@ export class OverviewComponent implements OnInit {
         this.stats.areas = areas?.length || 0;
         this.stats.beds = beds?.length || 0;
         this.stats.patients = typeof patients === 'number' ? patients : 0;
-        this.stats.nurseShifts = this.stats.nurses * 7; // Estimación: 7 días por enfermera
         this.stats.availableBeds =
           beds?.filter((b: any) => !b.patientId).length || 0;
         
@@ -72,12 +87,36 @@ export class OverviewComponent implements OnInit {
           beds: 0,
           patients: 0,
           nurses: 0,
-          nurseShifts: 0,
           availableBeds: 0,
         };
         this.loading = false;
       },
     });
+  }
+
+  private loadShiftsForRealtimeCard(): void {
+    this.shiftsService.getAllShifts().subscribe({
+      next: (shifts) => {
+        this.shifts = Array.isArray(shifts) ? shifts.filter((s) => s.isActive !== false) : [];
+        this.updateLiveClockFields();
+      },
+      error: () => {
+        this.shifts = [];
+        this.updateLiveClockFields();
+      },
+    });
+  }
+
+  private startLiveClock(): void {
+    this.updateLiveClockFields();
+    this.clockTimer = setInterval(() => this.updateLiveClockFields(), 1000);
+  }
+
+  private updateLiveClockFields(): void {
+    const now = new Date();
+    this.liveDateTimeLabel = this.shiftRealtimeService.formatDateTimeLabel(now);
+    const currentShift = this.shiftRealtimeService.resolveCurrentShift(this.shifts, now, false);
+    this.liveCurrentShiftLabel = this.shiftRealtimeService.formatShiftLabel(currentShift);
   }
 }
 

@@ -94,6 +94,7 @@ interface InventoryItem {
   styleUrls: [
     '../../shared/styles/admin-table-unified.css',
     '../../shared/styles/admin-panel-responsive.css',
+    '../../shared/styles/dashboard-layout.css',
     './pharmacy-dashboard.component.css',
   ],
 })
@@ -122,6 +123,7 @@ export class PharmacyDashboardComponent implements OnInit {
 
   activeSection: string = 'requests';
   private readonly storageKey = 'pharmacy-dashboard-ui-v1';
+  private readonly allowedSections = new Set(['requests', 'history', 'inventory']);
 
   loadingInventory = false;
   loadingRequests = false;
@@ -508,8 +510,15 @@ export class PharmacyDashboardComponent implements OnInit {
   }
 
   changeSection(section: string): void {
+    if (!this.allowedSections.has(section)) {
+      return;
+    }
     this.activeSection = section;
     this.persistUiState();
+  }
+
+  goToRequestsFromLogo(): void {
+    this.changeSection('requests');
   }
 
   /** KPI de solicitudes: mismo módulo, filtro y recarga desde servidor */
@@ -616,7 +625,11 @@ export class PharmacyDashboardComponent implements OnInit {
     if (!raw) return;
     try {
       const state = JSON.parse(raw);
-      if (typeof state.activeSection === 'string') this.activeSection = state.activeSection;
+      if (typeof state.activeSection === 'string' && this.allowedSections.has(state.activeSection)) {
+        this.activeSection = state.activeSection;
+      } else {
+        this.activeSection = 'requests';
+      }
       if (typeof state.requestFilter === 'string') this.requestFilter = state.requestFilter;
       if (typeof state.inventoryStatusFilter === 'string') this.inventoryStatusFilter = state.inventoryStatusFilter;
       if (typeof state.searchTerm === 'string') this.searchTerm = state.searchTerm;

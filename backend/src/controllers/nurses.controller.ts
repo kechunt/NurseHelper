@@ -547,7 +547,9 @@ export const getMyPatients = async (req: AuthRequest, res: Response) => {
     let patientsInBeds: Patient[] = [];
     try {
       patientsInBeds = await patientRepo.find({
-        where: { bedId: In(bedIds), isActive: true }
+        where: { bedId: In(bedIds), isActive: true },
+        // bedId tiene select:false en la entidad; la relación sí expone la cama asignada
+        relations: ['bed'],
       });
     } catch (patientError: any) {
       // Si la columna bedId o assignedToId no existe, continuar con array vacío
@@ -579,7 +581,8 @@ export const getMyPatients = async (req: AuthRequest, res: Response) => {
     let patientsAssignedToNurse: Patient[] = [];
     try {
       patientsAssignedToNurse = await patientRepo.find({
-        where: { assignedToId: userId, isActive: true }
+        where: { assignedToId: userId, isActive: true },
+        relations: ['bed'],
       });
       console.log(`✅ Pacientes asignados directamente a enfermera ${userId}: ${patientsAssignedToNurse.length}`);
     } catch (assignedError: any) {
@@ -613,7 +616,8 @@ export const getMyPatients = async (req: AuthRequest, res: Response) => {
       } else {
         // Si no, buscar por IDs de camas (comportamiento anterior)
         allPatients = await patientRepo.find({
-          where: { id: In(patientIds), isActive: true }
+          where: { id: In(patientIds), isActive: true },
+          relations: ['bed'],
         });
       }
     } catch (allPatientsError: any) {
@@ -708,8 +712,8 @@ export const getMyPatients = async (req: AuthRequest, res: Response) => {
 
     // Obtener todas las camas necesarias (de pacientes asignados o del área)
     const bedIdsFromAllPatients = allPatients
-      .map(p => p.bedId)
-      .filter(id => id !== null && id !== undefined) as number[];
+      .map((p) => p.bed?.id ?? p.bedId)
+      .filter((id): id is number => id !== null && id !== undefined) as number[];
     
     let allBedsForPatients: Bed[] = [];
     if (bedIdsFromAllPatients.length > 0) {
@@ -744,15 +748,19 @@ export const getMyPatients = async (req: AuthRequest, res: Response) => {
     // Iterar sobre TODOS los pacientes asignados directamente (no solo los de las camas)
     const patients = allPatients
       .map((patient) => {
-        console.log(`🔍 Procesando paciente ID: ${patient.id}, nombre: ${patient.firstName} ${patient.lastName}, activo: ${patient.isActive}, bedId: ${patient.bedId}`);
+        const resolvedBedId = patient.bed?.id ?? patient.bedId ?? null;
+        console.log(
+          `🔍 Procesando paciente ID: ${patient.id}, nombre: ${patient.firstName} ${patient.lastName}, activo: ${patient.isActive}, bedId: ${resolvedBedId}`
+        );
         if (!patient.isActive) {
           console.log(`⏭️ Saltando paciente ${patient.id} porque no está activo`);
           return null;
         }
 
-        // Obtener la cama del paciente si tiene una
-        const patientBed = patient.bedId ? bedsMap.get(patient.bedId) : null;
-        const bedNumber = patientBed ? patientBed.bedNumber : 'Sin cama asignada';
+        // Cama: relación `bed` (recomendado) o mapa por id (bedId puede no hidratarse por select:false)
+        const patientBed =
+          patient.bed ?? (resolvedBedId != null ? bedsMap.get(resolvedBedId) : null) ?? null;
+        const bedNumber = patientBed?.bedNumber ?? 'Sin cama asignada';
 
         // Calcular edad
         const age = patient.dateOfBirth

@@ -2,11 +2,11 @@
   <!-- Header similar al Admin -->
   <div class="dashboard-header">
     <div class="header-content">
-      <div class="logo-section">
+      <div class="logo-section" (click)="goToSummaryFromLogo()" role="button" tabindex="0" (keydown.enter)="goToSummaryFromLogo()" (keydown.space)="goToSummaryFromLogo(); $event.preventDefault()">
         <img src="/nursehelper.png" alt="NurseHelper" class="header-logo" />
         <div class="title-section">
           <h1 class="dashboard-title">Panel de Enfermera</h1>
-          <span class="area-subtitle">{{ assignedArea }}</span>
+          <span class="dashboard-subtitle" *ngIf="assignedArea">{{ assignedArea }}</span>
         </div>
       </div>
       <div class="user-section">
@@ -21,50 +21,69 @@
     </div>
   </div>
 
-  <!-- Contenido del dashboard -->
   <div class="dashboard-body">
-    <div class="dashboard-main-content">
-    <!-- Quick Stats -->
-    <div class="quick-stats">
-      <div class="stat-card" (click)="showAreaInfo()">
-        <div class="stat-icon">🏥</div>
-        <div class="stat-content">
-          <div class="stat-label">Área Asignada</div>
-          <div class="stat-value">{{ assignedArea }}</div>
-        </div>
-      </div>
-      
-      <div class="stat-card clickable" (click)="filterByPatients()">
-        <div class="stat-icon">👥</div>
-        <div class="stat-content">
-          <div class="stat-label">Pacientes Asignados</div>
-          <div class="stat-value">{{ assignedPatientsCount }} / {{ maxPatients }}</div>
-        </div>
-        <div class="click-hint">Click para ver</div>
-      </div>
-      
-      <div class="stat-card clickable" (click)="filterByTasks()">
-        <div class="stat-icon">⏰</div>
-        <div class="stat-content">
-          <div class="stat-label">Tareas Pendientes</div>
-          <div class="stat-value">{{ pendingTasksCount }}</div>
-        </div>
-        <div class="click-hint">Click para ver</div>
-      </div>
-      
-      <div class="stat-card clickable" (click)="showPharmacyRequest()">
-        <div class="stat-icon">💊</div>
-        <div class="stat-content">
-          <div class="stat-label">Medicamentos Hoy</div>
-          <div class="stat-value">{{ medicationsToday }}</div>
-        </div>
-        <div class="click-hint">Click para solicitar</div>
-      </div>
-    </div>
-  </div>
+    <nav class="dashboard-nav" aria-label="Módulos de enfermería">
+      <button type="button" class="nav-link" [class.active]="nurseMainView === 'summary'" (click)="setNurseMainView('summary')">
+        📊 Resumen
+      </button>
+      <button type="button" class="nav-link" [class.active]="nurseMainView === 'tasks'" (click)="setNurseMainView('tasks')">
+        ⏰ Tareas
+      </button>
+      <button type="button" class="nav-link" [class.active]="nurseMainView === 'pharmacy'" (click)="setNurseMainView('pharmacy')">
+        💊 Farmacia
+      </button>
+      <button type="button" class="nav-link" [class.active]="nurseMainView === 'beds'" (click)="setNurseMainView('beds')">
+        🛏️ Camas
+      </button>
+      <button type="button" class="nav-link" [class.active]="nurseMainView === 'patients'" (click)="setNurseMainView('patients')">
+        👥 Pacientes
+      </button>
+    </nav>
 
-  <!-- Sección de Tareas y Horarios Unificada (Mostrada por defecto) -->
-  <div *ngIf="showTasksSection" class="unified-tasks-section" id="tasks-section">
+    <div class="dashboard-content">
+      <div *ngIf="hasVisitedNurseView('summary')" [hidden]="nurseMainView !== 'summary'" class="tab-content">
+        <div class="overview-container dashboard-overview">
+          <h2 class="section-title">Resumen General</h2>
+          <div class="stats-grid">
+            <div class="stat-card clickable" (click)="showAreaInfo()">
+              <div class="stat-icon">🏥</div>
+              <div class="stat-content">
+                <h3 class="stat-value">{{ assignedArea }}</h3>
+                <p class="stat-label">Área asignada</p>
+              </div>
+              <div class="click-hint">Ver detalle</div>
+            </div>
+            <div class="stat-card clickable" (click)="filterByPatients()">
+              <div class="stat-icon">👥</div>
+              <div class="stat-content">
+                <h3 class="stat-value">{{ assignedPatientsCount }} / {{ maxPatients }}</h3>
+                <p class="stat-label">Pacientes asignados</p>
+              </div>
+              <div class="click-hint">Ir a pacientes</div>
+            </div>
+            <div class="stat-card clickable" (click)="filterByTasks()">
+              <div class="stat-icon">⏰</div>
+              <div class="stat-content">
+                <h3 class="stat-value">{{ pendingTasksCount }}</h3>
+                <p class="stat-label">Tareas pendientes</p>
+              </div>
+              <div class="click-hint">Ir a tareas</div>
+            </div>
+            <div class="stat-card clickable" (click)="showPharmacyRequest()">
+              <div class="stat-icon">💊</div>
+              <div class="stat-content">
+                <h3 class="stat-value">{{ medicationsToday }}</h3>
+                <p class="stat-label">Medicamentos hoy</p>
+              </div>
+              <div class="click-hint">Ir a farmacia</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+  <div *ngIf="hasVisitedNurseView('tasks')" [hidden]="nurseMainView !== 'tasks'" class="tab-content">
+    <div class="section-card nurse-module">
+    <div class="unified-tasks-section" id="tasks-section">
     <div class="section-header">
       <h2 class="section-title">⏰ Tareas Pendientes (Próximas Horas)</h2>
       <div class="tasks-actions">
@@ -189,53 +208,14 @@
         Prueba cambiando los filtros o haciendo click en "🔄 Limpiar Filtros"
       </p>
     </div>
-  </div>
-
-  <!-- Modal para Razón de No Completar Tarea -->
-  <div *ngIf="showNotCompletedModal" class="modal-backdrop modal-confirmation" (click)="closeNotCompletedModal()" style="z-index: 2000;">
-    <div class="modal-content modal-small" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h3>⚠️ Tarea No Realizada</h3>
-        <button class="close-btn" (click)="closeNotCompletedModal()">✕</button>
-      </div>
-
-      <div class="modal-body">
-        <div class="task-info-summary">
-          <p><strong>Hora programada:</strong> {{ selectedTaskForNotCompleted?.time }}</p>
-          <p><strong>Paciente:</strong> {{ selectedTaskForNotCompleted?.patientName || selectedPatient?.name }}</p>
-          <p><strong>Tarea/Medicamento:</strong> {{ selectedTaskForNotCompleted?.description || selectedTaskForNotCompleted?.medication }}</p>
-          <p *ngIf="selectedTaskForNotCompleted?.medication && selectedTaskForNotCompleted?.dosage">
-            <strong>Dosis:</strong> {{ selectedTaskForNotCompleted.dosage }}
-          </p>
-        </div>
-
-        <div class="reason-input-section">
-          <label for="reason-input">¿Por qué no se administró el medicamento/tratamiento? *</label>
-          <textarea 
-            id="reason-input"
-            class="observation-input" 
-            [(ngModel)]="notCompletedReason" 
-            placeholder="Ejemplo: Paciente rechazó el medicamento, Paciente dormido, Medicamento no disponible, etc."
-            rows="4"
-            maxlength="500"
-          ></textarea>
-          <div class="char-count">{{ (notCompletedReason || '').length }}/500 caracteres</div>
-        </div>
-      </div>
-
-      <div class="modal-footer">
-        <button class="btn-secondary-neuro" (click)="closeNotCompletedModal()">Cancelar</button>
-        <button class="btn-primary-neuro" 
-                (click)="confirmNotCompleted()" 
-                [disabled]="!notCompletedReason || notCompletedReason.trim().length < 10">
-          Confirmar
-        </button>
-      </div>
+    </div>
     </div>
   </div>
 
   <!-- Sección de Solicitud de Medicamentos -->
-  <div *ngIf="showPharmacySection" class="unified-tasks-section" id="pharmacy-section">
+  <div *ngIf="hasVisitedNurseView('pharmacy')" [hidden]="nurseMainView !== 'pharmacy'" class="tab-content">
+    <div class="section-card nurse-module">
+    <div class="unified-tasks-section" id="pharmacy-section">
     <div class="section-header">
       <h2 class="section-title">💊 Medicamentos de Hoy - Solicitud a Farmacia</h2>
       <div class="tasks-filters">
@@ -243,7 +223,7 @@
           <span class="summary-badge">📦 {{ uniqueMedicationsCount }} medicamentos</span>
           <span class="summary-badge">💉 {{ totalDosesToday }} dosis</span>
         </div>
-        <button class="close-section-btn" (click)="showPharmacySection = false; scrollToTop()">✕ Cerrar</button>
+        <button type="button" class="close-section-btn" (click)="setNurseMainView('summary')">✕ Cerrar</button>
       </div>
     </div>
 
@@ -302,9 +282,13 @@
     <p *ngIf="medicationsForPharmacy.length === 0" class="empty-message">
       No hay medicamentos programados para hoy
     </p>
+    </div>
+    </div>
   </div>
 
   <!-- Sección de Camas Asignadas -->
+  <div *ngIf="hasVisitedNurseView('beds')" [hidden]="nurseMainView !== 'beds'" class="tab-content">
+    <div class="section-card nurse-module">
   <div class="beds-section">
     <div class="section-header">
       <h2 class="section-title">🛏️ Mis Camas Asignadas</h2>
@@ -355,8 +339,12 @@
       </div>
     </div>
   </div>
+    </div>
+  </div>
 
   <!-- Tabla de Pacientes Mejorada -->
+  <div *ngIf="hasVisitedNurseView('patients')" [hidden]="nurseMainView !== 'patients'" class="tab-content">
+    <div class="section-card nurse-module">
   <div class="patients-table-section">
     <div class="section-header">
       <h2 class="section-title">👥 Mis Pacientes Asignados</h2>
@@ -448,6 +436,53 @@
     <p *ngIf="filteredPatients.length === 0" class="empty-message">
       No se encontraron pacientes con los filtros seleccionados
     </p>
+  </div>
+    </div>
+  </div>
+    </div>
+  </div>
+
+  <!-- Modal para Razón de No Completar Tarea -->
+  <div *ngIf="showNotCompletedModal" class="modal-backdrop modal-confirmation" (click)="closeNotCompletedModal()" style="z-index: 2000;">
+    <div class="modal-content modal-small" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>⚠️ Tarea No Realizada</h3>
+        <button class="close-btn" (click)="closeNotCompletedModal()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="task-info-summary">
+          <p><strong>Hora programada:</strong> {{ selectedTaskForNotCompleted?.time }}</p>
+          <p><strong>Paciente:</strong> {{ selectedTaskForNotCompleted?.patientName || selectedPatient?.name }}</p>
+          <p><strong>Tarea/Medicamento:</strong> {{ selectedTaskForNotCompleted?.description || selectedTaskForNotCompleted?.medication }}</p>
+          <p *ngIf="selectedTaskForNotCompleted?.medication && selectedTaskForNotCompleted?.dosage">
+            <strong>Dosis:</strong> {{ selectedTaskForNotCompleted.dosage }}
+          </p>
+        </div>
+
+        <div class="reason-input-section">
+          <label for="reason-input">¿Por qué no se administró el medicamento/tratamiento? *</label>
+          <textarea 
+            id="reason-input"
+            class="observation-input" 
+            [(ngModel)]="notCompletedReason" 
+            placeholder="Ejemplo: Paciente rechazó el medicamento, Paciente dormido, Medicamento no disponible, etc."
+            rows="4"
+            maxlength="500"
+          ></textarea>
+          <div class="char-count">{{ (notCompletedReason || '').length }}/500 caracteres</div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary-neuro" (click)="closeNotCompletedModal()">Cancelar</button>
+        <button class="btn-primary-neuro" 
+                (click)="confirmNotCompleted()" 
+                [disabled]="!notCompletedReason || notCompletedReason.trim().length < 10">
+          Confirmar
+        </button>
+      </div>
+    </div>
   </div>
 
   <!-- Modal de Detalles del Paciente -->

@@ -553,9 +553,35 @@
 .patients-table-container-modal {
   max-height: 300px;
   overflow-y: auto;
+  overflow-x: hidden;
   border-radius: 12px;
   background: #d1d9e6;
   box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
+}
+
+.patients-table-container-modal .patients-table {
+  table-layout: fixed;
+}
+
+.patients-table-container-modal .patients-table th,
+.patients-table-container-modal .patients-table td {
+  padding: 0.28rem 0.32rem !important;
+}
+
+.patients-table-container-modal .patients-table th:nth-child(1),
+.patients-table-container-modal .patients-table td:nth-child(1) {
+  width: 50%;
+}
+
+.patients-table-container-modal .patients-table th:nth-child(2),
+.patients-table-container-modal .patients-table td:nth-child(2) {
+  width: 20%;
+}
+
+.patients-table-container-modal .patients-table th:nth-child(3),
+.patients-table-container-modal .patients-table td:nth-child(3) {
+  width: 30%;
+  text-align: center;
 }
 
 .no-data {
@@ -757,6 +783,17 @@
 
 .btn-secondary-neuro:hover {
   box-shadow: inset 2px 2px 4px #bebebe, inset -2px -2px 4px #ffffff;
+}
+
+.btn-secondary-neuro.close-patients-modal-btn {
+  background: #e0e5ec;
+  color: #4a5568;
+  box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
+}
+
+.btn-secondary-neuro.close-patients-modal-btn:hover {
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+  transform: translateY(-1px);
 }
 
 /* Formularios */

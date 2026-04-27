@@ -52,6 +52,9 @@ export class UsersController {
         }
       }
 
+      // No listar cuentas que nunca completaron la verificación de correo
+      queryBuilder.andWhere('user.emailVerified = :emailVerified', { emailVerified: true });
+
       // Paginación y ordenamiento (usando índice en createdAt)
       queryBuilder
         .orderBy('user.createdAt', 'DESC')

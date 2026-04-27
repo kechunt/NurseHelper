@@ -91,9 +91,17 @@ interface TreatmentRecord {
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './nurse-dashboard.component.html',
-  styleUrl: './nurse-dashboard.component.css',
+  styleUrls: [
+    '../../shared/styles/admin-panel-responsive.css',
+    '../../shared/styles/admin-table-unified.css',
+    '../../shared/styles/dashboard-layout.css',
+    '../../shared/styles/dashboard-overview-stats.css',
+    './nurse-dashboard.component.css',
+  ],
 })
 export class NurseDashboardComponent implements OnInit {
+  private readonly nurseViewStorageKey = 'nurse-dashboard-main-view-v1';
+  private readonly allowedNurseViews = new Set(['summary', 'tasks', 'pharmacy', 'beds', 'patients']);
   nurseName: string = '';
   assignedArea: string = '';
   maxPatients: number = 0;
@@ -139,9 +147,9 @@ export class NurseDashboardComponent implements OnInit {
   showAddMedicationModal: boolean = false;
   medicationModalFromPatientDetail: boolean = false;
   selectedPatientForMedication: string = '';
-  isAddingMedication: boolean = false; // Prevenir múltiples clics
-  isAddingTreatment: boolean = false; // Prevenir múltiples clics al agregar tratamiento
-  isSavingObservation: boolean = false; // Prevenir múltiples clics al guardar observación
+  isAddingMedication: boolean = false; 
+  isAddingTreatment: boolean = false; 
+  isSavingObservation: boolean = false; 
   newMedication: any = {
     medication: '',
     dosage: '',
@@ -191,17 +199,39 @@ export class NurseDashboardComponent implements OnInit {
     description: '',
     scheduleType: 'recurring', // 'single' o 'recurring'
     date: '',
-    times: ['08:00'], // Múltiples horarios como en medicinas
-    time: '08:00', // Para compatibilidad
-    daysOfWeek: [], // Para schedules recurrentes (0=Domingo, 1=Lunes, etc.)
-    duration: 4, // Duración en semanas por defecto
-    durationUnit: 'weeks', // 'weeks' para tratamientos
+    times: ['08:00'], 
+    time: '08:00', 
+    daysOfWeek: [], 
+    duration: 4, 
+    durationUnit: 'weeks', 
     notes: ''
   };
   selectedTreatmentDays: string[] = [];
 
-  showPharmacySection: boolean = false;
-  showTasksSection: boolean = true;
+  /** Vista principal del panel (misma idea que admin/farmacia: nav lateral). Por defecto: resumen. */
+  nurseMainView: 'summary' | 'tasks' | 'pharmacy' | 'beds' | 'patients' = 'summary';
+
+  /**
+   * Módulos ya visitados: se mantienen en el DOM ocultos (como admin) para no repetir
+   * trabajo pesado al cambiar de pestaña.
+   */
+  private readonly visitedNurseViews = new Set<'summary' | 'tasks' | 'pharmacy' | 'beds' | 'patients'>([
+    'summary',
+  ]);
+
+  hasVisitedNurseView(view: 'summary' | 'tasks' | 'pharmacy' | 'beds' | 'patients'): boolean {
+    return this.visitedNurseViews.has(view);
+  }
+
+  setNurseMainView(view: 'summary' | 'tasks' | 'pharmacy' | 'beds' | 'patients'): void {
+    this.nurseMainView = view;
+    this.visitedNurseViews.add(view);
+    this.persistNurseMainView();
+  }
+
+  goToSummaryFromLogo(): void {
+    this.setNurseMainView('summary');
+  }
 
   medicationsForPharmacy: any[] = [];
   uniqueMedicationsCount: number = 0;
@@ -275,6 +305,8 @@ export class NurseDashboardComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.restoreNurseMainView();
+    this.visitedNurseViews.add(this.nurseMainView);
     this.loadNurseData();
   }
 
@@ -293,6 +325,19 @@ export class NurseDashboardComponent implements OnInit {
       this.nurseName = `${currentUser.firstName} ${currentUser.lastName}`;
     }
     this.reloadDashboard$.next();
+  }
+
+  private persistNurseMainView(): void {
+    localStorage.setItem(this.nurseViewStorageKey, this.nurseMainView);
+  }
+
+  private restoreNurseMainView(): void {
+    const savedView = localStorage.getItem(this.nurseViewStorageKey);
+    if (savedView && this.allowedNurseViews.has(savedView)) {
+      this.nurseMainView = savedView as 'summary' | 'tasks' | 'pharmacy' | 'beds' | 'patients';
+    } else {
+      this.nurseMainView = 'summary';
+    }
   }
 
   private applyPrimaryDashboardData(
@@ -322,10 +367,29 @@ export class NurseDashboardComponent implements OnInit {
       return processedBed;
     });
 
+    const bedNumberByPatientId = new Map<number, string>();
+    for (const b of beds || []) {
+      const pid = b.patient?.id;
+      if (pid != null && b.bedNumber) {
+        bedNumberByPatientId.set(Number(pid), b.bedNumber);
+      }
+    }
+
     this.patients = (patients || []).map((p) => ({
       id: p.id?.toString() || '',
       name: `${p.firstName || ''} ${p.lastName || ''}`,
-      bedNumber: p.bedNumber || '',
+      bedNumber: (() => {
+        const apiBed = (p.bedNumber || '').trim();
+        if (apiBed && apiBed !== 'Sin cama asignada') {
+          return apiBed;
+        }
+        const pid = typeof p.id === 'number' ? p.id : parseInt(String(p.id), 10);
+        if (Number.isFinite(pid)) {
+          const fromBeds = bedNumberByPatientId.get(pid);
+          if (fromBeds) return fromBeds;
+        }
+        return apiBed;
+      })(),
       age: p.age || 0,
       diagnosis: p.diagnosis || 'Sin diagnóstico',
       medications: p.medications || [],
@@ -575,7 +639,7 @@ export class NurseDashboardComponent implements OnInit {
 
   markScheduleAsNotAdministered(item: any): void {
     if (!item || !item.scheduleId) {
-      alert('⚠️ Error: Información de horario no válida');
+      this.toastService.error('Información de horario no válida');
       return;
     }
     
@@ -893,48 +957,41 @@ export class NurseDashboardComponent implements OnInit {
 
   // ========== FUNCIONES DE LAS STAT CARDS ==========
   showAreaInfo(): void {
-    alert(`Área: ${this.assignedArea}\nCamas asignadas: ${this.myBeds.length}\nPacientes: ${this.assignedPatientsCount}`);
+    this.toastService.info(
+      `Área: ${this.assignedArea}. Camas asignadas: ${this.myBeds.length}. Pacientes: ${this.assignedPatientsCount}`
+    );
   }
 
   filterByPatients(): void {
-    // Scroll a la tabla de pacientes
-    const table = document.querySelector('.patients-table-section');
-    if (table) {
-      table.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    this.setNurseMainView('patients');
     this.selectedFilter = 'all';
     this.searchTerm = '';
     this.filterPatients();
+    setTimeout(() => {
+      document
+        .querySelector('.patients-table-section')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
   }
 
   filterByTasks(): void {
-    this.showTasksSection = !this.showTasksSection;
-    this.showPharmacySection = false;
-    
-    if (this.showTasksSection) {
-      setTimeout(() => {
-        const tasksSection = document.getElementById('tasks-section');
-        if (tasksSection) {
-          tasksSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }, 100);
-    }
+    this.setNurseMainView('tasks');
+    setTimeout(() => {
+      document.getElementById('tasks-section')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }, 50);
   }
 
   showPharmacyRequest(): void {
-    // Mostrar/ocultar la sección de MEDICAMENTOS/FARMACIA
-    this.showPharmacySection = !this.showPharmacySection;
-    this.showTasksSection = false;
-    
-    // Si se muestra, hacer scroll a la sección
-    if (this.showPharmacySection) {
-      setTimeout(() => {
-        const pharmacySection = document.getElementById('pharmacy-section');
-        if (pharmacySection) {
-          pharmacySection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }, 100);
-    }
+    this.setNurseMainView('pharmacy');
+    setTimeout(() => {
+      document.getElementById('pharmacy-section')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }, 50);
   }
 
   // ========== FUNCIONES DE FARMACIA ==========
@@ -1055,7 +1112,7 @@ export class NurseDashboardComponent implements OnInit {
   openAddTaskModal(): void {
     // Validar que haya pacientes disponibles
     if (this.patients.length === 0) {
-      alert('⚠️ No hay pacientes disponibles');
+      this.toastService.warning('No hay pacientes disponibles');
       return;
     }
     
@@ -1178,7 +1235,7 @@ export class NurseDashboardComponent implements OnInit {
 
     // Validar campos básicos
     if (!this.newTreatment.patientId || !this.newTreatment.description) {
-      alert('⚠️ Por favor complete todos los campos obligatorios');
+      this.toastService.warning('Por favor complete todos los campos obligatorios');
       return;
     }
 
@@ -1188,23 +1245,23 @@ export class NurseDashboardComponent implements OnInit {
       : (this.newTreatment.time ? [this.newTreatment.time] : []);
     
     if (timesToUse.length === 0) {
-      alert('⚠️ Por favor agregue al menos un horario');
+      this.toastService.warning('Por favor agregue al menos un horario');
       return;
     }
 
     if (this.newTreatment.scheduleType === 'single' && !this.newTreatment.date) {
-      alert('⚠️ Por favor seleccione una fecha');
+      this.toastService.warning('Por favor seleccione una fecha');
       return;
     }
 
     if (this.newTreatment.scheduleType === 'recurring' && (!this.newTreatment.daysOfWeek || this.newTreatment.daysOfWeek.length === 0)) {
-      alert('⚠️ Por favor seleccione al menos un día de la semana');
+      this.toastService.warning('Por favor seleccione al menos un día de la semana');
       return;
     }
 
     // Validar que daysOfWeek sea un array válido
     if (this.newTreatment.scheduleType === 'recurring' && !Array.isArray(this.newTreatment.daysOfWeek)) {
-      alert('⚠️ Error: Los días seleccionados no son válidos');
+      this.toastService.error('Los días seleccionados no son válidos');
       return;
     }
 
@@ -1237,10 +1294,12 @@ export class NurseDashboardComponent implements OnInit {
 
     this.nurseService.addTreatment(treatmentData).subscribe({
       next: (response) => {
-        const message = this.newTreatment.scheduleType === 'single' 
-          ? `✅ Tratamiento agregado exitosamente: ${response.count || response.schedules?.length || 0} schedule(s) creado(s)`
-          : `✅ Tratamiento recurrente agregado: ${response.count || response.schedules?.length || 0} schedule(s) creado(s)`;
-        alert(message);
+        const n = response.count ?? response.schedules?.length ?? 0;
+        const msg =
+          this.newTreatment.scheduleType === 'single'
+            ? `Tratamiento agregado correctamente (${n} horario(s) creado(s)).`
+            : `Tratamiento recurrente agregado (${n} horario(s) creado(s)).`;
+        this.toastService.success(msg);
         this.closeAddTreatmentModal();
         this.isAddingTreatment = false;
         this.loadNurseData();
@@ -1248,7 +1307,7 @@ export class NurseDashboardComponent implements OnInit {
       error: (error) => {
         console.error('Error agregando tratamiento:', error);
         const errorMessage = error?.error?.message || error?.error?.error || 'Error desconocido';
-        alert(`❌ Error al agregar tratamiento: ${errorMessage}\n\nPor favor intente nuevamente.`);
+        this.toastService.error(`Error al agregar tratamiento: ${errorMessage}`);
         this.isAddingTreatment = false;
       }
     });
@@ -1256,7 +1315,7 @@ export class NurseDashboardComponent implements OnInit {
 
   openAddMedicationFromTasks(): void {
     if (this.patients.length === 0) {
-      alert('⚠️ No hay pacientes disponibles');
+      this.toastService.warning('No hay pacientes disponibles');
       return;
     }
 
@@ -1266,7 +1325,7 @@ export class NurseDashboardComponent implements OnInit {
 
   completeTask(task: any): void {
     if (!task || !task.id) {
-      alert('⚠️ Error: Información de tarea no válida');
+      this.toastService.error('Información de tarea no válida');
       return;
     }
 
@@ -1528,13 +1587,13 @@ export class NurseDashboardComponent implements OnInit {
 
     if (!this.selectedPatientForMedication || !this.newMedication.medication || 
         !this.newMedication.dosage || this.newMedication.times.length === 0) {
-      alert('⚠️ Por favor complete todos los campos requeridos');
+      this.toastService.warning('Por favor complete todos los campos requeridos');
       return;
     }
 
     // Validar que se hayan seleccionado días
     if (this.newMedication.days !== 'all' && (!this.selectedDays || this.selectedDays.length === 0)) {
-      alert('⚠️ Por favor seleccione al menos un día de la semana');
+      this.toastService.warning('Por favor seleccione al menos un día de la semana');
       return;
     }
 
@@ -1565,7 +1624,9 @@ export class NurseDashboardComponent implements OnInit {
 
     this.nurseService.addMedication(medicationData).subscribe({
       next: (response) => {
-        alert(`✅ Medicamento agregado exitosamente!\n${response.schedulesCreated || 0} dosis programadas.`);
+        this.toastService.success(
+          `Medicamento agregado correctamente. ${response.schedulesCreated || 0} dosis programadas.`
+        );
         this.closeAddMedicationModal();
         this.isAddingMedication = false;
         // Recargar datos del paciente
@@ -1573,7 +1634,9 @@ export class NurseDashboardComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error agregando medicamento:', error);
-        alert('❌ Error al agregar medicamento. Por favor intente nuevamente.');
+        const msg =
+          error?.error?.message || error?.message || 'Error al agregar medicamento. Intente nuevamente.';
+        this.toastService.error(msg);
         this.isAddingMedication = false;
       }
     });
@@ -1594,7 +1657,7 @@ export class NurseDashboardComponent implements OnInit {
 
   confirmSuspendMedication(): void {
     if (!this.suspendReason || this.suspendReason.trim().length < 10) {
-      alert('⚠️ El motivo debe tener al menos 10 caracteres');
+      this.toastService.warning('El motivo debe tener al menos 10 caracteres');
       return;
     }
 
@@ -1621,7 +1684,7 @@ export class NurseDashboardComponent implements OnInit {
     }
 
     if (!this.selectedPatient || !this.medicationToSuspend) {
-      alert('⚠️ Error: Información del paciente o medicamento no disponible');
+      this.toastService.error('Información del paciente o medicamento no disponible');
       return;
     }
 
@@ -1632,7 +1695,9 @@ export class NurseDashboardComponent implements OnInit {
       suspendUntil
     ).subscribe({
       next: (response) => {
-        alert(`⏸️ Medicamento suspendido.\n${response.dosesAffected || 0} dosis afectadas.`);
+        this.toastService.success(
+          `Medicamento suspendido. ${response.dosesAffected || 0} dosis afectadas.`
+        );
         this.closeSuspendMedicationModal();
         // Recargar datos del paciente
         if (this.selectedPatient) {
@@ -1649,7 +1714,7 @@ export class NurseDashboardComponent implements OnInit {
       error: (error) => {
         console.error('Error suspendiendo medicamento:', error);
         const errorMessage = error.error?.message || 'Error desconocido al suspender medicamento';
-        alert(`❌ Error al suspender medicamento: ${errorMessage}`);
+        this.toastService.error(`Error al suspender medicamento: ${errorMessage}`);
       }
     });
   }
@@ -1667,12 +1732,12 @@ export class NurseDashboardComponent implements OnInit {
 
   confirmDeleteMedication(): void {
     if (!this.deleteReason || this.deleteReason.trim().length < 10) {
-      alert('⚠️ El motivo debe tener al menos 10 caracteres');
+      this.toastService.warning('El motivo debe tener al menos 10 caracteres');
       return;
     }
 
     if (!this.selectedPatient || !this.medicationToDelete) {
-      alert('⚠️ Error: Información del paciente o medicamento no disponible');
+      this.toastService.error('Información del paciente o medicamento no disponible');
       return;
     }
 
@@ -1688,7 +1753,9 @@ export class NurseDashboardComponent implements OnInit {
 
     this.nurseService.deleteMedication(patientId, medicationName, reason).subscribe({
       next: (response) => {
-        alert(`🗑️ Medicamento eliminado permanentemente.\n${response.dosesDeleted || 0} dosis eliminadas.`);
+        this.toastService.success(
+          `Medicamento eliminado permanentemente. ${response.dosesDeleted || 0} dosis eliminadas.`
+        );
         this.closeDeleteMedicationModal();
         if (this.selectedPatient && this.selectedPatient.id) {
           this.loadPatientDetails(this.selectedPatient.id);
@@ -1697,7 +1764,7 @@ export class NurseDashboardComponent implements OnInit {
       },
       error: (error) => {
         const errorMsg = error?.error?.message || error?.error?.error || 'Error desconocido';
-        alert(`❌ Error al eliminar medicamento: ${errorMsg}\n\nPor favor intente nuevamente.`);
+        this.toastService.error(`Error al eliminar medicamento: ${errorMsg}`);
       }
     });
   }
@@ -1720,7 +1787,7 @@ export class NurseDashboardComponent implements OnInit {
 
   confirmReactivateMedication(): void {
     if (!this.selectedPatient || !this.medicationToReactivate) {
-      alert('⚠️ Error: Información del paciente o medicamento no disponible');
+      this.toastService.error('Información del paciente o medicamento no disponible');
       return;
     }
 
@@ -1734,7 +1801,9 @@ export class NurseDashboardComponent implements OnInit {
       this.medicationToReactivate.name
     ).subscribe({
       next: (response) => {
-        alert(`▶️ Medicamento reactivado exitosamente.\n${response.dosesReactivated || 0} dosis reactivadas.`);
+        this.toastService.success(
+          `Medicamento reactivado correctamente. ${response.dosesReactivated || 0} dosis reactivadas.`
+        );
         this.closeReactivateMedicationModal();
         // Recargar datos del paciente
         if (this.selectedPatient) {
@@ -1750,7 +1819,7 @@ export class NurseDashboardComponent implements OnInit {
       },
       error: (error) => {
         const errorMessage = error.error?.message || 'Error desconocido al reactivar medicamento';
-        alert(`❌ Error al reactivar medicamento: ${errorMessage}`);
+        this.toastService.error(`Error al reactivar medicamento: ${errorMessage}`);
       }
     });
   }
@@ -1773,12 +1842,12 @@ export class NurseDashboardComponent implements OnInit {
 
   confirmPostponeTask(): void {
     if (!this.taskToPostpone || !this.taskToPostpone.id) {
-      alert('⚠️ Error: Información de tarea no válida');
+      this.toastService.error('Información de tarea no válida');
       return;
     }
 
     if (!this.postponeNewDate || !this.postponeNewTime) {
-      alert('⚠️ Por favor ingrese fecha y hora válidas');
+      this.toastService.warning('Por favor ingrese fecha y hora válidas');
       return;
     }
 
@@ -1787,19 +1856,23 @@ export class NurseDashboardComponent implements OnInit {
     const now = new Date();
     
     if (newDateTime <= now) {
-      alert('⚠️ La fecha y hora deben ser futuras');
+      this.toastService.warning('La fecha y hora deben ser futuras');
       return;
     }
 
     this.nurseService.postponeTask(this.taskToPostpone.id, newDateTime.toISOString()).subscribe({
       next: () => {
-        alert(`⏱️ Tarea pospuesta para el ${this.postponeNewDate} a las ${this.postponeNewTime}`);
+        this.toastService.success(
+          `Tarea pospuesta para el ${this.postponeNewDate} a las ${this.postponeNewTime}`
+        );
         
         this.closePostponeTaskModal();
         this.loadNurseData();
       },
       error: (error) => {
-        alert('Error al posponer la tarea. Por favor intente nuevamente.');
+        const msg =
+          error?.error?.message || error?.message || 'Error al posponer la tarea. Intente nuevamente.';
+        this.toastService.error(msg);
       }
     });
   }
@@ -1879,9 +1952,11 @@ export class NurseDashboardComponent implements OnInit {
 
   releaseBed(): void {
     this.confirmationService.confirm({
-      title: 'Liberar Cama',
+      title: 'Liberar cama',
       message: '¿Estás seguro de liberar esta cama? El paciente quedará sin cama asignada.',
-      type: 'warning'
+      confirmText: 'Liberar',
+      cancelText: 'Cancelar',
+      type: 'warning',
     }).then((confirmed) => {
       if (confirmed) {
         this.editBedForm.patientId = null;
@@ -1910,7 +1985,6 @@ export class NurseDashboardComponent implements OnInit {
       this.toastService.error('Error: Cama no válida');
       return;
     }
-
     if (!this.editBedForm.bedNumber.trim()) {
       this.toastService.warning('El número de cama es requerido');
       return;
@@ -1993,14 +2067,14 @@ export class NurseDashboardComponent implements OnInit {
 
   printPatientInfo(): void {
     if (!this.selectedPatient) {
-      alert('⚠️ No hay información del paciente para imprimir');
+      this.toastService.warning('No hay información del paciente para imprimir');
       return;
     }
 
     // Crear ventana de impresión con contenido formateado
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
-      alert('⚠️ Por favor permite ventanas emergentes para imprimir');
+      this.toastService.warning('Permite ventanas emergentes en el navegador para imprimir');
       return;
     }
 
@@ -2151,4 +2225,5 @@ export class NurseDashboardComponent implements OnInit {
     `;
   }
 }
+
 

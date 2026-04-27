@@ -1,8 +1,17 @@
-<div class="overview-container">
+<div class="overview-container dashboard-overview">
   <h2 class="section-title">Resumen General</h2>
 
   <div *ngIf="loading" class="loading-state">
     <p>Cargando estadísticas...</p>
+  </div>
+
+  <div class="stat-card realtime-shift-card">
+    <div class="stat-icon">🕒</div>
+    <div class="stat-content">
+      <h3 class="stat-value realtime-value">{{ liveDateTimeLabel }}</h3>
+      <p class="stat-label">Fecha y hora actual</p>
+      <p class="realtime-shift-label">Turno en curso: {{ liveCurrentShiftLabel }}</p>
+    </div>
   </div>
 
   <div *ngIf="!loading" class="stats-grid">

@@ -27,7 +27,14 @@
         </option>
       </select>
     </div>
-    <div class="filter-group" *ngIf="searchQuery || selectedArea">
+    <div class="filter-group">
+      <label for="presence-filter">🟢 Estado en turno:</label>
+      <select id="presence-filter" class="neuro-select" [(ngModel)]="selectedShiftPresenceFilter">
+        <option value="all">Todas</option>
+        <option value="onShift">En turno (presentes)</option>
+      </select>
+    </div>
+    <div class="filter-group" *ngIf="searchQuery || selectedArea || selectedShiftPresenceFilter !== 'all'">
       <button class="neuro-btn clear-filters-btn" (click)="clearFilters()">
         🗑️ Limpiar Filtros
       </button>
@@ -78,6 +85,16 @@
 
       <div class="nurse-details">
         <div class="detail-item">
+          <span class="detail-label">⏱️ Turno actual:</span>
+          <span class="detail-value" [class.at-capacity]="!nurse.onCurrentShift">
+            {{ getOperationalStatusLabel(nurse) }}
+          </span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">🕒 En curso:</span>
+          <span class="detail-value">{{ liveShiftName }}</span>
+        </div>
+        <div class="detail-item">
           <span class="detail-label">📍 Área:</span>
           <span class="detail-value">{{ getAreaName(nurse.assignedAreaId) }}</span>
         </div>
@@ -110,7 +127,7 @@
             <tbody>
               <tr *ngFor="let patient of nurse.assignedPatients">
                 <td>{{ patient.firstName }} {{ patient.lastName }}</td>
-                <td>{{ getPatientBed(patient.id) }}</td>
+                <td>{{ getPatientBed(patient) }}</td>
                 <td>
                   <button class="action-btn-small remove" (click)="removePatientFromNurse(patient, nurse)" title="Remover">
                     ✕
@@ -224,7 +241,7 @@
               <tbody>
                 <tr *ngFor="let patient of selectedNursePatients">
                   <td>{{ patient.firstName }} {{ patient.lastName }}</td>
-                  <td>{{ getPatientBed(patient.id) }}</td>
+                  <td>{{ getPatientBed(patient) }}</td>
                   <td>
                     <button class="action-btn-small remove" (click)="removePatientFromNurse(patient)" title="Remover">
                       ✕ Remover
@@ -253,10 +270,10 @@
               <tbody>
                 <tr *ngFor="let patient of availablePatients">
                   <td>{{ patient.firstName }} {{ patient.lastName }}</td>
-                  <td>{{ getPatientBed(patient.id) }}</td>
+                  <td>{{ getPatientBed(patient) }}</td>
                   <td>
                     <button class="action-btn-small assign" (click)="assignPatientToNurse(patient)" title="Asignar">
-                      ➕ Asignar
+                      ➕ Asignar con cama
                     </button>
                   </td>
                 </tr>
@@ -269,7 +286,39 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn-secondary-neuro" (click)="closePatientsModal()">Cerrar</button>
+        <button class="btn-secondary-neuro close-patients-modal-btn" (click)="closePatientsModal()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Seleccionar cama al asignar paciente -->
+  <div *ngIf="showAssignBedModal" class="modal-backdrop" (click)="closeAssignBedModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>🛏️ Seleccionar cama para {{ patientPendingAssign?.firstName }} {{ patientPendingAssign?.lastName }}</h3>
+        <button class="close-btn" (click)="closeAssignBedModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="info-box">
+          <p><strong>Enfermera:</strong> {{ selectedNurse?.firstName }} {{ selectedNurse?.lastName }}</p>
+          <p><strong>Área:</strong> {{ getAreaName(selectedNurse?.assignedAreaId) }}</p>
+        </div>
+
+        <div class="input-group">
+          <label for="assign-bed-to-patient">Cama *</label>
+          <select id="assign-bed-to-patient" class="neuro-select" [(ngModel)]="selectedBedIdForAssign">
+            <option [ngValue]="null">Selecciona una cama</option>
+            <option *ngFor="let bed of bedsForPendingAssign" [ngValue]="bed.id">
+              {{ bed.bedNumber }} {{ bed.patientId ? '(actual del paciente)' : '(disponible)' }}
+            </option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary-neuro" (click)="closeAssignBedModal()">Cancelar</button>
+        <button class="btn-primary-neuro" (click)="confirmAssignPatientToNurseWithBed()" [disabled]="!selectedBedIdForAssign">
+          Guardar asignación
+        </button>
       </div>
     </div>
   </div>

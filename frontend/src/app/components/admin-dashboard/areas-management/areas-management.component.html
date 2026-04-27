@@ -18,15 +18,126 @@
       </div>
       <p class="area-description" *ngIf="area.description">{{ area.description }}</p>
       <div class="area-stats">
-        <span class="stat">🛏️ {{ getBedsForArea(area.id).length }} camas</span>
-        <span class="stat">
+        <button class="stat" type="button" (click)="openAreaBedsModal(area)">
+          🛏️ {{ getBedsForArea(area.id).length }} camas
+        </button>
+        <button class="stat" type="button" (click)="openAreaBedsModal(area)">
           👤 {{ getOccupiedBedsForArea(area.id) }} ocupadas
-        </span>
+        </button>
+        <button class="stat" type="button" (click)="openAreaPatientsModal(area)">
+          🧑‍🤝‍🧑 {{ getPatientsCountForArea(area.id) }} pacientes
+        </button>
       </div>
       <div class="card-actions">
         <button class="neuro-btn-icon" (click)="openCreateBedModal(area)" title="Agregar cama">➕</button>
         <button class="neuro-btn-icon" (click)="openModal(area)" title="Editar">✏️</button>
         <button class="neuro-btn-icon" (click)="deleteArea(area)" title="Eliminar">🗑️</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: detalle de camas y ocupación por área -->
+  <div *ngIf="showAreaBedsModal && selectedAreaForBeds" class="modal-backdrop" (click)="closeAreaBedsModal()">
+    <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>🛏️ Camas y pacientes - {{ selectedAreaForBeds.name }}</h3>
+        <button class="close-btn" (click)="closeAreaBedsModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="patients-table-container">
+          <table class="patients-table">
+            <thead>
+              <tr>
+                <th>Cama</th>
+                <th>Estado</th>
+                <th>Paciente</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of getBedsDetailsForArea(selectedAreaForBeds.id)">
+                <td>{{ item.bed.bedNumber }}</td>
+                <td>{{ item.patient ? 'Ocupada' : 'Disponible' }}</td>
+                <td>
+                  <span *ngIf="item.patient">{{ item.patient.firstName }} {{ item.patient.lastName }}</span>
+                  <span *ngIf="!item.patient">Sin paciente</span>
+                </td>
+                <td>
+                  <button
+                    *ngIf="item.patient"
+                    class="action-btn change-btn"
+                    (click)="openChangeAreaModal(item.patient); closeAreaBedsModal()"
+                    title="Editar o cambiar cama/área"
+                  >
+                    ✏️ Editar/Cambiar
+                  </button>
+                  <button
+                    *ngIf="item.patient"
+                    class="action-btn assign-btn"
+                    (click)="releasePatientFromBed(item.bed)"
+                    title="Quitar paciente de la cama"
+                  >
+                    🗑️ Liberar
+                  </button>
+                  <span *ngIf="!item.patient" class="no-bed-badge">Cama disponible</span>
+                </td>
+              </tr>
+              <tr *ngIf="getBedsDetailsForArea(selectedAreaForBeds.id).length === 0">
+                <td colspan="4" class="no-data-message">No hay camas registradas en esta área</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="neuro-btn outlined" (click)="closeAreaBedsModal()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: pacientes del área (con o sin cama) -->
+  <div *ngIf="showAreaPatientsModal && selectedAreaForPatients" class="modal-backdrop" (click)="closeAreaPatientsModal()">
+    <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>🧑‍🤝‍🧑 Pacientes del área - {{ selectedAreaForPatients.name }}</h3>
+        <button class="close-btn" (click)="closeAreaPatientsModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="patients-table-container">
+          <table class="patients-table">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Identificación</th>
+                <th>Cama</th>
+                <th>Teléfono</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let patient of getPatientsByArea(selectedAreaForPatients.id!)">
+                <td>{{ patient.firstName }} {{ patient.lastName }}</td>
+                <td>{{ patient.identificationNumber || 'N/A' }}</td>
+                <td>
+                  <span class="bed-badge" *ngIf="patient.bedNumber">{{ patient.bedNumber }}</span>
+                  <span class="no-bed-badge" *ngIf="!patient.bedNumber">Sin cama</span>
+                </td>
+                <td>{{ patient.phone || 'N/A' }}</td>
+                <td>
+                  <button class="action-btn change-btn" (click)="openChangeAreaModal(patient); closeAreaPatientsModal()">
+                    🔄 Cambiar Área
+                  </button>
+                </td>
+              </tr>
+              <tr *ngIf="getPatientsByArea(selectedAreaForPatients.id!).length === 0">
+                <td colspan="5" class="no-data-message">No hay pacientes asignados a esta área</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="neuro-btn outlined" (click)="closeAreaPatientsModal()">Cerrar</button>
       </div>
     </div>
   </div>

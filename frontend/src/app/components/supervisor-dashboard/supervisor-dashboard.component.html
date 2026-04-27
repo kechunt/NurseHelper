@@ -1,7 +1,7 @@
 <div class="admin-dashboard">
   <div class="dashboard-header">
     <div class="header-content">
-      <div class="logo-section">
+      <div class="logo-section" (click)="goToOverviewFromLogo()" role="button" tabindex="0" (keydown.enter)="goToOverviewFromLogo()" (keydown.space)="goToOverviewFromLogo(); $event.preventDefault()">
         <img src="/nursehelper.png" alt="NurseHelper" class="header-logo" />
         <h1 class="dashboard-title">Panel de Supervisión</h1>
       </div>

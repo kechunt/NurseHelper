@@ -30,6 +30,8 @@ import { SchedulesManagementComponent } from '../admin-dashboard/schedules-manag
 })
 export class SupervisorDashboardComponent implements OnInit {
   activeTab: string = 'overview';
+  private readonly storageKey = 'supervisor-dashboard-active-tab-v1';
+  private readonly allowedTabs = new Set(['overview', 'users', 'staff', 'areas', 'beds', 'patients', 'schedules']);
   private readonly visitedTabs = new Set<string>(['overview']);
 
   constructor(
@@ -54,6 +56,9 @@ export class SupervisorDashboardComponent implements OnInit {
       this.router.navigate(['/dashboard']);
       return;
     }
+
+    this.restoreActiveTab();
+    this.visitedTabs.add(this.activeTab);
   }
 
   hasVisitedTab(tab: string): boolean {
@@ -61,13 +66,34 @@ export class SupervisorDashboardComponent implements OnInit {
   }
 
   setActiveTab(tab: string): void {
+    if (!this.allowedTabs.has(tab)) {
+      return;
+    }
     this.activeTab = tab;
     this.visitedTabs.add(tab);
+    this.persistActiveTab();
+  }
+
+  goToOverviewFromLogo(): void {
+    this.setActiveTab('overview');
   }
 
   logout(): void {
     this.authService.logout();
     this.router.navigate(['/login']);
+  }
+
+  private persistActiveTab(): void {
+    localStorage.setItem(this.storageKey, this.activeTab);
+  }
+
+  private restoreActiveTab(): void {
+    const savedTab = localStorage.getItem(this.storageKey);
+    if (savedTab && this.allowedTabs.has(savedTab)) {
+      this.activeTab = savedTab;
+    } else {
+      this.activeTab = 'overview';
+    }
   }
 }
 

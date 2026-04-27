@@ -269,13 +269,19 @@ export class AdminService {
 
   updateBed(id: number, bed: Partial<Bed>): Observable<any> {
     return this.http.patch(`${environment.apiUrl}/beds/${id}`, bed).pipe(
-      tap(() => this.clearBedsCache())
+      tap(() => {
+        this.clearBedsCache();
+        this.clearPatientsCache();
+      })
     );
   }
 
   assignPatientToBed(bedId: number, patientId: number | null): Observable<any> {
     return this.http.post(`${environment.apiUrl}/beds/${bedId}/assign`, { patientId }).pipe(
-      tap(() => this.clearBedsCache())
+      tap(() => {
+        this.clearBedsCache();
+        this.clearPatientsCache();
+      })
     );
   }
 

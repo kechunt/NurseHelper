@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import { AppDataSource } from '../data-source';
 import { Shift } from '../entities/Shift';
 import { NurseShift } from '../entities/NurseShift';
+import { ShiftAttendance, ShiftAttendanceStatus } from '../entities/ShiftAttendance';
+import { User, UserRole } from '../entities/User';
 
 export const getShifts = async (req: Request, res: Response) => {
   try {
@@ -341,6 +343,220 @@ export const saveWeeklySchedule = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('❌ Error al guardar programación semanal:', error);
     res.status(500).json({ message: 'Error al guardar programación semanal' });
+  }
+};
+
+export const getShiftAttendance = async (req: Request, res: Response) => {
+  try {
+    const { date, shiftId } = req.query;
+
+    if (!date || !shiftId) {
+      return res.status(400).json({ message: 'date y shiftId son requeridos' });
+    }
+
+    const attendanceRepo = AppDataSource.getRepository(ShiftAttendance);
+    const nurseRepo = AppDataSource.getRepository(User);
+
+    const shiftIdNumber = parseInt(String(shiftId), 10);
+    if (Number.isNaN(shiftIdNumber)) {
+      return res.status(400).json({ message: 'shiftId inválido' });
+    }
+
+    const nurses = await nurseRepo.find({
+      where: { role: UserRole.NURSE, isActive: true },
+      order: { firstName: 'ASC', lastName: 'ASC' },
+    });
+
+    const attendance = await attendanceRepo.find({
+      where: {
+        date: new Date(`${date}T00:00:00`),
+        shiftId: shiftIdNumber,
+      },
+    });
+
+    const attendanceMap = new Map<number, ShiftAttendance>();
+    attendance.forEach((row) => attendanceMap.set(row.nurseId, row));
+
+    const items = nurses.map((nurse) => {
+      const row = attendanceMap.get(nurse.id);
+      return {
+        nurseId: nurse.id,
+        nurseName: `${nurse.firstName} ${nurse.lastName}`,
+        status: row?.status || ShiftAttendanceStatus.ABSENT,
+        checkInAt: row?.checkInAt || null,
+        checkOutAt: row?.checkOutAt || null,
+        notes: row?.notes || null,
+        assignedAreaId: nurse.assignedAreaId || null,
+      };
+    });
+
+    res.json(items);
+  } catch (error) {
+    console.error('Error al obtener asistencia del turno:', error);
+    res.status(500).json({ message: 'Error al obtener asistencia del turno' });
+  }
+};
+
+export const saveShiftAttendance = async (req: Request, res: Response) => {
+  try {
+    const { date, shiftId, attendance } = req.body;
+    const authReq = req as any;
+    const recordedBy = authReq.user?.id || null;
+
+    if (!date || !shiftId || !Array.isArray(attendance)) {
+      return res.status(400).json({ message: 'date, shiftId y attendance son requeridos' });
+    }
+
+    const shiftIdNumber = parseInt(String(shiftId), 10);
+    if (Number.isNaN(shiftIdNumber)) {
+      return res.status(400).json({ message: 'shiftId inválido' });
+    }
+
+    const validStatuses = new Set(Object.values(ShiftAttendanceStatus));
+    const attendanceRepo = AppDataSource.getRepository(ShiftAttendance);
+    const dateValue = new Date(`${date}T00:00:00`);
+
+    const savedRows: ShiftAttendance[] = [];
+    for (const item of attendance) {
+      const nurseId = parseInt(String(item?.nurseId), 10);
+      const status = String(item?.status || '').toLowerCase() as ShiftAttendanceStatus;
+
+      if (Number.isNaN(nurseId) || !validStatuses.has(status)) {
+        continue;
+      }
+
+      let row = await attendanceRepo.findOne({
+        where: { date: dateValue, shiftId: shiftIdNumber, nurseId },
+      });
+
+      if (!row) {
+        row = attendanceRepo.create({
+          date: dateValue,
+          shiftId: shiftIdNumber,
+          nurseId,
+        });
+      }
+
+      const now = new Date();
+      row.status = status;
+      if (status === ShiftAttendanceStatus.PRESENT || status === ShiftAttendanceStatus.LATE) {
+        row.checkInAt = item?.checkInAt ? new Date(item.checkInAt) : row.checkInAt || now;
+        row.checkOutAt = null;
+      } else {
+        row.checkInAt = null;
+        row.checkOutAt = null;
+      }
+      row.notes = item?.notes || null;
+      row.recordedBy = recordedBy;
+      savedRows.push(await attendanceRepo.save(row));
+    }
+
+    res.json({
+      message: 'Asistencia guardada exitosamente',
+      saved: savedRows.length,
+    });
+  } catch (error) {
+    console.error('Error al guardar asistencia del turno:', error);
+    res.status(500).json({ message: 'Error al guardar asistencia del turno' });
+  }
+};
+
+export const getPresentNursesByShift = async (req: Request, res: Response) => {
+  try {
+    const { date, shiftId } = req.query;
+    if (!date || !shiftId) {
+      return res.status(400).json({ message: 'date y shiftId son requeridos' });
+    }
+
+    const shiftIdNumber = parseInt(String(shiftId), 10);
+    if (Number.isNaN(shiftIdNumber)) {
+      return res.status(400).json({ message: 'shiftId inválido' });
+    }
+
+    const attendanceRepo = AppDataSource.getRepository(ShiftAttendance);
+    const presentRows = await attendanceRepo.find({
+      where: {
+        date: new Date(`${date}T00:00:00`),
+        shiftId: shiftIdNumber,
+      },
+      relations: ['nurse'],
+    });
+
+    const activeStatuses = new Set<ShiftAttendanceStatus>([
+      ShiftAttendanceStatus.PRESENT,
+      ShiftAttendanceStatus.LATE,
+    ]);
+
+    const nurses = presentRows
+      .filter((row) => activeStatuses.has(row.status) && row.nurse?.isActive && row.nurse?.role === UserRole.NURSE)
+      .map((row) => ({
+        nurseId: row.nurseId,
+        nurseName: `${row.nurse.firstName} ${row.nurse.lastName}`,
+        status: row.status,
+        assignedAreaId: row.nurse.assignedAreaId || null,
+      }));
+
+    res.json(nurses);
+  } catch (error) {
+    console.error('Error al obtener enfermeras presentes:', error);
+    res.status(500).json({ message: 'Error al obtener enfermeras presentes' });
+  }
+};
+
+export const getShiftAttendanceHistory = async (req: Request, res: Response) => {
+  try {
+    const { dateFrom, dateTo, shiftId, limit } = req.query;
+    const attendanceRepo = AppDataSource.getRepository(ShiftAttendance);
+
+    const qb = attendanceRepo
+      .createQueryBuilder('att')
+      .leftJoinAndSelect('att.nurse', 'nurse')
+      .leftJoinAndSelect('att.shift', 'shift')
+      .leftJoinAndSelect('att.recordedByUser', 'recordedByUser')
+      .where('att.status != :absentStatus', { absentStatus: ShiftAttendanceStatus.ABSENT })
+      .orderBy('att.date', 'DESC')
+      .addOrderBy('shift.id', 'ASC')
+      .addOrderBy('nurse.firstName', 'ASC');
+
+    if (dateFrom) {
+      qb.andWhere('att.date >= :dateFrom', { dateFrom: String(dateFrom) });
+    }
+    if (dateTo) {
+      qb.andWhere('att.date <= :dateTo', { dateTo: String(dateTo) });
+    }
+    if (shiftId) {
+      const shiftIdNumber = parseInt(String(shiftId), 10);
+      if (!Number.isNaN(shiftIdNumber)) {
+        qb.andWhere('att.shiftId = :shiftId', { shiftId: shiftIdNumber });
+      }
+    }
+
+    const take = Math.min(Math.max(parseInt(String(limit || '200'), 10), 1), 1000);
+    qb.take(take);
+
+    const rows = await qb.getMany();
+    const items = rows.map((row) => ({
+      id: row.id,
+      date: row.date,
+      shiftId: row.shiftId,
+      shiftName: row.shift?.name || '',
+      shiftTime: row.shift ? `${row.shift.startTime} - ${row.shift.endTime}` : '',
+      nurseId: row.nurseId,
+      nurseName: row.nurse ? `${row.nurse.firstName} ${row.nurse.lastName}` : `Enfermera #${row.nurseId}`,
+      status: row.status,
+      checkInAt: row.checkInAt,
+      checkOutAt: row.checkOutAt,
+      notes: row.notes,
+      recordedBy: row.recordedByUser
+        ? `${row.recordedByUser.firstName} ${row.recordedByUser.lastName}`
+        : null,
+      recordedAt: row.updatedAt,
+    }));
+
+    res.json(items);
+  } catch (error) {
+    console.error('Error al obtener historial de turnos:', error);
+    res.status(500).json({ message: 'Error al obtener historial de turnos' });
   }
 };
 

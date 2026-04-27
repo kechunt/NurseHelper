@@ -1,10 +1,19 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { AdminService } from '../../../services/admin.service';
-import { AuthService, User } from '../../../services/auth.service';
-import { ShiftsService, Shift as ShiftInterface, WeeklySchedule as WeeklyScheduleInterface } from '../../../services/shifts.service';
+import { User } from '../../../services/auth.service';
+import { ExportService } from '../../../shared/services/export.service';
+import {
+  ShiftsService,
+  Shift as ShiftInterface,
+  WeeklySchedule as WeeklyScheduleInterface,
+  ShiftAttendanceItem,
+  ShiftAttendanceStatus,
+  ShiftAttendanceHistoryItem,
+} from '../../../services/shifts.service';
+import { ShiftRealtimeService } from '../../../shared/services/shift-realtime.service';
 
 type Shift = ShiftInterface & { id: string };
 type WeeklySchedule = WeeklyScheduleInterface;
@@ -16,7 +25,7 @@ type WeeklySchedule = WeeklyScheduleInterface;
   templateUrl: './schedules-management.component.html',
   styleUrl: './schedules-management.component.css',
 })
-export class SchedulesManagementComponent implements OnInit {
+export class SchedulesManagementComponent implements OnInit, OnDestroy {
   nurses: User[] = [];
   areas: any[] = [];
   patients: any[] = [];
@@ -56,6 +65,25 @@ export class SchedulesManagementComponent implements OnInit {
   selectedAreaFilter: string = '';
   quickAssignShift: string = '';
   selectedNurses: Set<number> = new Set();
+
+  // Nuevo flujo: toma de lista por turno (sin planear semanalmente)
+  attendanceDate = '';
+  selectedShiftAttendanceId: number | null = null;
+  attendanceItems: ShiftAttendanceItem[] = [];
+  savingAttendance = false;
+  liveDateTimeLabel = '';
+  liveCurrentShiftLabel = '';
+  private clockTimer: ReturnType<typeof setInterval> | null = null;
+  showShiftConfigSection = false;
+  attendanceSummaryFilter: ShiftAttendanceStatus | 'all' = 'all';
+  attendanceSearchQuery = '';
+  attendanceAreaFilter: number | null = null;
+  showHistoryModal = false;
+  attendanceHistory: ShiftAttendanceHistoryItem[] = [];
+  loadingHistory = false;
+  historyDateFrom = '';
+  historyDateTo = '';
+  historyShiftId: number | null = null;
   
   days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
   dayNames: { [key: string]: string } = {
@@ -80,15 +108,32 @@ export class SchedulesManagementComponent implements OnInit {
 
   constructor(
     private adminService: AdminService,
-    private authService: AuthService,
-    private shiftsService: ShiftsService
+    private shiftsService: ShiftsService,
+    private exportService: ExportService,
+    private shiftRealtimeService: ShiftRealtimeService
   ) {}
 
   ngOnInit(): void {
     this.initializeWeek();
+    this.initializeAttendanceDate();
     this.loadShifts(); // Cargar turnos del backend primero
     this.loadNurses();
     this.generateNursesByAreaAndShift();
+    this.startLiveClock();
+  }
+
+  ngOnDestroy(): void {
+    if (this.clockTimer) {
+      clearInterval(this.clockTimer);
+      this.clockTimer = null;
+    }
+  }
+
+  initializeAttendanceDate(): void {
+    const today = new Date().toISOString().split('T')[0];
+    this.attendanceDate = today;
+    this.historyDateFrom = today;
+    this.historyDateTo = today;
   }
 
   loadShifts(): void {
@@ -130,13 +175,60 @@ export class SchedulesManagementComponent implements OnInit {
         });
         
         console.log('✅ Turnos procesados:', this.shifts);
+        this.ensureSelectedAttendanceShift();
       },
       error: (error) => {
         console.error('❌ Error cargando turnos:', error);
         // Mantener turnos por defecto si falla la carga
         console.warn('⚠️ Usando turnos por defecto');
+        this.ensureSelectedAttendanceShift();
       }
     });
+  }
+
+  ensureSelectedAttendanceShift(): void {
+    const selectableShift = this.getCurrentSystemShift() || this.shifts.find((s) => typeof s.id === 'number');
+    if (!selectableShift) {
+      return;
+    }
+    this.attendanceDate = new Date().toISOString().split('T')[0];
+    const numericShiftId = Number(selectableShift.id);
+    this.selectedShiftAttendanceId = Number.isFinite(numericShiftId) ? numericShiftId : null;
+    this.loadShiftAttendance();
+  }
+
+  private resolveCurrentShiftId(): number | null {
+    const currentShift = this.getCurrentSystemShift();
+    const currentShiftId = Number(currentShift?.id);
+    if (Number.isFinite(currentShiftId) && currentShiftId > 0) {
+      return currentShiftId;
+    }
+
+    const selectedId = Number(this.selectedShiftAttendanceId);
+    if (Number.isFinite(selectedId) && selectedId > 0) {
+      return selectedId;
+    }
+
+    return null;
+  }
+
+  private getCurrentSystemShift(): any | null {
+    const now = new Date();
+    const activeShifts = this.getEditableShifts();
+    return this.shiftRealtimeService.resolveCurrentShift(activeShifts, now, true);
+  }
+
+  private startLiveClock(): void {
+    const updateClock = () => {
+      const now = new Date();
+      this.liveDateTimeLabel = this.shiftRealtimeService.formatDateTimeLabel(now);
+
+      const currentShift = this.getCurrentSystemShift();
+      this.liveCurrentShiftLabel = this.shiftRealtimeService.formatShiftLabel(currentShift);
+    };
+
+    updateClock();
+    this.clockTimer = setInterval(updateClock, 1000);
   }
 
   initializeWeek(): void {
@@ -172,7 +264,10 @@ export class SchedulesManagementComponent implements OnInit {
           beds: this.beds.length
         });
         
-        this.loadWeeklySchedules();
+        this.loading = false;
+        if (this.selectedShiftAttendanceId) {
+          this.loadShiftAttendance();
+        }
       },
       error: (error: any) => {
         console.error('❌ Error loading data:', error);
@@ -406,6 +501,15 @@ export class SchedulesManagementComponent implements OnInit {
       return;
     }
 
+    const normalizedStartTime = this.normalizeTimeToHHMM(this.selectedShift.startTime);
+    const normalizedEndTime = this.normalizeTimeToHHMM(this.selectedShift.endTime);
+    if (!normalizedStartTime || !normalizedEndTime) {
+      alert('⚠️ Formato de hora inválido. Usa HH:MM');
+      return;
+    }
+    this.selectedShift.startTime = normalizedStartTime;
+    this.selectedShift.endTime = normalizedEndTime;
+
     // Validar que el ID sea numérico (no 'off' u otro string)
     const shiftId = typeof this.selectedShift.id === 'number' 
       ? this.selectedShift.id 
@@ -425,8 +529,8 @@ export class SchedulesManagementComponent implements OnInit {
 
     this.shiftsService.updateShift(
       shiftId,
-      this.selectedShift.startTime,
-      this.selectedShift.endTime
+      normalizedStartTime,
+      normalizedEndTime
     ).subscribe({
       next: (response) => {
         console.log('✅ Turno actualizado exitosamente:', response);
@@ -459,6 +563,265 @@ export class SchedulesManagementComponent implements OnInit {
         });
         alert(`Error al actualizar el horario del turno: ${error.error?.message || error.message || 'Error desconocido'}`);
       }
+    });
+  }
+
+  adjustShiftTime(field: 'startTime' | 'endTime', deltaMinutes: number): void {
+    if (!this.selectedShift || !this.selectedShift[field]) {
+      return;
+    }
+
+    const [h, m] = String(this.selectedShift[field]).split(':').map(Number);
+    if (Number.isNaN(h) || Number.isNaN(m)) {
+      return;
+    }
+
+    const totalMinutes = ((h * 60 + m + deltaMinutes) % (24 * 60) + (24 * 60)) % (24 * 60);
+    const nextHour = Math.floor(totalMinutes / 60);
+    const nextMinute = totalMinutes % 60;
+    this.selectedShift[field] = `${String(nextHour).padStart(2, '0')}:${String(nextMinute).padStart(2, '0')}`;
+  }
+
+  private normalizeTimeToHHMM(value: string): string | null {
+    const raw = String(value || '').trim();
+    if (!raw) return null;
+    const parts = raw.split(':');
+    if (parts.length < 2) return null;
+
+    const hour = Number(parts[0]);
+    const minute = Number(parts[1]);
+    if (Number.isNaN(hour) || Number.isNaN(minute)) return null;
+    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null;
+
+    return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+  }
+
+  // ========== TOMA DE LISTA POR TURNO ==========
+
+  loadShiftAttendance(): void {
+    if (!this.attendanceDate || !this.selectedShiftAttendanceId) {
+      this.attendanceItems = [];
+      return;
+    }
+
+    this.loading = true;
+    this.shiftsService.getShiftAttendance(this.attendanceDate, this.selectedShiftAttendanceId).subscribe({
+      next: (items) => {
+        this.attendanceItems = (items && items.length > 0) ? items : this.buildFallbackAttendanceItems();
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error cargando asistencia de turno:', error);
+        this.attendanceItems = this.buildFallbackAttendanceItems();
+        this.loading = false;
+      },
+    });
+  }
+
+  private buildFallbackAttendanceItems(): ShiftAttendanceItem[] {
+    return (this.nurses || []).map((nurse) => ({
+      nurseId: nurse.id!,
+      nurseName: `${nurse.firstName} ${nurse.lastName}`,
+      status: 'absent',
+      assignedAreaId: nurse.assignedAreaId || null,
+      checkInAt: null,
+      checkOutAt: null,
+      notes: null,
+    }));
+  }
+
+  setAttendanceStatus(item: ShiftAttendanceItem, status: ShiftAttendanceStatus): void {
+    const currentShiftId = this.resolveCurrentShiftId();
+    if (!currentShiftId) {
+      alert('⚠️ No se pudo detectar el turno actual del sistema');
+      return;
+    }
+    this.attendanceDate = new Date().toISOString().split('T')[0];
+    this.selectedShiftAttendanceId = currentShiftId;
+
+    item.status = status;
+    const nowIso = new Date().toISOString();
+    if (status === 'present' || status === 'late') {
+      item.checkInAt = item.checkInAt || nowIso;
+      item.checkOutAt = null;
+    } else {
+      item.checkInAt = null;
+      item.checkOutAt = null;
+    }
+  }
+
+  saveAttendanceList(): void {
+    const currentShiftId = this.resolveCurrentShiftId();
+    if (!currentShiftId) {
+      alert('⚠️ No se pudo detectar el turno actual del sistema');
+      return;
+    }
+    this.attendanceDate = new Date().toISOString().split('T')[0];
+    this.selectedShiftAttendanceId = currentShiftId;
+
+    const nowIso = new Date().toISOString();
+    const payload = this.attendanceItems.map((item) => {
+      if ((item.status === 'present' || item.status === 'late') && !item.checkInAt) {
+        return { ...item, checkInAt: nowIso };
+      }
+      return item;
+    });
+
+    this.savingAttendance = true;
+    this.shiftsService
+      .saveShiftAttendance(this.attendanceDate, this.selectedShiftAttendanceId, payload)
+      .subscribe({
+        next: (response) => {
+          this.savingAttendance = false;
+          alert(`✅ Lista guardada exitosamente (${response.saved} registros)`);
+          this.loadShiftAttendance();
+        },
+        error: (error) => {
+          this.savingAttendance = false;
+          alert(`❌ Error guardando lista: ${error.error?.message || error.message}`);
+        },
+      });
+  }
+
+  getAttendanceCount(status: ShiftAttendanceStatus): number {
+    return this.attendanceItems.filter((item) => item.status === status).length;
+  }
+
+  setAttendanceSummaryFilter(status: ShiftAttendanceStatus): void {
+    this.attendanceSummaryFilter = this.attendanceSummaryFilter === status ? 'all' : status;
+  }
+
+  toggleShiftConfigSection(): void {
+    this.showShiftConfigSection = !this.showShiftConfigSection;
+  }
+
+  clearAttendanceFilters(): void {
+    this.attendanceSearchQuery = '';
+    this.attendanceAreaFilter = null;
+  }
+
+  getAttendanceStatusLabel(status: ShiftAttendanceStatus): string {
+    switch (status) {
+      case 'present':
+        return 'Presente';
+      case 'late':
+        return 'Tarde';
+      case 'justified':
+        return 'Justificada';
+      case 'missing':
+        return 'Falta';
+      case 'absent':
+        return 'Ausente';
+      default:
+        return 'Ausente';
+    }
+  }
+
+  get nursesInCurrentShift(): ShiftAttendanceItem[] {
+    if (this.attendanceSummaryFilter === 'all') {
+      return this.attendanceItems;
+    }
+    return this.attendanceItems.filter((item) => item.status === this.attendanceSummaryFilter);
+  }
+
+  get filteredAttendanceItems(): ShiftAttendanceItem[] {
+    let items = [...this.attendanceItems];
+
+    if (this.attendanceSearchQuery.trim()) {
+      const query = this.attendanceSearchQuery.trim().toLowerCase();
+      items = items.filter((item) => (item.nurseName || '').toLowerCase().includes(query));
+    }
+
+    if (this.attendanceAreaFilter !== null) {
+      items = items.filter((item) => (item.assignedAreaId || null) === this.attendanceAreaFilter);
+    }
+
+    return items;
+  }
+
+  formatDateTime(value?: string | null): string {
+    if (!value) return '-';
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return '-';
+    return d.toLocaleString('es-MX', {
+      hour12: false,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }
+
+  openHistoryModal(): void {
+    this.showHistoryModal = true;
+    this.loadShiftAttendanceHistory();
+  }
+
+  closeHistoryModal(): void {
+    this.showHistoryModal = false;
+    this.attendanceHistory = [];
+  }
+
+  loadShiftAttendanceHistory(): void {
+    this.loadingHistory = true;
+    this.shiftsService.getShiftAttendanceHistory({
+      dateFrom: this.historyDateFrom,
+      dateTo: this.historyDateTo,
+      shiftId: this.historyShiftId,
+      limit: 500,
+    }).subscribe({
+      next: (items) => {
+        this.attendanceHistory = items || [];
+        this.loadingHistory = false;
+      },
+      error: () => {
+        this.attendanceHistory = [];
+        this.loadingHistory = false;
+      },
+    });
+  }
+
+  exportAttendanceHistoryCsv(): void {
+    if (!this.attendanceHistory.length) {
+      alert('⚠️ No hay datos en el historial para exportar');
+      return;
+    }
+
+    const rows = this.attendanceHistory.map((row) => ({
+      Fecha: row.date || '-',
+      Turno: row.shiftName || '-',
+      Horario: row.shiftTime || '-',
+      Enfermera: row.nurseName || '-',
+      Estado: this.getAttendanceStatusLabel(row.status),
+      Entrada: this.formatDateTime(row.checkInAt),
+    }));
+
+    this.exportService.exportToCSV(rows, {
+      filename: `historial_turnos_${new Date().toISOString().split('T')[0]}.csv`,
+      headers: ['Fecha', 'Turno', 'Horario', 'Enfermera', 'Estado', 'Entrada'],
+    });
+  }
+
+  exportAttendanceHistoryExcel(): void {
+    if (!this.attendanceHistory.length) {
+      alert('⚠️ No hay datos en el historial para exportar');
+      return;
+    }
+
+    const rows = this.attendanceHistory.map((row) => ({
+      Fecha: row.date || '-',
+      Turno: row.shiftName || '-',
+      Horario: row.shiftTime || '-',
+      Enfermera: row.nurseName || '-',
+      Estado: this.getAttendanceStatusLabel(row.status),
+      Entrada: this.formatDateTime(row.checkInAt),
+    }));
+
+    this.exportService.exportToExcel(rows, {
+      filename: `historial_turnos_${new Date().toISOString().split('T')[0]}.xlsx`,
+      sheetName: 'Historial turnos',
+      headers: ['Fecha', 'Turno', 'Horario', 'Enfermera', 'Estado', 'Entrada'],
     });
   }
 
