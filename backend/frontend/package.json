@@ -1,0 +1,9 @@
+{
+  "name": "backend-build-compat",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Compatibilidad para Build Command heredado en Vercel backend",
+  "scripts": {
+    "build": "echo \"Backend deploy: build frontend omitido (compat mode)\""
+  }
+}
