@@ -15,6 +15,7 @@ import { ToastService } from '../../services/toast.service';
 export class LoginComponent {
   usernameOrEmail: string = '';
   password: string = '';
+  showPassword: boolean = false;
   loading: boolean = false;
   error: string = '';
 
@@ -78,6 +79,10 @@ export class LoginComponent {
         this.toastService.error(this.error);
       },
     });
+  }
+
+  togglePasswordVisibility(): void {
+    this.showPassword = !this.showPassword;
   }
 }
 
