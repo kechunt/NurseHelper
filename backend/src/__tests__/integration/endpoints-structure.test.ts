@@ -19,6 +19,7 @@ import webhooksRoutes from '../../routes/webhooks.routes';
 import notificationsRoutes from '../../routes/notifications.routes';
 import backupRoutes from '../../routes/backup.routes';
 import healthRoutes from '../../routes/health.routes';
+import { logger } from '../../utils/logger';
 
 describe('Endpoints Structure Tests', () => {
   describe('Rutas Exportadas', () => {
@@ -39,14 +40,14 @@ describe('Endpoints Structure Tests', () => {
       expect(backupRoutes).toBeDefined();
       expect(healthRoutes).toBeDefined();
       
-      console.log('✅ Todas las rutas están exportadas');
+      logger.info('✅ Todas las rutas están exportadas');
     });
 
     it('debería tener rutas como instancias de Router', () => {
       const router = Router();
       expect(authRoutes).toBeInstanceOf(Object);
       expect(healthRoutes).toBeInstanceOf(Object);
-      console.log('✅ Rutas son instancias válidas');
+      logger.info('✅ Rutas son instancias válidas');
     });
   });
 
@@ -56,7 +57,7 @@ describe('Endpoints Structure Tests', () => {
       const path = require('path');
       const appTestPath = path.join(__dirname, '../../app-test.ts');
       expect(fs.existsSync(appTestPath)).toBe(true);
-      console.log('✅ app-test.ts existe');
+      logger.info('✅ app-test.ts existe');
     });
   });
 
@@ -77,7 +78,7 @@ describe('Endpoints Structure Tests', () => {
         require('../../entities/DeliveryHistory');
       }).not.toThrow();
       
-      console.log('✅ Todas las entidades se pueden importar');
+      logger.info('✅ Todas las entidades se pueden importar');
     });
   });
 
@@ -86,7 +87,7 @@ describe('Endpoints Structure Tests', () => {
       const { authMiddleware } = require('../../middleware/auth.middleware');
       expect(authMiddleware).toBeDefined();
       expect(typeof authMiddleware).toBe('function');
-      console.log('✅ authMiddleware disponible');
+      logger.info('✅ authMiddleware disponible');
     });
 
     it('debería tener middleware de roles', () => {
@@ -95,14 +96,14 @@ describe('Endpoints Structure Tests', () => {
       expect(roleMiddleware).toBeDefined();
       expect(typeof requireRole).toBe('function');
       expect(typeof roleMiddleware).toBe('function');
-      console.log('✅ roleMiddleware disponible');
+      logger.info('✅ roleMiddleware disponible');
     });
 
     it('debería tener middleware de rate limiting', () => {
       const { rateLimitMiddleware } = require('../../middleware/rate-limit.middleware');
       expect(rateLimitMiddleware).toBeDefined();
       expect(typeof rateLimitMiddleware).toBe('function');
-      console.log('✅ rateLimitMiddleware disponible');
+      logger.info('✅ rateLimitMiddleware disponible');
     });
   });
 
@@ -120,7 +121,7 @@ describe('Endpoints Structure Tests', () => {
         require('../../services/backup.service');
         require('../../services/alert.service');
       }).not.toThrow();
-      console.log('✅ Todos los servicios están disponibles');
+      logger.info('✅ Todos los servicios están disponibles');
     });
   });
 
@@ -135,7 +136,7 @@ describe('Endpoints Structure Tests', () => {
         require('../../controllers/health.controller');
         require('../../controllers/notifications.controller');
       }).not.toThrow();
-      console.log('✅ Todos los controladores están disponibles');
+      logger.info('✅ Todos los controladores están disponibles');
     });
   });
 
@@ -153,7 +154,7 @@ describe('Endpoints Structure Tests', () => {
         const sanitizerPath = path.join(__dirname, '../../utils/sanitizer.ts');
         expect(fs.existsSync(sanitizerPath)).toBe(true);
       }).not.toThrow();
-      console.log('✅ Todas las utilidades están disponibles');
+      logger.info('✅ Todas las utilidades están disponibles');
     });
   });
 });

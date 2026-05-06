@@ -20,6 +20,9 @@
             <h4>{{ supervisor.firstName }} {{ supervisor.lastName }}</h4>
             <p class="role-card-username">@{{ supervisor.username }}</p>
             <p class="role-card-email">{{ supervisor.email }}</p>
+            <p class="role-card-phone" *ngIf="(supervisor.phone || '').toString().trim()">
+              📞 {{ supervisor.phone }}
+            </p>
             <span class="neuro-status" [class.role-admin]="supervisor.role === 'admin'"
               [class.role-supervisor]="supervisor.role === 'supervisor'">
               {{ getRoleLabel(supervisor.role) }}
@@ -51,6 +54,9 @@
             <h4>{{ pharmacyUser.firstName }} {{ pharmacyUser.lastName }}</h4>
             <p class="role-card-username">@{{ pharmacyUser.username }}</p>
             <p class="role-card-email">{{ pharmacyUser.email }}</p>
+            <p class="role-card-phone" *ngIf="(pharmacyUser.phone || '').toString().trim()">
+              📞 {{ pharmacyUser.phone }}
+            </p>
             <span class="neuro-status role-pharmacy">
               {{ getRoleLabel(pharmacyUser.role) }}
             </span>
@@ -89,8 +95,8 @@
           appDebounce
           [debounceTime]="300"
           (debounced)="onSearchInput($event)"
-          placeholder="Buscar por nombre, usuario o email..."
-          aria-label="Buscar usuario por nombre, usuario o email"
+          placeholder="Buscar por nombre, usuario, email o teléfono..."
+          aria-label="Buscar usuario por nombre, usuario, email o teléfono"
         />
         <span class="search-icon">🔍</span>
       </div>
@@ -129,17 +135,27 @@
           <th scope="col">Usuario</th>
           <th scope="col">Email</th>
           <th scope="col">Nombre Completo</th>
+          <th scope="col">Teléfono</th>
           <th scope="col">Rol</th>
           <th scope="col">Estado</th>
-          <th scope="col">Acciones</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let user of paginatedUsers; trackBy: trackByUserId" [class.inactive]="!user.isActive">
+        <tr
+          *ngFor="let user of paginatedUsers; trackBy: trackByUserId"
+          [class.inactive]="!user.isActive"
+          class="admin-table-row--clickable"
+          tabindex="0"
+          role="button"
+          [attr.aria-label]="'Acciones para usuario ' + user.username"
+          (click)="openUserRowActionsSheet(user)"
+          (keydown)="onUserTableRowKeydown(user, $event)"
+        >
           <td>{{ user.id }}</td>
           <td>{{ user.username }}</td>
           <td>{{ user.email }}</td>
           <td>{{ user.firstName }} {{ user.lastName }}</td>
+          <td>{{ (user.phone || '').toString().trim() || '—' }}</td>
           <td>
             <span class="neuro-status" [class.role-admin]="user.role === 'admin'"
               [class.role-supervisor]="user.role === 'supervisor'"
@@ -153,20 +169,6 @@
               [class.inactive]="!user.isActive">
               {{ user.isActive ? 'Activo' : 'Inactivo' }}
             </span>
-          </td>
-          <td>
-            <div class="action-buttons" role="group" [attr.aria-label]="'Acciones para usuario ' + user.username">
-              <button class="neuro-btn-icon" (click)="openEditModal(user)" title="Editar" [attr.aria-label]="'Editar usuario ' + user.username">✏️</button>
-              <button class="neuro-btn-icon" (click)="openRoleModal(user)" title="Cambiar Rol" [attr.aria-label]="'Cambiar rol de ' + user.username">🔄</button>
-              <button
-                class="neuro-btn-icon delete-btn"
-                (click)="deleteUser(user)"
-                title="Eliminar Permanentemente"
-                [attr.aria-label]="'Eliminar usuario ' + user.username"
-              >
-                🗑️
-              </button>
-            </div>
           </td>
         </tr>
       </tbody>
@@ -184,6 +186,17 @@
       (itemsPerPageChange)="onItemsPerPageChange($event)"
     ></app-pagination>
   </div>
+
+  <app-admin-table-row-actions-modal
+    [open]="!!userRowActionsTarget"
+    [title]="'Usuario'"
+    [summaryLines]="userRowActionsTarget ? userRowActionsSummary(userRowActionsTarget) : []"
+    (dismissed)="closeUserRowActionsSheet()"
+  >
+    <button type="button" class="neuro-btn" (click)="fromUserSheetOpenEdit()">✏️ Editar datos</button>
+    <button type="button" class="neuro-btn" (click)="fromUserSheetOpenRole()">🔄 Cambiar rol</button>
+    <button type="button" class="neuro-btn outlined delete-btn" (click)="fromUserSheetDelete()">🗑️ Eliminar permanentemente</button>
+  </app-admin-table-row-actions-modal>
 
   <!-- Modal para editar usuario -->
   <div *ngIf="showEditModal" class="modal-backdrop" (click)="closeEditModal()">
@@ -232,6 +245,17 @@
               class="neuro-input"
               [(ngModel)]="editForm.lastName"
               placeholder="Ingrese el apellido"
+            />
+          </div>
+          <div class="input-group">
+            <label for="edit-phone">Teléfono</label>
+            <input
+              type="tel"
+              id="edit-phone"
+              class="neuro-input"
+              [(ngModel)]="editForm.phone"
+              placeholder="Opcional"
+              maxlength="30"
             />
           </div>
           <div class="input-group">

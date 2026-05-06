@@ -13,7 +13,11 @@ import { MedicationRequest } from './entities/MedicationRequest';
 import { DeliveryHistory } from './entities/DeliveryHistory';
 import { AdministrationHistory } from './entities/AdministrationHistory';
 import { MedicationInventoryMovement } from './entities/MedicationInventoryMovement';
+import { ShiftHandoverNote } from './entities/ShiftHandoverNote';
+import { PatientClinicalNote } from './entities/PatientClinicalNote';
 import { loadEnv } from './utils/env';
+import { logger } from './utils/logger';
+import path from 'path';
 
 loadEnv();
 
@@ -21,8 +25,8 @@ const password = process.env.DB_PASSWORD || 'Loktarogar';
 const databaseName = process.env.DB_DATABASE || 'nursehelper';
 
 if (databaseName.toLowerCase().includes('raikway')) {
-  console.error('❌ ERROR: El nombre de la base de datos contiene un error de tipeo: "raikway"');
-  console.error('💡 Debe ser "railway" (con "l" después de "rai")');
+  logger.error('❌ ERROR: El nombre de la base de datos contiene un error de tipeo: "raikway"');
+  logger.error('💡 Debe ser "railway" (con "l" después de "rai")');
   process.exit(1);
 }
 
@@ -50,9 +54,12 @@ export const AppDataSource = new DataSource({
     DeliveryHistory,
     AdministrationHistory,
     MedicationInventoryMovement,
+    ShiftHandoverNote,
+    PatientClinicalNote,
   ],
-  migrations: ['src/migrations/**/*.ts'],
-  subscribers: ['src/subscribers/**/*.ts'],
+  /** Desde `src/` (ts-node) o `dist/` (node): misma carpeta `migrations` relativa a este archivo. */
+  migrations: [path.join(__dirname, 'migrations', '*.{ts,js}')],
+  subscribers: [],
   extra: {
     connectionLimit: parseInt(process.env.DB_CONNECTION_LIMIT || '10'),
     waitForConnections: true,

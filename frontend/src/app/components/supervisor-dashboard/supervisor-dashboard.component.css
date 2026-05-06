@@ -66,6 +66,28 @@
   text-transform: uppercase;
 }
 
+.profile-trigger-btn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  text-align: right;
+  font: inherit;
+}
+
+.profile-trigger-btn:hover .user-name {
+  text-decoration: underline;
+}
+
+.user-phone-line {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #2d3748;
+  line-height: 1.25;
+}
+
 .logout-btn {
   background: #e0e5ec;
   border: none;

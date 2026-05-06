@@ -1,0 +1,84 @@
+<div
+  class="modal-backdrop modal-confirmation nurse-medication-day-detail-backdrop"
+  role="presentation"
+  (click)="onBackdrop()"
+>
+  <div
+    class="modal-content modal-small nurse-aux-modal"
+    appModalFocusTrap
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="nurse-medication-day-detail-dialog-title"
+    (click)="$event.stopPropagation()"
+  >
+    <div class="modal-header">
+      <h3 id="nurse-medication-day-detail-dialog-title" i18n="@@nurseMedicationDayDetailModal.title">💊 Detalle de medicación</h3>
+      <button
+        type="button"
+        class="close-btn"
+        aria-label="Cerrar"
+        i18n-aria-label="@@nurseMedicationDayDetailModal.closeAriaLabel"
+        (click)="onClose()"
+      >
+        ✕
+      </button>
+    </div>
+    <div class="modal-body medication-day-detail-body">
+      <div class="nurse-aux-modal__inset nurse-aux-modal__inset--compact">
+        <p class="med-day-detail-line" i18n="@@nurseMedicationDayDetailModal.linePatient">
+          <strong>Paciente:</strong> {{ patientName || '—' }}
+        </p>
+        <p class="med-day-detail-line" i18n="@@nurseMedicationDayDetailModal.lineMed">
+          <strong>Medicamento:</strong> {{ slot.name }}
+        </p>
+        <p class="med-day-detail-line" i18n="@@nurseMedicationDayDetailModal.lineDosage">
+          <strong>Dosis:</strong> {{ slot.dosage || '—' }}
+        </p>
+        <p class="med-day-detail-line" i18n="@@nurseMedicationDayDetailModal.lineTimeToday">
+          <strong>Hora (hoy):</strong> {{ slot.time }}
+        </p>
+        <p class="med-day-detail-line" i18n="@@nurseMedicationDayDetailModal.lineScheduled">
+          <strong>Fecha y hora programada:</strong> {{ scheduledLabel(slot) }}
+        </p>
+        <p class="med-day-detail-line" i18n="@@nurseMedicationDayDetailModal.lineStatus">
+          <strong>Estado:</strong> {{ statusLabel(slot) }}
+        </p>
+
+        <ng-container *ngIf="pauta as grp">
+          <hr class="history-detail-sep" />
+          <p class="med-day-detail-line" i18n="@@nurseMedicationDayDetailModal.lineFrequency">
+            <strong>Frecuencia (pauta):</strong> {{ grp.frequency || '—' }}
+          </p>
+          <p class="med-day-detail-line" i18n="@@nurseMedicationDayDetailModal.lineSchedulesDayOnly">
+            <strong>Horarios del día seleccionado:</strong> {{ selectedDayTimes(grp, slot).join(', ') || '—' }}
+          </p>
+          <p class="med-day-detail-line">
+            <strong>Fecha considerada:</strong> {{ selectedDayLabel(slot) }}
+          </p>
+          <p class="med-day-detail-line" *ngIf="grp.notes && grp.notes.trim() && grp.notes !== slot.notes" i18n="@@nurseMedicationDayDetailModal.pautaNotesHeading">
+            <strong>Notas de la medicación (pauta):</strong>
+          </p>
+          <div
+            class="med-day-detail-note-block"
+            *ngIf="grp.notes && grp.notes.trim() && grp.notes !== slot.notes"
+          >
+            {{ grp.notes }}
+          </div>
+
+        </ng-container>
+
+        <hr class="history-detail-sep" />
+        <p class="med-day-detail-line" i18n="@@nurseMedicationDayDetailModal.doseNotesHeading"><strong>Notas de esta dosis</strong></p>
+        <div class="med-day-detail-note-block" *ngIf="slot.notes && slot.notes.trim(); else sinNotasDosis">
+          {{ slot.notes }}
+        </div>
+        <ng-template #sinNotasDosis>
+          <p class="med-day-detail-empty" i18n="@@nurseMedicationDayDetailModal.noDoseNotes">Sin notas en esta toma.</p>
+        </ng-template>
+      </div>
+    </div>
+    <div class="modal-footer nurse-aux-modal__footer">
+      <button type="button" class="neuro-btn neuro-btn-sm" (click)="onClose()" i18n="@@nurseMedicationDayDetailModal.close">Cerrar</button>
+    </div>
+  </div>
+</div>

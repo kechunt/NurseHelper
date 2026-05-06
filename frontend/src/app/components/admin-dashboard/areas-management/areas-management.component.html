@@ -51,39 +51,27 @@
                 <th>Cama</th>
                 <th>Estado</th>
                 <th>Paciente</th>
-                <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let item of getBedsDetailsForArea(selectedAreaForBeds.id)">
+              <tr
+                *ngFor="let item of getBedsDetailsForArea(selectedAreaForBeds.id)"
+                class="admin-table-row--clickable"
+                tabindex="0"
+                role="button"
+                [attr.aria-label]="'Acciones cama ' + item.bed.bedNumber"
+                (click)="openAreaBedsDetailSheet(item)"
+                (keydown)="onAreaBedsRowKeydown(item, $event)"
+              >
                 <td>{{ item.bed.bedNumber }}</td>
                 <td>{{ item.patient ? 'Ocupada' : 'Disponible' }}</td>
                 <td>
                   <span *ngIf="item.patient">{{ item.patient.firstName }} {{ item.patient.lastName }}</span>
                   <span *ngIf="!item.patient">Sin paciente</span>
                 </td>
-                <td>
-                  <button
-                    *ngIf="item.patient"
-                    class="action-btn change-btn"
-                    (click)="openChangeAreaModal(item.patient); closeAreaBedsModal()"
-                    title="Editar o cambiar cama/área"
-                  >
-                    ✏️ Editar/Cambiar
-                  </button>
-                  <button
-                    *ngIf="item.patient"
-                    class="action-btn assign-btn"
-                    (click)="releasePatientFromBed(item.bed)"
-                    title="Quitar paciente de la cama"
-                  >
-                    🗑️ Liberar
-                  </button>
-                  <span *ngIf="!item.patient" class="no-bed-badge">Cama disponible</span>
-                </td>
               </tr>
               <tr *ngIf="getBedsDetailsForArea(selectedAreaForBeds.id).length === 0">
-                <td colspan="4" class="no-data-message">No hay camas registradas en esta área</td>
+                <td colspan="3" class="no-data-message">No hay camas registradas en esta área</td>
               </tr>
             </tbody>
           </table>
@@ -111,11 +99,17 @@
                 <th>Identificación</th>
                 <th>Cama</th>
                 <th>Teléfono</th>
-                <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let patient of getPatientsByArea(selectedAreaForPatients.id!)">
+              <tr
+                *ngFor="let patient of getPatientsByArea(selectedAreaForPatients.id!)"
+                class="admin-table-row--clickable"
+                tabindex="0"
+                role="button"
+                (click)="openAreaPatientsSheet(patient)"
+                (keydown)="onAreaPatientsRowKeydown(patient, $event)"
+              >
                 <td>{{ patient.firstName }} {{ patient.lastName }}</td>
                 <td>{{ patient.identificationNumber || 'N/A' }}</td>
                 <td>
@@ -123,14 +117,9 @@
                   <span class="no-bed-badge" *ngIf="!patient.bedNumber">Sin cama</span>
                 </td>
                 <td>{{ patient.phone || 'N/A' }}</td>
-                <td>
-                  <button class="action-btn change-btn" (click)="openChangeAreaModal(patient); closeAreaPatientsModal()">
-                    🔄 Cambiar Área
-                  </button>
-                </td>
               </tr>
               <tr *ngIf="getPatientsByArea(selectedAreaForPatients.id!).length === 0">
-                <td colspan="5" class="no-data-message">No hay pacientes asignados a esta área</td>
+                <td colspan="4" class="no-data-message">No hay pacientes asignados a esta área</td>
               </tr>
             </tbody>
           </table>
@@ -382,11 +371,17 @@
             <th>Identificación</th>
             <th>Teléfono</th>
             <th>Estado</th>
-            <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let patient of patientsWithoutArea">
+          <tr
+            *ngFor="let patient of patientsWithoutArea"
+            class="admin-table-row--clickable"
+            tabindex="0"
+            role="button"
+            (click)="openPatientWithoutAreaSheet(patient)"
+            (keydown)="onPatientWithoutAreaKeydown(patient, $event)"
+          >
             <td>{{ patient.firstName }} {{ patient.lastName }}</td>
             <td>{{ patient.identificationNumber || 'N/A' }}</td>
             <td>{{ patient.phone || 'N/A' }}</td>
@@ -394,11 +389,6 @@
               <span class="status-badge" [class.active]="patient.isActive">
                 {{ patient.isActive ? 'Activo' : 'Inactivo' }}
               </span>
-            </td>
-            <td>
-              <button class="action-btn assign-btn" (click)="openAssignAreaModal(patient)" title="Asignar área">
-                📍 Asignar Área
-              </button>
             </td>
           </tr>
         </tbody>
@@ -434,31 +424,32 @@
           </div>
           <div *ngIf="getPatientsByArea(area.id!).length > 0" class="patients-table-container">
             <table class="patients-table">
-              <thead>
-                <tr>
-                  <th>Nombre</th>
-                  <th>Identificación</th>
-                  <th>Cama</th>
-                  <th>Teléfono</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let patient of getPatientsByArea(area.id!)">
-                  <td>{{ patient.firstName }} {{ patient.lastName }}</td>
-                  <td>{{ patient.identificationNumber || 'N/A' }}</td>
-                  <td>
-                    <span class="bed-badge" *ngIf="patient.bedNumber">{{ patient.bedNumber }}</span>
-                    <span class="no-bed-badge" *ngIf="!patient.bedNumber">Sin cama</span>
-                  </td>
-                  <td>{{ patient.phone || 'N/A' }}</td>
-                  <td>
-                    <button class="action-btn change-btn" (click)="openChangeAreaModal(patient)" title="Cambiar área">
-                      🔄 Cambiar Área
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Identificación</th>
+                    <th>Cama</th>
+                    <th>Teléfono</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    *ngFor="let patient of getPatientsByArea(area.id!)"
+                    class="admin-table-row--clickable"
+                    tabindex="0"
+                    role="button"
+                    (click)="openPatientByAreaSheet(patient, area.id!)"
+                    (keydown)="onPatientByAreaRowKeydown(patient, area.id!, $event)"
+                  >
+                    <td>{{ patient.firstName }} {{ patient.lastName }}</td>
+                    <td>{{ patient.identificationNumber || 'N/A' }}</td>
+                    <td>
+                      <span class="bed-badge" *ngIf="patient.bedNumber">{{ patient.bedNumber }}</span>
+                      <span class="no-bed-badge" *ngIf="!patient.bedNumber">Sin cama</span>
+                    </td>
+                    <td>{{ patient.phone || 'N/A' }}</td>
+                  </tr>
+                </tbody>
             </table>
           </div>
         </div>
@@ -574,5 +565,74 @@
       </div>
     </div>
   </div>
+
+  <app-admin-table-row-actions-modal
+    [open]="!!areaBedsDetailSheet"
+    [title]="areaBedsDetailSheet?.bed?.bedNumber ? 'Cama ' + areaBedsDetailSheet!.bed.bedNumber : 'Cama'"
+    [summaryLines]="areaBedsSheetSummary()"
+    (dismissed)="closeAreaBedsDetailSheet()"
+  >
+    <button
+      type="button"
+      class="action-btn change-btn neuro-btn"
+      *ngIf="areaBedsDetailSheet?.patient"
+      (click)="fromAreaBedsSheetEditPatient()"
+    >
+      ✏️ Editar / cambiar cama o área
+    </button>
+    <button
+      type="button"
+      class="action-btn assign-btn neuro-btn"
+      *ngIf="areaBedsDetailSheet?.patient"
+      (click)="fromAreaBedsSheetRelease()"
+    >
+      🗑️ Liberar cama
+    </button>
+    <p *ngIf="areaBedsDetailSheet && !areaBedsDetailSheet.patient" class="admin-table-row-actions-line">Cama disponible.</p>
+  </app-admin-table-row-actions-modal>
+
+  <app-admin-table-row-actions-modal
+    [open]="!!areaPatientsAreaSheetPatient"
+    [title]="areaPatientsAreaSheetPatient ? areaPatientsAreaSheetPatient.firstName + ' ' + areaPatientsAreaSheetPatient.lastName : 'Paciente'"
+    [summaryLines]="
+      areaPatientsAreaSheetPatient
+        ? [
+            areaPatientsAreaSheetPatient.identificationNumber || 'Sin ID',
+            areaPatientsAreaSheetPatient.bedNumber ? 'Cama ' + areaPatientsAreaSheetPatient.bedNumber : 'Sin cama'
+          ]
+        : []
+    "
+    (dismissed)="closeAreaPatientsSheet()"
+  >
+    <button type="button" class="action-btn change-btn neuro-btn" (click)="fromAreaPatientsSheetChange()">
+      🔄 Cambiar área
+    </button>
+  </app-admin-table-row-actions-modal>
+
+  <app-admin-table-row-actions-modal
+    [open]="!!patientWithoutAreaSheet"
+    [title]="patientWithoutAreaSheet ? patientWithoutAreaSheet.firstName + ' ' + patientWithoutAreaSheet.lastName : 'Paciente'"
+    [summaryLines]="
+      patientWithoutAreaSheet
+        ? ['Sin área asignada', patientWithoutAreaSheet.identificationNumber || 'Sin ID']
+        : []
+    "
+    (dismissed)="closePatientWithoutAreaSheet()"
+  >
+    <button type="button" class="action-btn assign-btn neuro-btn" (click)="fromPatientWithoutAreaAssign()">📍 Asignar área</button>
+  </app-admin-table-row-actions-modal>
+
+  <app-admin-table-row-actions-modal
+    [open]="!!patientByAreaSheet"
+    [title]="patientByAreaSheet ? patientByAreaSheet.patient.firstName + ' ' + patientByAreaSheet.patient.lastName : 'Paciente'"
+    [summaryLines]="
+      patientByAreaSheet
+        ? ['Área actual (contexto)', patientByAreaSheet.patient.bedNumber ? 'Cama ' + patientByAreaSheet.patient.bedNumber : 'Sin cama']
+        : []
+    "
+    (dismissed)="closePatientByAreaSheet()"
+  >
+    <button type="button" class="action-btn change-btn neuro-btn" (click)="fromPatientByAreaChange()">🔄 Cambiar área</button>
+  </app-admin-table-row-actions-modal>
 </div>
 

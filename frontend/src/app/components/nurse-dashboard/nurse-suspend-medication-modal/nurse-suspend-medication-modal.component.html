@@ -1,0 +1,73 @@
+<div
+  class="modal-backdrop modal-confirmation nurse-suspend-medication-backdrop"
+  role="presentation"
+  (click)="onBackdrop()"
+>
+  <div
+    class="modal-content modal-small"
+    appModalFocusTrap
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="nurse-suspend-medication-dialog-title"
+    (click)="$event.stopPropagation()"
+  >
+    <div class="modal-header">
+      <h3 id="nurse-suspend-medication-dialog-title" i18n="@@nurseSuspendMedicationModal.title">⏸️ Suspender Medicamento</h3>
+      <button
+        type="button"
+        class="close-btn"
+        aria-label="Cerrar"
+        i18n-aria-label="@@nurseSuspendMedicationModal.closeAriaLabel"
+        (click)="onCancel()"
+      >
+        ✕
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="medication-info">
+        <p i18n="@@nurseSuspendMedicationModal.lineMed"><strong>Medicamento:</strong> {{ medication.name }}</p>
+        <p i18n="@@nurseSuspendMedicationModal.lineDosage"><strong>Dosis:</strong> {{ medication.dosage || '—' }}</p>
+        <p i18n="@@nurseSuspendMedicationModal.linePatient"><strong>Paciente:</strong> {{ patientName || '—' }}</p>
+      </div>
+
+      <div class="form-group">
+        <label for="suspend-duration" i18n="@@nurseSuspendMedicationModal.durationQuestion">¿Por cuánto tiempo? *</label>
+        <select id="suspend-duration" class="neuro-input" [(ngModel)]="durationType">
+          <option value="indefinite" i18n="@@nurseSuspendMedicationModal.optIndefinite">Indefinidamente (hasta reactivar)</option>
+          <option value="1day" i18n="@@nurseSuspendMedicationModal.opt1day">1 día</option>
+          <option value="3days" i18n="@@nurseSuspendMedicationModal.opt3days">3 días</option>
+          <option value="1week" i18n="@@nurseSuspendMedicationModal.opt1week">1 semana</option>
+          <option value="custom" i18n="@@nurseSuspendMedicationModal.optCustom">Fecha personalizada</option>
+        </select>
+      </div>
+
+      <div class="form-group" *ngIf="durationType === 'custom'">
+        <label for="suspend-until" i18n="@@nurseSuspendMedicationModal.untilLabel">Suspender hasta:</label>
+        <input id="suspend-until" type="date" class="neuro-input" [(ngModel)]="untilDate" />
+      </div>
+
+      <div class="form-group">
+        <label for="suspend-reason" i18n="@@nurseSuspendMedicationModal.reasonLabel">Motivo de la suspensión *</label>
+        <textarea
+          id="suspend-reason"
+          class="reason-textarea"
+          [(ngModel)]="reason"
+          placeholder="Ej: Paciente presenta efectos secundarios, Cambio de tratamiento..."
+          i18n-placeholder="@@nurseSuspendMedicationModal.reasonPlaceholder"
+          rows="3"
+          required
+        ></textarea>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn-secondary-neuro" (click)="onCancel()" i18n="@@nurseSuspendMedicationModal.cancel">
+        Cancelar
+      </button>
+      <button type="button" class="btn-primary-neuro" (click)="onConfirm()" [disabled]="!canSubmit" i18n="@@nurseSuspendMedicationModal.confirm">
+        Suspender
+      </button>
+    </div>
+  </div>
+</div>

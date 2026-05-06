@@ -29,6 +29,9 @@ export class PendingRegistration {
   @Column({ length: 100 })
   lastName: string;
 
+  @Column({ type: 'varchar', length: 30, nullable: true })
+  phone: string | null;
+
   @Column({
     type: 'enum',
     enum: ['admin', 'nurse', 'supervisor', 'pharmacy'],

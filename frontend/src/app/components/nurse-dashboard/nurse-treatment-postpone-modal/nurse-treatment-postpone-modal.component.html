@@ -1,0 +1,56 @@
+<div
+  class="modal-backdrop modal-confirmation nurse-treatment-postpone-backdrop"
+  role="presentation"
+  (click)="onBackdrop()"
+>
+  <div
+    class="modal-content modal-small"
+    appModalFocusTrap
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="nurse-treatment-postpone-dialog-title"
+    (click)="$event.stopPropagation()"
+  >
+    <div class="modal-header">
+      <h3 id="nurse-treatment-postpone-dialog-title" i18n="@@nurseTreatmentPostponeModal.title">⏱️ Posponer tratamiento</h3>
+      <button
+        type="button"
+        class="close-btn"
+        aria-label="Cerrar"
+        i18n-aria-label="@@nurseTreatmentPostponeModal.closeAriaLabel"
+        (click)="onCancel()"
+      >
+        ✕
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="task-info-summary">
+        <p i18n="@@nurseTreatmentPostponeModal.lineTreatment"><strong>Tratamiento:</strong> {{ item.description }}</p>
+        <p i18n="@@nurseTreatmentPostponeModal.lineCurrentTime"><strong>Hora actual:</strong> {{ item.time }}</p>
+      </div>
+      <div class="form-group">
+        <label for="treatment-postpone-date" i18n="@@nurseTreatmentPostponeModal.newDateLabel">Nueva fecha *</label>
+        <input
+          id="treatment-postpone-date"
+          type="date"
+          class="neuro-input"
+          [(ngModel)]="newDate"
+          required
+          [min]="minDate"
+        />
+      </div>
+      <div class="form-group">
+        <label for="treatment-postpone-time" i18n="@@nurseTreatmentPostponeModal.newTimeLabel">Nueva hora *</label>
+        <input id="treatment-postpone-time" type="time" class="neuro-input" [(ngModel)]="newTime" required />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-secondary-neuro" (click)="onCancel()" i18n="@@nurseTreatmentPostponeModal.cancel">
+        Cancelar
+      </button>
+      <button type="button" class="btn-primary-neuro" (click)="onConfirm()" [disabled]="!canSubmit" i18n="@@nurseTreatmentPostponeModal.save">
+        Guardar
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,46 @@
+.nurse-header-actions-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.nurse-header-search-input {
+  min-width: 10rem;
+  max-width: 16rem;
+  padding: 0.45rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid rgba(174, 174, 192, 0.35);
+  background: #e8ecf0;
+  font-size: 0.9rem;
+  color: #2d3748;
+  box-shadow: inset 2px 2px 4px #c5c9cd, inset -2px -2px 4px #ffffff;
+}
+
+.neuro-input-inline {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.nurse-header-search-input::placeholder {
+  color: #718096;
+}
+
+.nurse-header-search-input:focus {
+  outline: none;
+  border-color: rgba(66, 153, 225, 0.45);
+}
+
+@media (max-width: 768px) {
+  .nurse-header-actions-wrap {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .nurse-header-search-input {
+    min-width: 0;
+    max-width: none;
+    width: 100%;
+  }
+}

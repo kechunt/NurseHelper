@@ -1,6 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'http';
 import app from '../src/app-test';
 import { AppDataSource } from '../src/data-source';
+import { logger } from '../src/utils/logger';
 
 let initPromise: Promise<void> | null = null;
 
@@ -12,11 +13,11 @@ async function ensureDatabaseInitialized(): Promise<void> {
   if (!initPromise) {
     initPromise = AppDataSource.initialize()
       .then(() => {
-        console.log('✅ DB inicializada en función serverless');
+        logger.info('✅ DB inicializada en función serverless');
       })
       .catch((error) => {
         initPromise = null;
-        console.error('❌ Error inicializando DB en serverless:', error);
+        logger.error('❌ Error inicializando DB en serverless:', error);
         throw error;
       });
   }

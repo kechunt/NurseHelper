@@ -1,0 +1,53 @@
+<div
+  class="modal-backdrop modal-confirmation nurse-schedule-edit-backdrop"
+  role="presentation"
+  (click)="onBackdrop()"
+>
+  <div
+    class="modal-content modal-small"
+    appModalFocusTrap
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="nurse-schedule-edit-dialog-title"
+    (click)="$event.stopPropagation()"
+  >
+    <div class="modal-header">
+      <h3 id="nurse-schedule-edit-dialog-title" i18n="@@nurseScheduleEditModal.title">Editar tratamiento / horario</h3>
+      <button
+        type="button"
+        class="close-btn"
+        aria-label="Cerrar"
+        i18n-aria-label="@@nurseScheduleEditModal.closeAriaLabel"
+        (click)="onCancel()"
+      >
+        ✕
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="input-group">
+        <label for="schedule-edit-desc" i18n="@@nurseScheduleEditModal.descriptionLabel">Descripción</label>
+        <textarea
+          id="schedule-edit-desc"
+          class="observation-input"
+          [(ngModel)]="description"
+          rows="3"
+        ></textarea>
+      </div>
+      <div class="input-group">
+        <label for="schedule-edit-notes" i18n="@@nurseScheduleEditModal.notesLabel">Notas</label>
+        <textarea
+          id="schedule-edit-notes"
+          class="observation-input"
+          [(ngModel)]="notes"
+          rows="2"
+        ></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-secondary-neuro" (click)="onCancel()" i18n="@@nurseScheduleEditModal.cancel">
+        Cancelar
+      </button>
+      <button type="button" class="btn-primary-neuro" (click)="save()" i18n="@@nurseScheduleEditModal.save">Guardar</button>
+    </div>
+  </div>
+</div>

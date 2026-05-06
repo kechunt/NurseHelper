@@ -45,7 +45,7 @@ export class BedsController {
             (errorMessage.includes('bedId') || errorMessage.includes('bed') || 
              errorMessage.includes('assignedToId') || errorMessage.includes('assignedTo') ||
              errorMessage.includes('Patient'))) {
-          console.warn('⚠️ Columna bedId o assignedToId no existe aún, cargando camas sin relación de pacientes');
+          logger.warn('⚠️ Columna bedId o assignedToId no existe aún, cargando camas sin relación de pacientes');
           beds = await bedRepository.find({
             relations: ['area'],
             order: { bedNumber: 'ASC' },
@@ -91,7 +91,7 @@ export class BedsController {
             (errorMessage.includes('bedId') || errorMessage.includes('bed') || 
              errorMessage.includes('assignedToId') || errorMessage.includes('assignedTo') ||
              errorMessage.includes('Patient'))) {
-          console.warn('⚠️ Columna bedId o assignedToId no existe aún, cargando camas sin relación de pacientes');
+          logger.warn('⚠️ Columna bedId o assignedToId no existe aún, cargando camas sin relación de pacientes');
           beds = await bedRepository.find({
             where: { areaId },
             relations: ['area'],

@@ -1,0 +1,106 @@
+<div class="section-header">
+  <h2 class="section-title">👥 Mis Pacientes Asignados</h2>
+</div>
+
+<div class="filters-container patients-filters-bar">
+  <div class="filter-box">
+    <label for="nurse-patient-search">🔍 Buscar por nombre o cama</label>
+    <input
+      id="nurse-patient-search"
+      type="text"
+      class="neuro-input neuro-input-inline"
+      autocomplete="off"
+      [ngModel]="searchTerm"
+      (ngModelChange)="onSearchTermChange($event)"
+      placeholder="Ej. María, 2B…"
+    />
+  </div>
+  <div class="filter-box">
+    <label for="nurse-patient-filter-type">📋 Filtrar lista</label>
+    <select
+      id="nurse-patient-filter-type"
+      class="neuro-select neuro-select-inline"
+      [ngModel]="selectedFilter"
+      (ngModelChange)="onSelectedFilterChange($event)"
+    >
+      <option value="all">Todos los pacientes</option>
+      <option value="medications">Con medicamentos hoy</option>
+      <option value="tasks">Con tareas pendientes</option>
+      <option value="critical">Casos críticos</option>
+    </select>
+  </div>
+  <div class="filter-box filter-box-actions" *ngIf="showClearPatientFilters">
+    <label class="filter-box-spacer" aria-hidden="true">&nbsp;</label>
+    <button type="button" class="neuro-btn neuro-btn-sm" (click)="onClearPatientFilters()">
+      🔄 Limpiar filtros
+    </button>
+  </div>
+</div>
+
+<!-- Cuadrícula tipo gestión de enfermeras (admin) -->
+<div *ngIf="patients.length > 0" class="patients-assigned-grid">
+  <div
+    *ngFor="let patient of patients"
+    class="patient-assigned-card"
+    [class.patient-assigned-card--critical]="patient.priority === 'critical'"
+    role="button"
+    tabindex="0"
+    [attr.aria-label]="'Ver detalle de ' + patient.name"
+    (click)="openPatientDetails.emit(patient)"
+    (keydown.enter)="openPatientDetails.emit(patient)"
+    (keydown.space)="$event.preventDefault(); openPatientDetails.emit(patient)"
+  >
+    <div class="patient-assigned-card-header">
+      <div class="patient-assigned-card-info">
+        <h3 class="patient-assigned-card-name">{{ patient.name }}</h3>
+        <p class="patient-assigned-card-meta">
+          <span class="patient-assigned-meta-item">🛏️ {{ patient.bedNumber }}</span>
+          <span class="patient-assigned-meta-sep">·</span>
+          <span class="patient-assigned-meta-item">🎂 {{ patient.age }} años</span>
+        </p>
+      </div>
+      <div class="patient-assigned-kpis">
+        <div
+          class="patient-assigned-task-pill"
+          [class.patient-assigned-task-pill--active]="medicationDosesToday(patient) > 0"
+        >
+          💊 {{ medicationDosesToday(patient) }} medicamentos
+        </div>
+        <div
+          class="patient-assigned-task-pill patient-assigned-task-pill--muted"
+        >
+          🩺 {{ treatmentsTodayCount(patient) }} tratamientos
+        </div>
+      </div>
+    </div>
+
+    <div class="patient-assigned-card-clinical" (click)="$event.stopPropagation()">
+      <app-nurse-clinical-notes-scope-block
+        [patientId]="patient.id"
+        scope="diagnosis"
+        [notesFromApi]="patient.clinicalNotes?.diagnosis ?? []"
+        [legacySingleFieldText]="patient.diagnosis"
+        [compact]="true"
+        blockLabel="Diagnóstico"
+        emptyLabel="Sin diagnóstico"
+      />
+      <app-nurse-clinical-notes-scope-block
+        [patientId]="patient.id"
+        scope="medical"
+        [notesFromApi]="patient.clinicalNotes?.medical ?? []"
+        [legacySingleFieldText]="patient.medicalObservations ?? ''"
+        [compact]="true"
+        blockLabel="Obs. médicas"
+        emptyLabel="Sin observaciones"
+      />
+    </div>
+
+    <div class="patient-assigned-card-actions" (click)="$event.stopPropagation()">
+      <button type="button" class="neuro-btn neuro-btn-sm patient-assigned-action-btn patient-assigned-action-btn--primary" (click)="openPatientDetails.emit(patient)">
+        📋 Ver ficha
+      </button>
+    </div>
+  </div>
+</div>
+
+<p *ngIf="patients.length === 0" class="empty-message">No se encontraron pacientes con los filtros seleccionados</p>

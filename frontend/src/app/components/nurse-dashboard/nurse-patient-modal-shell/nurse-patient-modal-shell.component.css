@@ -1,0 +1,233 @@
+/* Estilos del modal de ficha (antes en `nurse-dashboard.component.css`); ámbito bajo `.nurse-patient-modal-shell`. */
+
+.nurse-patient-modal-shell .modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.48);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  padding: 2rem;
+}
+
+.nurse-patient-modal-shell .modal-content {
+  background: #e0e5ec;
+  border-radius: 30px;
+  max-width: 900px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+  position: relative;
+}
+
+.nurse-patient-modal-shell .modal-content.modal-large {
+  max-width: 1200px;
+}
+
+.nurse-patient-modal-shell .modal-content.modal-large .modal-header {
+  padding-bottom: 2rem;
+  margin-bottom: 0.25rem;
+}
+
+.nurse-patient-modal-shell .modal-header {
+  padding: 2rem 2rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  flex-shrink: 0;
+  background: #e0e5ec;
+  border-radius: 30px 30px 0 0;
+}
+
+.nurse-patient-modal-shell .modal-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 2rem;
+  right: 2rem;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(174, 174, 192, 0.2), transparent);
+}
+
+.nurse-patient-modal-shell .modal-header h3 {
+  color: #4a5568;
+  font-size: 1.5rem;
+  font-weight: 300;
+  margin: 0;
+}
+
+.nurse-patient-modal-shell .close-btn {
+  background: #e0e5ec;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 1.5rem;
+  color: #4a5568;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.nurse-patient-modal-shell .close-btn:hover {
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.28);
+}
+
+.nurse-patient-modal-shell .close-btn:active {
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+}
+
+.nurse-patient-modal-shell .modal-content.modal-large .patient-modal-nav {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 0.5rem;
+  padding: 1rem;
+  margin: 1rem 2rem 1rem;
+  background: #e0e5ec;
+  border-radius: 20px;
+  box-shadow: 15px 15px 30px #bebebe, -15px -15px 30px #ffffff;
+  overflow-x: auto;
+  flex-shrink: 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+.nurse-patient-modal-shell .modal-content.modal-large .patient-modal-nav::-webkit-scrollbar {
+  height: 6px;
+}
+
+.nurse-patient-modal-shell .modal-content.modal-large .patient-modal-nav::-webkit-scrollbar-thumb {
+  background: rgba(174, 174, 192, 0.35);
+  border-radius: 10px;
+}
+
+.nurse-patient-modal-shell .modal-content.modal-large .patient-modal-nav .nav-link {
+  background: #e0e5ec;
+  border: none;
+  padding: 14px 20px;
+  border-radius: 15px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #718096;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.nurse-patient-modal-shell .modal-content.modal-large .patient-modal-nav .nav-link:hover {
+  color: #4a5568;
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+}
+
+.nurse-patient-modal-shell .modal-content.modal-large .patient-modal-nav .nav-link.active {
+  color: #4a5568;
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+}
+
+.nurse-patient-modal-shell .modal-body {
+  padding: 2rem;
+  overflow-y: auto;
+  overflow-x: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.nurse-patient-modal-shell .modal-content.modal-large .modal-body .tab-content {
+  animation: none;
+}
+
+.nurse-patient-modal-shell .modal-footer {
+  padding: 1.5rem 2rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  position: relative;
+  flex-shrink: 0;
+  background: #e0e5ec;
+  border-radius: 0 0 30px 30px;
+}
+
+.nurse-patient-modal-shell .modal-footer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 2rem;
+  right: 2rem;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(174, 174, 192, 0.2), transparent);
+}
+
+.nurse-patient-modal-shell .btn-secondary-neuro {
+  background: #e0e5ec;
+  color: #4a5568;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
+}
+
+.nurse-patient-modal-shell .btn-secondary-neuro:hover {
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+}
+
+.nurse-patient-modal-shell .btn-secondary-neuro:active {
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+}
+
+.nurse-patient-modal-shell .btn-primary-neuro {
+  background: #e0e5ec;
+  color: #4a5568;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
+  transition: all 0.2s ease;
+}
+
+.nurse-patient-modal-shell .btn-primary-neuro:hover {
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+}
+
+.nurse-patient-modal-shell .btn-primary-neuro:active {
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+}
+
+@media (max-width: 1200px) {
+  .nurse-patient-modal-shell .modal-content {
+    max-width: 95%;
+    margin: 1rem;
+  }
+
+  .nurse-patient-modal-shell .modal-content.modal-large .patient-modal-nav {
+    margin: 0 1rem 0.75rem;
+    padding: 0.75rem;
+  }
+
+  .nurse-patient-modal-shell .modal-content.modal-large .patient-modal-nav .nav-link {
+    padding: 12px 16px;
+    font-size: 14px;
+  }
+}

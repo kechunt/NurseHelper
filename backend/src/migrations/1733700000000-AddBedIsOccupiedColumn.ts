@@ -1,4 +1,5 @@
 import { MigrationInterface, QueryRunner, TableColumn } from 'typeorm';
+import { logger } from '../utils/logger';
 
 export class AddBedIsOccupiedColumn1733700000000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -7,7 +8,7 @@ export class AddBedIsOccupiedColumn1733700000000 implements MigrationInterface {
     const hasIsOccupiedColumn = table?.findColumnByName('isOccupied');
 
     if (!hasIsOccupiedColumn) {
-      console.log('🔄 Agregando columna isOccupied a la tabla beds...');
+      logger.info('🔄 Agregando columna isOccupied a la tabla beds...');
       await queryRunner.addColumn(
         'beds',
         new TableColumn({
@@ -17,9 +18,9 @@ export class AddBedIsOccupiedColumn1733700000000 implements MigrationInterface {
           isNullable: false,
         })
       );
-      console.log('✅ Columna isOccupied agregada exitosamente');
+      logger.info('✅ Columna isOccupied agregada exitosamente');
     } else {
-      console.log('ℹ️ La columna isOccupied ya existe en la tabla beds');
+      logger.info('ℹ️ La columna isOccupied ya existe en la tabla beds');
     }
   }
 
@@ -28,9 +29,9 @@ export class AddBedIsOccupiedColumn1733700000000 implements MigrationInterface {
     const hasIsOccupiedColumn = table?.findColumnByName('isOccupied');
 
     if (hasIsOccupiedColumn) {
-      console.log('🔄 Eliminando columna isOccupied de la tabla beds...');
+      logger.info('🔄 Eliminando columna isOccupied de la tabla beds...');
       await queryRunner.dropColumn('beds', 'isOccupied');
-      console.log('✅ Columna isOccupied eliminada exitosamente');
+      logger.info('✅ Columna isOccupied eliminada exitosamente');
     }
   }
 }

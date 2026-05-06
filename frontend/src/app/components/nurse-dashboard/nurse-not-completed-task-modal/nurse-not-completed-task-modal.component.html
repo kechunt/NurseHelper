@@ -1,0 +1,67 @@
+<div
+  class="modal-backdrop modal-confirmation nurse-not-completed-backdrop"
+  role="presentation"
+  (click)="onBackdrop()"
+>
+  <div
+    class="modal-content modal-small"
+    appModalFocusTrap
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="nurse-not-completed-dialog-title"
+    (click)="$event.stopPropagation()"
+  >
+    <div class="modal-header">
+      <h3 id="nurse-not-completed-dialog-title" i18n="@@nurseNotCompletedTaskModal.title">⚠️ Tarea No Realizada</h3>
+      <button
+        type="button"
+        class="close-btn"
+        aria-label="Cerrar"
+        i18n-aria-label="@@nurseNotCompletedTaskModal.closeAriaLabel"
+        (click)="onCancel()"
+      >
+        ✕
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="task-info-summary">
+        <p *ngIf="task.time" i18n="@@nurseNotCompletedTaskModal.scheduledTime">
+          <strong>Hora programada:</strong> {{ task.time }}
+        </p>
+        <p i18n="@@nurseNotCompletedTaskModal.patient"><strong>Paciente:</strong> {{ patientLine }}</p>
+        <p i18n="@@nurseNotCompletedTaskModal.taskMed"><strong>Tarea/Medicamento:</strong> {{ taskLine }}</p>
+        <p *ngIf="task.medication && task.dosage" i18n="@@nurseNotCompletedTaskModal.dosage">
+          <strong>Dosis:</strong> {{ task.dosage }}
+        </p>
+      </div>
+
+      <div class="reason-input-section">
+        <label for="reason-input-not-completed" i18n="@@nurseNotCompletedTaskModal.reasonLabel">
+          ¿Por qué no se administró el medicamento/tratamiento? *
+        </label>
+        <textarea
+          id="reason-input-not-completed"
+          class="observation-input"
+          [(ngModel)]="reason"
+          placeholder="Ejemplo: Paciente rechazó el medicamento, Paciente dormido, Medicamento no disponible, etc."
+          i18n-placeholder="@@nurseNotCompletedTaskModal.reasonPlaceholder"
+          rows="4"
+          maxlength="500"
+        ></textarea>
+        <div class="char-count" i18n="@@nurseNotCompletedTaskModal.charCount">
+          {{ (reason || '').length }}/500 caracteres
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn-secondary-neuro" (click)="onCancel()" i18n="@@nurseNotCompletedTaskModal.cancel">
+        Cancelar
+      </button>
+      <button type="button" class="btn-primary-neuro" (click)="onConfirm()" [disabled]="!canConfirm" i18n="@@nurseNotCompletedTaskModal.confirm">
+        Confirmar
+      </button>
+    </div>
+  </div>
+</div>

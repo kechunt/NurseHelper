@@ -1,10 +1,11 @@
 import { AppDataSource } from '../data-source';
 import { User, UserRole } from '../entities/User';
+import { logger } from '../utils/logger';
 
 const createPharmacyUser = async () => {
   try {
     await AppDataSource.initialize();
-    console.log('🌱 Conectado a la base de datos...');
+    logger.info('🌱 Conectado a la base de datos...');
 
     const userRepo = AppDataSource.getRepository(User);
 
@@ -14,12 +15,12 @@ const createPharmacyUser = async () => {
     });
 
     if (existingUser) {
-      console.log('⚠️  El usuario "farmacia" ya existe. Actualizando contraseña...');
+      logger.info('⚠️  El usuario "farmacia" ya existe. Actualizando contraseña...');
       existingUser.password = 'password123'; // Se hasheará automáticamente
       existingUser.role = UserRole.PHARMACY;
       existingUser.isActive = true;
       await userRepo.save(existingUser);
-      console.log('✅ Usuario "farmacia" actualizado exitosamente');
+      logger.info('✅ Usuario "farmacia" actualizado exitosamente');
     } else {
       // Crear nuevo usuario
       const pharmacyUser = new User();
@@ -32,18 +33,18 @@ const createPharmacyUser = async () => {
       pharmacyUser.isActive = true;
 
       await userRepo.save(pharmacyUser);
-      console.log('✅ Usuario "farmacia" creado exitosamente');
+      logger.info('✅ Usuario "farmacia" creado exitosamente');
     }
 
-    console.log('\n📋 Credenciales de acceso:');
-    console.log('   Usuario: farmacia');
-    console.log('   Contraseña: password123');
-    console.log('   Rol: pharmacy');
-    console.log('   Dashboard: /pharmacy\n');
+    logger.info('\n📋 Credenciales de acceso:');
+    logger.info('   Usuario: farmacia');
+    logger.info('   Contraseña: password123');
+    logger.info('   Rol: pharmacy');
+    logger.info('   Dashboard: /pharmacy\n');
 
     await AppDataSource.destroy();
   } catch (error) {
-    console.error('❌ Error al crear usuario de farmacia:', error);
+    logger.error('❌ Error al crear usuario de farmacia:', error);
     await AppDataSource.destroy();
     process.exit(1);
   }

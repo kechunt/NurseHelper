@@ -75,17 +75,19 @@ describe('DebounceDirective', () => {
   }));
 
   it('debería usar el tiempo de debounce personalizado', fakeAsync(() => {
-    component.debounceTime = 500;
-    fixture.detectChanges();
-    
-    inputElement.value = 'test';
-    inputElement.dispatchEvent(new Event('input'));
-    
+    const f = TestBed.createComponent(TestComponent);
+    f.componentInstance.debounceTime = 500;
+    f.detectChanges();
+    const inp = f.debugElement.query(By.directive(DebounceDirective)).nativeElement as HTMLInputElement;
+
+    inp.value = 'test';
+    inp.dispatchEvent(new Event('input'));
+
     tick(300);
-    expect(component.debouncedValue).toBe('');
-    
+    expect(f.componentInstance.debouncedValue).toBe('');
+
     tick(200);
-    expect(component.debouncedValue).toBe('test');
+    expect(f.componentInstance.debouncedValue).toBe('test');
   }));
 
   it('debería emitir solo valores distintos', fakeAsync(() => {

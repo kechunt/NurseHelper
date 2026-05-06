@@ -1,6 +1,7 @@
 <div 
   *ngIf="show"
   class="modal-overlay"
+  appModalFocusTrap
   role="dialog"
   aria-modal="true"
   [attr.aria-labelledby]="'modal-title-' + type"
@@ -19,6 +20,7 @@
         class="modal-close"
         (click)="close()"
         aria-label="Cerrar modal"
+        i18n-aria-label="@@confirmationModal.closeAriaLabel"
         tabindex="0"
       >
         <span aria-hidden="true">×</span>

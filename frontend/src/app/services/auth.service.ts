@@ -14,6 +14,8 @@ export interface User {
   emailVerified?: boolean;
   maxPatients?: number;
   assignedAreaId?: number | null;
+  /** Si el backend lo expone en el futuro; si no, la UI muestra “No registrado”. */
+  phone?: string | null;
 }
 
 export interface LoginResponse {
@@ -28,6 +30,8 @@ export interface RegisterRequest {
   password: string;
   firstName: string;
   lastName: string;
+  /** Opcional; máx. 30 caracteres en backend. */
+  phone?: string | null;
   role?: 'admin' | 'nurse' | 'supervisor' | 'pharmacy';
 }
 
@@ -155,6 +159,25 @@ export class AuthService {
         console.error('Error loading user from storage', e);
       }
     }
+  }
+
+  /** Actualizar nombre, apellido, usuario y email del usuario autenticado (cualquier rol). */
+  updateMyProfile(body: {
+    firstName: string;
+    lastName: string;
+    username: string;
+    email: string;
+    phone?: string | null;
+  }): Observable<{ message: string; user: User }> {
+    return this.http.patch<{ message: string; user: User }>(`${this.apiUrl}/me`, body).pipe(
+      tap((res) => {
+        if (res.user) {
+          const prev = this.currentUser();
+          const merged: User = prev ? { ...prev, ...res.user } : res.user;
+          this.setUser(merged);
+        }
+      })
+    );
   }
 }
 

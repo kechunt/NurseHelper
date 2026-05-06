@@ -402,18 +402,13 @@ export class NurseService {
       return [];
     }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    // Obtener todos los schedules pendientes en una sola query
     const schedules = await this.scheduleRepository
       .createQueryBuilder('schedule')
       .where('schedule.patientId IN (:...patientIds)', { patientIds: patientIdsInArea })
-      .andWhere('schedule.scheduledTime >= :today', { today })
-      .andWhere('schedule.scheduledTime < :tomorrow', { tomorrow })
       .andWhere('schedule.status = :status', { status: ScheduleStatus.PENDING })
+      .andWhere(
+        '(DATE(schedule.scheduledTime) = CURDATE() OR DATE(schedule.scheduledTime) = DATE_ADD(CURDATE(), INTERVAL 1 DAY))'
+      )
       .orderBy('schedule.scheduledTime', 'ASC')
       .getMany();
 
@@ -450,6 +445,7 @@ export class NurseService {
         id: schedule.id,
         time: timeStr,
         hour,
+        scheduledTime: time.toISOString(),
         type: taskType,
         description: schedule.description,
         patientName: patient ? `${patient.firstName} ${patient.lastName}` : 'Desconocido',
@@ -460,12 +456,11 @@ export class NurseService {
         notCompleted: schedule.status === ScheduleStatus.MISSED || schedule.status === ScheduleStatus.CANCELLED,
         notCompletedReason: schedule.status === ScheduleStatus.MISSED ? schedule.notes : '',
         status: schedule.status,
-        scheduleId: schedule.id
+        scheduleId: schedule.id,
       };
     });
 
-    // Agrupar por hora
-    const grouped = tasks.reduce((acc: any, task) => {
+    const grouped = tasks.reduce((acc: Record<string, any[]>, task) => {
       if (!acc[task.hour]) {
         acc[task.hour] = [];
       }
@@ -473,10 +468,15 @@ export class NurseService {
       return acc;
     }, {});
 
-    const result = Object.entries(grouped).map(([hour, tasks]) => ({
-      hour,
-      tasks
-    }));
+    const result = Object.entries(grouped)
+      .sort((a, b) => parseInt(String(a[0]).split(':')[0], 10) - parseInt(String(b[0]).split(':')[0], 10))
+      .map(([hour, hourTasks]) => ({
+        hour,
+        tasks: (hourTasks as any[]).sort(
+          (t1, t2) =>
+            new Date(t1.scheduledTime || 0).getTime() - new Date(t2.scheduledTime || 0).getTime()
+        ),
+      }));
 
     // Guardar en caché por 1 minuto (las tareas cambian frecuentemente)
     await cacheService.set(cacheKey, result, 60);

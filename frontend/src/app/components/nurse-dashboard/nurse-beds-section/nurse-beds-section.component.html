@@ -1,0 +1,71 @@
+<div class="section-card nurse-module">
+  <div class="nurse-module-stack">
+    <div class="section-header beds-section-header">
+      <h2 class="section-title">🛏️ Mis Camas Asignadas</h2>
+      <span class="section-subtitle">{{ myBeds.length }} camas en {{ assignedArea }}</span>
+    </div>
+
+    <div class="beds-grid">
+      <div
+        *ngFor="let bed of myBeds"
+        class="bed-card clickable-bed"
+        [class.occupied]="bed.patient"
+        [class.available]="!bed.patient"
+        (click)="bedEditRequest.emit(bed)"
+        title="Click para editar cama"
+      >
+        <div class="bed-header">
+          <div class="bed-number">{{ bed.bedNumber }}</div>
+          <div class="bed-status-badge" [class.occupied]="bed.patient">
+            <span *ngIf="bed.patient">🛏️ Ocupada</span>
+            <span *ngIf="!bed.patient">✅ Disponible</span>
+          </div>
+        </div>
+
+        <div *ngIf="bed.patient" class="bed-patient-info">
+          <div class="patient-assignment-header">
+            <span class="assignment-label">👤 Paciente Asignado:</span>
+          </div>
+          <div class="patient-name">{{ bed.patient.name }}</div>
+          <div class="patient-meta">
+            <span class="meta-item">🎂 {{ bed.patient.age }} años</span>
+          </div>
+          <div class="bed-patient-clinical" *ngIf="bed.patient" (click)="$event.stopPropagation()">
+            <app-nurse-clinical-notes-scope-block
+              [patientId]="bed.patient.id"
+              scope="diagnosis"
+              [notesFromApi]="bed.patient.clinicalNotes?.diagnosis ?? []"
+              [legacySingleFieldText]="bed.patient.diagnosis ?? ''"
+              [compact]="true"
+              blockLabel="Diagnóstico"
+              emptyLabel="Sin diagnóstico"
+            />
+            <app-nurse-clinical-notes-scope-block
+              [patientId]="bed.patient.id"
+              scope="medical"
+              [notesFromApi]="bed.patient.clinicalNotes?.medical ?? []"
+              [legacySingleFieldText]="bed.patient.medicalObservations ?? ''"
+              [compact]="true"
+              blockLabel="Obs. médicas"
+              emptyLabel="Sin observaciones"
+            />
+          </div>
+          <button
+            type="button"
+            class="view-patient-btn-neuro"
+            (click)="onViewPatientClick(bed.patient, $event)"
+            title="Ver detalles del paciente"
+          >
+            👁️ Ver Detalles Completos
+          </button>
+        </div>
+
+        <div *ngIf="!bed.patient" class="bed-empty">
+          <div class="empty-icon">🏥</div>
+          <p>Cama disponible</p>
+          <small class="click-hint">Click para asignar paciente</small>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

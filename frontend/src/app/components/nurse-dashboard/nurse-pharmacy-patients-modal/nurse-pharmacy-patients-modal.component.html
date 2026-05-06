@@ -1,0 +1,51 @@
+<div
+  class="modal-backdrop modal-confirmation nurse-pharmacy-patients-backdrop"
+  role="presentation"
+  (click)="onBackdropClick()"
+>
+  <div
+    class="modal-content modal-small nurse-aux-modal"
+    appModalFocusTrap
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="nurse-pharmacy-patients-dialog-title"
+    (click)="$event.stopPropagation()"
+  >
+    <div class="modal-header">
+      <h3 id="nurse-pharmacy-patients-dialog-title" i18n="@@nursePharmacyPatientsModal.title">
+        👥 Pacientes — {{ med.name }}
+      </h3>
+      <button
+        type="button"
+        class="close-btn"
+        aria-label="Cerrar"
+        i18n-aria-label="@@nursePharmacyPatientsModal.closeAriaLabel"
+        (click)="onCloseClick()"
+      >
+        ✕
+      </button>
+    </div>
+    <div class="modal-body pharmacy-patients-modal-body">
+      <div class="nurse-aux-modal__inset">
+        <p class="pharmacy-patients-modal-intro" i18n="@@nursePharmacyPatientsModal.intro">
+          <strong>Dosis:</strong> {{ med.dosage || '—' }} · <strong>Total hoy:</strong> {{ med.totalDoses }} dosis ·
+          <strong>Pacientes:</strong> {{ med.patientsCount }}
+        </p>
+        <p class="pharmacy-patients-modal-hint" i18n="@@nursePharmacyPatientsModal.hint">
+          Personas que tienen programada esta medicación para hoy en tu área.
+        </p>
+      </div>
+      <ul class="pharmacy-patients-list">
+        <li *ngFor="let p of med.patients" class="pharmacy-patients-list-item">
+          <div class="pharmacy-patient-line-name">{{ p.patientName }}</div>
+          <div class="pharmacy-patient-line-meta">
+            <span *ngIf="p.bedNumber" i18n="@@nursePharmacyPatientsModal.bed">🛏️ Cama {{ p.bedNumber }}</span>
+            <span *ngIf="p.areaName" class="pharmacy-patient-area" i18n="@@nursePharmacyPatientsModal.areaSuffix">
+              · {{ p.areaName }}
+            </span>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>

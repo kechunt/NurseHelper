@@ -767,6 +767,13 @@
   font-size: 0.85rem;
 }
 
+.role-card-phone {
+  margin: -0.35rem 0 0.75rem 0;
+  color: #2d3748;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
 .role-card-actions {
   display: flex;
   gap: 0.5rem;

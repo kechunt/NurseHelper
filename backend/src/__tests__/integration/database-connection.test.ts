@@ -7,6 +7,7 @@ import { User } from '../../entities/User';
 import { Patient } from '../../entities/Patient';
 import { Area } from '../../entities/Area';
 import { Bed } from '../../entities/Bed';
+import { logger } from '../../utils/logger';
 
 describe('Database Connection Tests', () => {
   let canConnect = false;
@@ -15,15 +16,15 @@ describe('Database Connection Tests', () => {
     try {
       if (!AppDataSource.isInitialized) {
         await AppDataSource.initialize();
-        console.log('✅ Base de datos inicializada');
+        logger.info('✅ Base de datos inicializada');
         canConnect = true;
       } else {
         canConnect = true;
       }
     } catch (error: any) {
-      console.warn('⚠️ No se pudo conectar a BD. Los tests de BD se saltarán.');
-      console.warn('   Error:', error.message);
-      console.warn('   Esto es normal si MySQL no está corriendo o no está configurado.');
+      logger.warn('⚠️ No se pudo conectar a BD. Los tests de BD se saltarán.');
+      logger.warn('   Error:', error.message);
+      logger.warn('   Esto es normal si MySQL no está corriendo o no está configurado.');
       canConnect = false;
     }
   });
@@ -32,41 +33,41 @@ describe('Database Connection Tests', () => {
     try {
       if (AppDataSource.isInitialized) {
         await AppDataSource.destroy();
-        console.log('✅ Conexión cerrada');
+        logger.info('✅ Conexión cerrada');
       }
     } catch (error) {
-      console.error('Error al cerrar conexión:', error);
+      logger.error('Error al cerrar conexión:', error);
     }
   });
 
   describe('Conexión Básica', () => {
     it('debería inicializar la conexión', () => {
       if (!canConnect) {
-        console.log('⏭️ Test saltado - BD no disponible');
+        logger.info('⏭️ Test saltado - BD no disponible');
         return;
       }
       try {
         expect(AppDataSource.isInitialized).toBe(true);
-        console.log('✅ Conexión inicializada correctamente');
+        logger.info('✅ Conexión inicializada correctamente');
       } catch (error: any) {
-        console.error('❌ Error:', error.message);
+        logger.error('❌ Error:', error.message);
         throw error;
       }
     });
 
     it('debería poder ejecutar query simple', async () => {
       if (!canConnect) {
-        console.log('⏭️ Test saltado - BD no disponible');
+        logger.info('⏭️ Test saltado - BD no disponible');
         return;
       }
       try {
         const result = await AppDataSource.query('SELECT 1 as test');
         expect(result).toBeDefined();
         expect(result[0].test).toBe(1);
-        console.log('✅ Query ejecutada correctamente');
+        logger.info('✅ Query ejecutada correctamente');
       } catch (error: any) {
-        console.error('❌ Error en query:', error.message);
-        console.error('Código de error:', error.code);
+        logger.error('❌ Error en query:', error.message);
+        logger.error('Código de error:', error.code);
         throw error;
       }
     });
@@ -82,7 +83,7 @@ describe('Database Connection Tests', () => {
   describe('Repositorios', () => {
     it('debería obtener repositorio de User', () => {
       if (!canConnect) {
-        console.log('⏭️ Test saltado - BD no disponible');
+        logger.info('⏭️ Test saltado - BD no disponible');
         return;
       }
       const repository = AppDataSource.getRepository(User);
@@ -92,7 +93,7 @@ describe('Database Connection Tests', () => {
 
     it('debería obtener repositorio de Patient', () => {
       if (!canConnect) {
-        console.log('⏭️ Test saltado - BD no disponible');
+        logger.info('⏭️ Test saltado - BD no disponible');
         return;
       }
       const repository = AppDataSource.getRepository(Patient);
@@ -102,7 +103,7 @@ describe('Database Connection Tests', () => {
 
     it('debería obtener repositorio de Area', () => {
       if (!canConnect) {
-        console.log('⏭️ Test saltado - BD no disponible');
+        logger.info('⏭️ Test saltado - BD no disponible');
         return;
       }
       const repository = AppDataSource.getRepository(Area);
@@ -112,7 +113,7 @@ describe('Database Connection Tests', () => {
 
     it('debería obtener repositorio de Bed', () => {
       if (!canConnect) {
-        console.log('⏭️ Test saltado - BD no disponible');
+        logger.info('⏭️ Test saltado - BD no disponible');
         return;
       }
       const repository = AppDataSource.getRepository(Bed);
@@ -124,7 +125,7 @@ describe('Database Connection Tests', () => {
   describe('Queries Complejas', () => {
     it('debería ejecutar JOIN query', async () => {
       if (!canConnect) {
-        console.log('⏭️ Test saltado - BD no disponible');
+        logger.info('⏭️ Test saltado - BD no disponible');
         return;
       }
       const result = await AppDataSource.query(`
@@ -141,7 +142,7 @@ describe('Database Connection Tests', () => {
 
     it('debería ejecutar query con parámetros', async () => {
       if (!canConnect) {
-        console.log('⏭️ Test saltado - BD no disponible');
+        logger.info('⏭️ Test saltado - BD no disponible');
         return;
       }
       const result = await AppDataSource.query(
@@ -156,7 +157,7 @@ describe('Database Connection Tests', () => {
   describe('Transacciones', () => {
     it('debería poder ejecutar transacción', async () => {
       if (!canConnect) {
-        console.log('⏭️ Test saltado - BD no disponible');
+        logger.info('⏭️ Test saltado - BD no disponible');
         return;
       }
       await AppDataSource.transaction(async (manager) => {
@@ -170,7 +171,7 @@ describe('Database Connection Tests', () => {
   describe('Performance', () => {
     it('debería ejecutar query en menos de 1 segundo', async () => {
       if (!canConnect) {
-        console.log('⏭️ Test saltado - BD no disponible');
+        logger.info('⏭️ Test saltado - BD no disponible');
         return;
       }
       const start = Date.now();
@@ -189,7 +190,7 @@ describe('Database Connection Tests', () => {
   describe('Integridad de Datos', () => {
     it('debería tener tablas creadas', async () => {
       if (!canConnect) {
-        console.log('⏭️ Test saltado - BD no disponible');
+        logger.info('⏭️ Test saltado - BD no disponible');
         return;
       }
       const tables = await AppDataSource.query(`
@@ -206,7 +207,7 @@ describe('Database Connection Tests', () => {
 
     it('debería tener índices en tablas principales', async () => {
       if (!canConnect) {
-        console.log('⏭️ Test saltado - BD no disponible');
+        logger.info('⏭️ Test saltado - BD no disponible');
         return;
       }
       const indexes = await AppDataSource.query(`

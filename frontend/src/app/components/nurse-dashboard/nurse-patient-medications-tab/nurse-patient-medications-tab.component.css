@@ -1,0 +1,153 @@
+/* Pestaña medicamentos del modal paciente (antes en nurse-dashboard.component.css). */
+
+.patient-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: #e0e5ec;
+  border-radius: 15px;
+  box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.summary-item .label {
+  font-size: 0.85rem;
+  color: #a0aec0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.summary-item .value {
+  font-size: 1.1rem;
+  color: #4a5568;
+  font-weight: 600;
+}
+
+.medications-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.medications-header h4 {
+  margin: 0;
+}
+
+.medications-header .neuro-btn.add-med-btn {
+  flex-shrink: 0;
+}
+
+.medications-header--stack {
+  align-items: flex-start;
+}
+
+.treatments-day-hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.82rem;
+  color: #718096;
+  line-height: 1.35;
+  max-width: 32rem;
+}
+
+.frequency-text {
+  color: #718096;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.treatment-slot-status {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.med-notes-cell {
+  vertical-align: middle !important;
+  text-align: center;
+}
+
+.medications-modal-table {
+  margin-top: 0;
+  width: 100%;
+  table-layout: auto;
+}
+
+.medications-modal-table th,
+.medications-modal-table td {
+  padding: 12px 8px;
+  white-space: nowrap;
+  overflow: visible;
+}
+
+.medications-modal-table th:last-child,
+.medications-modal-table td:last-child {
+  white-space: normal;
+}
+
+.medications-modal-table th:last-child,
+.medications-modal-table td.med-modal-action-cell {
+  min-width: 180px;
+  text-align: center;
+}
+
+.medications-modal-table td {
+  padding: 0.8rem;
+}
+
+.medications-modal-table td.med-dosis-cell,
+.medications-modal-table td.med-horarios-cell {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  vertical-align: middle;
+}
+
+.med-name-table-modal {
+  font-weight: 600;
+  color: #4a5568;
+  font-size: 0.95rem;
+}
+
+.medications-modal-table .med-table-plain {
+  font-size: 0.85rem;
+  color: #4a5568;
+  font-weight: 500;
+}
+
+.medications-modal-table th,
+.medications-modal-table td {
+  vertical-align: middle !important;
+}
+
+.medications-modal-table .action-buttons-table--modal-row {
+  height: auto !important;
+  min-height: 32px !important;
+  max-height: none !important;
+  flex-wrap: wrap !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 0.28rem !important;
+  white-space: normal !important;
+}
+
+.medications-modal-table td.med-modal-action-cell {
+  overflow: visible !important;
+  vertical-align: middle !important;
+}
+
+.empty-message {
+  text-align: center;
+  padding: 3rem;
+  color: #a0aec0;
+  font-style: italic;
+  font-size: 1rem;
+}

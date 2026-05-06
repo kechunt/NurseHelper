@@ -1,0 +1,121 @@
+<div class="medications-header medications-header--stack">
+  <div>
+    <h4 i18n="@@nursePatientTreatmentsDayTab.sectionTitle">🩺 Tratamientos del día</h4>
+    <p class="treatments-day-hint" i18n="@@nursePatientTreatmentsDayTab.sectionHint">
+      Una fila por cada horario programado para hoy; acciones aplican solo a esa fila.
+    </p>
+  </div>
+  <button type="button" class="neuro-btn add-med-btn" (click)="addTreatment.emit()" i18n="@@nursePatientTreatmentsDayTab.addTreatmentBtn">
+    ➕ Agregar tratamiento
+  </button>
+</div>
+
+<div class="table-wrapper-neuro unified-table-container">
+  <table class="unified-tasks-table neuro-table medications-modal-table treatments-modal-table treatments-today-table">
+    <thead>
+      <tr>
+        <th i18n="@@nursePatientTreatmentsDayTab.colTime">Hora</th>
+        <th i18n="@@nursePatientTreatmentsDayTab.colType">Tipo</th>
+        <th i18n="@@nursePatientTreatmentsDayTab.colTreatment">Tratamiento</th>
+        <th i18n="@@nursePatientTreatmentsDayTab.colStatus">Estado</th>
+        <th i18n="@@nursePatientTreatmentsDayTab.colNotes">Notas</th>
+        <th i18n="@@nursePatientTreatmentsDayTab.colDetail">Detalle</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr
+        *ngFor="let slot of slots"
+        class="admin-table-row--clickable"
+        role="button"
+        tabindex="0"
+        [attr.aria-label]="'Abrir acciones del tratamiento de las ' + slot.time"
+        (click)="openSlotActions(slot)"
+        (keydown.enter)="openSlotActions(slot)"
+        (keydown.space)="$event.preventDefault(); openSlotActions(slot)"
+      >
+        <td>
+          <span class="frequency-text">{{ slot.time }}</span>
+        </td>
+        <td>
+          <span class="frequency-text">{{ typeLabel(slot.scheduleType) }}</span>
+        </td>
+        <td>
+          <div class="med-name-table-modal">{{ slot.description }}</div>
+        </td>
+        <td>
+          <span class="treatment-slot-status">{{ statusLabel(slot) }}</span>
+        </td>
+        <td>
+          <div class="notes-text">{{ slot.notes || '—' }}</div>
+        </td>
+        <td class="med-horarios-cell">
+          <button
+            type="button"
+            class="med-slots-toggle-neuro"
+            (click)="openSlotDetail.emit(slot); $event.stopPropagation()"
+            title="Ver este horario (hoy)"
+            i18n-title="@@nursePatientTreatmentsDayTab.slotsTitle"
+          >
+            <span i18n="@@nursePatientTreatmentsDayTab.slotsBtn">Horarios</span>
+          </button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<app-admin-table-row-actions-modal
+  [open]="!!selectedSlotForActions"
+  [title]="slotActionsTitle()"
+  [summaryLines]="slotActionsSummary()"
+  (dismissed)="closeSlotActions()"
+>
+  <button
+    type="button"
+    class="neuro-btn"
+    (click)="executeMarkDone()"
+    *ngIf="hasPendingSelectedSlot()"
+  >
+    ✓ Marcar como realizado
+  </button>
+  <button
+    type="button"
+    class="neuro-btn"
+    (click)="executePostpone()"
+    *ngIf="hasPendingSelectedSlot()"
+  >
+    ⏱ Posponer
+  </button>
+  <button
+    type="button"
+    class="neuro-btn"
+    (click)="executeCancel()"
+    *ngIf="hasPendingSelectedSlot()"
+  >
+    ✕ Cancelar este horario
+  </button>
+  <button
+    type="button"
+    class="neuro-btn"
+    (click)="executeEdit()"
+    *ngIf="hasPendingSelectedSlot()"
+  >
+    ✏️ Editar descripción o notas
+  </button>
+  <button
+    type="button"
+    class="neuro-btn"
+    (click)="executeDelete()"
+    *ngIf="hasPendingSelectedSlot()"
+  >
+    🗑️ Eliminar horario pendiente
+  </button>
+  <p class="admin-table-row-actions-line" *ngIf="selectedSlotForActions && !hasPendingSelectedSlot()">
+    Este horario ya no está pendiente. No hay acciones de edición disponibles.
+  </p>
+</app-admin-table-row-actions-modal>
+
+<p *ngIf="slots.length === 0" class="empty-message" i18n="@@nursePatientTreatmentsDayTab.empty">
+  No hay tratamientos ni chequeos programados para hoy. Use «Agregar tratamiento» para programar uno; se guarda en la base de datos y aparecerá
+  aquí al instante.
+</p>

@@ -1,0 +1,286 @@
+/*
+ * Modales del panel enfermería (subcomponentes del overlays stack): mismo lenguaje visual
+ * que admin — fondo semitransparente sin blur (#e0e5ec en contenido, radio 30px, sombras).
+ * Encapsulación Angular: no hereda reglas de `nurse-dashboard.component.css`.
+ */
+
+@keyframes nurse-modal-backdrop-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes nurse-modal-content-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 2rem;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  animation: nurse-modal-backdrop-fade-in 0.2s ease;
+}
+
+.modal-backdrop.modal-confirmation {
+  z-index: 2000 !important;
+}
+
+.modal-backdrop.nurse-modal-backdrop-dim {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+  background: #e0e5ec;
+  border-radius: 30px;
+  width: 100%;
+  max-width: 900px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  box-shadow:
+    30px 30px 60px rgba(0, 0, 0, 0.3),
+    -30px -30px 60px rgba(255, 255, 255, 0.1);
+  animation: nurse-modal-content-appear 0.28s ease;
+}
+
+.modal-content.modal-small {
+  max-width: 600px;
+}
+
+.modal-content.modal-large {
+  max-width: min(1100px, 96vw);
+}
+
+.modal-content.nurse-aux-modal {
+  max-width: min(520px, 94vw);
+  border: none;
+}
+
+.modal-header {
+  padding: 2rem 2rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(174, 174, 192, 0.3);
+}
+
+.modal-content.nurse-aux-modal .modal-header {
+  padding: 1.25rem 1.75rem 1rem;
+}
+
+.modal-header h3 {
+  color: #4a5568;
+  font-size: 1.5rem;
+  font-weight: 300;
+  margin: 0;
+}
+
+.modal-content.nurse-aux-modal .modal-header h3 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.close-btn {
+  background: #e0e5ec;
+  border: none;
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  font-size: 20px;
+  line-height: 1;
+  color: #4a5568;
+  cursor: pointer;
+  box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+}
+
+.close-btn:active {
+  box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
+}
+
+.modal-body {
+  padding: 2rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  min-height: 0;
+}
+
+.modal-content.nurse-aux-modal .modal-body {
+  padding: 0.85rem 1.75rem 1.25rem;
+}
+
+.medication-day-detail-body {
+  max-height: min(72vh, 34rem);
+}
+
+.modal-footer {
+  padding: 1rem 2rem 2rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: flex-end;
+  align-items: center;
+  flex-shrink: 0;
+  border-top: 1px solid rgba(174, 174, 192, 0.3);
+}
+
+.modal-content.nurse-aux-modal .modal-footer.nurse-aux-modal__footer {
+  padding: 1rem 1.75rem 1.5rem;
+  justify-content: center;
+}
+
+.nurse-aux-modal__inset {
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.85rem;
+  background: #e0e5ec;
+  border-radius: 15px;
+  box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
+}
+
+.nurse-aux-modal__inset--compact {
+  margin-bottom: 0.65rem;
+}
+
+.input-group {
+  margin-top: 1.5rem;
+}
+
+.input-group:first-child {
+  margin-top: 0;
+}
+
+.input-group label {
+  display: block;
+  color: #4a5568;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.neuro-input {
+  width: 100%;
+  padding: 14px 18px;
+  background: #e0e5ec;
+  border: none;
+  border-radius: 15px;
+  font-size: 16px;
+  color: #4a5568;
+  box-shadow: inset 6px 6px 12px #bebebe, inset -6px -6px 12px #ffffff;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.neuro-input:focus {
+  outline: none;
+  box-shadow: inset 8px 8px 16px #bebebe, inset -8px -8px 16px #ffffff;
+}
+
+.neuro-input::placeholder {
+  color: #a0aec0;
+}
+
+.neuro-input-block {
+  display: block;
+  width: 100%;
+}
+
+.neuro-textarea-block {
+  display: block;
+  width: 100%;
+  min-height: 8rem;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.btn-primary-neuro {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: #e0e5ec;
+  color: #4a5568;
+  box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
+}
+
+.btn-primary-neuro:hover:not(:disabled) {
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+  transform: translateY(-1px);
+}
+
+.btn-primary-neuro:active:not(:disabled) {
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+  transform: translateY(0);
+}
+
+.btn-primary-neuro:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.modal-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+  background: #e0e5ec;
+  border-radius: 10px;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+  background: #bebebe;
+  border-radius: 10px;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
+}
+
+@media (max-width: 768px) {
+  .modal-backdrop {
+    padding: 0.65rem;
+  }
+
+  .modal-content.modal-large {
+    border-radius: 22px;
+    max-height: calc(100vh - 1.25rem);
+  }
+
+  .modal-content.nurse-aux-modal {
+    border-radius: 22px;
+    max-height: calc(100vh - 1.25rem);
+  }
+}

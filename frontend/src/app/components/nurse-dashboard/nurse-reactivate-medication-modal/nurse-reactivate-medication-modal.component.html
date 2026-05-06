@@ -1,0 +1,52 @@
+<div
+  class="modal-backdrop modal-confirmation nurse-reactivate-medication-backdrop"
+  role="presentation"
+  (click)="onBackdrop()"
+>
+  <div
+    class="modal-content modal-small"
+    appModalFocusTrap
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="nurse-reactivate-medication-dialog-title"
+    (click)="$event.stopPropagation()"
+  >
+    <div class="modal-header">
+      <h3 id="nurse-reactivate-medication-dialog-title" i18n="@@nurseReactivateMedicationModal.title">
+        ▶️ Reactivar Medicamento
+      </h3>
+      <button
+        type="button"
+        class="close-btn"
+        aria-label="Cerrar"
+        i18n-aria-label="@@nurseReactivateMedicationModal.closeAriaLabel"
+        (click)="onCancel()"
+      >
+        ✕
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="medication-info">
+        <p i18n="@@nurseReactivateMedicationModal.lineMed"><strong>Medicamento:</strong> {{ medication.name }}</p>
+        <p i18n="@@nurseReactivateMedicationModal.lineDosage"><strong>Dosis:</strong> {{ medication.dosage || '—' }}</p>
+        <p i18n="@@nurseReactivateMedicationModal.linePatient"><strong>Paciente:</strong> {{ patientName || '—' }}</p>
+      </div>
+
+      <div class="info-box">
+        <p i18n="@@nurseReactivateMedicationModal.info">
+          ✅ Esta acción reactivará todas las dosis futuras programadas de este medicamento.
+        </p>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn-secondary-neuro" (click)="onCancel()" i18n="@@nurseReactivateMedicationModal.cancel">
+        Cancelar
+      </button>
+      <button type="button" class="btn-primary-neuro" (click)="onConfirm()" i18n="@@nurseReactivateMedicationModal.confirm">
+        ▶️ Reactivar Medicamento
+      </button>
+    </div>
+  </div>
+</div>

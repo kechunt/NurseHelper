@@ -1,0 +1,101 @@
+<div
+  class="nurse-nav-tablist"
+  role="tablist"
+  aria-label="Vistas del panel de enfermería"
+  i18n-aria-label="@@nurseDashboardMainNav.tablistAriaLabel"
+>
+  <button
+    type="button"
+    class="nav-link"
+    role="tab"
+    id="nurse-tab-summary"
+    [class.active]="nurseMainView === 'summary'"
+    [attr.aria-selected]="nurseMainView === 'summary'"
+    aria-controls="nurse-panel-summary"
+    (click)="select('summary')"
+    (keydown)="onMainViewTabKeydown($event, 'summary')"
+  >
+    <span i18n="@@nurseDashboardMainNav.tab.summary">📊 Resumen</span>
+  </button>
+  <button
+    type="button"
+    class="nav-link"
+    role="tab"
+    id="nurse-tab-tasks"
+    [class.active]="nurseMainView === 'tasks'"
+    [attr.aria-selected]="nurseMainView === 'tasks'"
+    aria-controls="nurse-panel-tasks"
+    (click)="select('tasks')"
+    (keydown)="onMainViewTabKeydown($event, 'tasks')"
+  >
+    <span i18n="@@nurseDashboardMainNav.tab.tasks">⏰ Tareas</span>
+  </button>
+  <button
+    type="button"
+    class="nav-link"
+    role="tab"
+    id="nurse-tab-pharmacy"
+    [class.active]="nurseMainView === 'pharmacy'"
+    [attr.aria-selected]="nurseMainView === 'pharmacy'"
+    aria-controls="nurse-panel-pharmacy"
+    (click)="select('pharmacy')"
+    (keydown)="onMainViewTabKeydown($event, 'pharmacy')"
+  >
+    <span i18n="@@nurseDashboardMainNav.tab.pharmacy">💊 Farmacia</span>
+  </button>
+  <button
+    type="button"
+    class="nav-link"
+    role="tab"
+    id="nurse-tab-beds"
+    [class.active]="nurseMainView === 'beds'"
+    [attr.aria-selected]="nurseMainView === 'beds'"
+    aria-controls="nurse-panel-beds"
+    (click)="select('beds')"
+    (keydown)="onMainViewTabKeydown($event, 'beds')"
+  >
+    <span i18n="@@nurseDashboardMainNav.tab.beds">🛏️ Camas</span>
+  </button>
+  <button
+    type="button"
+    class="nav-link"
+    role="tab"
+    id="nurse-tab-patients"
+    [class.active]="nurseMainView === 'patients'"
+    [attr.aria-selected]="nurseMainView === 'patients'"
+    aria-controls="nurse-panel-patients"
+    (click)="select('patients')"
+    (keydown)="onMainViewTabKeydown($event, 'patients')"
+  >
+    <span i18n="@@nurseDashboardMainNav.tab.patients">👥 Pacientes</span>
+  </button>
+</div>
+<div
+  class="nurse-nav-quick-group"
+  role="group"
+  aria-label="Accesos rápidos"
+  i18n-aria-label="@@nurseDashboardMainNav.quickAriaLabel"
+>
+  <button
+    type="button"
+    class="nav-link nurse-nav-quick"
+    (click)="entregaClick.emit()"
+    title="Nota de paso de turno: el texto guardado solo se consulta en esta ventana, eligiendo fecha, para enfermeras del mismo área."
+    aria-label="Nota de paso de turno"
+    i18n-title="@@nurseDashboardMainNav.quick.handoverTitle"
+    i18n-aria-label="@@nurseDashboardMainNav.quick.handoverAriaLabel"
+  >
+    <span i18n="@@nurseDashboardMainNav.quick.handover">📋 Entrega</span>
+  </button>
+  <button
+    type="button"
+    class="nav-link nurse-nav-quick"
+    (click)="reportesClick.emit()"
+    title="Reportes últimos 7 días"
+    aria-label="Reportes últimos 7 días"
+    i18n-title="@@nurseDashboardMainNav.quick.reportsTitle"
+    i18n-aria-label="@@nurseDashboardMainNav.quick.reportsAriaLabel"
+  >
+    <span i18n="@@nurseDashboardMainNav.quick.reports">📈 Reportes</span>
+  </button>
+</div>

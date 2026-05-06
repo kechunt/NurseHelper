@@ -3,6 +3,7 @@ import { AuthRequest } from './auth.middleware';
 import { UserRole } from '../entities/User';
 import { AppDataSource } from '../data-source';
 import { Bed } from '../entities/Bed';
+import { logger } from '../utils/logger';
 
 export const requireRole = (roles: UserRole[]) => {
   return (req: AuthRequest, res: Response, next: NextFunction): void => {
@@ -77,7 +78,7 @@ export const requireAdminOrSupervisorOrNurseInArea = async (req: AuthRequest, re
 
       next();
     } catch (error) {
-      console.error('Error verificando permisos de enfermera:', error);
+      logger.error('Error verificando permisos de enfermera:', error);
       res.status(500).json({ message: 'Error al verificar permisos' });
     }
   } else {

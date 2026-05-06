@@ -1,0 +1,27 @@
+<div
+  *ngIf="open"
+  class="admin-table-row-actions-backdrop"
+  role="presentation"
+  (click)="onBackdropClick()"
+>
+  <div
+    class="admin-table-row-actions-dialog"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-labelledby]="titleId"
+    (click)="$event.stopPropagation()"
+  >
+    <div class="admin-table-row-actions-header">
+      <h3 [id]="titleId">{{ title }}</h3>
+      <button type="button" class="admin-table-row-actions-close" (click)="close()" [attr.aria-label]="closeAriaLabel">
+        ✕
+      </button>
+    </div>
+    <div class="admin-table-row-actions-body">
+      <p class="admin-table-row-actions-line" *ngFor="let line of summaryLines">{{ line }}</p>
+      <div class="admin-table-row-actions-buttons">
+        <ng-content />
+      </div>
+    </div>
+  </div>
+</div>

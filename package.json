@@ -15,6 +15,7 @@
     "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
     "test:frontend": "cd frontend && npm test",
     "migration:run": "cd backend && npm run migration:run",
+    "migration:run:prod": "cd backend && npm run migration:run:prod",
     "migration:generate": "cd backend && npm run migration:generate"
   },
   "prettier": {

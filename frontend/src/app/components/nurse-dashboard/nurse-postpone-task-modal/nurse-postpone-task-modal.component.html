@@ -1,0 +1,63 @@
+<div
+  class="modal-backdrop modal-confirmation nurse-postpone-task-backdrop"
+  role="presentation"
+  (click)="onBackdrop()"
+>
+  <div
+    class="modal-content modal-small"
+    appModalFocusTrap
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="nurse-postpone-task-dialog-title"
+    (click)="$event.stopPropagation()"
+  >
+    <div class="modal-header">
+      <h3 id="nurse-postpone-task-dialog-title" i18n="@@nursePostponeTaskModal.title">⏱️ Posponer Tarea</h3>
+      <button
+        type="button"
+        class="close-btn"
+        aria-label="Cerrar"
+        i18n-aria-label="@@nursePostponeTaskModal.closeAriaLabel"
+        (click)="onCancel()"
+      >
+        ✕
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="task-info-summary">
+        <p i18n="@@nursePostponeTaskModal.summaryCurrentTime"><strong>Hora actual:</strong> {{ task.time }}</p>
+        <p i18n="@@nursePostponeTaskModal.summaryPatient"><strong>Paciente:</strong> {{ task.patientName }}</p>
+        <p i18n="@@nursePostponeTaskModal.summaryTask"><strong>Tarea:</strong> {{ task.description }}</p>
+      </div>
+
+      <div class="form-group">
+        <label for="postpone-new-date" i18n="@@nursePostponeTaskModal.newDateLabel">Nueva fecha *</label>
+        <input
+          id="postpone-new-date"
+          type="date"
+          class="neuro-input"
+          [(ngModel)]="postponeNewDate"
+          required
+          [min]="minDate"
+        />
+      </div>
+      <div class="form-group">
+        <label for="postpone-new-time" i18n="@@nursePostponeTaskModal.newTimeLabel">Nueva hora *</label>
+        <input id="postpone-new-time" type="time" class="neuro-input" [(ngModel)]="postponeNewTime" required />
+        <small class="hint-text" i18n="@@nursePostponeTaskModal.dateTimeHint">
+          Seleccione la nueva fecha y hora para esta tarea
+        </small>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn-secondary-neuro" (click)="onCancel()" i18n="@@nursePostponeTaskModal.cancel">
+        Cancelar
+      </button>
+      <button type="button" class="btn-primary-neuro" (click)="onConfirm()" [disabled]="!canSubmit" i18n="@@nursePostponeTaskModal.confirm">
+        ⏱️ Posponer Tarea
+      </button>
+    </div>
+  </div>
+</div>

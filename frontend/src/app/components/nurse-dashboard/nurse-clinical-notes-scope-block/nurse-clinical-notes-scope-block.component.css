@@ -1,0 +1,443 @@
+/* Neumorfía alineada con dashboard-layout (.nurse-dashboard .neuro-btn); encapsulado bajo .ncnsb */
+
+.ncnsb {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.ncnsb--compact {
+  gap: 0.25rem;
+}
+
+/* ─── Celda de tabla «Mis pacientes»: mismo comportamiento/modales; vista previa plana ─── */
+.ncnsb.ncnsb--table-cell {
+  gap: 0.12rem;
+}
+
+.ncnsb.ncnsb--table-cell .ncnsb__block-label {
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  margin: 0 0 0.06rem 0;
+  line-height: 1.15;
+}
+
+.ncnsb.ncnsb--table-cell .ncnsb__preview {
+  padding: 0;
+  min-height: 0;
+  border-radius: 0;
+}
+
+.ncnsb.ncnsb--table-cell .ncnsb__preview-line-main.ncnsb__preview-line-main--block {
+  background: transparent;
+  box-shadow: none;
+  padding: 0.06rem 0 0.06rem 0.35rem;
+  margin-bottom: 0.06rem;
+  border-radius: 0;
+  border-left: 2px solid #cbd5e1;
+}
+
+.ncnsb.ncnsb--table-cell .ncnsb__preview-line-main.ncnsb__preview-line-main--block:last-child {
+  margin-bottom: 0;
+}
+
+.ncnsb.ncnsb--table-cell .ncnsb__preview-line-main:hover {
+  filter: none;
+  background: rgba(113, 128, 150, 0.07);
+}
+
+.ncnsb.ncnsb--table-cell .ncnsb__preview-text {
+  font-size: 0.78rem;
+  line-height: 1.25;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+}
+
+.ncnsb.ncnsb--table-cell .ncnsb__empty {
+  font-size: 0.76rem;
+  margin: 0;
+  padding: 0.05rem 0;
+  font-style: italic;
+}
+
+.ncnsb.ncnsb--table-cell .ncnsb__expand-btn.neuro-btn.neuro-btn-sm {
+  align-self: flex-start;
+  margin-top: 0.08rem;
+  padding: 0;
+  background: transparent !important;
+  border-radius: 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #2b6cb0;
+  box-shadow: none !important;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.ncnsb.ncnsb--table-cell .ncnsb__expand-btn.neuro-btn.neuro-btn-sm:hover {
+  color: #2c5282;
+  box-shadow: none !important;
+}
+
+.ncnsb.ncnsb--table-cell .ncnsb__expand-btn.neuro-btn.neuro-btn-sm:active {
+  box-shadow: none !important;
+}
+
+.ncnsb__block-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #718096;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ncnsb .neuro-btn {
+  background: #e0e5ec;
+  color: #4a5568;
+  border: none;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #ffffff;
+}
+
+.ncnsb .neuro-btn:hover {
+  box-shadow: 3px 3px 6px #bebebe, -3px -3px 6px #ffffff;
+}
+
+.ncnsb .neuro-btn:active {
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+}
+
+.ncnsb .neuro-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ncnsb .neuro-btn.neuro-btn-sm {
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.ncnsb__preview {
+  border-radius: 10px;
+  padding: 0.35rem 0.25rem;
+  min-height: 2rem;
+}
+
+.ncnsb__preview--clickable {
+  cursor: pointer;
+}
+
+.ncnsb .ncnsb__eye-btn.neuro-btn.neuro-btn-sm {
+  padding: 0;
+  width: 2.35rem;
+  min-width: 2.35rem;
+  height: auto;
+  align-self: stretch;
+  min-height: 2.35rem;
+  border-radius: 12px;
+  font-size: 1rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ncnsb .ncnsb__eye-btn.ncnsb__eye-btn--active {
+  box-shadow: inset 4px 4px 8px #bebebe, inset -3px -3px 8px #ffffff;
+  background: #d8dde8;
+  color: #2c5282;
+}
+
+.ncnsb .ncnsb__eye-btn.ncnsb__eye-btn--list {
+  width: 2.85rem;
+  min-width: 2.85rem;
+  min-height: 2.85rem;
+}
+
+.ncnsb__preview-line-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  text-align: left;
+  border: none;
+  border-radius: 12px;
+  padding: 0.45rem 0.55rem;
+  margin: 0;
+  background: #e0e5ec;
+  font: inherit;
+  color: #2d3748;
+  cursor: pointer;
+  line-height: 1.35;
+  box-shadow: inset 2px 2px 5px #cbccd1, inset -2px -2px 5px #fafbff;
+  transition: filter 0.15s ease;
+}
+
+.ncnsb__preview-line-main:hover {
+  filter: brightness(1.02);
+}
+
+.ncnsb__preview-line-main.ncnsb__preview-line-main--block {
+  width: 100%;
+  box-sizing: border-box;
+  flex: none;
+  margin-bottom: 0.35rem;
+}
+
+.ncnsb__preview-line-main.ncnsb__preview-line-main--block:last-child {
+  margin-bottom: 0;
+}
+
+.ncnsb__preview-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  word-break: break-word;
+}
+
+.ncnsb--compact .ncnsb__preview-text {
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  font-size: 0.82rem;
+}
+
+.ncnsb__empty {
+  margin: 0;
+  color: #a0aec0;
+  font-style: italic;
+  font-size: 0.88rem;
+}
+
+.ncnsb--compact .ncnsb__empty {
+  font-size: 0.78rem;
+}
+
+.ncnsb__expand-btn {
+  align-self: flex-start;
+}
+
+.ncnsb--compact .ncnsb__expand-btn.neuro-btn.neuro-btn-sm {
+  font-size: 0.72rem;
+  padding: 6px 12px;
+}
+
+.ncnsb .ncnsb__icon-close.neuro-btn.neuro-btn-sm {
+  padding: 0;
+  width: 2.35rem;
+  min-width: 2.35rem;
+  height: 2.35rem;
+  border-radius: 12px;
+  font-size: 1rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Lista completa */
+.ncnsb-list-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 12050;
+  background: rgba(45, 55, 72, 0.45);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0.75rem;
+  box-sizing: border-box;
+}
+
+@media (min-width: 560px) {
+  .ncnsb-list-backdrop {
+    align-items: center;
+  }
+}
+
+.ncnsb-list-dialog {
+  background: #e8ecf1;
+  border-radius: 16px 16px 0 0;
+  max-width: 520px;
+  width: 100%;
+  max-height: min(85vh, 560px);
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 1.1rem;
+  box-shadow: 8px 8px 24px rgba(0, 0, 0, 0.18);
+  color: #2d3748;
+}
+
+@media (min-width: 560px) {
+  .ncnsb-list-dialog {
+    border-radius: 16px;
+    max-height: min(80vh, 520px);
+  }
+}
+
+.ncnsb-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.35rem;
+}
+
+.ncnsb-list-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.ncnsb-list-hint {
+  margin: 0 0 0.65rem 0;
+  font-size: 0.78rem;
+  color: #718096;
+  line-height: 1.35;
+}
+
+.ncnsb-list-ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.ncnsb-list-li {
+  margin: 0 0 0.35rem 0;
+}
+
+.ncnsb-list-row-wrap {
+  display: flex;
+  align-items: stretch;
+  gap: 0.45rem;
+  width: 100%;
+}
+
+.ncnsb-list-row-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  text-align: left;
+  border: none;
+  border-radius: 12px;
+  padding: 0.55rem 0.65rem;
+  background: #e0e5ec;
+  font: inherit;
+  cursor: pointer;
+  color: #2d3748;
+  box-shadow: inset 2px 2px 5px #cbccd1, inset -2px -2px 5px #fafbff;
+  transition: filter 0.15s ease;
+}
+
+.ncnsb-list-row-main:hover {
+  filter: brightness(1.03);
+}
+
+.ncnsb-list-body {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.ncnsb-list-done {
+  margin-top: 0.65rem;
+  width: 100%;
+}
+
+/* Detalle */
+.ncnsb-detail-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 12100;
+  background: rgba(45, 55, 72, 0.5);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.ncnsb-detail-dialog {
+  background: #e8ecf1;
+  border-radius: 16px;
+  padding: 1.25rem 1.5rem;
+  max-width: 420px;
+  width: 100%;
+  box-shadow: 8px 8px 20px #bebebe, -6px -6px 16px #ffffff;
+  color: #2d3748;
+}
+
+.ncnsb-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.ncnsb-detail-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.ncnsb-detail-meta {
+  margin: 0 0 1rem 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.35rem 1rem;
+  font-size: 0.9rem;
+}
+
+.ncnsb-detail-meta dt {
+  margin: 0;
+  font-weight: 600;
+  color: #718096;
+}
+
+.ncnsb-detail-meta dd {
+  margin: 0;
+  color: #2d3748;
+}
+
+.ncnsb-detail-body-label {
+  margin: 0 0 0.35rem 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #718096;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.ncnsb-detail-body {
+  margin: 0 0 1.25rem 0;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.ncnsb-detail-done {
+  width: 100%;
+}

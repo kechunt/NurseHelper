@@ -1,0 +1,63 @@
+<div
+  class="modal-backdrop modal-confirmation nurse-delete-medication-backdrop"
+  role="presentation"
+  (click)="onBackdrop()"
+>
+  <div
+    class="modal-content modal-small"
+    appModalFocusTrap
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="nurse-delete-medication-dialog-title"
+    (click)="$event.stopPropagation()"
+  >
+    <div class="modal-header">
+      <h3 id="nurse-delete-medication-dialog-title" i18n="@@nurseDeleteMedicationModal.title">🗑️ Eliminar Medicamento</h3>
+      <button
+        type="button"
+        class="close-btn"
+        aria-label="Cerrar"
+        i18n-aria-label="@@nurseDeleteMedicationModal.closeAriaLabel"
+        (click)="onCancel()"
+      >
+        ✕
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="warning-box">
+        <p i18n="@@nurseDeleteMedicationModal.warning">
+          ⚠️ Esta acción eliminará PERMANENTEMENTE todas las dosis futuras programadas.
+        </p>
+      </div>
+
+      <div class="medication-info">
+        <p i18n="@@nurseDeleteMedicationModal.lineMed"><strong>Medicamento:</strong> {{ medication.name }}</p>
+        <p i18n="@@nurseDeleteMedicationModal.lineDosage"><strong>Dosis:</strong> {{ medication.dosage || '—' }}</p>
+        <p i18n="@@nurseDeleteMedicationModal.linePatient"><strong>Paciente:</strong> {{ patientName || '—' }}</p>
+      </div>
+
+      <div class="form-group">
+        <label for="delete-med-reason" i18n="@@nurseDeleteMedicationModal.reasonLabel">Motivo de la eliminación *</label>
+        <textarea
+          id="delete-med-reason"
+          class="reason-textarea"
+          [(ngModel)]="deleteReason"
+          placeholder="Ej: Fin del tratamiento, Cambio de medicamento, Reacción adversa..."
+          i18n-placeholder="@@nurseDeleteMedicationModal.reasonPlaceholder"
+          rows="3"
+          required
+        ></textarea>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn-secondary-neuro" (click)="onCancel()" i18n="@@nurseDeleteMedicationModal.cancel">
+        Cancelar
+      </button>
+      <button type="button" class="btn-primary-neuro" (click)="onConfirm()" [disabled]="!canSubmit" i18n="@@nurseDeleteMedicationModal.confirm">
+        Eliminar Permanentemente
+      </button>
+    </div>
+  </div>
+</div>

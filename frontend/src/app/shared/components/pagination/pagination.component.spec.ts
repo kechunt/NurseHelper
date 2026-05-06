@@ -117,14 +117,10 @@ describe('PaginationComponent', () => {
 
   it('debería emitir itemsPerPageChange al cambiar items por página', () => {
     spyOn(component.itemsPerPageChange, 'emit');
-    
-    const select = document.createElement('select');
-    select.value = '50';
-    const event = new Event('change');
-    Object.defineProperty(event, 'target', { value: select });
-    
+
+    const event = { target: { value: '50' } } as unknown as Event;
     component.onItemsPerPageChange(event);
-    
+
     expect(component.itemsPerPageChange.emit).toHaveBeenCalledWith(50);
   });
 

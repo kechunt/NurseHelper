@@ -1,0 +1,79 @@
+<div class="section-header nurse-module-header">
+  <h2 class="section-title">📊 Resumen general</h2>
+</div>
+<div class="overview-container dashboard-overview">
+  <div class="stats-grid">
+    <div class="stat-card clickable" (click)="areaSummaryClick.emit()">
+      <div class="stat-icon">🏥</div>
+      <div class="stat-content">
+        <h3 class="stat-value">{{ assignedArea }}</h3>
+        <p class="stat-label">Área asignada</p>
+      </div>
+      <div class="click-hint">Ver detalle</div>
+    </div>
+    <div class="stat-card clickable" (click)="openPatientsModuleClick.emit()">
+      <div class="stat-icon">👥</div>
+      <div class="stat-content">
+        <h3 class="stat-value">{{ assignedPatientsCount }} / {{ maxPatients }}</h3>
+        <p class="stat-label">Pacientes asignados</p>
+      </div>
+      <div class="click-hint">Ir a pacientes</div>
+    </div>
+    <div class="stat-card clickable" (click)="openTasksQuickClick.emit()">
+      <div class="stat-icon">⏰</div>
+      <div class="stat-content">
+        <h3 class="stat-value">{{ pendingTasksCount }}</h3>
+        <p class="stat-label">Tareas pendientes</p>
+      </div>
+      <div class="click-hint">Ver en modal</div>
+    </div>
+    <div class="stat-card clickable" (click)="openPharmacyQuickClick.emit()">
+      <div class="stat-icon">💊</div>
+      <div class="stat-content">
+        <h3 class="stat-value">{{ medicationsToday }}</h3>
+        <p class="stat-label">Medicamentos hoy</p>
+      </div>
+      <div class="click-hint">Solicitar a farmacia</div>
+    </div>
+  </div>
+
+  <div class="stats-grid nurse-summary-actions-grid">
+    <button type="button" class="stat-card clickable nurse-attention-tile" (click)="openAttentionPharmacyClick.emit()">
+      <div class="stat-icon">📤</div>
+      <div class="stat-content">
+        <h3 class="stat-value">{{ attentionPharmacyNotRequestedCount }}</h3>
+        <p class="stat-label">Medicamentos sin solicitar a farmacia</p>
+      </div>
+      <div class="click-hint">Ir a Farmacia para enviar</div>
+    </button>
+    <button type="button" class="stat-card clickable nurse-attention-tile" (click)="openAttentionTasksNextHourClick.emit()">
+      <div class="stat-icon">⏱️</div>
+      <div class="stat-content">
+        <h3 class="stat-value">{{ attentionTasksNextHourCount }}</h3>
+        <p class="stat-label">Tareas pendientes (próx. 1 h)</p>
+      </div>
+      <div class="click-hint">Abrir lista</div>
+    </button>
+    <button
+      type="button"
+      class="stat-card clickable nurse-attention-tile"
+      (click)="openHandoverClick.emit()"
+      title="Lo que guardes solo se ve al abrir esta nota (misma área, por fecha). No hay otra pantalla con el texto."
+    >
+      <div class="stat-icon">📋</div>
+      <div class="stat-content">
+        <h3 class="stat-value">Entrega</h3>
+        <p class="stat-label">Nota de turno por día y área</p>
+      </div>
+      <div class="click-hint">Abrir nota</div>
+    </button>
+    <button type="button" class="stat-card clickable nurse-attention-tile" (click)="openReportsClick.emit()">
+      <div class="stat-icon">📈</div>
+      <div class="stat-content">
+        <h3 class="stat-value">7 días</h3>
+        <p class="stat-label">Reportes cumplimiento y medicación</p>
+      </div>
+      <div class="click-hint">Ver reportes</div>
+    </button>
+  </div>
+</div>

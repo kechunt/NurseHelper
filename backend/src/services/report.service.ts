@@ -6,8 +6,9 @@
 import { AppDataSource } from '../data-source';
 import { Schedule, ScheduleStatus, ScheduleType } from '../entities/Schedule';
 import { Patient } from '../entities/Patient';
-import { AdministrationHistory, AdministrationStatus } from '../entities/AdministrationHistory';
-import { Between } from 'typeorm';
+import { User } from '../entities/User';
+import { Bed } from '../entities/Bed';
+import { Between, In } from 'typeorm';
 import { logger } from '../utils/logger';
 
 export interface MedicationReport {
@@ -36,16 +37,74 @@ export interface ComplianceStats {
 
 export class ReportService {
   /**
+   * Pacientes visibles para una enfermera (asignación directa o camas del área), alineado con `getMyPatients`.
+   */
+  async getPatientIdsVisibleToNurse(nurseUserId: number): Promise<number[]> {
+    const userRepo = AppDataSource.getRepository(User);
+    const bedRepo = AppDataSource.getRepository(Bed);
+    const patientRepo = AppDataSource.getRepository(Patient);
+
+    const user = await userRepo.findOne({ where: { id: nurseUserId } });
+    if (!user?.assignedAreaId) {
+      return [];
+    }
+
+    let patientsAssignedToNurse: Patient[] = [];
+    try {
+      patientsAssignedToNurse = await patientRepo.find({
+        where: { assignedToId: nurseUserId, isActive: true },
+        select: ['id'],
+      });
+    } catch (e: any) {
+      const msg = e?.message || e?.sqlMessage || '';
+      if (e?.code === 'ER_BAD_FIELD_ERROR' && msg.includes('assignedToId')) {
+        patientsAssignedToNurse = [];
+      } else {
+        throw e;
+      }
+    }
+
+    if (patientsAssignedToNurse.length > 0) {
+      return patientsAssignedToNurse.map((p) => p.id);
+    }
+
+    const bedsInArea = await bedRepo.find({
+      where: { areaId: user.assignedAreaId, isActive: true },
+    });
+    const bedIds = bedsInArea.map((b) => b.id);
+    if (bedIds.length === 0) {
+      return [];
+    }
+
+    try {
+      const inBeds = await patientRepo.find({
+        where: { bedId: In(bedIds), isActive: true },
+        select: ['id'],
+      });
+      return inBeds.map((p) => p.id);
+    } catch (e: any) {
+      const msg = e?.message || e?.sqlMessage || '';
+      if (e?.code === 'ER_BAD_FIELD_ERROR' && msg.includes('bedId')) {
+        return [];
+      }
+      throw e;
+    }
+  }
+
+  /**
    * Generar reporte de administración de medicamentos
    */
   async generateMedicationReport(
     startDate: Date,
     endDate: Date,
-    patientId?: number
+    patientId?: number,
+    restrictToPatientIds?: number[]
   ): Promise<MedicationReport[]> {
     const scheduleRepository = AppDataSource.getRepository(Schedule);
-    const adminHistoryRepository = AppDataSource.getRepository(AdministrationHistory);
-    const patientRepository = AppDataSource.getRepository(Patient);
+
+    if (restrictToPatientIds !== undefined && restrictToPatientIds.length === 0) {
+      return [];
+    }
 
     // Obtener schedules de medicamentos en el rango de fechas
     const whereClause: any = {
@@ -55,20 +114,13 @@ export class ReportService {
 
     if (patientId) {
       whereClause.patientId = patientId;
+    } else if (restrictToPatientIds && restrictToPatientIds.length > 0) {
+      whereClause.patientId = In(restrictToPatientIds);
     }
 
     const schedules = await scheduleRepository.find({
       where: whereClause,
       relations: ['patient'],
-    });
-
-    // Obtener historial de administraciones
-    const adminHistory = await adminHistoryRepository.find({
-      where: {
-        scheduledTime: Between(startDate, endDate),
-        ...(patientId && { patientId }),
-      },
-      relations: ['schedule', 'schedule.patient'],
     });
 
     // Agrupar por paciente y medicamento
@@ -119,10 +171,21 @@ export class ReportService {
   async generateComplianceStats(
     startDate: Date,
     endDate: Date,
-    patientId?: number
+    patientId?: number,
+    restrictToPatientIds?: number[]
   ): Promise<ComplianceStats> {
     const scheduleRepository = AppDataSource.getRepository(Schedule);
-    const adminHistoryRepository = AppDataSource.getRepository(AdministrationHistory);
+
+    if (restrictToPatientIds !== undefined && restrictToPatientIds.length === 0) {
+      return {
+        totalSchedules: 0,
+        administered: 0,
+        missed: 0,
+        cancelled: 0,
+        complianceRate: 0,
+        byPatient: [],
+      };
+    }
 
     const whereClause: any = {
       scheduledTime: Between(startDate, endDate),
@@ -130,6 +193,8 @@ export class ReportService {
 
     if (patientId) {
       whereClause.patientId = patientId;
+    } else if (restrictToPatientIds && restrictToPatientIds.length > 0) {
+      whereClause.patientId = In(restrictToPatientIds);
     }
 
     const schedules = await scheduleRepository.find({
@@ -188,22 +253,88 @@ export class ReportService {
     };
   }
 
+  private escapeCsvCell(value: string | number): string {
+    const s = String(value ?? '');
+    if (/[",\n\r]/.test(s)) {
+      return `"${s.replace(/"/g, '""')}"`;
+    }
+    return s;
+  }
+
+  private medicationReportToCsv(rows: MedicationReport[]): string {
+    const header = [
+      'PacienteId',
+      'Paciente',
+      'Medicamento',
+      'Dosis',
+      'Programados',
+      'Administrados',
+      'NoAdministrados',
+      'PctCumplimiento',
+    ];
+    const lines = [
+      header.join(','),
+      ...rows.map((r) =>
+        [
+          r.patientId,
+          r.patientName,
+          r.medication,
+          r.dosage,
+          r.scheduled,
+          r.administered,
+          r.missed,
+          Math.round(r.complianceRate * 100) / 100,
+        ]
+          .map((c) => this.escapeCsvCell(c))
+          .join(',')
+      ),
+    ];
+    return '\uFEFF' + lines.join('\n');
+  }
+
+  private complianceStatsToCsv(stats: ComplianceStats): string {
+    const lines: string[] = [
+      'Seccion,Clave,Valor',
+      `Resumen,totalSchedules,${stats.totalSchedules}`,
+      `Resumen,administered,${stats.administered}`,
+      `Resumen,missed,${stats.missed}`,
+      `Resumen,cancelled,${stats.cancelled}`,
+      `Resumen,complianceRatePct,${Math.round(stats.complianceRate * 100) / 100}`,
+      '',
+      'PorPaciente,PacienteId,PacienteNombre,PctCumplimiento',
+    ];
+    for (const row of stats.byPatient) {
+      lines.push(
+        [
+          'PorPaciente',
+          row.patientId,
+          row.patientName,
+          Math.round(row.complianceRate * 100) / 100,
+        ]
+          .map((c) => this.escapeCsvCell(c))
+          .join(',')
+      );
+    }
+    return '\uFEFF' + lines.join('\n');
+  }
+
   /**
-   * Exportar reporte a formato específico
+   * Exportar reporte a formato específico (CSV implementado; PDF/Excel no).
    */
   async exportReport(
     report: MedicationReport[] | ComplianceStats,
     format: 'pdf' | 'excel' | 'csv'
-  ): Promise<Buffer> {
-    // En producción, usar librerías como:
-    // - PDF: pdfkit, jsPDF
-    // - Excel: exceljs, xlsx
-    // - CSV: csv-writer
-
+  ): Promise<Buffer | null> {
     logger.info('Report export requested', { format, reportType: Array.isArray(report) ? 'medication' : 'compliance' });
 
-    // Placeholder - implementar según necesidad
-    return Buffer.from('');
+    if (format === 'csv') {
+      const text = Array.isArray(report)
+        ? this.medicationReportToCsv(report)
+        : this.complianceStatsToCsv(report);
+      return Buffer.from(text, 'utf8');
+    }
+
+    return null;
   }
 }
 

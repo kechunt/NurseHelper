@@ -1,12 +1,21 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { AdminService, Area, Bed, Patient } from '../../../services/admin.service';
 import { User } from '../../../services/auth.service';
 import { ShiftsService } from '../../../services/shifts.service';
 import { environment } from '../../../../environments/environment';
+import { ConfirmationService } from '../../../services/confirmation.service';
+import {
+  adminConfirmRemovePatientAssignmentMessage,
+  ADMIN_CONFIRM_REMOVE_PATIENT_ASSIGNMENT_TITLE,
+  ADMIN_CONFIRM_REMOVE_PATIENT_ASSIGNMENT_YES,
+} from '../admin-confirmation-copy.helpers';
+import { ToastService } from '../../../services/toast.service';
+import { AdminTableRowActionsModalComponent } from '../../../shared/components/admin-table-row-actions-modal/admin-table-row-actions-modal.component';
 
 interface NurseWithPatients extends User {
   assignedPatients: Patient[];
@@ -18,7 +27,7 @@ interface NurseWithPatients extends User {
 @Component({
   selector: 'app-staff-management',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, AdminTableRowActionsModalComponent],
   templateUrl: './staff-management.component.html',
   styleUrl: './staff-management.component.css',
 })
@@ -34,13 +43,18 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
   showEditModal = false;
   showPatientsModal = false;
   showAssignBedModal = false;
-  
+  showChangeAreaModal = false;
+
   selectedNurse: NurseWithPatients | null = null;
   selectedNursePatients: Patient[] = [];
   availablePatients: Patient[] = [];
   patientPendingAssign: Patient | null = null;
   bedsForPendingAssign: Bed[] = [];
   selectedBedIdForAssign: number | null = null;
+  /** Enfermera cuyo área se edita en el modal dedicado (reutiliza updateUser + misma lista de áreas que Editar). */
+  changeAreaNurse: NurseWithPatients | null = null;
+  changeAreaSelectedId: number | null = null;
+  savingChangeArea = false;
 
   // Formularios
   editForm: Partial<User> = {};
@@ -48,14 +62,46 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
   // Filtros
   searchQuery: string = '';
   selectedArea: number | null = null;
-  selectedShiftPresenceFilter: 'all' | 'onShift' = 'all';
+  selectedShiftPresenceFilter: 'all' | 'onShift' | 'offShift' = 'all';
   liveShiftName = 'Sin turno activo';
   private operationalStatusTimer: ReturnType<typeof setInterval> | null = null;
+  /** Detalle expandido solo para enfermeras en turno actual (mapa id → visible). */
+  nurseDetailExpanded: Record<number, boolean> = {};
+
+  /** Paciente (+ contexto): acciones en hoja desde tablas internas. */
+  staffPatientSheet:
+    | { kind: 'card-assigned'; nurse: NurseWithPatients; patient: Patient }
+    | { kind: 'modal-assigned'; patient: Patient }
+    | { kind: 'modal-available'; patient: Patient }
+    | null = null;
 
   constructor(
     private adminService: AdminService,
-    private shiftsService: ShiftsService
+    private shiftsService: ShiftsService,
+    private router: Router,
+    private confirmationService: ConfirmationService,
+    private toastService: ToastService
   ) {}
+
+  /**
+   * Normaliza `assignedAreaId` para guardar: `null` sin área, o id numérico existente en `areas`.
+   * Si la selección es inválida, muestra aviso y devuelve `false`.
+   */
+  private parseAndValidateAssignedAreaId(raw: number | null | undefined): number | null | false {
+    if (raw === null || raw === undefined || raw === ('' as any)) {
+      return null;
+    }
+    const n = typeof raw === 'number' ? raw : parseInt(String(raw), 10);
+    if (isNaN(n)) {
+      this.toastService.warning('El área seleccionada no es válida');
+      return false;
+    }
+    if (!this.areas.some((a) => a.id === n)) {
+      this.toastService.warning('El área seleccionada no existe');
+      return false;
+    }
+    return n;
+  }
 
   private toNumber(value: any): number | null {
     if (value === null || value === undefined || value === '') {
@@ -80,6 +126,11 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
     return { bedId: null, bedNumber: null };
   }
 
+  /** Paciente con cama asignada en el sistema (no listar en “disponibles” para esta enfermera). */
+  patientHasBedAssigned(patient: any): boolean {
+    return this.resolvePatientBedInfo(patient).bedId != null;
+  }
+
   ngOnInit(): void {
     console.log('🚀 Staff Management Component inicializado');
     console.log('🌐 API URL:', environment.apiUrl);
@@ -94,7 +145,7 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
     }
   }
 
-  loadData(): void {
+  loadData(onComplete?: () => void): void {
     this.loading = true;
     this.error = null;
     this.nurses = []; // Limpiar datos anteriores
@@ -359,11 +410,13 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
 
         this.loadOperationalShiftStatus();
         this.loading = false;
+        onComplete?.();
       },
       error: (error) => {
         console.error('❌ Error cargando datos:', error);
         this.error = 'Error al cargar los datos. Por favor, recarga la página.';
         this.loading = false;
+        onComplete?.();
       },
     });
   }
@@ -393,6 +446,9 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
 
     if (this.selectedShiftPresenceFilter === 'onShift') {
       filtered = filtered.filter((n) => n.onCurrentShift === true);
+    }
+    if (this.selectedShiftPresenceFilter === 'offShift') {
+      filtered = filtered.filter((n) => n.onCurrentShift !== true);
     }
 
     return filtered;
@@ -485,9 +541,46 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
     if (nurse.currentShiftStatus === 'present') return 'En turno';
     if (nurse.currentShiftStatus === 'late') return 'En turno (tarde)';
     if (nurse.currentShiftStatus === 'justified') return 'Ausencia justificada';
-    if (nurse.currentShiftStatus === 'missing') return 'Falta en turno';
+    if (nurse.currentShiftStatus === 'missing') return 'Ausente (falta en turno)';
     if (nurse.currentShiftStatus === 'absent') return 'Fuera de turno';
     return 'Sin registro de turno';
+  }
+
+  /** Texto corto para la pastilla (mismo rol visual que antes “Activo/Inactivo”). */
+  getShiftPresenceBadgeLabel(nurse: NurseWithPatients): string {
+    return this.getOperationalStatusLabel(nurse);
+  }
+
+  /** Clases CSS para la pastilla de turno (misma base que .nurse-status). */
+  getShiftPresenceBadgeClass(nurse: NurseWithPatients): string {
+    const s = nurse.currentShiftStatus;
+    if (s === 'present' || s === 'late') return 'nurse-shift-status on-shift';
+    if (s === 'justified') return 'nurse-shift-status justified';
+    if (s === 'missing') return 'nurse-shift-status absent-shift';
+    if (s === 'absent') return 'nurse-shift-status off-shift';
+    return 'nurse-shift-status unknown-shift';
+  }
+
+  getNursePhoneDisplay(nurse: NurseWithPatients): string {
+    const raw = (nurse as any)?.phone;
+    const s = raw != null ? String(raw).trim() : '';
+    return s.length > 0 ? s : 'No registrado';
+  }
+
+  isNurseDetailExpanded(nurse: NurseWithPatients): boolean {
+    const id = nurse.id;
+    return id != null && !!this.nurseDetailExpanded[id];
+  }
+
+  toggleNurseDetail(nurse: NurseWithPatients): void {
+    const id = nurse.id;
+    if (id == null) return;
+    const next = !this.nurseDetailExpanded[id];
+    this.nurseDetailExpanded = { ...this.nurseDetailExpanded, [id]: next };
+  }
+
+  canShowDetailToggle(nurse: NurseWithPatients): boolean {
+    return nurse.onCurrentShift === true;
   }
 
   // ========== GESTIÓN DE ENFERMERA ==========
@@ -498,6 +591,7 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
       lastName: nurse.lastName,
       email: nurse.email,
       username: nurse.username,
+      phone: (nurse as any).phone ?? '',
       maxPatients: nurse.maxPatients || 0,
       assignedAreaId: nurse.assignedAreaId || null,
       isActive: nurse.isActive,
@@ -514,42 +608,36 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
   saveNurse(): void {
     if (!this.selectedNurse?.id) return;
 
-    // Validar que el área sea válida si está asignada
-    if (this.editForm.assignedAreaId !== null && this.editForm.assignedAreaId !== undefined) {
-      const areaId = typeof this.editForm.assignedAreaId === 'number' 
-        ? this.editForm.assignedAreaId 
-        : parseInt(String(this.editForm.assignedAreaId));
-      
-      if (isNaN(areaId)) {
-        alert('⚠️ El área seleccionada no es válida');
-        return;
-      }
-      
-      // Verificar que el área existe
-      const areaExists = this.areas.some((a) => a.id === areaId);
-      if (!areaExists) {
-        alert('⚠️ El área seleccionada no existe');
-        return;
-      }
-      
-      this.editForm.assignedAreaId = areaId;
+    const parsedArea = this.parseAndValidateAssignedAreaId(this.editForm.assignedAreaId as number | null | undefined);
+    if (parsedArea === false) {
+      return;
     }
+    this.editForm.assignedAreaId = parsedArea;
+
+    const phoneTrim = String(this.editForm.phone ?? '').trim();
+    if (phoneTrim.length > 30) {
+      this.toastService.warning('El teléfono no puede superar 30 caracteres');
+      return;
+    }
+    const payload = { ...this.editForm, phone: phoneTrim.length > 0 ? phoneTrim : null };
 
     console.log('💾 Guardando enfermera:', {
       id: this.selectedNurse.id,
-      formData: this.editForm
+      formData: payload,
     });
 
-    this.adminService.updateUser(this.selectedNurse.id, this.editForm).subscribe({
+    this.adminService.updateUser(this.selectedNurse.id, payload).subscribe({
       next: () => {
         console.log('✅ Enfermera actualizada exitosamente');
-        alert('✅ Enfermera actualizada exitosamente');
+        this.toastService.success('Enfermera actualizada correctamente');
         this.closeEditModal();
         this.loadData(); // Recargar para actualizar todo (incluyendo pacientes asignados)
       },
       error: (error) => {
         console.error('Error actualizando enfermera:', error);
-        alert(`Error al actualizar la enfermera: ${error.error?.message || error.message || 'Error desconocido'}`);
+        this.toastService.error(
+          `Error al actualizar la enfermera: ${error.error?.message || error.message || 'Error desconocido'}`
+        );
       },
     });
   }
@@ -570,6 +658,9 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
     this.availablePatients = (this.patients || []).filter((p: any) => {
       const patientId = typeof p.id === 'number' ? p.id : parseInt(String(p.id), 10);
       if (!patientId || isNaN(patientId) || assignedIds.has(patientId)) {
+        return false;
+      }
+      if (this.patientHasBedAssigned(p)) {
         return false;
       }
       if (p.isActive === false || p.isActive === 0) {
@@ -595,6 +686,141 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
     this.availablePatients = [];
   }
 
+  openChangeAreaModal(nurse: NurseWithPatients | null | undefined): void {
+    if (!nurse?.id) {
+      return;
+    }
+    this.changeAreaNurse = nurse;
+    this.changeAreaSelectedId = this.toNumber(nurse.assignedAreaId);
+    this.savingChangeArea = false;
+    this.showChangeAreaModal = true;
+  }
+
+  closeChangeAreaModal(): void {
+    this.showChangeAreaModal = false;
+    this.changeAreaNurse = null;
+    this.changeAreaSelectedId = null;
+    this.savingChangeArea = false;
+  }
+
+  /** Misma API que Editar enfermera (`updateUser` solo `assignedAreaId`). */
+  saveChangeAreaModal(): void {
+    if (!this.changeAreaNurse?.id) {
+      return;
+    }
+    const parsedArea = this.parseAndValidateAssignedAreaId(this.changeAreaSelectedId);
+    if (parsedArea === false) {
+      return;
+    }
+    const nurseId = this.toNumber(this.changeAreaNurse.id);
+    if (!nurseId) {
+      return;
+    }
+
+    const patientsModalOpen = this.showPatientsModal;
+    const patientsModalNurseId =
+      this.selectedNurse?.id != null ? this.toNumber(this.selectedNurse.id) : null;
+
+    this.savingChangeArea = true;
+    this.adminService.updateUser(nurseId, { assignedAreaId: parsedArea }).subscribe({
+      next: () => {
+        this.savingChangeArea = false;
+        this.toastService.success('Área de la enfermera actualizada');
+        this.closeChangeAreaModal();
+        this.loadData(() => {
+          if (patientsModalOpen && patientsModalNurseId != null && patientsModalNurseId === nurseId) {
+            const n = this.nurses.find((x) => this.toNumber(x.id) === nurseId);
+            if (n) {
+              this.openPatientsModal(n);
+            }
+          }
+        });
+      },
+      error: (error) => {
+        this.savingChangeArea = false;
+        this.toastService.error(
+          `Error al actualizar el área: ${error.error?.message || error.message || 'Error desconocido'}`
+        );
+      },
+    });
+  }
+
+  /** Abre la pestaña Camas del panel admin (asignación paciente–cama por área). */
+  goToAdminBedsTab(): void {
+    this.closeAssignBedModal();
+    this.closePatientsModal();
+    this.router.navigate(['/admin'], { queryParams: { tab: 'beds' } });
+  }
+
+  openStaffPatientSheet(
+    ctx:
+      | { kind: 'card-assigned'; nurse: NurseWithPatients; patient: Patient }
+      | { kind: 'modal-assigned'; patient: Patient }
+      | { kind: 'modal-available'; patient: Patient }
+  ): void {
+    this.staffPatientSheet = ctx;
+  }
+
+  closeStaffPatientSheet(): void {
+    this.staffPatientSheet = null;
+  }
+
+  onStaffPatientRowKeydown(
+    ctx:
+      | { kind: 'card-assigned'; nurse: NurseWithPatients; patient: Patient }
+      | { kind: 'modal-assigned'; patient: Patient }
+      | { kind: 'modal-available'; patient: Patient },
+    event: KeyboardEvent
+  ): void {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      this.openStaffPatientSheet(ctx);
+    }
+  }
+
+  staffPatientSheetTitle(): string {
+    const s = this.staffPatientSheet;
+    if (!s) {
+      return '';
+    }
+    return `${s.patient.firstName} ${s.patient.lastName}`;
+  }
+
+  staffPatientSheetSummary(): string[] {
+    const s = this.staffPatientSheet;
+    if (!s) {
+      return [];
+    }
+    const bed = this.getPatientBed(s.patient);
+    if (s.kind === 'modal-available') {
+      return ['Sin cama en el listado de “disponibles”', 'Se asignará a la enfermera del modal con flujo de cama'];
+    }
+    if (s.kind === 'card-assigned') {
+      return [`Cama: ${bed}`, `Enfermera: ${s.nurse.firstName} ${s.nurse.lastName}`];
+    }
+    return [`Cama: ${bed}`, 'Asignado a la enfermera del modal'];
+  }
+
+  execStaffPatientRemove(): void {
+    const s = this.staffPatientSheet;
+    if (!s || s.kind === 'modal-available') {
+      return;
+    }
+    void (s.kind === 'card-assigned'
+      ? this.removePatientFromNurse(s.patient, s.nurse)
+      : this.removePatientFromNurse(s.patient));
+    this.closeStaffPatientSheet();
+  }
+
+  execStaffPatientAssign(): void {
+    const s = this.staffPatientSheet;
+    if (s?.kind !== 'modal-available') {
+      return;
+    }
+    this.assignPatientToNurse(s.patient);
+    this.closeStaffPatientSheet();
+  }
+
   assignPatientToNurse(patient: Patient): void {
     if (!this.selectedNurse?.id || !patient.id) {
       return;
@@ -613,14 +839,14 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
           ? rawAid
           : parseInt(String(rawAid), 10);
     if (!isNaN(currentAid) && currentAid === nurseId) {
-      alert('Este paciente ya está asignado a esta enfermera.');
+      this.toastService.warning('Este paciente ya está asignado a esta enfermera.');
       return;
     }
     if (
       this.selectedNurse.maxPatients &&
       this.selectedNursePatients.length >= this.selectedNurse.maxPatients
     ) {
-      alert(
+      this.toastService.warning(
         `La enfermera ya tiene el máximo de pacientes asignados (${this.selectedNurse.maxPatients})`
       );
       return;
@@ -628,7 +854,9 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
 
     const nurseAreaId = this.toNumber(this.selectedNurse.assignedAreaId);
     if (!nurseAreaId) {
-      alert('La enfermera no tiene área asignada. Asigna un área antes de asignar pacientes.');
+      this.toastService.warning(
+        'La enfermera no tiene área asignada. Asigna un área antes de asignar pacientes.'
+      );
       return;
     }
 
@@ -656,7 +884,7 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         const msg = error.error?.message || error.message || 'Error cargando camas del área';
-        alert(msg);
+        this.toastService.error(msg);
       },
     });
   }
@@ -670,7 +898,7 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
 
   confirmAssignPatientToNurseWithBed(): void {
     if (!this.selectedNurse?.id || !this.patientPendingAssign?.id || !this.selectedBedIdForAssign) {
-      alert('Selecciona una cama para continuar.');
+      this.toastService.warning('Selecciona una cama para continuar.');
       return;
     }
 
@@ -678,7 +906,7 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
     const patientId = this.toNumber(this.patientPendingAssign.id);
     const bedId = this.toNumber(this.selectedBedIdForAssign);
     if (!nurseId || !patientId || !bedId) {
-      alert('Datos inválidos para asignación.');
+      this.toastService.warning('Datos inválidos para asignación.');
       return;
     }
 
@@ -686,14 +914,14 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
       next: () => {
         this.adminService.updatePatient(patientId, { assignedToId: nurseId }).subscribe({
           next: () => {
-            alert('Paciente asignado con cama correctamente.');
+            this.toastService.success('Paciente asignado con cama correctamente.');
             this.closeAssignBedModal();
             this.loadData();
             this.closePatientsModal();
           },
           error: (error) => {
             const msg = error.error?.message || error.message || 'No se pudo asignar enfermera';
-            alert(`La cama se asignó, pero faltó asignar enfermera: ${msg}`);
+            this.toastService.warning(`La cama se asignó, pero faltó asignar enfermera: ${msg}`);
             this.closeAssignBedModal();
             this.loadData();
             this.closePatientsModal();
@@ -702,22 +930,30 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         const msg = error.error?.message || error.message || 'No se pudo asignar cama';
-        alert(`No se pudo guardar la cama seleccionada: ${msg}`);
+        this.toastService.error(`No se pudo guardar la cama seleccionada: ${msg}`);
       },
     });
   }
 
-  removePatientFromNurse(patient: Patient, nurse?: NurseWithPatients): void {
+  async removePatientFromNurse(patient: Patient, nurse?: NurseWithPatients): Promise<void> {
     const targetNurse = nurse || this.selectedNurse;
     if (!targetNurse?.id || !patient.id) {
       return;
     }
 
-    if (
-      !confirm(
-        `¿Quitar a ${patient.firstName} ${patient.lastName} como paciente asignado a ${targetNurse.firstName} ${targetNurse.lastName}?`
-      )
-    ) {
+    const ok = await this.confirmationService.confirm({
+      title: ADMIN_CONFIRM_REMOVE_PATIENT_ASSIGNMENT_TITLE,
+      message: adminConfirmRemovePatientAssignmentMessage(
+        patient.firstName || '',
+        patient.lastName || '',
+        targetNurse.firstName || '',
+        targetNurse.lastName || ''
+      ),
+      type: 'warning',
+      confirmText: ADMIN_CONFIRM_REMOVE_PATIENT_ASSIGNMENT_YES,
+      cancelText: 'Cancelar',
+    });
+    if (!ok) {
       return;
     }
 
@@ -736,7 +972,7 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
     if (!isNaN(currentAid) && currentAid === nurseId) {
       this.adminService.updatePatient(patientId, { assignedToId: null }).subscribe({
         next: () => {
-          alert('Paciente desasignado de la enfermera.');
+          this.toastService.success('Paciente desasignado de la enfermera.');
           this.loadData();
           if (this.showPatientsModal) {
             this.closePatientsModal();
@@ -744,7 +980,7 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
         },
         error: (error) => {
           const msg = error.error?.message || error.message || 'Error desconocido';
-          alert(`Error al quitar la asignación: ${msg}`);
+          this.toastService.error(`Error al quitar la asignación: ${msg}`);
         },
       });
       return;
@@ -765,7 +1001,7 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
       : NaN;
 
     if (!patientBed || isNaN(nurseAreaId)) {
-      alert('No hay cama en el área de esta enfermera para liberar.');
+      this.toastService.warning('No hay cama en el área de esta enfermera para liberar.');
       return;
     }
 
@@ -775,13 +1011,13 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
         : parseInt(String(patientBed.areaId), 10);
 
     if (bedAreaId !== nurseAreaId) {
-      alert('Este paciente no está en el área de esta enfermera.');
+      this.toastService.warning('Este paciente no está en el área de esta enfermera.');
       return;
     }
 
     this.adminService.assignPatientToBed(patientBed.id!, null).subscribe({
       next: () => {
-        alert('Paciente removido del área (cama liberada).');
+        this.toastService.success('Paciente removido del área (cama liberada).');
         this.loadData();
         if (this.showPatientsModal) {
           this.closePatientsModal();
@@ -789,7 +1025,7 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         const msg = error.error?.message || error.message || 'Error desconocido';
-        alert(`Error al liberar la cama: ${msg}`);
+        this.toastService.error(`Error al liberar la cama: ${msg}`);
       },
     });
   }
@@ -820,6 +1056,7 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
     this.searchQuery = '';
     this.selectedArea = null;
     this.selectedShiftPresenceFilter = 'all';
+    this.nurseDetailExpanded = {};
   }
 
   trackByNurseId(index: number, nurse: NurseWithPatients): any {

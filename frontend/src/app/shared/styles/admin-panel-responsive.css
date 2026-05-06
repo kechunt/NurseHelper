@@ -30,11 +30,36 @@
   gap: 1rem;
 }
 
+/* Filtros alineados con pacientes (admin) — reutilizable en enfermería / otros paneles */
+.filters-container {
+  background: #e0e5ec;
+  border-radius: 15px;
+  padding: 1.5rem;
+  margin-bottom: 1.25rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
+}
+
+.filter-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.filter-box label {
+  color: #4a5568;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
 /* Keep tables and wrappers inside viewport */
 .table-container,
 .patients-table-container,
 .patients-table-container-modal,
-.table-wrapper-neuro {
+.table-wrapper-neuro,
+.unified-table-container {
   max-width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;

@@ -169,6 +169,43 @@
         </div>
       </div>
 
+      <!-- Observaciones clínicas (opcional; mismos campos que edición y panel enfermería) -->
+      <div class="form-section">
+        <h3>📝 Observaciones clínicas</h3>
+        <div class="form-grid-compact">
+          <div class="input-group full-width">
+            <label for="w-medical-history">Diagnóstico / historial clínico</label>
+            <textarea
+              id="w-medical-history"
+              class="neuro-input"
+              rows="3"
+              formControlName="medicalHistory"
+              placeholder="Ej. Neumonía en resolución, DM2..."
+            ></textarea>
+          </div>
+          <div class="input-group full-width">
+            <label for="w-medical-observations">Observaciones médicas / evolución</label>
+            <textarea
+              id="w-medical-observations"
+              class="neuro-input"
+              rows="3"
+              formControlName="medicalObservations"
+              placeholder="Signos, evolución, alertas clínicas..."
+            ></textarea>
+          </div>
+          <div class="input-group full-width">
+            <label for="w-general-observations">Observaciones generales</label>
+            <textarea
+              id="w-general-observations"
+              class="neuro-input"
+              rows="3"
+              formControlName="generalObservations"
+              placeholder="Cuidados de enfermería, preferencias, otros datos relevantes..."
+            ></textarea>
+          </div>
+        </div>
+      </div>
+
       <!-- Botón de Guardar -->
       <div class="form-actions">
         <button 
@@ -297,11 +334,19 @@
             <th scope="col">Área</th>
             <th scope="col">Cama</th>
             <th scope="col">Estado</th>
-            <th scope="col">Acciones</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let patient of paginatedPatients; trackBy: trackByPatientId" [class.inactive]="!patient.isActive">
+          <tr
+            *ngFor="let patient of paginatedPatients; trackBy: trackByPatientId"
+            [class.inactive]="!patient.isActive"
+            class="admin-table-row--clickable"
+            tabindex="0"
+            role="button"
+            [attr.aria-label]="'Acciones para paciente ' + patient.firstName + ' ' + patient.lastName"
+            (click)="openPatientRowActionsSheet(patient)"
+            (keydown)="onPatientTableRowKeydown(patient, $event)"
+          >
             <td>{{ patient.id }}</td>
             <td>{{ patient.firstName }} {{ patient.lastName }}</td>
             <td>{{ patient.identificationNumber || '-' }}</td>
@@ -311,15 +356,6 @@
               <span class="neuro-status" [class.active]="patient.isActive" [class.inactive]="!patient.isActive" [attr.aria-label]="patient.isActive ? 'Paciente activo' : 'Paciente inactivo'">
                 {{ patient.isActive ? 'Activo' : 'Inactivo' }}
               </span>
-            </td>
-            <td>
-              <div class="action-buttons" role="group" aria-label="Acciones del paciente">
-                <button class="neuro-btn-icon" (click)="openEditModal(patient)" title="Ver/Editar Detalles" aria-label="Ver detalles de {{ patient.firstName }} {{ patient.lastName }}">👁️</button>
-                <button class="neuro-btn-icon" (click)="toggleActive(patient)" [attr.aria-label]="(patient.isActive ? 'Desactivar' : 'Activar') + ' paciente ' + patient.firstName + ' ' + patient.lastName">
-                  {{ patient.isActive ? '🔒' : '🔓' }}
-                </button>
-                <button class="neuro-btn-icon delete-btn" (click)="deletePatient(patient)" [attr.aria-label]="'Eliminar paciente ' + patient.firstName + ' ' + patient.lastName">🗑️</button>
-              </div>
             </td>
           </tr>
         </tbody>
@@ -335,6 +371,19 @@
     </div>
     </div>
   </div>
+
+  <app-admin-table-row-actions-modal
+    [open]="!!patientRowActionsTarget"
+    [title]="'Paciente'"
+    [summaryLines]="patientRowActionsTarget ? patientRowActionsSummary(patientRowActionsTarget) : []"
+    (dismissed)="closePatientRowActionsSheet()"
+  >
+    <button type="button" class="neuro-btn" (click)="fromPatientSheetOpenEdit()">👁️ Ver / editar detalles</button>
+    <button type="button" class="neuro-btn" (click)="fromPatientSheetToggleActive()">
+      {{ patientRowActionsTarget?.isActive ? '🔒 Desactivar' : '🔓 Activar' }}
+    </button>
+    <button type="button" class="neuro-btn outlined delete-btn" (click)="fromPatientSheetDelete()">🗑️ Eliminar</button>
+  </app-admin-table-row-actions-modal>
 
   <!-- Modal de Edición Detallada del Paciente -->
   <div *ngIf="showEditModal" class="modal-backdrop" (click)="closeEditModal()">

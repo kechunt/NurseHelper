@@ -1,16 +1,32 @@
 <div class="admin-dashboard">
+  <app-dashboard-user-profile-modal #supervisorProfile />
   <div class="dashboard-header">
     <div class="header-content">
-      <div class="logo-section" (click)="goToOverviewFromLogo()" role="button" tabindex="0" (keydown.enter)="goToOverviewFromLogo()" (keydown.space)="goToOverviewFromLogo(); $event.preventDefault()">
-        <img src="/nursehelper.png" alt="NurseHelper" class="header-logo" />
-        <h1 class="dashboard-title">Panel de Supervisión</h1>
+      <div
+        class="logo-section"
+        (click)="goToOverviewFromLogo()"
+        role="button"
+        tabindex="0"
+        aria-label="Ir al resumen del panel de supervisión"
+        (keydown.enter)="goToOverviewFromLogo()"
+        (keydown.space)="goToOverviewFromLogo(); $event.preventDefault()"
+      >
+        <img src="/nursehelper.png" alt="" class="header-logo" />
+        <h1 class="dashboard-title" id="supervisor-dashboard-heading">Panel de Supervisión</h1>
       </div>
       <div class="user-section">
-        <div class="user-info">
+        <button
+          type="button"
+          class="user-info profile-trigger-btn"
+          (click)="supervisorProfile.open()"
+          title="Editar mi información"
+          aria-label="Editar mi información de usuario"
+        >
           <span class="user-name">{{ currentUser()?.firstName || '' }} {{ currentUser()?.lastName || '' }}</span>
           <span class="user-role">Supervisor</span>
-        </div>
-        <button class="neuro-btn-icon logout-btn" (click)="logout()" title="Cerrar Sesión">
+          <span class="user-phone-line" *ngIf="headerUserPhoneLine as hp">{{ hp }}</span>
+        </button>
+        <button type="button" class="neuro-btn-icon logout-btn" (click)="logout()" title="Cerrar Sesión" aria-label="Cerrar sesión">
           🚪
         </button>
       </div>
@@ -18,87 +34,177 @@
   </div>
 
   <div class="dashboard-body">
-    <nav class="dashboard-nav">
+    <nav class="dashboard-nav" role="tablist" aria-label="Secciones del panel de supervisión">
       <button
+        type="button"
+        role="tab"
+        id="supervisor-tab-overview"
         class="nav-link"
         [class.active]="activeTab === 'overview'"
+        [attr.aria-selected]="activeTab === 'overview'"
+        aria-controls="supervisor-panel-overview"
         (click)="setActiveTab('overview')"
+        (keydown)="onSupervisorTabKeydown($event, 'overview')"
       >
         📊 Resumen
       </button>
       <button
+        type="button"
+        role="tab"
+        id="supervisor-tab-users"
         class="nav-link"
         [class.active]="activeTab === 'users'"
+        [attr.aria-selected]="activeTab === 'users'"
+        aria-controls="supervisor-panel-users"
         (click)="setActiveTab('users')"
+        (keydown)="onSupervisorTabKeydown($event, 'users')"
       >
         👥 Usuarios
       </button>
       <button
+        type="button"
+        role="tab"
+        id="supervisor-tab-staff"
         class="nav-link"
         [class.active]="activeTab === 'staff'"
+        [attr.aria-selected]="activeTab === 'staff'"
+        aria-controls="supervisor-panel-staff"
         (click)="setActiveTab('staff')"
+        (keydown)="onSupervisorTabKeydown($event, 'staff')"
       >
         👩‍⚕️ Gestión de Enfermeras
       </button>
       <button
+        type="button"
+        role="tab"
+        id="supervisor-tab-areas"
         class="nav-link"
         [class.active]="activeTab === 'areas'"
+        [attr.aria-selected]="activeTab === 'areas'"
+        aria-controls="supervisor-panel-areas"
         (click)="setActiveTab('areas')"
+        (keydown)="onSupervisorTabKeydown($event, 'areas')"
       >
         🏥 Áreas
       </button>
       <button
+        type="button"
+        role="tab"
+        id="supervisor-tab-beds"
         class="nav-link"
         [class.active]="activeTab === 'beds'"
+        [attr.aria-selected]="activeTab === 'beds'"
+        aria-controls="supervisor-panel-beds"
         (click)="setActiveTab('beds')"
+        (keydown)="onSupervisorTabKeydown($event, 'beds')"
       >
         🛏️ Camas
       </button>
       <button
+        type="button"
+        role="tab"
+        id="supervisor-tab-patients"
         class="nav-link"
         [class.active]="activeTab === 'patients'"
+        [attr.aria-selected]="activeTab === 'patients'"
+        aria-controls="supervisor-panel-patients"
         (click)="setActiveTab('patients')"
+        (keydown)="onSupervisorTabKeydown($event, 'patients')"
       >
         👤 Pacientes
       </button>
       <button
+        type="button"
+        role="tab"
+        id="supervisor-tab-schedules"
         class="nav-link"
         [class.active]="activeTab === 'schedules'"
+        [attr.aria-selected]="activeTab === 'schedules'"
+        aria-controls="supervisor-panel-schedules"
         (click)="setActiveTab('schedules')"
+        (keydown)="onSupervisorTabKeydown($event, 'schedules')"
       >
         📅 Horarios
       </button>
     </nav>
 
-    <div class="dashboard-content">
-      <div *ngIf="hasVisitedTab('overview')" [hidden]="activeTab !== 'overview'" class="tab-content">
+    <main class="dashboard-content" id="supervisor-dashboard-main" aria-labelledby="supervisor-dashboard-heading">
+      <div
+        *ngIf="hasVisitedTab('overview')"
+        [hidden]="activeTab !== 'overview'"
+        class="tab-content"
+        role="tabpanel"
+        id="supervisor-panel-overview"
+        aria-labelledby="supervisor-tab-overview"
+      >
         <app-overview [onNavigate]="setActiveTab.bind(this)"></app-overview>
       </div>
 
-      <div *ngIf="hasVisitedTab('users')" [hidden]="activeTab !== 'users'" class="tab-content">
+      <div
+        *ngIf="hasVisitedTab('users')"
+        [hidden]="activeTab !== 'users'"
+        class="tab-content"
+        role="tabpanel"
+        id="supervisor-panel-users"
+        aria-labelledby="supervisor-tab-users"
+      >
         <app-users-management></app-users-management>
       </div>
 
-      <div *ngIf="hasVisitedTab('staff')" [hidden]="activeTab !== 'staff'" class="tab-content">
+      <div
+        *ngIf="hasVisitedTab('staff')"
+        [hidden]="activeTab !== 'staff'"
+        class="tab-content"
+        role="tabpanel"
+        id="supervisor-panel-staff"
+        aria-labelledby="supervisor-tab-staff"
+      >
         <app-staff-management></app-staff-management>
       </div>
 
-      <div *ngIf="hasVisitedTab('areas')" [hidden]="activeTab !== 'areas'" class="tab-content">
+      <div
+        *ngIf="hasVisitedTab('areas')"
+        [hidden]="activeTab !== 'areas'"
+        class="tab-content"
+        role="tabpanel"
+        id="supervisor-panel-areas"
+        aria-labelledby="supervisor-tab-areas"
+      >
         <app-areas-management></app-areas-management>
       </div>
 
-      <div *ngIf="hasVisitedTab('beds')" [hidden]="activeTab !== 'beds'" class="tab-content">
+      <div
+        *ngIf="hasVisitedTab('beds')"
+        [hidden]="activeTab !== 'beds'"
+        class="tab-content"
+        role="tabpanel"
+        id="supervisor-panel-beds"
+        aria-labelledby="supervisor-tab-beds"
+      >
         <app-beds-management></app-beds-management>
       </div>
 
-      <div *ngIf="hasVisitedTab('patients')" [hidden]="activeTab !== 'patients'" class="tab-content">
+      <div
+        *ngIf="hasVisitedTab('patients')"
+        [hidden]="activeTab !== 'patients'"
+        class="tab-content"
+        role="tabpanel"
+        id="supervisor-panel-patients"
+        aria-labelledby="supervisor-tab-patients"
+      >
         <app-patients-management></app-patients-management>
       </div>
 
-      <div *ngIf="hasVisitedTab('schedules')" [hidden]="activeTab !== 'schedules'" class="tab-content">
+      <div
+        *ngIf="hasVisitedTab('schedules')"
+        [hidden]="activeTab !== 'schedules'"
+        class="tab-content"
+        role="tabpanel"
+        id="supervisor-panel-schedules"
+        aria-labelledby="supervisor-tab-schedules"
+      >
         <app-schedules-management></app-schedules-management>
       </div>
-    </div>
+    </main>
   </div>
 </div>
-

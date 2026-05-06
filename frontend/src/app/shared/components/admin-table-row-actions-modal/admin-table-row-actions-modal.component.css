@@ -1,0 +1,101 @@
+.admin-table-row-actions-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 11040;
+  background: rgba(45, 55, 72, 0.45);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0.75rem;
+  box-sizing: border-box;
+}
+
+@media (min-width: 560px) {
+  .admin-table-row-actions-backdrop {
+    align-items: center;
+  }
+}
+
+.admin-table-row-actions-dialog {
+  background: #e8ecf1;
+  border-radius: 16px 16px 0 0;
+  max-width: 420px;
+  width: 100%;
+  max-height: min(85vh, 520px);
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 1.1rem 1.15rem;
+  box-shadow: 8px 8px 24px rgba(0, 0, 0, 0.18);
+  color: #2d3748;
+}
+
+@media (min-width: 560px) {
+  .admin-table-row-actions-dialog {
+    border-radius: 16px;
+  }
+}
+
+.admin-table-row-actions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.admin-table-row-actions-header h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.admin-table-row-actions-close {
+  flex-shrink: 0;
+  background: #e0e5ec;
+  border: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 10px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: #4a5568;
+  box-shadow: 3px 3px 6px #bebebe, -2px -2px 5px #fff;
+}
+
+.admin-table-row-actions-close:active {
+  box-shadow: inset 2px 2px 5px #cbccd1, inset -2px -2px 5px #fafbff;
+}
+
+.admin-table-row-actions-body {
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.admin-table-row-actions-line {
+  margin: 0 0 0.35rem 0;
+  font-size: 0.88rem;
+  color: #4a5568;
+  line-height: 1.4;
+}
+
+.admin-table-row-actions-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin-top: 0.65rem;
+  padding: 0.7rem;
+  border-radius: 12px;
+  background: #e0e5ec;
+  box-shadow: inset 5px 5px 10px #cbccd1, inset -4px -4px 10px #fafbff;
+}
+
+.admin-table-row-actions-buttons .neuro-btn,
+.admin-table-row-actions-buttons .btn-attendance {
+  width: 100%;
+  justify-content: center;
+  text-align: center;
+}

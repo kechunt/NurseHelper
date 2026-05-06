@@ -1,0 +1,26 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+:host-context(.nurse-dashboard) .nurse-nav-tablist,
+:host-context(.nurse-dashboard) .nurse-nav-quick-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Ajustes de atajos: el estilo base de `.nav-link` viene de `dashboard-layout.css` bajo `.nurse-dashboard`. */
+:host-context(.nurse-dashboard) .nav-link.nurse-nav-quick {
+  font-size: 0.88rem;
+}
+
+@media (max-width: 1024px) {
+  :host-context(.nurse-dashboard) .nurse-nav-quick-group {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+}

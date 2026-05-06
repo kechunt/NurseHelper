@@ -1,4 +1,5 @@
 import { MigrationInterface, QueryRunner, TableColumn, TableForeignKey, TableIndex } from 'typeorm';
+import { logger } from '../utils/logger';
 
 export class AddPatientAssignedToIdColumn1734100000000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -11,7 +12,7 @@ export class AddPatientAssignedToIdColumn1734100000000 implements MigrationInter
     const hasAssignedToIdColumn = table.findColumnByName('assignedToId');
 
     if (!hasAssignedToIdColumn) {
-      console.log('🔄 Agregando columna assignedToId a la tabla patients...');
+      logger.info('🔄 Agregando columna assignedToId a la tabla patients...');
       
       // Agregar la columna assignedToId
       await queryRunner.addColumn(
@@ -26,7 +27,7 @@ export class AddPatientAssignedToIdColumn1734100000000 implements MigrationInter
       // Crear la foreign key si la tabla users existe
       const usersTable = await queryRunner.getTable('users');
       if (usersTable) {
-        console.log('🔄 Creando foreign key para assignedToId...');
+        logger.info('🔄 Creando foreign key para assignedToId...');
         await queryRunner.createForeignKey(
           'patients',
           new TableForeignKey({
@@ -40,7 +41,7 @@ export class AddPatientAssignedToIdColumn1734100000000 implements MigrationInter
       }
 
       // Crear índice para mejorar el rendimiento
-      console.log('🔄 Creando índice para assignedToId...');
+      logger.info('🔄 Creando índice para assignedToId...');
       await queryRunner.createIndex(
         'patients',
         new TableIndex({
@@ -49,16 +50,16 @@ export class AddPatientAssignedToIdColumn1734100000000 implements MigrationInter
         })
       );
       
-      console.log('✅ Columna assignedToId agregada exitosamente');
+      logger.info('✅ Columna assignedToId agregada exitosamente');
     } else {
-      console.log('ℹ️ La columna assignedToId ya existe en la tabla patients');
+      logger.info('ℹ️ La columna assignedToId ya existe en la tabla patients');
     }
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     const table = await queryRunner.getTable('patients');
     if (!table) {
-      console.log('ℹ️ La tabla patients no existe');
+      logger.info('ℹ️ La tabla patients no existe');
       return;
     }
     
@@ -68,20 +69,20 @@ export class AddPatientAssignedToIdColumn1734100000000 implements MigrationInter
       // Eliminar índice primero
       const index = table.indices.find(idx => idx.columnNames.includes('assignedToId'));
       if (index) {
-        console.log(`🔄 Eliminando índice ${index.name}...`);
+        logger.info(`🔄 Eliminando índice ${index.name}...`);
         await queryRunner.dropIndex('patients', index);
       }
 
       // Eliminar foreign key primero
       const foreignKeys = table.foreignKeys.filter(fk => fk.columnNames.includes('assignedToId'));
       for (const fk of foreignKeys) {
-        console.log(`🔄 Eliminando foreign key ${fk.name}...`);
+        logger.info(`🔄 Eliminando foreign key ${fk.name}...`);
         await queryRunner.dropForeignKey('patients', fk);
       }
       
-      console.log('🔄 Eliminando columna assignedToId de la tabla patients...');
+      logger.info('🔄 Eliminando columna assignedToId de la tabla patients...');
       await queryRunner.dropColumn('patients', 'assignedToId');
-      console.log('✅ Columna assignedToId eliminada exitosamente');
+      logger.info('✅ Columna assignedToId eliminada exitosamente');
     }
   }
 }

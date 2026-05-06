@@ -27,7 +27,8 @@ export class UsersController {
           'user.username', 
           'user.email', 
           'user.firstName', 
-          'user.lastName', 
+          'user.lastName',
+          'user.phone',
           'user.role', 
           'user.isActive', 
           'user.maxPatients', 
@@ -38,7 +39,7 @@ export class UsersController {
       // Filtrar por búsqueda
       if (search) {
         queryBuilder.where(
-          '(user.username LIKE :search OR user.email LIKE :search OR user.firstName LIKE :search OR user.lastName LIKE :search)',
+          '(user.username LIKE :search OR user.email LIKE :search OR user.firstName LIKE :search OR user.lastName LIKE :search OR user.phone LIKE :search)',
           { search: `%${search}%` }
         );
       }
@@ -84,7 +85,7 @@ export class UsersController {
         sendErrorResponse(res, 400, 'ID de usuario inválido', 'INVALID_ID');
         return;
       }
-      const { username, email, firstName, lastName, role, isActive, maxPatients, assignedAreaId } = req.body;
+      const { username, email, firstName, lastName, phone, role, isActive, maxPatients, assignedAreaId } = req.body;
 
       const userRepository = AppDataSource.getRepository(User);
       const user = await userRepository.findOne({ where: { id: userId } });
@@ -134,6 +135,19 @@ export class UsersController {
 
       if (firstName) user.firstName = firstName;
       if (lastName) user.lastName = lastName;
+
+      if (phone !== undefined) {
+        if (phone === null || phone === '') {
+          user.phone = null;
+        } else {
+          const p = String(phone).trim();
+          if (p.length > 30) {
+            sendErrorResponse(res, 400, 'El teléfono no puede superar 30 caracteres', 'VALIDATION_ERROR');
+            return;
+          }
+          user.phone = p.length > 0 ? p : null;
+        }
+      }
 
       // Actualizar campos de enfermera
       if (maxPatients !== undefined) user.maxPatients = maxPatients;

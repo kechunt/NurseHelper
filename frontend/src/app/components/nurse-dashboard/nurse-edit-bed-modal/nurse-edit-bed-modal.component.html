@@ -1,0 +1,119 @@
+<div class="modal-backdrop nurse-edit-bed-backdrop" role="presentation" (click)="onBackdrop()">
+  <div
+    class="modal-content"
+    appModalFocusTrap
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="nurse-edit-bed-dialog-title"
+    (click)="$event.stopPropagation()"
+  >
+    <div class="modal-header">
+      <h3 id="nurse-edit-bed-dialog-title" i18n="@@nurseEditBedModal.title">✏️ Editar Cama</h3>
+      <button
+        type="button"
+        class="close-btn"
+        aria-label="Cerrar"
+        i18n-aria-label="@@nurseEditBedModal.closeAriaLabel"
+        (click)="onCancel()"
+      >
+        ✕
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="input-group">
+        <label for="edit-bed-number" i18n="@@nurseEditBedModal.bedNumberLabel">Número/Nombre de Cama *</label>
+        <input
+          type="text"
+          id="edit-bed-number"
+          class="neuro-input"
+          [(ngModel)]="editBedForm.bedNumber"
+          placeholder="Ej: SAL-001, Cama-1, etc."
+          i18n-placeholder="@@nurseEditBedModal.bedNumberPlaceholder"
+        />
+      </div>
+      <div class="input-group">
+        <label for="edit-bed-availability" i18n="@@nurseEditBedModal.bedStateLabel">Estado de la Cama</label>
+        <select id="edit-bed-availability" class="neuro-select" [(ngModel)]="editBedForm.isActive">
+          <option [ngValue]="true" i18n="@@nurseEditBedModal.stateAvailable">✅ Disponible (puede recibir pacientes)</option>
+          <option [ngValue]="false" i18n="@@nurseEditBedModal.stateUnavailable">❌ No Disponible (fuera de servicio)</option>
+        </select>
+        <small>
+          <span *ngIf="editBedForm.isActive" class="nurse-edit-bed-hint nurse-edit-bed-hint--ok" i18n="@@nurseEditBedModal.hintActive">
+            ✓ La cama está habilitada para uso
+          </span>
+          <span *ngIf="!editBedForm.isActive" class="nurse-edit-bed-hint nurse-edit-bed-hint--warn" i18n="@@nurseEditBedModal.hintInactive">
+            ⚠️ La cama está fuera de servicio (mantenimiento, reparación, etc.)
+          </span>
+        </small>
+      </div>
+      <div class="input-group">
+        <label for="edit-bed-patient" i18n="@@nurseEditBedModal.patientAssignmentLabel">Asignación de Paciente</label>
+
+        <div class="patient-actions" *ngIf="editBedForm.patientId">
+          <div class="current-patient">
+            <span class="patient-info"> 👤 {{ getCurrentPatientName() }} </span>
+            <button
+              type="button"
+              class="release-bed-btn"
+              (click)="releaseBed()"
+              title="Liberar cama"
+              i18n-title="@@nurseEditBedModal.releaseTitle"
+              i18n="@@nurseEditBedModal.releaseBtn"
+            >
+              🔓 Liberar Cama
+            </button>
+          </div>
+        </div>
+
+        <div class="patient-selection" *ngIf="!editBedForm.patientId">
+          <div class="patient-search-header">
+            <label i18n="@@nurseEditBedModal.availablePatientsLabel">Pacientes disponibles:</label>
+            <input
+              type="text"
+              class="neuro-input search-input"
+              [(ngModel)]="patientSearchTerm"
+              (input)="filterPatientsForBed()"
+              placeholder="🔍 Buscar por nombre..."
+              i18n-placeholder="@@nurseEditBedModal.searchPlaceholder"
+            />
+          </div>
+
+          <div class="patients-list-container">
+            <div class="patients-list" *ngIf="filteredPatientsForBed.length > 0">
+              <div
+                *ngFor="let patient of filteredPatientsForBed"
+                class="patient-item"
+                [class.has-bed]="getPatientBed(patient.id ?? undefined)"
+                (click)="selectPatientForBed(patient)"
+              >
+                <div class="patient-item-info">
+                  <strong>{{ patient.firstName }} {{ patient.lastName }}</strong>
+                  <div class="patient-details">
+                    <span class="patient-bed-info" *ngIf="getPatientBed(patient.id ?? undefined)" i18n="@@nurseEditBedModal.patientHasBed">
+                      🛏️ Cama: {{ getPatientBed(patient.id ?? undefined)?.bedNumber }}
+                    </span>
+                    <span class="patient-bed-info available" *ngIf="!getPatientBed(patient.id ?? undefined)" i18n="@@nurseEditBedModal.patientAvailable">
+                      ✅ Disponible para asignar
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div *ngIf="filteredPatientsForBed.length === 0 && !patientSearchTerm" class="no-patients-message">
+              <p i18n="@@nurseEditBedModal.noPatientsToAssign">No hay pacientes disponibles para asignar</p>
+            </div>
+
+            <div *ngIf="filteredPatientsForBed.length === 0 && patientSearchTerm" class="no-patients-message">
+              <p i18n="@@nurseEditBedModal.noSearchResults">No se encontraron pacientes con ese nombre</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="neuro-btn outlined" (click)="onCancel()" i18n="@@nurseEditBedModal.cancel">Cancelar</button>
+      <button type="button" class="neuro-btn" (click)="saveBedChanges()" i18n="@@nurseEditBedModal.save">💾 Guardar Cambios</button>
+    </div>
+  </div>
+</div>

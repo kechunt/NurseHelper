@@ -2,7 +2,7 @@
  * DTOs para pacientes
  */
 
-import { IsString, IsOptional, IsDateString, IsBoolean, IsInt, Min, Max, Length, IsNotEmpty } from 'class-validator';
+import { IsString, IsOptional, IsDateString, IsBoolean, IsInt, Min, Max, Length, IsNotEmpty, IsIn } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreatePatientDto {
@@ -157,4 +157,12 @@ export class SaveObservationDto {
   @IsNotEmpty()
   @Length(1, 5000)
   observation: string;
+
+  /**
+   * Categoría de la nota (se guarda en `patient_clinical_notes` con autor y fecha server-side).
+   * Tipos: general | medical | diagnosis | allergies | specialNeeds.
+   */
+  @IsOptional()
+  @IsIn(['general', 'medical', 'diagnosis', 'allergies', 'specialNeeds'])
+  scope?: 'general' | 'medical' | 'diagnosis' | 'allergies' | 'specialNeeds';
 }

@@ -7,6 +7,8 @@ import { AuthRequest } from '../middleware/auth.middleware';
 import { UserRole } from '../entities/User';
 import { sendPaginatedResponse, sendErrorResponse, handleControllerError, parseId, parsePagination } from '../utils/response.helper';
 import { logger } from '../utils/logger';
+import { patientService } from '../services/patient.service';
+import { assertNurseCanAccessPatient } from '../services/nurse-patient-access.service';
 
 export class PatientsController {
   async getAll(req: Request, res: Response): Promise<void> {
@@ -101,7 +103,7 @@ export class PatientsController {
             (errorMessage.includes('bedId') || errorMessage.includes('bed') || 
              errorMessage.includes('assignedToId') || errorMessage.includes('assignedTo') ||
              errorMessage.includes('Patient'))) {
-          console.warn('⚠️ Columna bedId o assignedToId no encontrada en patients. Cargando pacientes sin relaciones.');
+          logger.warn('⚠️ Columna bedId o assignedToId no encontrada en patients. Cargando pacientes sin relaciones.');
           
           queryBuilder = patientRepository
             .createQueryBuilder('patient')
@@ -187,7 +189,7 @@ export class PatientsController {
             (errorMessage.includes('bedId') || errorMessage.includes('bed') || 
              errorMessage.includes('assignedToId') || errorMessage.includes('assignedTo') ||
              errorMessage.includes('Patient'))) {
-          console.warn('⚠️ Columna bedId o assignedToId no encontrada en patients. Cargando paciente sin relaciones.');
+          logger.warn('⚠️ Columna bedId o assignedToId no encontrada en patients. Cargando paciente sin relaciones.');
           patient = await patientRepository.findOne({
             where: { id },
             relations: ['schedules'],
@@ -214,37 +216,41 @@ export class PatientsController {
 
   async saveObservation(req: Request, res: Response): Promise<void> {
     try {
-      const { id } = req.params;
-      const { observation } = req.body;
-
-      if (!observation || observation.trim().length === 0) {
-        sendErrorResponse(res, 400, 'La observación no puede estar vacía', 'VALIDATION_ERROR');
-        return;
-      }
-
-      const patientId = parseId(id);
+      const patientId = parseId(req.params.id);
       if (!patientId) {
         sendErrorResponse(res, 400, 'ID de paciente inválido', 'INVALID_ID');
         return;
       }
 
-      const patientRepository = AppDataSource.getRepository(Patient);
-      const patient = await patientRepository.findOne({ where: { id: patientId } });
-
-      if (!patient) {
-        sendErrorResponse(res, 404, 'Paciente no encontrado', 'PATIENT_NOT_FOUND');
+      const observation = typeof req.body?.observation === 'string' ? req.body.observation.trim() : '';
+      if (!observation) {
+        sendErrorResponse(res, 400, 'La observación no puede estar vacía', 'VALIDATION_ERROR');
         return;
       }
 
-      // Agregar observación con timestamp
-      const timestamp = new Date().toLocaleString('es-ES');
-      const newObservation = `[${timestamp}] ${observation.trim()}`;
-      
-      patient.generalObservations = patient.generalObservations 
-        ? `${patient.generalObservations}\n${newObservation}`
-        : newObservation;
+      const scopeRaw = req.body?.scope;
+      const allowedScopes = ['general', 'medical', 'diagnosis', 'allergies', 'specialNeeds'] as const;
+      type AppendScope = (typeof allowedScopes)[number];
+      const scope: AppendScope =
+        typeof scopeRaw === 'string' && (allowedScopes as readonly string[]).includes(scopeRaw)
+          ? (scopeRaw as AppendScope)
+          : 'general';
 
-      await patientRepository.save(patient);
+      const authReq = req as AuthRequest;
+      const user = authReq.user;
+      if (!user?.id) {
+        sendErrorResponse(res, 401, 'No autenticado', 'UNAUTHORIZED');
+        return;
+      }
+      if (user.role === UserRole.NURSE) {
+        const gate = await assertNurseCanAccessPatient(user.id, user.assignedAreaId, patientId);
+        if (!gate.ok) {
+          sendErrorResponse(res, gate.status ?? 403, gate.message ?? 'No autorizado', 'FORBIDDEN');
+          return;
+        }
+      }
+
+      const patient = await patientService.saveObservation(patientId, { observation, scope }, user.id);
 
       res.json({ message: 'Observación guardada exitosamente', patient });
     } catch (error) {
@@ -317,7 +323,7 @@ export class PatientsController {
             (errorMessage.includes('bedId') || errorMessage.includes('bed') || 
              errorMessage.includes('assignedToId') || errorMessage.includes('assignedTo') ||
              errorMessage.includes('Patient'))) {
-          console.warn('⚠️ Columna bedId o assignedToId no encontrada en patients. Cargando paciente sin relaciones.');
+          logger.warn('⚠️ Columna bedId o assignedToId no encontrada en patients. Cargando paciente sin relaciones.');
           savedPatient = await patientRepository.findOne({
             where: { id: patient.id },
           });
@@ -403,18 +409,22 @@ export class PatientsController {
         } catch (error: any) {
           // Si bedId no existe, permitir la actualización (asumiendo que no hay restricción de área)
           if (error?.code === 'ER_BAD_FIELD_ERROR' && error?.message?.includes('bedId')) {
-            console.warn('⚠️ Columna bedId no encontrada. Saltando verificación de área para enfermera.');
+            logger.warn('⚠️ Columna bedId no encontrada. Saltando verificación de área para enfermera.');
           } else {
             throw error;
           }
         }
-        // Las enfermeras solo pueden actualizar observaciones médicas, alergias y necesidades especiales
-        // No pueden actualizar otros campos como firstName, lastName, etc.
+        // Enfermería: observaciones, alergias, necesidades, observaciones generales, diagnóstico (historial clínico)
         if (firstName !== undefined || lastName !== undefined || identificationNumber !== undefined ||
             dateOfBirth !== undefined || gender !== undefined || phone !== undefined ||
-            address !== undefined || medicalHistory !== undefined || emergencyContact !== undefined ||
+            address !== undefined || emergencyContact !== undefined ||
             emergencyPhone !== undefined || emergencyRelation !== undefined || isActive !== undefined) {
-          sendErrorResponse(res, 403, 'Solo puedes actualizar observaciones médicas, alergias y necesidades especiales', 'FORBIDDEN');
+          sendErrorResponse(
+            res,
+            403,
+            'Solo puedes actualizar diagnóstico (historial clínico), observaciones médicas, alergias, necesidades especiales y observaciones generales',
+            'FORBIDDEN'
+          );
           return;
         }
       }
@@ -490,7 +500,7 @@ export class PatientsController {
             (errorMessage.includes('bedId') || errorMessage.includes('bed') || 
              errorMessage.includes('assignedToId') || errorMessage.includes('assignedTo') ||
              errorMessage.includes('Patient'))) {
-          console.warn('⚠️ Columna bedId o assignedToId no encontrada en patients. Cargando paciente sin relaciones.');
+          logger.warn('⚠️ Columna bedId o assignedToId no encontrada en patients. Cargando paciente sin relaciones.');
           updatedPatient = await patientRepository.findOne({
             where: { id: patient.id },
           });
@@ -554,7 +564,7 @@ export class PatientsController {
             } catch (error: any) {
               // Si bedId no existe en la tabla, asumir que no hay otros pacientes
               if (error?.code === 'ER_BAD_FIELD_ERROR' && error?.message?.includes('bedId')) {
-                console.warn('⚠️ Columna bedId no encontrada. Saltando verificación de otros pacientes.');
+                logger.warn('⚠️ Columna bedId no encontrada. Saltando verificación de otros pacientes.');
                 try {
                   bed.isOccupied = false;
                   await bedRepository.save(bed);
@@ -573,7 +583,7 @@ export class PatientsController {
       } catch (error: any) {
         // Si bedId no existe en la entidad Patient, ignorar esta sección
         if (error?.code === 'ER_BAD_FIELD_ERROR' && error?.message?.includes('bedId')) {
-          console.warn('⚠️ Columna bedId no encontrada. Saltando liberación de cama.');
+          logger.warn('⚠️ Columna bedId no encontrada. Saltando liberación de cama.');
         } else {
           throw error;
         }

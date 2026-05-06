@@ -173,5 +173,7 @@ router.post('/resend-verification', authRateLimitMiddleware(), authController.re
  */
 router.get('/me', authMiddleware, authController.me.bind(authController));
 
+router.patch('/me', authMiddleware, authController.updateMe.bind(authController));
+
 export default router;
 

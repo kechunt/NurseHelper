@@ -1,0 +1,12 @@
+<div class="nurse-header-actions-wrap">
+  <input
+    type="search"
+    class="neuro-input neuro-input-inline nurse-header-search-input"
+    placeholder="Buscar paciente o cama…"
+    aria-label="Buscar paciente o cama"
+    appDebounce
+    [debounceTime]="350"
+    (debounced)="debounced.emit($event)"
+    title="Un resultado: abre ficha. Varios: va a Pacientes con filtro"
+  />
+</div>

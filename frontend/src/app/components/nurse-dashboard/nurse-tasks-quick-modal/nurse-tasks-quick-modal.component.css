@@ -1,0 +1,511 @@
+/* Modal base (mismo criterio que nurse-dashboard; el hijo no hereda estilos encapsulados del padre) */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.48);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  padding: 2rem;
+}
+
+.modal-backdrop.nurse-modal-backdrop-dim {
+  background: rgba(0, 0, 0, 0.48);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.modal-backdrop.modal-confirmation {
+  z-index: 2000 !important;
+}
+
+.modal-content {
+  background: #e0e5ec;
+  border-radius: 30px;
+  max-width: 900px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+  position: relative;
+}
+
+.modal-content.modal-large {
+  max-width: 1200px;
+}
+
+.modal-content.modal-large .modal-header {
+  padding-bottom: 2rem;
+  margin-bottom: 0.25rem;
+}
+
+.modal-header {
+  padding: 2rem 2rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  flex-shrink: 0;
+  background: #e0e5ec;
+  border-radius: 30px 30px 0 0;
+}
+
+.modal-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 2rem;
+  right: 2rem;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(174, 174, 192, 0.2), transparent);
+}
+
+.modal-header h3 {
+  color: #4a5568;
+  font-size: 1.5rem;
+  font-weight: 300;
+  margin: 0;
+}
+
+.close-btn {
+  background: #e0e5ec;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 1.5rem;
+  color: #4a5568;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.28);
+}
+
+.close-btn:active {
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+}
+
+.modal-body {
+  padding: 2rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  min-height: 0;
+}
+
+.modal-content.modal-large .modal-body {
+  overflow-x: auto;
+}
+
+.modal-footer {
+  padding: 1.5rem 2rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  position: relative;
+  flex-shrink: 0;
+  background: #e0e5ec;
+  border-radius: 0 0 30px 30px;
+}
+
+.modal-footer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 2rem;
+  right: 2rem;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(174, 174, 192, 0.2), transparent);
+}
+
+.btn-primary-neuro {
+  background: #e0e5ec;
+  color: #4a5568;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
+  transition: all 0.2s ease;
+}
+
+.btn-primary-neuro:hover {
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+}
+
+.btn-primary-neuro:active {
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+}
+
+.nurse-quick-modal-shell {
+  max-width: min(960px, 96vw);
+  border-radius: 22px;
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.42);
+  border: none;
+}
+
+.nurse-quick-modal-body {
+  max-height: min(70vh, 34rem);
+  overflow: auto;
+  padding: 0.5rem 1.5rem 1rem;
+}
+
+.nurse-quick-modal-body .table-wrapper-neuro.nurse-table-shell-flat {
+  padding: 0.45rem 0.4rem;
+  box-sizing: border-box;
+  border-radius: 12px;
+}
+
+.nurse-quick-modal-body .unified-tasks-table th,
+.nurse-quick-modal-body .unified-tasks-table td {
+  padding: 0.45rem 0.5rem;
+  vertical-align: middle;
+}
+
+.nurse-quick-modal-intro {
+  margin: 0 0 0.85rem;
+  font-size: 0.88rem;
+  color: #4a5568;
+}
+
+.nurse-quick-modal-toolbar {
+  justify-content: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+.filter-box-actions .filter-box-spacer {
+  visibility: hidden;
+  min-height: 1.25rem;
+  margin: 0;
+  padding: 0;
+}
+
+.neuro-select-inline {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.neuro-select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  padding-right: 2.5rem;
+  background: #e0e5ec;
+  border: none;
+  border-radius: 12px;
+  box-shadow: inset 6px 6px 12px #bebebe, inset -6px -6px 12px #ffffff;
+  color: #4a5568;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%234a5568' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+}
+
+.neuro-select:focus {
+  outline: none;
+  box-shadow: inset 8px 8px 16px #bebebe, inset -8px -8px 16px #ffffff;
+}
+
+.neuro-select:hover {
+  box-shadow: inset 7px 7px 14px #bebebe, inset -7px -7px 14px #ffffff;
+}
+
+.neuro-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.empty-state {
+  text-align: center;
+}
+
+.empty-state--compact {
+  padding: 1rem 0 0.5rem;
+}
+
+.empty-icon {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.5;
+}
+
+.empty-message--compact {
+  margin: 0;
+  padding: 0.5rem 1rem 1rem;
+  color: #a0aec0;
+  font-style: italic;
+  font-size: 0.95rem;
+}
+
+.nurse-reports-modal-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 1rem 1.5rem 1.25rem;
+}
+
+.nurse-reports-modal-footer .btn-primary-neuro {
+  margin-left: auto;
+}
+
+.unified-tasks-table input[type='checkbox'] {
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+}
+
+.unified-tasks-table td:last-child {
+  white-space: nowrap !important;
+  overflow: visible !important;
+}
+
+/* Última columna = estado; la de descripción admite varias líneas. */
+.nurse-quick-modal-body .nurse-tasks-table tr.task-row td:nth-child(5) {
+  white-space: normal !important;
+}
+
+.task-row {
+  transition: background 0.2s ease;
+}
+
+.task-row--clickable {
+  cursor: pointer;
+}
+
+.task-row--clickable:focus-visible {
+  outline: 2px solid #718096;
+  outline-offset: -2px;
+}
+
+.task-row td {
+  padding: 0.4rem 0.5rem !important;
+  vertical-align: middle !important;
+  line-height: 1 !important;
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+.task-row td > div {
+  margin: 0 !important;
+  padding: 0 !important;
+  display: inline-block !important;
+  line-height: 1 !important;
+  vertical-align: middle !important;
+}
+
+.task-row.not-completed {
+  opacity: 0.7;
+  background: rgba(255, 205, 210, 0.1);
+}
+
+.reason-text-compact {
+  font-size: 0.65rem;
+  color: #e53e3e;
+  margin: 0 !important;
+  margin-left: 0.3rem !important;
+  line-height: 1 !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.task-row:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.task-row.completed {
+  opacity: 0.5;
+}
+
+.time-cell {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #4a5568;
+  white-space: nowrap;
+  line-height: 1 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.patient-name-compact {
+  font-weight: 500;
+  color: #4a5568;
+  font-size: 0.85rem;
+  line-height: 1 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.nurse-tasks-table th,
+.nurse-tasks-table td {
+  white-space: normal !important;
+}
+
+.nurse-tasks-table tr.task-row td {
+  padding: 0.65rem 0.75rem !important;
+  line-height: 1.35 !important;
+  vertical-align: middle !important;
+}
+
+.nurse-tasks-table tr.task-row td > div {
+  display: block !important;
+  line-height: 1.35 !important;
+}
+
+.task-type-plain {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #4a5568;
+  line-height: 1.35;
+  background: none;
+  box-shadow: none;
+  padding: 0;
+  border: none;
+}
+
+.task-bed-plain {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #2d3748;
+  line-height: 1.35;
+  background: none;
+  box-shadow: none;
+  padding: 0;
+  border: none;
+}
+
+.nurse-tasks-table tr.task-row td:first-child {
+  white-space: nowrap !important;
+}
+
+.nurse-tasks-table .description-compact {
+  max-width: 100%;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  display: block;
+  font-size: 0.88rem;
+  line-height: 1.35 !important;
+  color: #4a5568;
+}
+
+.description-compact {
+  color: #718096;
+  font-size: 0.8rem;
+  line-height: 1 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.nurse-tasks-table tr.task-row td .description-compact--row-preview {
+  display: block !important;
+  white-space: normal !important;
+  max-width: 100%;
+}
+
+.nurse-tasks-table .time-cell {
+  font-size: 0.9rem;
+  line-height: 1.35 !important;
+}
+
+.nurse-tasks-table .patient-name-compact {
+  font-size: 0.9rem;
+  max-width: 14rem;
+  white-space: normal;
+}
+
+.status-indicator {
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  display: inline-block;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.status-indicator.pending {
+  background: #e0e5ec;
+  color: #4a5568;
+  box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
+}
+
+.status-indicator.done {
+  background: #e0e5ec;
+  color: #4a5568;
+  box-shadow: 3px 3px 6px #bebebe, -3px -3px 6px #ffffff;
+  opacity: 0.7;
+}
+
+.status-indicator.not-done {
+  background: #e0e5ec;
+  color: #4a5568;
+  box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
+  font-weight: 700;
+}
+
+.nurse-tasks-table .status-indicator {
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 0;
+  border-radius: 0;
+  box-shadow: none !important;
+  background: none !important;
+  opacity: 1 !important;
+}
+
+.nurse-tasks-table .status-indicator.pending {
+  color: #c05621;
+}
+
+.nurse-tasks-table .status-indicator.done {
+  color: #276749;
+}
+
+.nurse-tasks-table .status-indicator.not-done {
+  color: #c53030;
+}
+
+.nurse-table-shell-flat.table-wrapper-neuro.unified-table-container {
+  background: transparent;
+  box-shadow: none;
+  padding: 0.5rem 0;
+}

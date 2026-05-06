@@ -1,0 +1,273 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.section-title {
+  color: #4a5568;
+  font-size: 1.5rem;
+  font-weight: 300;
+  margin: 0;
+}
+
+.tasks-actions.header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.summary-inline {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.summary-badge {
+  background: #e0e5ec;
+  padding: 6px 14px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  color: #4a5568;
+  font-weight: 600;
+  box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
+  white-space: nowrap;
+}
+
+.med-name-compact {
+  font-weight: 600;
+  color: #4a5568;
+  font-size: 0.95rem;
+}
+
+.pharmacy-dose-count-plain {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #4a5568;
+  white-space: nowrap;
+}
+
+.pharmacy-dosage-plain {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.pharmacy-view-patients-btn {
+  appearance: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #4a5568;
+  background: #e0e5ec;
+  border: none;
+  border-radius: 14px;
+  padding: 0.5rem 1.1rem;
+  box-shadow: 5px 5px 10px rgba(163, 177, 198, 0.55), -5px -5px 10px rgba(255, 255, 255, 0.85);
+  transition: box-shadow 0.18s ease, transform 0.12s ease;
+  white-space: nowrap;
+}
+
+.pharmacy-view-patients-btn:hover {
+  box-shadow: 6px 6px 12px rgba(163, 177, 198, 0.6), -6px -6px 12px rgba(255, 255, 255, 0.95);
+}
+
+.pharmacy-view-patients-btn:active {
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+  transform: scale(0.98);
+}
+
+.pharmacy-patients-cell {
+  vertical-align: middle !important;
+  text-align: center;
+}
+
+.pharmacy-patients-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.pharmacy-patient-count-text {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.pharmacy-footer {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: center;
+}
+
+.btn-primary-neuro {
+  background: #e0e5ec;
+  color: #4a5568;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
+  transition: all 0.2s ease;
+}
+
+.btn-primary-neuro:hover {
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+}
+
+.btn-primary-neuro:active {
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+}
+
+.btn-primary-neuro.large {
+  padding: 14px 32px;
+  font-size: 1rem;
+  min-width: 300px;
+}
+
+.pharmacy-footer .neuro-btn.btn-primary-neuro.large {
+  min-width: min(100%, 360px);
+  border-radius: 50px;
+}
+
+.empty-message {
+  text-align: center;
+  padding: 3rem;
+  color: #a0aec0;
+  font-style: italic;
+  font-size: 1rem;
+}
+
+.pharmacy-history-shell {
+  margin-top: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.pharmacy-history-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.85rem;
+}
+
+.pharmacy-history-heading-block {
+  flex: 1;
+  min-width: min(100%, 240px);
+}
+
+.pharmacy-history-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.pharmacy-history-subtitle {
+  margin: 0.35rem 0 0;
+  font-size: 0.9rem;
+  color: #718096;
+  line-height: 1.4;
+}
+
+.pharmacy-history-collapsed-hint {
+  color: #718096;
+  font-weight: 500;
+}
+
+.pharmacy-history-panel {
+  padding: 0.95rem 0.85rem 0.8rem;
+  border-radius: 16px;
+  background: #e0e5ec;
+  box-shadow: inset 5px 5px 10px #cbccd1, inset -4px -4px 10px #fafbff;
+  border-top: 1px solid rgba(174, 174, 192, 0.3);
+}
+
+.pharmacy-history-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.pharmacy-history-label {
+  display: flex;
+  gap: 0.65rem;
+  align-items: center;
+  color: #4a5568;
+  font-weight: 600;
+}
+
+.pharmacy-history-date {
+  appearance: none;
+  border: none;
+  background: #e0e5ec;
+  border-radius: 12px;
+  padding: 0.55rem 0.9rem;
+  box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
+  color: #4a5568;
+  font-weight: 600;
+}
+
+.pharmacy-history-help {
+  font-size: 0.85rem;
+  color: #718096;
+  font-weight: 600;
+}
+
+:host .pharmacy-history-shell .toggle-btn-neuro:active {
+  box-shadow: inset 4px 4px 8px #bebebe, inset -3px -3px 8px #ffffff;
+}
+
+.pharmacy-history-id {
+  font-weight: 700;
+  color: #4a5568;
+  white-space: nowrap;
+}
+
+.status-indicator {
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  display: inline-block;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.status-indicator.pending {
+  background: #e0e5ec;
+  color: #4a5568;
+  box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
+}
+
+.status-indicator.done {
+  background: #e0e5ec;
+  color: #4a5568;
+  box-shadow: 3px 3px 6px #bebebe, -3px -3px 6px #ffffff;
+  opacity: 0.7;
+}
+
+/* Misma cáscara de tabla plana que tareas / pacientes */
+.nurse-table-shell-flat.table-wrapper-neuro.unified-table-container {
+  background: transparent;
+  box-shadow: none;
+  padding: 0.5rem 0;
+}

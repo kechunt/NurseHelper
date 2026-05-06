@@ -1,9 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
-import { AdminService } from '../../services/admin.service';
 import { OverviewComponent } from './overview/overview.component';
 import { UsersManagementComponent } from './users-management/users-management.component';
 import { StaffManagementComponent } from './staff-management/staff-management.component';
@@ -11,14 +10,15 @@ import { AreasManagementComponent } from './areas-management/areas-management.co
 import { BedsManagementComponent } from './beds-management/beds-management.component';
 import { PatientsManagementComponent } from './patients-management/patients-management.component';
 import { SchedulesManagementComponent } from './schedules-management/schedules-management.component';
+import { DashboardUserProfileModalComponent } from '../../shared/components/dashboard-user-profile-modal/dashboard-user-profile-modal.component';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule,
     RouterModule,
+    DashboardUserProfileModalComponent,
     OverviewComponent,
     UsersManagementComponent,
     StaffManagementComponent,
@@ -31,28 +31,38 @@ import { SchedulesManagementComponent } from './schedules-management/schedules-m
   styleUrl: './admin-dashboard.component.css',
 })
 export class AdminDashboardComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
   activeTab: string = 'overview';
   private readonly storageKey = 'admin-dashboard-active-tab-v1';
   private readonly allowedTabs = new Set(['overview', 'users', 'staff', 'areas', 'beds', 'patients', 'schedules']);
   /** Pestañas ya visitadas: el componente se mantiene montado (oculto) para no repetir llamadas a la API al volver. */
   private readonly visitedTabs = new Set<string>(['overview']);
-  showProfileModal = false;
-  profileForm: { firstName: string; lastName: string; username: string; email: string } = {
-    firstName: '',
-    lastName: '',
-    username: '',
-    email: '',
-  };
-  savingProfile = false;
+
+  /** Orden de pestañas en la barra (sincronizado con `allowedTabs` y con los `id="admin-tab-*"` del template). */
+  readonly adminTabOrder: readonly string[] = [
+    'overview',
+    'users',
+    'staff',
+    'areas',
+    'beds',
+    'patients',
+    'schedules',
+  ];
 
   constructor(
     private authService: AuthService,
-    private adminService: AdminService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) {}
   
   get currentUser() {
     return this.authService.currentUser;
+  }
+
+  get headerUserPhoneLine(): string | null {
+    const p = this.authService.currentUser()?.phone;
+    const s = p != null ? String(p).trim() : '';
+    return s.length > 0 ? `📞 ${s}` : null;
   }
 
   ngOnInit(): void {
@@ -69,6 +79,16 @@ export class AdminDashboardComponent implements OnInit {
     }
 
     this.restoreActiveTab();
+    const tabFromQuery = this.route.snapshot.queryParamMap.get('tab');
+    if (tabFromQuery && this.allowedTabs.has(tabFromQuery)) {
+      this.setActiveTab(tabFromQuery);
+    }
+    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      const t = params.get('tab');
+      if (t && this.allowedTabs.has(t)) {
+        this.setActiveTab(t);
+      }
+    });
     this.visitedTabs.add(this.activeTab);
   }
 
@@ -83,6 +103,39 @@ export class AdminDashboardComponent implements OnInit {
     this.activeTab = tab;
     this.visitedTabs.add(tab);
     this.persistActiveTab();
+  }
+
+  /**
+   * Teclado en pestañas (WAI-ARIA tabs): ←/→, Inicio, Fin.
+   * Activa la sección y mueve el foco al botón correspondiente.
+   */
+  onAdminTabKeydown(event: KeyboardEvent, currentTab: string): void {
+    const key = event.key;
+    if (key !== 'ArrowLeft' && key !== 'ArrowRight' && key !== 'Home' && key !== 'End') {
+      return;
+    }
+    event.preventDefault();
+
+    let idx = this.adminTabOrder.indexOf(currentTab);
+    if (idx < 0) {
+      return;
+    }
+
+    if (key === 'Home') {
+      idx = 0;
+    } else if (key === 'End') {
+      idx = this.adminTabOrder.length - 1;
+    } else if (key === 'ArrowRight') {
+      idx = Math.min(this.adminTabOrder.length - 1, idx + 1);
+    } else {
+      idx = Math.max(0, idx - 1);
+    }
+
+    const next = this.adminTabOrder[idx];
+    this.setActiveTab(next);
+    queueMicrotask(() => {
+      document.getElementById(`admin-tab-${next}`)?.focus();
+    });
   }
 
   goToOverviewFromLogo(): void {
@@ -107,62 +160,5 @@ export class AdminDashboardComponent implements OnInit {
     }
   }
 
-  openProfileModal(): void {
-    const user = this.currentUser();
-    if (!user) return;
-    this.profileForm = {
-      firstName: user.firstName || '',
-      lastName: user.lastName || '',
-      username: user.username || '',
-      email: user.email || '',
-    };
-    this.showProfileModal = true;
-  }
-
-  closeProfileModal(): void {
-    this.showProfileModal = false;
-    this.savingProfile = false;
-  }
-
-  saveProfile(): void {
-    const user = this.currentUser();
-    if (!user?.id) return;
-    if (
-      !this.profileForm.firstName.trim() ||
-      !this.profileForm.lastName.trim() ||
-      !this.profileForm.username.trim() ||
-      !this.profileForm.email.trim()
-    ) {
-      alert('Completa todos los campos.');
-      return;
-    }
-
-    this.savingProfile = true;
-    this.adminService.updateUser(user.id, {
-      firstName: this.profileForm.firstName.trim(),
-      lastName: this.profileForm.lastName.trim(),
-      username: this.profileForm.username.trim(),
-      email: this.profileForm.email.trim(),
-    }).subscribe({
-      next: () => {
-        const updatedUser = {
-          ...user,
-          firstName: this.profileForm.firstName.trim(),
-          lastName: this.profileForm.lastName.trim(),
-          username: this.profileForm.username.trim(),
-          email: this.profileForm.email.trim(),
-        };
-        this.authService.currentUser.set(updatedUser);
-        localStorage.setItem('nursehelper_user', JSON.stringify(updatedUser));
-        this.savingProfile = false;
-        this.showProfileModal = false;
-        alert('✅ Información personal actualizada');
-      },
-      error: (error) => {
-        this.savingProfile = false;
-        alert(`❌ No se pudo actualizar tu información: ${error.error?.message || error.message}`);
-      },
-    });
-  }
 }
 

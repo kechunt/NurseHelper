@@ -6,9 +6,14 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 import { AdminService, Patient, Area, Bed } from '../../../services/admin.service';
 import { ToastService } from '../../../services/toast.service';
 import { ConfirmationService } from '../../../services/confirmation.service';
+import {
+  ADMIN_CONFIRM_REMOVE_MEDICATION_MESSAGE,
+  ADMIN_CONFIRM_REMOVE_MEDICATION_TITLE,
+} from '../admin-confirmation-copy.helpers';
 import { ExportService } from '../../../shared/services/export.service';
 import { PaginationComponent, PaginationConfig } from '../../../shared/components/pagination/pagination.component';
 import { DebounceDirective } from '../../../shared/directives/debounce.directive';
+import { AdminTableRowActionsModalComponent } from '../../../shared/components/admin-table-row-actions-modal/admin-table-row-actions-modal.component';
 
 // Interfaces para el formulario extendido
 interface Medication {
@@ -40,7 +45,14 @@ interface PendingTask {
 @Component({
   selector: 'app-patients-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, PaginationComponent, DebounceDirective],
+  imports: [
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    PaginationComponent,
+    DebounceDirective,
+    AdminTableRowActionsModalComponent,
+  ],
   templateUrl: './patients-management.component.html',
   styleUrl: './patients-management.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -87,6 +99,8 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
   // Modal de edición
   showEditModal = false;
   selectedPatient: Patient | null = null;
+  /** Fila de la tabla: acciones en hoja inferior (móvil / tabla limpia). */
+  patientRowActionsTarget: Patient | null = null;
   activeTab: string = 'personal';
   
   // Control de secciones colapsables
@@ -162,7 +176,10 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
       emergencyPhone: ['', [Validators.required]],
       emergencyRelation: [''],
       selectedAreaId: ['', [Validators.required]],
-      selectedBedId: ['']
+      selectedBedId: [''],
+      medicalHistory: [''],
+      medicalObservations: [''],
+      generalObservations: [''],
     });
   }
 
@@ -503,6 +520,19 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
       isActive: true,
     };
 
+    const mh = typeof formValue.medicalHistory === 'string' ? formValue.medicalHistory.trim() : '';
+    const mo = typeof formValue.medicalObservations === 'string' ? formValue.medicalObservations.trim() : '';
+    const go = typeof formValue.generalObservations === 'string' ? formValue.generalObservations.trim() : '';
+    if (mh) {
+      patientData.medicalHistory = mh;
+    }
+    if (mo) {
+      patientData.medicalObservations = mo;
+    }
+    if (go) {
+      patientData.generalObservations = go;
+    }
+
     this.loading = true;
 
     // Crear el paciente
@@ -570,6 +600,59 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
       }
     }
     return 'Campos incompletos';
+  }
+
+  openPatientRowActionsSheet(patient: Patient): void {
+    this.patientRowActionsTarget = patient;
+    this.cdr.markForCheck();
+  }
+
+  closePatientRowActionsSheet(): void {
+    this.patientRowActionsTarget = null;
+    this.cdr.markForCheck();
+  }
+
+  onPatientTableRowKeydown(patient: Patient, event: KeyboardEvent): void {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      this.openPatientRowActionsSheet(patient);
+    }
+  }
+
+  patientRowActionsSummary(p: Patient): string[] {
+    return [
+      `${p.firstName} ${p.lastName}`,
+      `Cédula: ${p.identificationNumber || '—'}`,
+      `${p.areaName || 'Sin área'} · ${p.bedNumber ? 'Cama ' + p.bedNumber : 'Sin cama'}`,
+      `${p.isActive ? 'Activo' : 'Inactivo'}`,
+    ];
+  }
+
+  fromPatientSheetOpenEdit(): void {
+    const p = this.patientRowActionsTarget;
+    if (!p?.id) {
+      return;
+    }
+    this.closePatientRowActionsSheet();
+    this.openEditModal(p);
+  }
+
+  async fromPatientSheetToggleActive(): Promise<void> {
+    const p = this.patientRowActionsTarget;
+    if (!p) {
+      return;
+    }
+    this.closePatientRowActionsSheet();
+    await this.toggleActive(p);
+  }
+
+  async fromPatientSheetDelete(): Promise<void> {
+    const p = this.patientRowActionsTarget;
+    if (!p) {
+      return;
+    }
+    this.closePatientRowActionsSheet();
+    await this.deletePatient(p);
   }
 
   // ========== MODAL DE EDICIÓN ==========
@@ -796,9 +879,17 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
     });
   }
 
-  removeMedication(index: number): void {
-    if (confirm('¿Eliminar este medicamento?')) {
+  async removeMedication(index: number): Promise<void> {
+    const confirmed = await this.confirmationService.confirm({
+      title: ADMIN_CONFIRM_REMOVE_MEDICATION_TITLE,
+      message: ADMIN_CONFIRM_REMOVE_MEDICATION_MESSAGE,
+      type: 'warning',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+    });
+    if (confirmed) {
       this.editForm.medications.splice(index, 1);
+      this.cdr.markForCheck();
     }
   }
 

@@ -52,6 +52,10 @@ export class User {
   @Column({ length: 100 })
   lastName: string;
 
+  /** Teléfono de contacto (opcional). */
+  @Column({ type: 'varchar', length: 30, nullable: true })
+  phone: string | null;
+
   @Column({
     type: 'enum',
     enum: ['admin', 'nurse', 'supervisor', 'pharmacy'],

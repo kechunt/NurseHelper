@@ -3,7 +3,8 @@
 .table-container,
 .patients-table-container,
 .patients-table-container-modal,
-.table-wrapper-neuro {
+.table-wrapper-neuro,
+.unified-table-container {
   overflow-x: auto;
   border-radius: 15px;
   background: #d1d9e6;
@@ -197,7 +198,8 @@
 :host .table-container,
 :host .patients-table-container,
 :host .patients-table-container-modal,
-:host .table-wrapper-neuro {
+:host .table-wrapper-neuro,
+:host .unified-table-container {
   overflow-x: auto !important;
   border-radius: 15px !important;
   background: #d1d9e6 !important;
@@ -258,4 +260,14 @@
 :host .shifts-table-neuro tbody tr:hover,
 :host .unified-tasks-table tbody tr:hover {
   background: #d1d9e6 !important;
+}
+
+/* Fila clicable: acciones en modal (panel admin / móvil). */
+tr.admin-table-row--clickable {
+  cursor: pointer;
+}
+
+tr.admin-table-row--clickable:focus-visible {
+  outline: 2px solid rgba(43, 108, 176, 0.55);
+  outline-offset: -2px;
 }

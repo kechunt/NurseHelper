@@ -15,10 +15,10 @@ import { Subscription } from 'rxjs';
   template: `
     <app-confirmation-modal
       [show]="showModal"
-      [title]="modalData?.title || 'Confirmar acción'"
-      [message]="modalData?.message || ''"
-      [confirmText]="modalData?.confirmText || 'Confirmar'"
-      [cancelText]="modalData?.cancelText || 'Cancelar'"
+      [title]="modalData?.title || defaultModalTitle"
+      [message]="modalData?.message || defaultModalMessage"
+      [confirmText]="modalData?.confirmText || defaultModalConfirmLabel"
+      [cancelText]="modalData?.cancelText || defaultModalCancelLabel"
       [type]="modalData?.type || 'info'"
       (confirmed)="handleConfirm()"
       (cancelled)="handleCancel()"
@@ -27,6 +27,11 @@ import { Subscription } from 'rxjs';
   `,
 })
 export class ConfirmationWrapperComponent implements OnInit, OnDestroy {
+  readonly defaultModalTitle = $localize`:@@confirmationModal.defaultTitle:Confirmar acción`;
+  readonly defaultModalMessage = $localize`:@@confirmationModal.defaultMessage:¿Estás seguro de realizar esta acción?`;
+  readonly defaultModalConfirmLabel = $localize`:@@confirmationModal.defaultConfirmLabel:Confirmar`;
+  readonly defaultModalCancelLabel = $localize`:@@confirmationModal.defaultCancelLabel:Cancelar`;
+
   showModal = false;
   modalData?: any;
   private resolveFn?: (value: boolean) => void;

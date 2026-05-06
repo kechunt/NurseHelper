@@ -1,5 +1,7 @@
 /* You can add global styles to this file, and also import other style files */
 @import './app/shared/styles/table-actions-normalized.css';
+/** Layout cabecera + nav + cuerpo (admin, farmacia, shell enfermera). Debe ser global: si se importa solo en un componente encapsulado, no aplica bien al host del shell. */
+@import './app/shared/styles/dashboard-layout.css';
 
 * {
   margin: 0;
@@ -147,11 +149,17 @@ app-root {
   }
 }
 
-/* ===== Normalizacion global tablas panel admin ===== */
+/* ===== Normalizacion global tablas (admin + enfermera en shell) ===== */
 .admin-dashboard .dashboard-content .table-container,
 .admin-dashboard .dashboard-content .patients-table-container,
 .admin-dashboard .dashboard-content .patients-table-container-modal,
-.admin-dashboard .dashboard-content .table-wrapper-neuro {
+.admin-dashboard .dashboard-content .table-wrapper-neuro,
+.admin-dashboard .dashboard-content .unified-table-container,
+.nurse-dashboard .dashboard-content .table-container,
+.nurse-dashboard .dashboard-content .patients-table-container,
+.nurse-dashboard .dashboard-content .patients-table-container-modal,
+.nurse-dashboard .dashboard-content .table-wrapper-neuro,
+.nurse-dashboard .dashboard-content .unified-table-container {
   overflow-x: auto !important;
   border-radius: 15px !important;
   background: #d1d9e6 !important;
@@ -162,7 +170,11 @@ app-root {
 .admin-dashboard .dashboard-content .neuro-table,
 .admin-dashboard .dashboard-content .patients-table,
 .admin-dashboard .dashboard-content .shifts-table-neuro,
-.admin-dashboard .dashboard-content .unified-tasks-table {
+.admin-dashboard .dashboard-content .unified-tasks-table,
+.nurse-dashboard .dashboard-content .neuro-table,
+.nurse-dashboard .dashboard-content .patients-table,
+.nurse-dashboard .dashboard-content .shifts-table-neuro,
+.nurse-dashboard .dashboard-content .unified-tasks-table {
   width: 100% !important;
   border-collapse: collapse !important;
   background: #e0e5ec !important;
@@ -173,14 +185,22 @@ app-root {
 .admin-dashboard .dashboard-content .neuro-table thead,
 .admin-dashboard .dashboard-content .patients-table thead,
 .admin-dashboard .dashboard-content .shifts-table-neuro thead,
-.admin-dashboard .dashboard-content .unified-tasks-table thead {
+.admin-dashboard .dashboard-content .unified-tasks-table thead,
+.nurse-dashboard .dashboard-content .neuro-table thead,
+.nurse-dashboard .dashboard-content .patients-table thead,
+.nurse-dashboard .dashboard-content .shifts-table-neuro thead,
+.nurse-dashboard .dashboard-content .unified-tasks-table thead {
   background: #d1d9e6 !important;
 }
 
 .admin-dashboard .dashboard-content .neuro-table th,
 .admin-dashboard .dashboard-content .patients-table th,
 .admin-dashboard .dashboard-content .shifts-table-neuro th,
-.admin-dashboard .dashboard-content .unified-tasks-table th {
+.admin-dashboard .dashboard-content .unified-tasks-table th,
+.nurse-dashboard .dashboard-content .neuro-table th,
+.nurse-dashboard .dashboard-content .patients-table th,
+.nurse-dashboard .dashboard-content .shifts-table-neuro th,
+.nurse-dashboard .dashboard-content .unified-tasks-table th {
   padding: 1rem !important;
   text-align: left !important;
   color: #4a5568 !important;
@@ -194,7 +214,11 @@ app-root {
 .admin-dashboard .dashboard-content .neuro-table td,
 .admin-dashboard .dashboard-content .patients-table td,
 .admin-dashboard .dashboard-content .shifts-table-neuro td,
-.admin-dashboard .dashboard-content .unified-tasks-table td {
+.admin-dashboard .dashboard-content .unified-tasks-table td,
+.nurse-dashboard .dashboard-content .neuro-table td,
+.nurse-dashboard .dashboard-content .patients-table td,
+.nurse-dashboard .dashboard-content .shifts-table-neuro td,
+.nurse-dashboard .dashboard-content .unified-tasks-table td {
   padding: 0.35rem 0.4rem !important;
   color: #4a5568 !important;
   border-top: 1px solid rgba(174, 174, 192, 0.3) !important;
@@ -210,11 +234,15 @@ app-root {
 .admin-dashboard .dashboard-content .neuro-table tbody tr:hover,
 .admin-dashboard .dashboard-content .patients-table tbody tr:hover,
 .admin-dashboard .dashboard-content .shifts-table-neuro tbody tr:hover,
-.admin-dashboard .dashboard-content .unified-tasks-table tbody tr:hover {
+.admin-dashboard .dashboard-content .unified-tasks-table tbody tr:hover,
+.nurse-dashboard .dashboard-content .neuro-table tbody tr:hover,
+.nurse-dashboard .dashboard-content .patients-table tbody tr:hover,
+.nurse-dashboard .dashboard-content .shifts-table-neuro tbody tr:hover,
+.nurse-dashboard .dashboard-content .unified-tasks-table tbody tr:hover {
   background: #d1d9e6 !important;
 }
 
-/* Estado unificado en todas las tablas del panel admin */
+/* Estado unificado en tablas (admin + enfermera) */
 .admin-dashboard .dashboard-content table td [class*="status"],
 .admin-dashboard .dashboard-content table td [class*="estado"],
 .admin-dashboard .dashboard-content table td [class*="role"],
@@ -222,7 +250,15 @@ app-root {
 .admin-dashboard .dashboard-content table td .status-badge,
 .admin-dashboard .dashboard-content table td .bed-status,
 .admin-dashboard .dashboard-content table td .badge-shift-neuro,
-.admin-dashboard .dashboard-content table td .neuro-status {
+.admin-dashboard .dashboard-content table td .neuro-status,
+.nurse-dashboard .dashboard-content table td [class*="status"],
+.nurse-dashboard .dashboard-content table td [class*="estado"],
+.nurse-dashboard .dashboard-content table td [class*="role"],
+.nurse-dashboard .dashboard-content table td .badge-status-attendance,
+.nurse-dashboard .dashboard-content table td .status-badge,
+.nurse-dashboard .dashboard-content table td .bed-status,
+.nurse-dashboard .dashboard-content table td .badge-shift-neuro,
+.nurse-dashboard .dashboard-content table td .neuro-status {
   display: inline !important;
   min-height: 0 !important;
   padding: 0 !important;

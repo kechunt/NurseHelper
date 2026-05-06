@@ -1,0 +1,211 @@
+<app-nurse-pharmacy-patients-modal
+  *ngIf="vm.pharmacyPatientsModalMed"
+  [med]="vm.pharmacyPatientsModalMed"
+  (dismissed)="pharmacyPatientsDismissed.emit()"
+/>
+
+<app-nurse-not-completed-task-modal
+  *ngIf="vm.selectedTaskForNotCompleted"
+  [task]="vm.selectedTaskForNotCompleted"
+  [patientNameFallback]="vm.selectedPatientNameFallback"
+  (dismissed)="notCompletedDismissed.emit()"
+  (confirmed)="notCompletedConfirmed.emit($event)"
+/>
+
+<app-nurse-patient-modal-shell
+  *ngIf="vm.showPatientModal && vm.selectedPatient"
+  [patient]="vm.selectedPatient"
+  [activeTab]="vm.activeTab"
+  [newDiagnosisNote]="vm.newDiagnosisNote"
+  [newMedicalObservationNote]="vm.newMedicalObservationNote"
+  [newAllergiesNote]="vm.newAllergiesNote"
+  [newSpecialNeedsNote]="vm.newSpecialNeedsNote"
+  [newGeneralObservationNote]="vm.newGeneralObservationNote"
+  [isSavingObservation]="vm.isSavingObservation"
+  [historyFilter]="vm.historyFilter"
+  [historyOutcomeFilter]="vm.historyOutcomeFilter"
+  [historyEditRecord]="vm.historyEditRecord"
+  [scheduleEditContext]="vm.scheduleEditContext"
+  [medicationsSlots]="vm.medicationsSlots"
+  [treatmentsSlots]="vm.treatmentsSlots"
+  [historyRecords]="vm.historyRecords"
+  (closed)="patientModalClosed.emit()"
+  (printRequested)="patientModalPrintRequested.emit()"
+  (exportCsvRequested)="patientExportCsvRequested.emit($event)"
+  (exportExcelRequested)="patientExportExcelRequested.emit($event)"
+  (activeTabChange)="patientActiveTabChange.emit($event)"
+  (newDiagnosisNoteChange)="patientNewDiagnosisNoteChange.emit($event)"
+  (newMedicalObservationNoteChange)="patientNewMedicalObservationNoteChange.emit($event)"
+  (newAllergiesNoteChange)="patientNewAllergiesNoteChange.emit($event)"
+  (newSpecialNeedsNoteChange)="patientNewSpecialNeedsNoteChange.emit($event)"
+  (newGeneralObservationNoteChange)="patientNewGeneralObservationNoteChange.emit($event)"
+  (addMedication)="patientAddMedication.emit()"
+  (openMedicationDayDetail)="patientOpenMedicationDayDetail.emit($event)"
+  (markMedicationGiven)="patientMarkMedicationGiven.emit($event)"
+  (markMedicationNotAdministered)="patientMarkMedicationNotAdministered.emit($event)"
+  (suspendMedication)="patientSuspendMedication.emit($event)"
+  (reactivateMedication)="patientReactivateMedication.emit($event)"
+  (deleteMedicationSlot)="patientDeleteMedicationSlot.emit($event)"
+  (addTreatment)="patientAddTreatment.emit()"
+  (openTreatmentSlotDetail)="patientOpenTreatmentSlotDetail.emit($event)"
+  (markTreatmentDone)="patientMarkTreatmentDone.emit($event)"
+  (postponeTreatment)="patientPostponeTreatment.emit($event)"
+  (cancelTreatment)="patientCancelTreatment.emit($event)"
+  (editTreatmentSchedule)="patientEditTreatmentSchedule.emit($event)"
+  (deleteTreatmentSlot)="patientDeleteTreatmentSlot.emit($event)"
+  (saveDiagnosis)="patientSaveDiagnosis.emit($event)"
+  (saveMedicalObservations)="patientSaveMedicalObservations.emit($event)"
+  (saveAllergies)="patientSaveAllergies.emit($event)"
+  (saveSpecialNeeds)="patientSaveSpecialNeeds.emit($event)"
+  (saveGeneralObservationsFull)="patientSaveGeneralObservationsFull.emit($event)"
+  (saveClinicalAppend)="patientSaveClinicalAppend.emit($event)"
+  (historyPeriodChange)="patientHistoryPeriodChange.emit($event)"
+  (historyOutcomeChange)="patientHistoryOutcomeChange.emit($event)"
+  (historyOpenDetail)="patientHistoryOpenDetail.emit($event)"
+  (historyOpenEdit)="patientHistoryOpenEdit.emit($event)"
+  (historyDeleteRecord)="patientHistoryDeleteRecord.emit($event)"
+  (historyEditDismissed)="patientHistoryEditDismissed.emit()"
+  (historyEditSaved)="patientHistoryEditSaved.emit()"
+  (scheduleEditDismissed)="patientScheduleEditDismissed.emit()"
+  (scheduleEditSaved)="patientScheduleEditSaved.emit()"
+/>
+
+<app-nurse-history-detail-modal
+  *ngIf="vm.historyDetailRecord"
+  [record]="vm.historyDetailRecord"
+  (dismissed)="historyDetailDismissed.emit()"
+/>
+
+<app-nurse-medication-day-detail-modal
+  *ngIf="vm.medicationDayDetailView as medDay"
+  [slot]="medDay.slot"
+  [patientName]="medDay.patientName"
+  [pauta]="medDay.pauta"
+  (dismissed)="medicationDayDetailDismissed.emit()"
+/>
+
+<app-nurse-handover-modal
+  *ngIf="vm.showHandoverModal"
+  [handoverDate]="vm.handoverDate"
+  [handoverBody]="vm.handoverBody"
+  [handoverSaving]="vm.handoverSaving"
+  (handoverDateChange)="handoverDateChange.emit($event)"
+  (handoverDateCommitted)="handoverDateCommitted.emit()"
+  (handoverBodyChange)="handoverBodyChange.emit($event)"
+  (dismissed)="handoverDismissed.emit()"
+  (saveRequested)="handoverSaveRequested.emit()"
+/>
+
+<app-nurse-reports-modal
+  *ngIf="vm.showNurseReportsModal"
+  [periodLabel]="vm.nurseReportsPeriodLabel"
+  [loading]="vm.nurseReportsLoading"
+  [error]="vm.nurseReportsError"
+  [compliance]="vm.nurseReportsCompliance"
+  [medication]="vm.nurseReportsMedication"
+  [exporting]="vm.nurseReportsExporting"
+  (dismissed)="nurseReportsDismissed.emit()"
+  (csvDownload)="nurseReportsCsvDownload.emit($event)"
+/>
+
+<app-nurse-tasks-quick-modal
+  *ngIf="vm.tasksQuickModalOpen"
+  [patients]="vm.patients"
+  [patientFilter]="vm.tasksPatientFilter"
+  [hourFilter]="vm.tasksHourFilter"
+  [hourGroups]="vm.tasksGroupedByHour"
+  (patientFilterChange)="tasksQuickPatientFilterChange.emit($event)"
+  (hourFilterChange)="tasksQuickHourFilterChange.emit($event)"
+  (clearFiltersRequested)="tasksQuickClearFilters.emit()"
+  (openTaskDetail)="tasksQuickOpenTaskDetail.emit($event)"
+  (dismissed)="tasksQuickDismissed.emit()"
+  (openFullModule)="tasksQuickOpenFullModule.emit()"
+/>
+
+<app-nurse-pending-task-detail-modal
+  *ngIf="vm.pendingTaskDetailModalOpen && vm.pendingTaskDetail as pt"
+  [task]="pt"
+  (dismissed)="pendingTaskDetailDismissed.emit()"
+  (completeRequested)="pendingTaskDetailCompleteRequested.emit($event)"
+  (notCompletedRequested)="pendingTaskDetailNotCompletedRequested.emit($event)"
+  (postponeRequested)="pendingTaskDetailPostponeRequested.emit($event)"
+/>
+
+<!-- Modal rápido de Farmacia desactivado: desde Resumen redirigimos al módulo Farmacia. -->
+
+<app-nurse-schedule-slots-modal
+  *ngIf="vm.scheduleSlotsView as slotsV"
+  [kind]="slotsV.kind"
+  [title]="slotsV.title"
+  [notes]="slotsV.notes ?? null"
+  [todaySlots]="slotsV.today"
+  [otherSlots]="slotsV.other"
+  [allSlots]="slotsV.allSlots"
+  (dismissed)="scheduleSlotsDismissed.emit()"
+/>
+
+<app-nurse-add-medication-modal
+  *ngIf="vm.addMedicationModalOpen"
+  [patients]="vm.patients"
+  [lockPatientSelect]="vm.addMedicationLockPatientSelect"
+  [initialPatientId]="vm.addMedicationInitialPatientId"
+  (dismissed)="addMedicationDismissed.emit()"
+  (saved)="addMedicationSaved.emit($event)"
+/>
+
+<app-nurse-suspend-medication-modal
+  *ngIf="vm.medicationToSuspend"
+  [medication]="vm.medicationToSuspend"
+  [patientName]="vm.selectedPatientNameForMedicationModals"
+  (dismissed)="suspendMedicationDismissed.emit()"
+  (confirmed)="suspendMedicationConfirmed.emit($event)"
+/>
+
+<app-nurse-add-treatment-modal
+  *ngIf="vm.addTreatmentModalOpen"
+  [patients]="vm.patients"
+  [mode]="vm.addTreatmentMode"
+  [fromPatientContext]="vm.addTreatmentFromPatientContext"
+  [initialPatientId]="vm.addTreatmentInitialPatientId"
+  (dismissed)="addTreatmentDismissed.emit()"
+  (saved)="addTreatmentSaved.emit($event)"
+/>
+
+<app-nurse-delete-medication-modal
+  *ngIf="vm.medicationToDelete"
+  [medication]="vm.medicationToDelete"
+  [patientName]="vm.selectedPatientNameForMedicationModals"
+  (dismissed)="deleteMedicationDismissed.emit()"
+  (confirmed)="deleteMedicationConfirmed.emit($event)"
+/>
+
+<app-nurse-treatment-postpone-modal
+  *ngIf="vm.treatmentPostponeItem"
+  [item]="vm.treatmentPostponeItem"
+  (dismissed)="treatmentPostponeDismissed.emit()"
+  (confirmed)="treatmentPostponeConfirmed.emit($event)"
+/>
+
+<app-nurse-reactivate-medication-modal
+  *ngIf="vm.medicationToReactivate"
+  [medication]="vm.medicationToReactivate"
+  [patientName]="vm.selectedPatientNameForMedicationModals"
+  (dismissed)="reactivateMedicationDismissed.emit()"
+  (confirmed)="reactivateMedicationConfirmed.emit()"
+/>
+
+<app-nurse-postpone-task-modal
+  *ngIf="vm.taskToPostpone"
+  [task]="vm.taskToPostpone"
+  (dismissed)="postponeTaskDismissed.emit()"
+  (confirmed)="postponeTaskConfirmed.emit($event)"
+/>
+
+<app-nurse-edit-bed-modal
+  *ngIf="vm.editBedModalBed"
+  [bed]="vm.editBedModalBed"
+  [myBeds]="vm.myBeds"
+  (dismissed)="editBedDismissed.emit()"
+  (saved)="editBedSaved.emit()"
+  (reloadRequested)="editBedReloadRequested.emit()"
+/>

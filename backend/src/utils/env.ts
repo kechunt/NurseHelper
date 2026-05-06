@@ -1,6 +1,7 @@
 import * as dotenv from 'dotenv';
 import { resolve } from 'path';
 import { existsSync } from 'fs';
+import { logger } from './logger';
 
 /**
  * Carga las variables de entorno desde el archivo .env
@@ -16,7 +17,7 @@ export function loadEnv(): void {
   if (existsSync(backendEnvLocalPath)) {
     const result = dotenv.config({ path: backendEnvLocalPath });
     if (!result.error) {
-      console.log(`✅ Variables de entorno cargadas desde: ${backendEnvLocalPath} (desarrollo local)`);
+      logger.info(`✅ Variables de entorno cargadas desde: ${backendEnvLocalPath} (desarrollo local)`);
       process.env.ENV_LOADED = 'true';
       return;
     }
@@ -26,7 +27,7 @@ export function loadEnv(): void {
   if (existsSync(rootEnvLocalPath)) {
     const result = dotenv.config({ path: rootEnvLocalPath });
     if (!result.error) {
-      console.log(`✅ Variables de entorno cargadas desde: ${rootEnvLocalPath} (desarrollo local)`);
+      logger.info(`✅ Variables de entorno cargadas desde: ${rootEnvLocalPath} (desarrollo local)`);
       process.env.ENV_LOADED = 'true';
       return;
     }
@@ -37,7 +38,7 @@ export function loadEnv(): void {
   if (existsSync(backendEnvPath)) {
     const result = dotenv.config({ path: backendEnvPath });
     if (!result.error) {
-      console.log(`✅ Variables de entorno cargadas desde: ${backendEnvPath}`);
+      logger.info(`✅ Variables de entorno cargadas desde: ${backendEnvPath}`);
       process.env.ENV_LOADED = 'true';
       return;
     }
@@ -47,14 +48,14 @@ export function loadEnv(): void {
   if (existsSync(rootEnvPath)) {
     const result = dotenv.config({ path: rootEnvPath });
     if (!result.error) {
-      console.log(`✅ Variables de entorno cargadas desde: ${rootEnvPath}`);
+      logger.info(`✅ Variables de entorno cargadas desde: ${rootEnvPath}`);
       process.env.ENV_LOADED = 'true';
       return;
     }
   }
 
   dotenv.config();
-  console.log('✅ Variables de entorno cargadas desde proceso');
+  logger.info('✅ Variables de entorno cargadas desde proceso');
   process.env.ENV_LOADED = 'true';
 }
 

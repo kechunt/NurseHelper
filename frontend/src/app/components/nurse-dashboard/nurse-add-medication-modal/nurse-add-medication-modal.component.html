@@ -1,0 +1,189 @@
+<div class="modal-backdrop modal-confirmation" role="presentation" (click)="onBackdrop()">
+  <div
+    class="modal-content modal-medication"
+    appModalFocusTrap
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="nurse-add-medication-dialog-title"
+    (click)="$event.stopPropagation()"
+  >
+    <div class="modal-header">
+      <h3 id="nurse-add-medication-dialog-title">
+        <span i18n="@@nurseAddMedicationModal.titleBase">💊 Agregar Medicamento</span>
+        <ng-container *ngIf="getSelectedPatientName() as pn"><span aria-hidden="true"> — </span>{{ pn }}</ng-container>
+      </h3>
+      <button
+        type="button"
+        class="close-btn"
+        aria-label="Cerrar"
+        i18n-aria-label="@@nurseAddMedicationModal.closeAriaLabel"
+        (click)="onCancel()"
+        [disabled]="isAdding"
+      >
+        ✕
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <form class="medication-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label i18n="@@nurseAddMedicationModal.patientLabel">Paciente *</label>
+            <select
+              class="neuro-input"
+              [(ngModel)]="selectedPatientId"
+              name="selectedPatient"
+              [disabled]="lockPatientSelect"
+            >
+              <option value="" i18n="@@nurseAddMedicationModal.selectPatientPlaceholder">Seleccionar paciente...</option>
+              <option *ngFor="let patient of patients" [value]="patient.id">
+                {{ patient.name }} ({{ patient.bedNumber }})
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row two-cols">
+          <div class="form-group">
+            <label i18n="@@nurseAddMedicationModal.medicationLabel">Medicamento *</label>
+            <input
+              type="text"
+              class="neuro-input"
+              [(ngModel)]="newMedication.medication"
+              placeholder="Ej: Nifedipino"
+              i18n-placeholder="@@nurseAddMedicationModal.medicationPlaceholder"
+              name="medication"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label i18n="@@nurseAddMedicationModal.dosageLabel">Dosis *</label>
+            <input
+              type="text"
+              class="neuro-input"
+              [(ngModel)]="newMedication.dosage"
+              placeholder="Ej: 10mg"
+              i18n-placeholder="@@nurseAddMedicationModal.dosagePlaceholder"
+              name="dosage"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label i18n="@@nurseAddMedicationModal.frequencyLabel">Frecuencia *</label>
+            <select
+              class="neuro-input"
+              [(ngModel)]="newMedication.frequency"
+              name="frequency"
+              (change)="updateTimeSuggestions()"
+            >
+              <option value="" i18n="@@nurseAddMedicationModal.frequencyChoose">Seleccione...</option>
+              <option value="once" i18n="@@nurseAddMedicationModal.freqOnce">Una vez al día</option>
+              <option value="twice" i18n="@@nurseAddMedicationModal.freqTwice">Dos veces al día (cada 12h)</option>
+              <option value="three_times" i18n="@@nurseAddMedicationModal.freqThree">Tres veces al día (cada 8h)</option>
+              <option value="four_times" i18n="@@nurseAddMedicationModal.freqFour">Cuatro veces al día (cada 6h)</option>
+              <option value="every_6h" i18n="@@nurseAddMedicationModal.freqEvery6h">Cada 6 horas</option>
+              <option value="every_8h" i18n="@@nurseAddMedicationModal.freqEvery8h">Cada 8 horas</option>
+              <option value="every_12h" i18n="@@nurseAddMedicationModal.freqEvery12h">Cada 12 horas</option>
+              <option value="every_24h" i18n="@@nurseAddMedicationModal.freqEvery24h">Cada 24 horas</option>
+              <option value="custom" i18n="@@nurseAddMedicationModal.freqCustom">Personalizado</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>
+              <span i18n="@@nurseAddMedicationModal.timesLabel">Horarios *</span>
+              <span class="hint-text" i18n="@@nurseAddMedicationModal.timesSuggested"> (Sugeridos: {{ suggestedTimes }}) </span>
+            </label>
+            <div class="times-input-group">
+              <div *ngFor="let time of newMedication.times; let i = index" class="time-input-row">
+                <input type="time" class="neuro-input small" [(ngModel)]="newMedication.times[i]" [name]="'time' + i" />
+                <button
+                  type="button"
+                  class="remove-time-btn"
+                  (click)="removeTime(i)"
+                  *ngIf="newMedication.times.length > 1"
+                  i18n-aria-label="@@nurseAddMedicationModal.removeTimeAria"
+                  title="Quitar horario"
+                  i18n-title="@@nurseAddMedicationModal.removeTimeTitle"
+                >
+                  ✕
+                </button>
+              </div>
+              <button type="button" class="add-time-btn" (click)="addTime()" i18n="@@nurseAddMedicationModal.addTimeBtn">
+                ➕ Agregar hora
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label i18n="@@nurseAddMedicationModal.adminDaysLabel">Días de administración *</label>
+            <div class="days-selector">
+              <label class="day-checkbox" *ngFor="let day of daysOfWeek">
+                <input type="checkbox" [checked]="isDaySelected(day.value)" (change)="toggleDay(day.value)" />
+                <span class="day-label">{{ day.label }}</span>
+              </label>
+              <button type="button" class="select-all-btn" (click)="selectAllDays()" i18n="@@nurseAddMedicationModal.selectAllDays">
+                Todos
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row two-cols">
+          <div class="form-group">
+            <label i18n="@@nurseAddMedicationModal.durationLabel">Duración *</label>
+            <input
+              type="number"
+              class="neuro-input"
+              [(ngModel)]="newMedication.duration"
+              placeholder="Ej: 30"
+              i18n-placeholder="@@nurseAddMedicationModal.durationPlaceholder"
+              name="duration"
+              min="1"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label i18n="@@nurseAddMedicationModal.durationUnitLabel">Unidad</label>
+            <select class="neuro-input" [(ngModel)]="newMedication.durationUnit" name="durationUnit">
+              <option value="days" i18n="@@nurseAddMedicationModal.unitDays">Días</option>
+              <option value="weeks" i18n="@@nurseAddMedicationModal.unitWeeks">Semanas</option>
+              <option value="months" i18n="@@nurseAddMedicationModal.unitMonths">Meses</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label i18n="@@nurseAddMedicationModal.notesLabel">Notas/Instrucciones</label>
+            <textarea
+              class="neuro-input"
+              [(ngModel)]="newMedication.notes"
+              placeholder="Ej: Tomar con alimentos, enjuagar boca después..."
+              i18n-placeholder="@@nurseAddMedicationModal.notesPlaceholder"
+              name="notes"
+              rows="3"
+            ></textarea>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-secondary-neuro" type="button" (click)="onCancel()" [disabled]="isAdding" i18n="@@nurseAddMedicationModal.cancel">
+        Cancelar
+      </button>
+      <button class="btn-primary-neuro" type="button" (click)="confirmAdd()" [disabled]="isAdding">
+        <span *ngIf="isAdding" i18n="@@nurseAddMedicationModal.adding">⏳ Agregando...</span>
+        <span *ngIf="!isAdding" i18n="@@nurseAddMedicationModal.submitAdd">💊 Agregar Medicamento</span>
+      </button>
+    </div>
+  </div>
+</div>

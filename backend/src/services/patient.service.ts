@@ -13,6 +13,11 @@ import { CreatePatientDto, UpdatePatientDto, SaveObservationDto } from '../dto/p
 import { cacheService } from './cache.service';
 import { In } from 'typeorm';
 import { logger } from '../utils/logger';
+import {
+  insertPatientClinicalNote,
+  observationScopeToCategory,
+  type ObservationAppendScope,
+} from './patient-clinical-note.service';
 
 export class PatientService {
   private patientRepository = AppDataSource.getRepository(Patient);
@@ -159,28 +164,30 @@ export class PatientService {
   }
 
   /**
-   * Guardar observación en paciente
+   * Guardar observación clínica estructurada (autor + fecha en tabla patient_clinical_notes).
    */
-  async saveObservation(id: number, dto: SaveObservationDto): Promise<Patient> {
-    const patient = await this.getPatientById(id, false);
+  async saveObservation(id: number, dto: SaveObservationDto, authorUserId: number): Promise<Patient> {
+    await this.getPatientById(id, false);
 
     if (!dto.observation || dto.observation.trim().length === 0) {
       throw new ValidationError('La observación no puede estar vacía');
     }
 
-    const timestamp = new Date().toLocaleString('es-ES');
-    const newObservation = `[${timestamp}] ${dto.observation.trim()}`;
-    
-    patient.generalObservations = patient.generalObservations 
-      ? `${patient.generalObservations}\n${newObservation}`
-      : newObservation;
+    if (!authorUserId || authorUserId < 1) {
+      throw new ValidationError('Se requiere un usuario autenticado para registrar la observación');
+    }
 
-    await this.patientRepository.save(patient);
+    const scope = (dto.scope ?? 'general') as ObservationAppendScope;
+    await insertPatientClinicalNote({
+      patientId: id,
+      category: observationScopeToCategory(scope),
+      body: dto.observation.trim(),
+      authorUserId,
+    });
 
-    // Invalidar caché
     await cacheService.delete(cacheService.generateKey('patient', id.toString()));
 
-    logger.info('Observation saved', { patientId: id });
+    logger.info('Observation saved', { patientId: id, scope });
 
     return await this.getPatientById(id);
   }

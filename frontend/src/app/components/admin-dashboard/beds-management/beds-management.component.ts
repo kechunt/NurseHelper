@@ -4,11 +4,17 @@ import { FormsModule } from '@angular/forms';
 import { AdminService, Area, Bed } from '../../../services/admin.service';
 import { ToastService } from '../../../services/toast.service';
 import { ConfirmationService } from '../../../services/confirmation.service';
+import {
+  ADMIN_CONFIRM_RELEASE_BED_MESSAGE,
+  ADMIN_CONFIRM_RELEASE_BED_TITLE,
+  ADMIN_CONFIRM_RELEASE_BED_YES,
+} from '../admin-confirmation-copy.helpers';
+import { AdminTableRowActionsModalComponent } from '../../../shared/components/admin-table-row-actions-modal/admin-table-row-actions-modal.component';
 
 @Component({
   selector: 'app-beds-management',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, AdminTableRowActionsModalComponent],
   templateUrl: './beds-management.component.html',
   styleUrl: './beds-management.component.css',
 })
@@ -37,6 +43,8 @@ export class BedsManagementComponent implements OnInit {
   selectedAreaId: number | null = null;
   showEditBedModal = false;
   selectedBed: Bed | null = null;
+  /** Tarjeta de cama: acciones en hoja inferior. */
+  bedCardActionsTarget: Bed | null = null;
   editBedForm: { bedNumber: string; patientId: number | null; isActive: boolean; areaId: number | null } = { 
     bedNumber: '', 
     patientId: null,
@@ -228,6 +236,59 @@ export class BedsManagementComponent implements OnInit {
     return this.areas.filter((area) => area.id !== undefined && areaIds.has(area.id!));
   }
 
+  openBedCardActionsSheet(bed: Bed): void {
+    this.bedCardActionsTarget = bed;
+    this.cdr.markForCheck();
+  }
+
+  closeBedCardActionsSheet(): void {
+    this.bedCardActionsTarget = null;
+    this.cdr.markForCheck();
+  }
+
+  onBedCardKeydown(bed: Bed, event: KeyboardEvent): void {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      this.openBedCardActionsSheet(bed);
+    }
+  }
+
+  bedCardActionsSummary(b: Bed): string[] {
+    return [
+      `Cama: ${b.bedNumber || '—'}`,
+      this.getAreaName(b.areaId),
+      this.getBedStatusLabel(b),
+      this.getBedStatusLabel(b) === 'Ocupada' ? `Paciente: ${this.getPatientNameForBed(b)}` : 'Sin paciente asignado',
+    ];
+  }
+
+  fromBedSheetViewPatient(): void {
+    const b = this.bedCardActionsTarget;
+    if (!b || this.getBedStatusLabel(b) !== 'Ocupada') {
+      return;
+    }
+    this.closeBedCardActionsSheet();
+    this.openOccupiedPatientModal(b);
+  }
+
+  fromBedSheetEdit(): void {
+    const b = this.bedCardActionsTarget;
+    if (!b) {
+      return;
+    }
+    this.closeBedCardActionsSheet();
+    this.openEditBedModal(b);
+  }
+
+  async fromBedSheetDelete(): Promise<void> {
+    const b = this.bedCardActionsTarget;
+    if (!b) {
+      return;
+    }
+    this.closeBedCardActionsSheet();
+    await this.deleteBed(b);
+  }
+
   openEditBedModal(bed: Bed): void {
     this.selectedBed = { ...bed };
     const isActiveValue = bed.isActive !== undefined && bed.isActive !== null 
@@ -277,7 +338,7 @@ export class BedsManagementComponent implements OnInit {
 
   createBed(): void {
     if (!this.createBedForm.bedNumber.trim() || !this.createBedForm.areaId) {
-      alert('El número de cama y el área son requeridos');
+      this.toastService.warning('El número de cama y el área son requeridos');
       return;
     }
 
@@ -294,11 +355,11 @@ export class BedsManagementComponent implements OnInit {
         this.loadData();
         setTimeout(() => {
           this.cdr.detectChanges();
-          alert(`✅ Cama ${newBed.bedNumber} creada exitosamente`);
+          this.toastService.success(`Cama ${newBed.bedNumber} creada correctamente`);
         }, 200);
       },
       error: (error) => {
-        alert(error.error?.message || 'Error al crear la cama');
+        this.toastService.error(error.error?.message || 'Error al crear la cama');
       }
     });
   }
@@ -439,10 +500,18 @@ export class BedsManagementComponent implements OnInit {
     });
   }
 
-  releaseBed(): void {
-    if (confirm('¿Estás seguro de liberar esta cama? El paciente quedará sin cama asignada.')) {
-      this.editBedForm.patientId = null;
+  async releaseBed(): Promise<void> {
+    const ok = await this.confirmationService.confirm({
+      title: ADMIN_CONFIRM_RELEASE_BED_TITLE,
+      message: ADMIN_CONFIRM_RELEASE_BED_MESSAGE,
+      type: 'warning',
+      confirmText: ADMIN_CONFIRM_RELEASE_BED_YES,
+      cancelText: 'Cancelar',
+    });
+    if (!ok) {
+      return;
     }
+    this.editBedForm.patientId = null;
   }
 
   getCurrentPatientName(): string {
@@ -544,7 +613,7 @@ export class BedsManagementComponent implements OnInit {
 
   saveBedChanges(): void {
     if (!this.selectedBed?.id || !this.editBedForm.bedNumber.trim()) {
-      alert('El número de cama es requerido');
+      this.toastService.warning('El número de cama es requerido');
       return;
     }
 
@@ -582,14 +651,14 @@ export class BedsManagementComponent implements OnInit {
               };
             }
             
-            let message = '✅ Cama actualizada exitosamente';
+            let message = 'Cama actualizada correctamente';
             if (newPatientId === null && originalPatientId !== null) {
-              message = `✅ Cama ${this.editBedForm.bedNumber} liberada exitosamente`;
+              message = `Cama ${this.editBedForm.bedNumber} liberada correctamente`;
             } else if (newPatientId !== null && originalPatientId === null) {
-              message = `✅ Paciente asignado a cama ${this.editBedForm.bedNumber}`;
+              message = `Paciente asignado a cama ${this.editBedForm.bedNumber}`;
             } else if (hasStateChanged) {
               const estado = isActiveBoolean ? 'disponible' : 'no disponible';
-              message = `✅ Cama ${this.editBedForm.bedNumber} marcada como ${estado}`;
+              message = `Cama ${this.editBedForm.bedNumber} marcada como ${estado}`;
             }
             
             this.closeEditBedModal();
@@ -598,12 +667,12 @@ export class BedsManagementComponent implements OnInit {
             setTimeout(() => {
               this.loadData();
               setTimeout(() => {
-                alert(message);
+                this.toastService.success(message);
               }, 200);
             }, 100);
           },
           error: (error) => {
-            alert(error.error?.message || 'Error al actualizar la cama');
+            this.toastService.error(error.error?.message || 'Error al actualizar la cama');
             this.loadData();
             this.closeEditBedModal();
             this.cdr.detectChanges();
@@ -611,7 +680,7 @@ export class BedsManagementComponent implements OnInit {
         });
       },
       error: (error) => {
-        alert(error.error?.message || 'Error al actualizar la asignación de paciente');
+        this.toastService.error(error.error?.message || 'Error al actualizar la asignación de paciente');
         this.loadData();
         this.closeEditBedModal();
         this.cdr.detectChanges();

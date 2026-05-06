@@ -202,6 +202,10 @@ router.delete('/:id', authMiddleware, requireAdminOrSupervisor, patientsControll
  *             properties:
  *               observation:
  *                 type: string
+ *               scope:
+ *                 type: string
+ *                 enum: [general, medical, diagnosis, allergies, specialNeeds]
+ *                 description: Campo destino de la línea fechada (generalObservations, medicalObservations, medicalHistory, allergies, specialNeeds)
  *     responses:
  *       200:
  *         description: Observación guardada exitosamente

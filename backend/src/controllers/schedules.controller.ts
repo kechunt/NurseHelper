@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { AppDataSource } from '../data-source';
 import { Schedule, ScheduleType, ScheduleStatus } from '../entities/Schedule';
 import { AdministrationHistory, AdministrationStatus } from '../entities/AdministrationHistory';
+import { logger } from '../utils/logger';
 
 export class SchedulesController {
   async getAll(req: Request, res: Response): Promise<void> {
@@ -51,7 +52,7 @@ export class SchedulesController {
         if (error?.code === 'ER_BAD_FIELD_ERROR' && 
             (errorMessage.includes('assignedToId') || errorMessage.includes('assignedTo') ||
              errorMessage.includes('Patient'))) {
-          console.warn('⚠️ Columna assignedToId no encontrada en patients. Cargando schedules sin relación assignedTo.');
+          logger.warn('⚠️ Columna assignedToId no encontrada en patients. Cargando schedules sin relación assignedTo.');
           queryBuilder = scheduleRepository
             .createQueryBuilder('schedule')
             .leftJoinAndSelect('schedule.patient', 'patient')
@@ -91,7 +92,7 @@ export class SchedulesController {
         totalPages: Math.ceil(total / limit),
       });
     } catch (error) {
-      console.error('Error al obtener horarios:', error);
+      logger.error('Error al obtener horarios:', error);
       res.status(500).json({ message: 'Error interno del servidor' });
     }
   }
@@ -108,7 +109,7 @@ export class SchedulesController {
 
       res.json(schedules);
     } catch (error) {
-      console.error('Error al obtener horarios por paciente:', error);
+      logger.error('Error al obtener horarios por paciente:', error);
       res.status(500).json({ message: 'Error interno del servidor' });
     }
   }
@@ -159,7 +160,7 @@ export class SchedulesController {
         if (error?.code === 'ER_BAD_FIELD_ERROR' && 
             (errorMessage.includes('assignedToId') || errorMessage.includes('assignedTo') ||
              errorMessage.includes('Patient'))) {
-          console.warn('⚠️ Columna assignedToId no encontrada. Cargando schedule sin relación assignedTo.');
+          logger.warn('⚠️ Columna assignedToId no encontrada. Cargando schedule sin relación assignedTo.');
           savedSchedule = await scheduleRepository.findOne({
             where: { id: schedule.id },
             relations: ['patient'],
@@ -174,7 +175,7 @@ export class SchedulesController {
 
       res.status(201).json({ message: 'Horario creado exitosamente', schedule: savedSchedule });
     } catch (error) {
-      console.error('Error al crear horario:', error);
+      logger.error('Error al crear horario:', error);
       res.status(500).json({ message: 'Error interno del servidor' });
     }
   }
@@ -224,7 +225,7 @@ export class SchedulesController {
         if (error?.code === 'ER_BAD_FIELD_ERROR' && 
             (errorMessage.includes('assignedToId') || errorMessage.includes('assignedTo') ||
              errorMessage.includes('Patient'))) {
-          console.warn('⚠️ Columna assignedToId no encontrada. Cargando schedule sin relación assignedTo.');
+          logger.warn('⚠️ Columna assignedToId no encontrada. Cargando schedule sin relación assignedTo.');
           updatedSchedule = await scheduleRepository.findOne({
             where: { id: schedule.id },
             relations: ['patient'],
@@ -239,7 +240,7 @@ export class SchedulesController {
 
       res.json({ message: 'Horario actualizado exitosamente', schedule: updatedSchedule });
     } catch (error) {
-      console.error('Error al actualizar horario:', error);
+      logger.error('Error al actualizar horario:', error);
       res.status(500).json({ message: 'Error interno del servidor' });
     }
   }
@@ -260,7 +261,7 @@ export class SchedulesController {
 
       res.json({ message: 'Horario eliminado exitosamente' });
     } catch (error) {
-      console.error('Error al eliminar horario:', error);
+      logger.error('Error al eliminar horario:', error);
       res.status(500).json({ message: 'Error interno del servidor' });
     }
   }
@@ -320,7 +321,7 @@ export class SchedulesController {
         }
       });
     } catch (error) {
-      console.error('Error al completar tarea:', error);
+      logger.error('Error al completar tarea:', error);
       res.status(500).json({ 
         message: 'Error interno del servidor',
         error: error instanceof Error ? error.message : 'Error desconocido'
@@ -391,7 +392,7 @@ export class SchedulesController {
         }
       });
     } catch (error) {
-      console.error('Error al marcar tarea como no completada:', error);
+      logger.error('Error al marcar tarea como no completada:', error);
       res.status(500).json({ 
         message: 'Error interno del servidor',
         error: error instanceof Error ? error.message : 'Error desconocido'
@@ -426,7 +427,7 @@ export class SchedulesController {
 
       res.json({ message: 'Tarea pospuesta exitosamente', schedule });
     } catch (error) {
-      console.error('Error al posponer tarea:', error);
+      logger.error('Error al posponer tarea:', error);
       res.status(500).json({ message: 'Error interno del servidor' });
     }
   }
@@ -452,7 +453,7 @@ export class SchedulesController {
 
       res.json({ message: 'Medicamento marcado como administrado', schedule });
     } catch (error) {
-      console.error('Error al marcar medicamento:', error);
+      logger.error('Error al marcar medicamento:', error);
       res.status(500).json({ message: 'Error interno del servidor' });
     }
   }

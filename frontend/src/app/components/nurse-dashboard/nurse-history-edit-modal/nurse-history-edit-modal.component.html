@@ -1,0 +1,73 @@
+<div
+  class="modal-backdrop modal-confirmation nurse-history-edit-backdrop"
+  role="presentation"
+  (click)="onBackdrop()"
+>
+  <div
+    class="modal-content modal-small"
+    appModalFocusTrap
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="nurse-history-edit-dialog-title"
+    (click)="$event.stopPropagation()"
+  >
+    <div class="modal-header">
+      <h3 id="nurse-history-edit-dialog-title" i18n="@@nurseHistoryEditModal.title">Editar registro de historial</h3>
+      <button
+        type="button"
+        class="close-btn"
+        aria-label="Cerrar"
+        i18n-aria-label="@@nurseHistoryEditModal.closeAriaLabel"
+        (click)="onCancel()"
+      >
+        ✕
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="input-group" *ngIf="showsStatusSelect()">
+        <label for="history-edit-status" i18n="@@nurseHistoryEditModal.statusLabel">Estado del registro</label>
+        <select id="history-edit-status" class="neuro-select neuro-select-block" [(ngModel)]="status">
+          <option value="administered" i18n="@@nurseHistoryEditModal.statusAdministered">Realizado / Administrado</option>
+          <option value="not_administered" i18n="@@nurseHistoryEditModal.statusNotDone">No realizado</option>
+          <option value="missed" i18n="@@nurseHistoryEditModal.statusMissed">Omitido</option>
+        </select>
+        <p class="history-edit-hint" i18n="@@nurseHistoryEditModal.statusHint">
+          Aplica a medicamentos y tratamientos registrados en el historial.
+        </p>
+      </div>
+      <div class="input-group">
+        <label for="history-edit-desc" i18n="@@nurseHistoryEditModal.descriptionLabel">Descripción</label>
+        <textarea
+          id="history-edit-desc"
+          class="observation-input"
+          [(ngModel)]="description"
+          rows="3"
+        ></textarea>
+      </div>
+      <div class="input-group">
+        <label for="history-edit-notes" i18n="@@nurseHistoryEditModal.notesFieldLabel">Notas</label>
+        <textarea
+          id="history-edit-notes"
+          class="observation-input"
+          [(ngModel)]="notes"
+          rows="3"
+          placeholder="Observaciones sobre esta administración o tratamiento…"
+          i18n-placeholder="@@nurseHistoryEditModal.notesPlaceholder"
+        ></textarea>
+      </div>
+      <div
+        class="input-group"
+        *ngIf="showsStatusSelect() && (status === 'not_administered' || status === 'missed')"
+      >
+        <label for="history-edit-reason" i18n="@@nurseHistoryEditModal.reasonLabel">Motivo (no realizado / omitido)</label>
+        <textarea id="history-edit-reason" class="observation-input" [(ngModel)]="reason" rows="2"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-secondary-neuro" (click)="onCancel()" i18n="@@nurseHistoryEditModal.cancel">
+        Cancelar
+      </button>
+      <button type="button" class="btn-primary-neuro" (click)="save()" i18n="@@nurseHistoryEditModal.save">Guardar</button>
+    </div>
+  </div>
+</div>

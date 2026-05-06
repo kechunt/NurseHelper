@@ -76,23 +76,20 @@ function checkDependencies() {
 }
 
 function runMigrations() {
-  log('🔄 Verificando migraciones pendientes...', 'blue');
+  log('🔄 Ejecutando migraciones TypeORM (tablas pacientes, observaciones clínicas, etc.)...', 'blue');
   try {
-    const result = execSync('npm run migration:run', {
+    execSync('npm run migration:run', {
       cwd: path.join(__dirname, '..', 'backend'),
-      encoding: 'utf8',
-      stdio: 'pipe'
+      stdio: 'inherit',
     });
-    
-    if (result.includes('No migrations') || result.includes('already executed')) {
-      log('✅ No hay migraciones pendientes', 'green');
-    } else {
-      log('✅ Migraciones ejecutadas', 'green');
-    }
-  } catch (error) {
-    // Si hay error, puede ser que no haya migraciones o que haya un problema
-    // Continuamos de todas formas
-    log('⚠️  No se pudieron ejecutar migraciones (puede ser normal)', 'yellow');
+    log('✅ Migraciones aplicadas o ya estaban al día', 'green');
+  } catch {
+    log(
+      '❌ Fallaron las migraciones (MySQL inaccesible o esquema incoherente). Corrija DB_* en .env.local y que MySQL esté activo.',
+      'red'
+    );
+    log('   Manual: cd backend && npm run migration:run', 'yellow');
+    process.exit(1);
   }
 }
 

@@ -1,11 +1,44 @@
 import { Request, Response } from 'express';
 import { AppDataSource } from '../data-source';
 import { Schedule, ScheduleStatus, ScheduleType } from '../entities/Schedule';
+import { cacheService } from '../services/cache.service';
+import { logger } from '../utils/logger';
+
+/** Inicio del día calendario local a partir de YYYY-MM-DD o Date/ISO (evita desfases JSON). */
+function parseMedicationStartDate(startDate: unknown): Date {
+  if (startDate == null || startDate === '') {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+  if (typeof startDate === 'string') {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(startDate.trim());
+    if (m) {
+      const y = parseInt(m[1], 10);
+      const mo = parseInt(m[2], 10) - 1;
+      const day = parseInt(m[3], 10);
+      const d = new Date(y, mo, day);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    }
+  }
+  const d = new Date(startDate as string | number | Date);
+  if (isNaN(d.getTime())) {
+    const f = new Date();
+    f.setHours(0, 0, 0, 0);
+    return f;
+  }
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
 
 // Agregar nuevo medicamento con horarios
 export const addMedication = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).userId;
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: 'Usuario no autenticado' });
+    }
     const {
       patientId,
       medication,
@@ -26,11 +59,19 @@ export const addMedication = async (req: Request, res: Response) => {
       });
     }
 
+    const pid = parseInt(String(patientId), 10);
+    if (!Number.isFinite(pid) || pid <= 0) {
+      return res.status(400).json({ message: 'ID de paciente inválido' });
+    }
+
     const scheduleRepo = AppDataSource.getRepository(Schedule);
+
+    const daysEffective =
+      Array.isArray(days) && days.length === 0 ? 'all' : days;
 
     let calculatedEndDate = endDate;
     if (duration && durationUnit && !endDate) {
-      const start = new Date(startDate || Date.now());
+      const start = parseMedicationStartDate(startDate);
       calculatedEndDate = new Date(start);
       
       switch (durationUnit) {
@@ -46,8 +87,7 @@ export const addMedication = async (req: Request, res: Response) => {
       }
     }
 
-    const start = new Date(startDate || Date.now());
-    start.setHours(0, 0, 0, 0);
+    const start = parseMedicationStartDate(startDate);
     
     const end = calculatedEndDate ? new Date(calculatedEndDate) : new Date(start);
     if (!calculatedEndDate) {
@@ -68,10 +108,10 @@ export const addMedication = async (req: Request, res: Response) => {
       let includeDay = true;
 
       // Verificar si este día debe incluirse según los días seleccionados
-      if (days && days !== 'all') {
-        if (Array.isArray(days)) {
+      if (daysEffective && daysEffective !== 'all') {
+        if (Array.isArray(daysEffective)) {
           // days es un array de strings como ['monday', 'tuesday', etc.]
-          includeDay = days.some(day => {
+          includeDay = daysEffective.some(day => {
             const dayName = day.toLowerCase();
             return dayMap[dayName] === dayOfWeek;
           });
@@ -89,7 +129,7 @@ export const addMedication = async (req: Request, res: Response) => {
           scheduledTime.setHours(hours, minutes, 0, 0);
 
           const schedule = new Schedule();
-          schedule.patientId = parseInt(patientId);
+          schedule.patientId = pid;
           schedule.assignedToId = userId;
           schedule.type = ScheduleType.MEDICATION;
           schedule.status = ScheduleStatus.PENDING;
@@ -114,6 +154,20 @@ export const addMedication = async (req: Request, res: Response) => {
       await scheduleRepo.save(batch);
     }
 
+    if (schedules.length === 0) {
+      return res.status(400).json({
+        message:
+          'No se generó ninguna dosis: revise los días de la semana (si eligió días concretos, debe incluir al menos uno) y la fecha de inicio.',
+        schedulesCreated: 0,
+      });
+    }
+
+    await cacheService.delete(cacheService.generateKey('nurse', 'patients', String(userId)));
+    await cacheService.delete(
+      cacheService.generateKey('nurse', 'tasks', String(userId), new Date().toDateString())
+    );
+    await cacheService.delete(cacheService.generateKey('patient', String(pid)));
+
     res.status(201).json({ 
       message: `Medicamento agregado exitosamente. ${schedules.length} dosis programadas.`,
       schedulesCreated: schedules.length,
@@ -121,7 +175,7 @@ export const addMedication = async (req: Request, res: Response) => {
       endDate: calculatedEndDate || end
     });
   } catch (error) {
-    console.error('Error al agregar medicamento:', error);
+    logger.error('Error al agregar medicamento:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 };
@@ -176,7 +230,7 @@ export const suspendMedication = async (req: Request, res: Response) => {
 
     await scheduleRepo.save(schedules);
 
-    console.log(`⏸️ Medicamento "${decodedMedication}" suspendido para paciente ${patientId}. Motivo: ${reason}. ${schedules.length} dosis afectadas.`);
+    logger.info(`⏸️ Medicamento "${decodedMedication}" suspendido para paciente ${patientId}. Motivo: ${reason}. ${schedules.length} dosis afectadas.`);
 
     res.json({ 
       message: 'Medicamento suspendido exitosamente',
@@ -184,7 +238,7 @@ export const suspendMedication = async (req: Request, res: Response) => {
       suspendedUntil: suspendUntil || 'indefinidamente'
     });
   } catch (error) {
-    console.error('Error al suspender medicamento:', error);
+    logger.error('Error al suspender medicamento:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 };
@@ -229,7 +283,7 @@ export const deleteMedication = async (req: Request, res: Response) => {
     // Ahora eliminar permanentemente
     await scheduleRepo.remove(schedules);
 
-    console.log(`🗑️ Medicamento "${medication}" eliminado para paciente ${patientId}. Motivo: ${reason}. ${schedules.length} dosis eliminadas.`);
+    logger.info(`🗑️ Medicamento "${medication}" eliminado para paciente ${patientId}. Motivo: ${reason}. ${schedules.length} dosis eliminadas.`);
 
     res.json({ 
       message: 'Medicamento eliminado permanentemente',
@@ -237,7 +291,7 @@ export const deleteMedication = async (req: Request, res: Response) => {
       reason: reason.trim()
     });
   } catch (error) {
-    console.error('Error al eliminar medicamento:', error);
+    logger.error('Error al eliminar medicamento:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 };
@@ -246,13 +300,14 @@ export const deleteMedication = async (req: Request, res: Response) => {
 export const reactivateMedication = async (req: Request, res: Response) => {
   try {
     const { patientId, medication } = req.params;
+    const decodedMedication = decodeURIComponent(medication);
 
     const scheduleRepo = AppDataSource.getRepository(Schedule);
     
     // Buscar dosis canceladas futuras
     const schedules = await scheduleRepo.createQueryBuilder('schedule')
       .where('schedule.patientId = :patientId', { patientId: parseInt(patientId) })
-      .andWhere('schedule.medication = :medication', { medication })
+      .andWhere('schedule.medication = :medication', { medication: decodedMedication })
       .andWhere('schedule.status = :status', { status: ScheduleStatus.CANCELLED })
       .andWhere('schedule.scheduledTime > :now', { now: new Date() })
       .getMany();
@@ -270,7 +325,7 @@ export const reactivateMedication = async (req: Request, res: Response) => {
       dosesReactivated: schedules.length
     });
   } catch (error) {
-    console.error('Error al reactivar medicamento:', error);
+    logger.error('Error al reactivar medicamento:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 };
@@ -301,7 +356,7 @@ export const getPatientMedications = async (req: Request, res: Response) => {
 
     res.json(medications);
   } catch (error) {
-    console.error('Error al obtener medicamentos:', error);
+    logger.error('Error al obtener medicamentos:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 };

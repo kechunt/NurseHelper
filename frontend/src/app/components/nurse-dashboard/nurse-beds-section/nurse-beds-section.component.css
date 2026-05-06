@@ -1,0 +1,242 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.beds-section-header.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.section-title {
+  color: #4a5568;
+  font-size: 1.5rem;
+  font-weight: 300;
+  margin: 0;
+}
+
+.section-subtitle {
+  color: #718096;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.beds-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.bed-card {
+  background: #e0e5ec;
+  border-radius: 20px;
+  padding: 1.5rem;
+  box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.bed-card:hover {
+  box-shadow: 8px 8px 16px #bebebe, -8px -8px 16px #ffffff;
+  transform: translateY(-2px);
+}
+
+.bed-card.available {
+  opacity: 0.8;
+  border-color: rgba(174, 174, 192, 0.3);
+}
+
+.bed-card.occupied {
+  border-color: rgba(174, 174, 192, 0.45);
+  background: #e0e5ec;
+  box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
+}
+
+.bed-card.occupied:hover {
+  box-shadow: 8px 8px 16px #bebebe, -8px -8px 16px #ffffff;
+}
+
+.bed-card.clickable-bed {
+  cursor: pointer;
+}
+
+.click-hint {
+  font-size: 0.75rem;
+  color: #718096;
+  margin-top: 0.5rem;
+  font-style: italic;
+}
+
+.bed-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+}
+
+.bed-number {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.bed-status-badge {
+  padding: 6px 14px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
+  transition: all 0.3s ease;
+}
+
+.bed-status-badge.occupied {
+  background: #e0e5ec;
+  color: #4a5568;
+  box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
+  text-shadow: none;
+}
+
+.bed-status-badge:not(.occupied) {
+  background: #e0e5ec;
+  color: #718096;
+}
+
+.bed-patient-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: 12px;
+  margin-top: 0.5rem;
+  border-left: 3px solid rgba(174, 174, 192, 0.55);
+  box-shadow: inset 2px 2px 4px rgba(174, 174, 192, 0.2), inset -2px -2px 4px rgba(255, 255, 255, 0.8);
+}
+
+.patient-assignment-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+
+.assignment-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #718096;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.patient-name {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #2d3748;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.25rem 0;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(174, 174, 192, 0.35);
+}
+
+.patient-meta {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.meta-item {
+  font-size: 0.85rem;
+  color: #718096;
+}
+
+.patient-conditions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.condition-badge {
+  background: #e0e5ec;
+  padding: 4px 10px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  color: #718096;
+  box-shadow: inset 2px 2px 4px #bebebe, inset -2px -2px 4px #ffffff;
+}
+
+.bed-patient-clinical {
+  margin-top: 0.65rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid rgba(174, 174, 192, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.view-patient-btn-neuro {
+  background: #e0e5ec;
+  color: #4a5568;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
+  margin-top: 0.75rem;
+  width: 100%;
+}
+
+.view-patient-btn-neuro:hover {
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+  transform: translateY(-1px);
+}
+
+.view-patient-btn-neuro:active {
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+  transform: translateY(0);
+}
+
+.bed-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 0;
+  opacity: 0.6;
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.5;
+}
+
+.bed-empty p {
+  color: #a0aec0;
+  font-style: italic;
+  margin: 0.5rem 0 0 0;
+  font-weight: 500;
+}
+@media (max-width: 1024px) {
+  .beds-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .beds-grid {
+    grid-template-columns: 1fr;
+  }
+}
+

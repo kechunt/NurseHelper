@@ -12,11 +12,12 @@ import { ConfirmationService } from '../../../services/confirmation.service';
 import { ExportService } from '../../../shared/services/export.service';
 import { PaginationComponent, PaginationConfig } from '../../../shared/components/pagination/pagination.component';
 import { DebounceDirective } from '../../../shared/directives/debounce.directive';
+import { AdminTableRowActionsModalComponent } from '../../../shared/components/admin-table-row-actions-modal/admin-table-row-actions-modal.component';
 
 @Component({
   selector: 'app-users-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, PaginationComponent, DebounceDirective],
+  imports: [CommonModule, FormsModule, PaginationComponent, DebounceDirective, AdminTableRowActionsModalComponent],
   templateUrl: './users-management.component.html',
   styleUrl: './users-management.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -41,6 +42,8 @@ export class UsersManagementComponent implements OnInit, OnDestroy {
   showRoleModal = false;
   showEditModal = false;
   selectedUser: User | null = null;
+  /** Fila tabla: acciones en hoja inferior. */
+  userRowActionsTarget: User | null = null;
   newRole: string = '';
   editForm: Partial<User> = {};
   
@@ -189,6 +192,59 @@ export class UsersManagementComponent implements OnInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
+  openUserRowActionsSheet(user: User): void {
+    this.userRowActionsTarget = user;
+    this.cdr.markForCheck();
+  }
+
+  closeUserRowActionsSheet(): void {
+    this.userRowActionsTarget = null;
+    this.cdr.markForCheck();
+  }
+
+  onUserTableRowKeydown(user: User, event: KeyboardEvent): void {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      this.openUserRowActionsSheet(user);
+    }
+  }
+
+  userRowActionsSummary(u: User): string[] {
+    return [
+      `@${u.username}`,
+      `${u.firstName} ${u.lastName}`,
+      u.email || '—',
+      `Rol: ${this.getRoleLabel(u.role)} · ${u.isActive ? 'Activo' : 'Inactivo'}`,
+    ];
+  }
+
+  fromUserSheetOpenEdit(): void {
+    const u = this.userRowActionsTarget;
+    if (!u) {
+      return;
+    }
+    this.closeUserRowActionsSheet();
+    this.openEditModal(u);
+  }
+
+  fromUserSheetOpenRole(): void {
+    const u = this.userRowActionsTarget;
+    if (!u) {
+      return;
+    }
+    this.closeUserRowActionsSheet();
+    this.openRoleModal(u);
+  }
+
+  async fromUserSheetDelete(): Promise<void> {
+    const u = this.userRowActionsTarget;
+    if (!u) {
+      return;
+    }
+    this.closeUserRowActionsSheet();
+    await this.deleteUser(u);
+  }
+
   openRoleModal(user: User): void {
     this.selectedUser = user;
     this.newRole = user.role;
@@ -202,6 +258,7 @@ export class UsersManagementComponent implements OnInit, OnDestroy {
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
+      phone: user.phone ?? '',
       role: user.role,
       isActive: user.isActive,
     };
@@ -304,6 +361,12 @@ export class UsersManagementComponent implements OnInit, OnDestroy {
       return;
     }
 
+    const phoneCheck = ((this.editForm.phone as string) || '').trim();
+    if (phoneCheck.length > 30) {
+      this.toastService.warning('El teléfono no puede superar 30 caracteres');
+      return;
+    }
+
     // Confirmación especial si se está cambiando el rol de enfermera
     const wasNurse = this.selectedUser.role === 'nurse';
     const isChangingFromNurse = !!(wasNurse && this.editForm.role && this.editForm.role !== 'nurse');
@@ -331,7 +394,13 @@ export class UsersManagementComponent implements OnInit, OnDestroy {
 
     if (!this.selectedUser) return;
 
-    this.adminService.updateUser(this.selectedUser.id!, this.editForm).subscribe({
+    const phoneTrim = ((this.editForm.phone as string) || '').trim();
+    const payload = {
+      ...this.editForm,
+      phone: phoneTrim.length > 0 ? phoneTrim : null,
+    };
+
+    this.adminService.updateUser(this.selectedUser.id!, payload).subscribe({
       next: (response) => {
         let message = 'Usuario actualizado exitosamente';
         if (isChangingFromNurse) {
@@ -484,6 +553,7 @@ export class UsersManagementComponent implements OnInit, OnDestroy {
         'Email': u.email,
         'Nombre': u.firstName,
         'Apellido': u.lastName,
+        'Teléfono': (u.phone || '').toString().trim() || '',
         'Rol': this.getRoleLabel(u.role),
         'Estado': u.isActive ? 'Activo' : 'Inactivo'
       }));

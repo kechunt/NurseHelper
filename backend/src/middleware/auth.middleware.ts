@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { AppDataSource } from '../data-source';
 import { User } from '../entities/User';
 import { verifyToken } from '../utils/jwt';
+import { logger } from '../utils/logger';
 
 export interface AuthRequest extends Request {
   user?: User;
@@ -15,7 +16,7 @@ export const authMiddleware = async (
   try {
     // Verificar que AppDataSource esté inicializado
     if (!AppDataSource.isInitialized) {
-      console.error('❌ AppDataSource no está inicializado en authMiddleware');
+      logger.error('❌ AppDataSource no está inicializado en authMiddleware');
       res.status(500).json({ 
         message: 'Error de conexión a la base de datos',
         error: 'La base de datos no está inicializada'
@@ -45,8 +46,8 @@ export const authMiddleware = async (
     req.user = user;
     next();
   } catch (error) {
-    console.error('❌ Error en authMiddleware:', error);
-    console.error('Error details:', {
+    logger.error('❌ Error en authMiddleware:', error);
+    logger.error('Error details:', {
       name: error instanceof Error ? error.name : 'Unknown',
       message: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined

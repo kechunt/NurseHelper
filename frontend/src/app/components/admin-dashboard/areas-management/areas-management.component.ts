@@ -4,11 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { AdminService, Area, Bed } from '../../../services/admin.service';
 import { ToastService } from '../../../services/toast.service';
 import { ConfirmationService } from '../../../services/confirmation.service';
+import { AdminTableRowActionsModalComponent } from '../../../shared/components/admin-table-row-actions-modal/admin-table-row-actions-modal.component';
 
 @Component({
   selector: 'app-areas-management',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, AdminTableRowActionsModalComponent],
   templateUrl: './areas-management.component.html',
   styleUrl: './areas-management.component.css',
 })
@@ -59,6 +60,12 @@ export class AreasManagementComponent implements OnInit {
   selectedAreaForBeds: Area | null = null;
   showAreaPatientsModal = false;
   selectedAreaForPatients: Area | null = null;
+
+  /** Tablas con acciones → hoja inferior. */
+  areaBedsDetailSheet: { bed: Bed; patient: any | null } | null = null;
+  areaPatientsAreaSheetPatient: any | null = null;
+  patientWithoutAreaSheet: any | null = null;
+  patientByAreaSheet: { patient: any; areaId: number } | null = null;
 
   constructor(
     private adminService: AdminService,
@@ -548,6 +555,7 @@ export class AreasManagementComponent implements OnInit {
   closeAreaBedsModal(): void {
     this.showAreaBedsModal = false;
     this.selectedAreaForBeds = null;
+    this.areaBedsDetailSheet = null;
   }
 
   openAreaPatientsModal(area: Area): void {
@@ -558,6 +566,124 @@ export class AreasManagementComponent implements OnInit {
   closeAreaPatientsModal(): void {
     this.showAreaPatientsModal = false;
     this.selectedAreaForPatients = null;
+    this.areaPatientsAreaSheetPatient = null;
+  }
+
+  openAreaBedsDetailSheet(row: { bed: Bed; patient: any | null }): void {
+    this.areaBedsDetailSheet = { bed: row.bed, patient: row.patient };
+  }
+
+  closeAreaBedsDetailSheet(): void {
+    this.areaBedsDetailSheet = null;
+  }
+
+  onAreaBedsRowKeydown(row: { bed: Bed; patient: any | null }, event: KeyboardEvent): void {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      this.openAreaBedsDetailSheet(row);
+    }
+  }
+
+  areaBedsSheetSummary(): string[] {
+    const d = this.areaBedsDetailSheet;
+    if (!d) {
+      return [];
+    }
+    const lines = [`Cama ${d.bed.bedNumber}`, d.patient ? `Paciente: ${d.patient.firstName} ${d.patient.lastName}` : 'Sin paciente'];
+    return lines;
+  }
+
+  fromAreaBedsSheetEditPatient(): void {
+    const d = this.areaBedsDetailSheet;
+    if (!d?.patient) {
+      return;
+    }
+    const patient = d.patient;
+    this.closeAreaBedsDetailSheet();
+    this.closeAreaBedsModal();
+    this.openChangeAreaModal(patient);
+  }
+
+  fromAreaBedsSheetRelease(): void {
+    const d = this.areaBedsDetailSheet;
+    if (!d?.patient) {
+      return;
+    }
+    this.closeAreaBedsDetailSheet();
+    this.releasePatientFromBed(d.bed);
+  }
+
+  openAreaPatientsSheet(patient: any): void {
+    this.areaPatientsAreaSheetPatient = patient;
+  }
+
+  closeAreaPatientsSheet(): void {
+    this.areaPatientsAreaSheetPatient = null;
+  }
+
+  onAreaPatientsRowKeydown(patient: any, event: KeyboardEvent): void {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      this.openAreaPatientsSheet(patient);
+    }
+  }
+
+  fromAreaPatientsSheetChange(): void {
+    const p = this.areaPatientsAreaSheetPatient;
+    if (!p) {
+      return;
+    }
+    this.closeAreaPatientsSheet();
+    this.closeAreaPatientsModal();
+    this.openChangeAreaModal(p);
+  }
+
+  openPatientWithoutAreaSheet(patient: any): void {
+    this.patientWithoutAreaSheet = patient;
+  }
+
+  closePatientWithoutAreaSheet(): void {
+    this.patientWithoutAreaSheet = null;
+  }
+
+  onPatientWithoutAreaKeydown(patient: any, event: KeyboardEvent): void {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      this.openPatientWithoutAreaSheet(patient);
+    }
+  }
+
+  fromPatientWithoutAreaAssign(): void {
+    const p = this.patientWithoutAreaSheet;
+    if (!p) {
+      return;
+    }
+    this.closePatientWithoutAreaSheet();
+    this.openAssignAreaModal(p);
+  }
+
+  openPatientByAreaSheet(patient: any, areaId: number): void {
+    this.patientByAreaSheet = { patient, areaId };
+  }
+
+  closePatientByAreaSheet(): void {
+    this.patientByAreaSheet = null;
+  }
+
+  onPatientByAreaRowKeydown(patient: any, areaId: number, event: KeyboardEvent): void {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      this.openPatientByAreaSheet(patient, areaId);
+    }
+  }
+
+  fromPatientByAreaChange(): void {
+    const ctx = this.patientByAreaSheet;
+    if (!ctx) {
+      return;
+    }
+    this.closePatientByAreaSheet();
+    this.openChangeAreaModal(ctx.patient);
   }
 
   getBedsDetailsForArea(areaId?: number): Array<{

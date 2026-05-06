@@ -1,7 +1,24 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
+
+export interface ShiftHandoverNoteDto {
+  id: number;
+  areaId: number;
+  noteDate: string;
+  body: string;
+  authorUserId: number;
+  updatedAt: string;
+}
+
+/** Ámbito del POST `/patients/:id/observations` (concatena línea con fecha en el campo correspondiente). */
+export type ClinicalObservationAppendScope =
+  | 'general'
+  | 'medical'
+  | 'diagnosis'
+  | 'allergies'
+  | 'specialNeeds';
 
 export interface NurseStats {
   assignedPatientsCount: number;
@@ -27,6 +44,15 @@ export interface BedWithPatient {
   } | null;
 }
 
+/** Nota clínica con autor (API enfermería / detalle paciente). */
+export interface PatientClinicalNoteDto {
+  id: number | null;
+  body: string;
+  authorName: string | null;
+  createdAt: string | null;
+  legacy: boolean;
+}
+
 export interface PatientDetail {
   id: number;
   firstName: string;
@@ -37,6 +63,12 @@ export interface PatientDetail {
   diagnosis: string;
   medications: any[];
   medicationsDetail: any[];
+  /** Medicación del día: una fila por horario programado hoy. */
+  medicationsToday?: any[];
+  /** Tratamientos/chequeos de hoy (sin medicamentos). */
+  treatmentsToday?: any[];
+  /** Tratamientos agrupados con scheduleSlots (como medicationsDetail). */
+  treatmentsDetail?: any[];
   todaySchedule: any[];
   treatmentHistory: any[];
   pendingTasks: number;
@@ -45,6 +77,14 @@ export interface PatientDetail {
   allergies: string;
   specialNeeds: string;
   generalObservations: string;
+  /** Historial de notas por campo (lista: solo `body`; detalle al pulsar). */
+  clinicalNotes?: {
+    diagnosis: PatientClinicalNoteDto[];
+    medical: PatientClinicalNoteDto[];
+    allergies: PatientClinicalNoteDto[];
+    specialNeeds: PatientClinicalNoteDto[];
+    general: PatientClinicalNoteDto[];
+  };
 }
 
 export interface TaskGrouped {
@@ -56,7 +96,9 @@ export interface TaskItem {
   id: number;
   time: string;
   hour: string;
-  type: 'medication' | 'check';
+  /** ISO 8601: hora programada exacta (filtros «próximas horas» y orden). */
+  scheduledTime?: string;
+  type: 'medication' | 'check' | 'treatment' | string;
   description: string;
   patientName: string;
   bedNumber: string;
@@ -66,6 +108,43 @@ export interface TaskItem {
   notCompleted?: boolean;
   notCompletedReason?: string;
   status: string;
+  scheduleId?: number;
+}
+
+/** Ítem del historial diario (tareas con resultado) en el área de la enfermera. */
+export interface NurseDayHistoryItem {
+  id: number;
+  scheduledTime: string;
+  time: string;
+  type: string;
+  description: string;
+  patientName: string;
+  bedNumber: string;
+  medication: string | null;
+  dosage: string | null;
+  status: string;
+  completed: boolean;
+  missed: boolean;
+  notCompletedReason?: string;
+  /** ISO: hora en que se guardó en BD (administration_history.administeredAt o respaldo schedule.updatedAt). */
+  recordedAt?: string | null;
+  /** Texto localizado para UI. */
+  recordedAtTime?: string | null;
+}
+
+export interface NurseDayHistoryResponse {
+  date: string;
+  items: NurseDayHistoryItem[];
+}
+
+/** Respuesta de `GET /nurse/shift-context` (turno en horario + asistencia del día). */
+export interface NurseShiftContext {
+  hasActiveShiftWindow: boolean;
+  shiftName: string | null;
+  shiftTime: string | null;
+  attendanceStatus: string | null;
+  onDuty: boolean;
+  summary: string;
 }
 
 export interface MedicationForPharmacy {
@@ -95,19 +174,54 @@ export class NurseService {
     return this.http.get<NurseStats>(`${this.apiUrl}/nurse/stats`);
   }
 
+  /** Turno en curso y registro de asistencia de hoy (solo rol enfermería). */
+  getShiftContext(): Observable<NurseShiftContext> {
+    return this.http.get<NurseShiftContext>(`${this.apiUrl}/nurse/shift-context`);
+  }
+
+  /** Nota de entrega de turno del área para una fecha (YYYY-MM-DD). */
+  getHandoverNote(date: string): Observable<{ note: ShiftHandoverNoteDto | null }> {
+    const params = new HttpParams().set('date', date);
+    return this.http.get<{ note: ShiftHandoverNoteDto | null }>(`${this.apiUrl}/nurse/handover-notes`, {
+      params,
+    });
+  }
+
+  /** Crear o actualizar la nota de entrega del área para una fecha. */
+  putHandoverNote(noteDate: string, body: string): Observable<{ note: ShiftHandoverNoteDto }> {
+    return this.http.put<{ note: ShiftHandoverNoteDto }>(`${this.apiUrl}/nurse/handover-notes`, {
+      noteDate,
+      body,
+    });
+  }
+
   // Obtener camas asignadas
   getMyBeds(): Observable<BedWithPatient[]> {
     return this.http.get<BedWithPatient[]>(`${this.apiUrl}/nurse/beds`);
   }
 
-  // Obtener pacientes asignados
-  getMyPatients(): Observable<PatientDetail[]> {
-    return this.http.get<PatientDetail[]>(`${this.apiUrl}/nurse/patients`);
+  /**
+   * Pacientes asignados a la enfermera.
+   * @param q Opcional: filtro servidor por nombre, cama, id o identificación (máx. 100 caracteres).
+   */
+  getMyPatients(q?: string): Observable<PatientDetail[]> {
+    const base = `${this.apiUrl}/nurse/patients`;
+    if (q != null && String(q).trim().length > 0) {
+      const enc = encodeURIComponent(String(q).trim());
+      return this.http.get<PatientDetail[]>(`${base}?q=${enc}`);
+    }
+    return this.http.get<PatientDetail[]>(base);
   }
 
   // Obtener tareas/horarios del día
   getTodayTasks(): Observable<TaskGrouped[]> {
     return this.http.get<TaskGrouped[]>(`${this.apiUrl}/nurse/tasks/today`);
+  }
+
+  /** Historial del día: medicación/tratamientos completados o no realizados. `date` = YYYY-MM-DD (local). */
+  getTasksDayHistory(date: string): Observable<NurseDayHistoryResponse> {
+    const q = encodeURIComponent(date);
+    return this.http.get<NurseDayHistoryResponse>(`${this.apiUrl}/nurse/tasks/day-history?date=${q}`);
   }
 
   // Completar tarea
@@ -140,9 +254,13 @@ export class NurseService {
     return this.http.put(`${this.apiUrl}/schedules/${scheduleId}/medication-given`, { notes });
   }
 
-  // Guardar observación del paciente
-  saveObservation(patientId: number, observation: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}/patients/${patientId}/observations`, { observation });
+  /** Añade una línea `[fecha] texto` en el campo indicado por `scope`. */
+  saveObservation(
+    patientId: number,
+    observation: string,
+    scope: ClinicalObservationAppendScope = 'general'
+  ): Observable<any> {
+    return this.http.post(`${this.apiUrl}/patients/${patientId}/observations`, { observation, scope });
   }
 
   // Actualizar observaciones médicas del paciente
@@ -169,8 +287,9 @@ export class NurseService {
     dosage: string;
     frequency: string;
     times: string[];
-    startDate?: Date;
-    endDate?: Date;
+    /** `YYYY-MM-DD` en calendario local o `Date` (se serializa en JSON). */
+    startDate?: Date | string;
+    endDate?: Date | string;
     days?: string[] | 'all';
     notes?: string;
     duration?: number;
@@ -232,9 +351,8 @@ export class NurseService {
     };
 
     if (data.scheduleType === 'single' && data.date) {
-      // Para schedule único, usar el primer horario de times o time
+      // Para schedule único, usar el primer horario de times o time (solo date/time: el backend arma la fecha en hora local)
       const timeToUse = (data.times && data.times.length > 0) ? data.times[0] : (data.time || '08:00');
-      payload.scheduledTime = this.parseDateTimeToDate(data.date, timeToUse);
       payload.date = data.date;
       payload.time = timeToUse;
     } else if (data.scheduleType === 'recurring' && data.daysOfWeek) {
@@ -264,13 +382,6 @@ export class NurseService {
     return date;
   }
 
-  private parseDateTimeToDate(dateStr: string, timeStr: string): Date {
-    const [hours, minutes] = timeStr.split(':').map(Number);
-    const date = new Date(dateStr);
-    date.setHours(hours, minutes, 0, 0);
-    return date;
-  }
-
   // Registrar administración de medicamento/tratamiento
   recordAdministration(data: {
     scheduleId: number;
@@ -284,6 +395,66 @@ export class NurseService {
   // Obtener historial de administraciones de un paciente
   getPatientHistory(patientId: number): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/nurse/patients/${patientId}/history`);
+  }
+
+  patchAdministrationHistory(
+    patientId: number,
+    historyId: number,
+    body: {
+      notes?: string;
+      reasonNotAdministered?: string;
+      description?: string;
+      status?: 'administered' | 'not_administered' | 'missed';
+    }
+  ): Observable<any> {
+    return this.http.patch(
+      `${this.apiUrl}/nurse/patients/${patientId}/administration-history/${historyId}`,
+      body
+    );
+  }
+
+  deleteAdministrationHistory(patientId: number, historyId: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/nurse/patients/${patientId}/administration-history/${historyId}`);
+  }
+
+  patchPatientSchedule(
+    patientId: number,
+    scheduleId: number,
+    body: { description?: string; notes?: string; scheduledTime?: string; status?: string }
+  ): Observable<any> {
+    return this.http.patch(`${this.apiUrl}/nurse/patients/${patientId}/schedules/${scheduleId}`, body);
+  }
+
+  /** Alta rápida de un tratamiento (no medicación) para un paciente. */
+  quickAddPatientTreatment(
+    patientId: number,
+    body: { description: string; date: string; time: string; notes?: string }
+  ): Observable<any> {
+    return this.http.post(`${this.apiUrl}/nurse/patients/${patientId}/treatments/quick`, body);
+  }
+
+  /** Aceptar, posponer o cancelar un tratamiento/chequeo (no medicamento). */
+  patchTreatmentScheduleAction(
+    patientId: number,
+    scheduleId: number,
+    body: { action: 'accept' | 'postpone' | 'cancel'; newScheduledTime?: string; notes?: string }
+  ): Observable<any> {
+    return this.http.patch(
+      `${this.apiUrl}/nurse/patients/${patientId}/treatment-schedules/${scheduleId}`,
+      body
+    );
+  }
+
+  deletePatientSchedule(patientId: number, scheduleId: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/nurse/patients/${patientId}/schedules/${scheduleId}`);
+  }
+
+  updateMedicalHistory(patientId: number, medicalHistory: string): Observable<any> {
+    return this.http.patch(`${this.apiUrl}/patients/${patientId}`, { medicalHistory });
+  }
+
+  replaceGeneralObservations(patientId: number, generalObservations: string): Observable<any> {
+    return this.http.patch(`${this.apiUrl}/patients/${patientId}`, { generalObservations });
   }
 
   // ========== GESTIÓN DE CAMAS (Reutilizando funcionalidad del admin) ==========

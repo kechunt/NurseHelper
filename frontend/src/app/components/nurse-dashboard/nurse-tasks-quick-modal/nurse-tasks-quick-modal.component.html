@@ -1,0 +1,162 @@
+<div
+  class="modal-backdrop modal-confirmation nurse-modal-backdrop-dim"
+  role="presentation"
+  (click)="onBackdropClick()"
+  style="z-index: 2290"
+>
+  <div
+    class="modal-content modal-large nurse-quick-modal-shell"
+    appModalFocusTrap
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="nurse-tasks-quick-dialog-title"
+    (click)="$event.stopPropagation()"
+  >
+    <div class="modal-header">
+      <h3 id="nurse-tasks-quick-dialog-title" i18n="@@nurseTasksQuickModal.title">⏰ Tareas pendientes</h3>
+      <button
+        type="button"
+        class="close-btn"
+        aria-label="Cerrar"
+        i18n-aria-label="@@nurseTasksQuickModal.closeAriaLabel"
+        (click)="dismissed.emit()"
+      >
+        ✕
+      </button>
+    </div>
+    <div class="modal-body nurse-quick-modal-body">
+      <p class="nurse-quick-modal-intro" i18n="@@nurseTasksQuickModal.intro">
+        Pulsa una fila para ver el tratamiento o medicamento y las acciones (completar, no realizada, posponer).
+        El módulo <strong>Tareas</strong> incluye historial del día y altas.
+      </p>
+      <div class="filters-container">
+        <div class="filter-box">
+          <label for="nurse-tasks-quick-patient" i18n="@@nurseTasksQuickModal.patientFilterLabel">👤 Paciente</label>
+          <select
+            id="nurse-tasks-quick-patient"
+            class="neuro-select neuro-select-inline"
+            [ngModel]="patientFilter"
+            (ngModelChange)="patientFilterChange.emit($event)"
+          >
+            <option value="" i18n="@@nurseTasksQuickModal.allPatientsOption">Todos los pacientes</option>
+            <option *ngFor="let patient of patients" [value]="patient.id">
+              {{ patient.name }} ({{ patient.bedNumber }})
+            </option>
+          </select>
+        </div>
+        <div class="filter-box">
+          <label for="nurse-tasks-quick-hour" i18n="@@nurseTasksQuickModal.hourFilterLabel">⏰ Horario</label>
+          <select
+            id="nurse-tasks-quick-hour"
+            class="neuro-select neuro-select-inline"
+            [ngModel]="hourFilter"
+            (ngModelChange)="hourFilterChange.emit($event)"
+          >
+            <option value="current" i18n="@@nurseTasksQuickModal.hourNext3h">Próximas 3 horas</option>
+            <option value="next1h" i18n="@@nurseTasksQuickModal.hourNext1h">Próxima 1 hora</option>
+            <option value="all" i18n="@@nurseTasksQuickModal.hourAll">Todas las horas</option>
+            <option value="morning" i18n="@@nurseTasksQuickModal.hourMorning">Mañana (06:00-12:00)</option>
+            <option value="afternoon" i18n="@@nurseTasksQuickModal.hourAfternoon">Tarde (12:00-18:00)</option>
+            <option value="evening" i18n="@@nurseTasksQuickModal.hourEvening">Noche (18:00-00:00)</option>
+            <option value="night" i18n="@@nurseTasksQuickModal.hourNight">Madrugada (00:00-06:00)</option>
+          </select>
+        </div>
+        <div class="filter-box filter-box-actions" *ngIf="patientFilter || hourFilter !== 'current'">
+          <label class="filter-box-spacer" aria-hidden="true">&nbsp;</label>
+          <button type="button" class="neuro-btn neuro-btn-sm" (click)="clearFiltersRequested.emit()" i18n="@@nurseTasksQuickModal.clearFilters">
+            🔄 Limpiar filtros
+          </button>
+        </div>
+      </div>
+      <div class="table-wrapper-neuro unified-table-container nurse-table-shell-flat">
+        <table class="unified-tasks-table neuro-table medications-modal-table nurse-tasks-table">
+          <thead>
+            <tr>
+              <th i18n="@@nurseTasksQuickModal.colTime">Hora</th>
+              <th i18n="@@nurseTasksQuickModal.colType">Tipo</th>
+              <th i18n="@@nurseTasksQuickModal.colPatient">Paciente</th>
+              <th i18n="@@nurseTasksQuickModal.colBed">Cama</th>
+              <th i18n="@@nurseTasksQuickModal.colDescription">Descripción/Medicamento</th>
+              <th i18n="@@nurseTasksQuickModal.colStatus">Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <ng-container *ngFor="let hourGroup of hourGroups">
+              <tr
+                *ngFor="let task of hourGroup.tasks || []"
+                class="task-row task-row--clickable"
+                [class.completed]="task.completed"
+                [class.not-completed]="task.notCompleted"
+                tabindex="0"
+                role="button"
+                [attr.aria-label]="taskRowAriaLabel(task)"
+                (click)="openPendingTaskFromRow(task)"
+                (keydown)="onPendingRowKeydown(task, $event)"
+              >
+                <td>
+                  <div class="time-cell">{{ task.time }}</div>
+                </td>
+                <td>
+                  <div class="task-type-plain">
+                    <span *ngIf="task.type === 'medication'" i18n="@@nurseTasksQuickModal.typeMedication">💊 Medicamento</span>
+                    <span *ngIf="task.type === 'treatment'" i18n="@@nurseTasksQuickModal.typeTreatment">🩺 Tratamiento</span>
+                    <span
+                      *ngIf="task.type === 'check' || (!task.type || (task.type !== 'medication' && task.type !== 'treatment'))"
+                      i18n="@@nurseTasksQuickModal.typeCheck"
+                    >🩺 Chequeo</span>
+                  </div>
+                </td>
+                <td>
+                  <div class="patient-name-compact">{{ task.patientName }}</div>
+                  <div *ngIf="task.notCompletedReason" class="reason-text-compact" title="{{ task.notCompletedReason }}">
+                    ⚠️ {{ task.notCompletedReason }}
+                  </div>
+                </td>
+                <td>
+                  <span class="task-bed-plain">{{ task.bedNumber }}</span>
+                </td>
+                <td>
+                  <div
+                    class="description-compact description-compact--truncate description-compact--row-preview"
+                    [title]="task.description || ''"
+                  >
+                    {{ descriptionPreview(task) }}
+                  </div>
+                </td>
+                <td>
+                  <span
+                    *ngIf="!task.completed && !task.notCompleted"
+                    class="status-indicator pending"
+                    i18n="@@nurseTasksQuickModal.statusPending"
+                  >⏳ Pendiente</span>
+                  <span
+                    *ngIf="task.completed"
+                    class="status-indicator done"
+                    i18n="@@nurseTasksQuickModal.statusDone"
+                  >✓ Completada</span>
+                  <span
+                    *ngIf="task.notCompleted"
+                    class="status-indicator not-done"
+                    i18n="@@nurseTasksQuickModal.statusNotDone"
+                  >✗ No realizada</span>
+                </td>
+              </tr>
+            </ng-container>
+          </tbody>
+        </table>
+      </div>
+      <div *ngIf="hourGroups.length === 0" class="empty-state empty-state--compact">
+        <div class="empty-icon">⏰</div>
+        <p class="empty-message empty-message--compact" i18n="@@nurseTasksQuickModal.emptyMessage">
+          No hay tareas para los filtros seleccionados
+        </p>
+      </div>
+    </div>
+    <div class="modal-footer nurse-reports-modal-footer">
+      <button type="button" class="neuro-btn neuro-btn-sm" (click)="openFullModule.emit()" i18n="@@nurseTasksQuickModal.openFullTasks">
+        ⏰ Abrir módulo Tareas
+      </button>
+      <button type="button" class="btn-primary-neuro" (click)="dismissed.emit()" i18n="@@nurseTasksQuickModal.close">Cerrar</button>
+    </div>
+  </div>
+</div>

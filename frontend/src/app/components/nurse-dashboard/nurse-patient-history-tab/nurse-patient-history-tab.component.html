@@ -1,0 +1,171 @@
+<div class="history-header-section history-header-section--table">
+  <h4 i18n="@@nursePatientHistoryTab.sectionTitle">📜 Historial de administraciones y tratamientos</h4>
+  <div class="history-filters-card">
+    <div class="history-toolbar">
+      <div class="history-filter-row">
+        <span class="history-filter-label" i18n="@@nursePatientHistoryTab.labelPeriod">Periodo</span>
+        <div class="history-filters history-filters--padded">
+          <button
+            type="button"
+            class="filter-btn-neuro filter-btn-neuro--history"
+            [class.active]="periodFilter === 'all'"
+            (click)="periodFilterChange.emit('all')"
+            i18n="@@nursePatientHistoryTab.periodAll"
+          >
+            Todos
+          </button>
+          <button
+            type="button"
+            class="filter-btn-neuro filter-btn-neuro--history"
+            [class.active]="periodFilter === 'today'"
+            (click)="periodFilterChange.emit('today')"
+            i18n="@@nursePatientHistoryTab.periodToday"
+          >
+            Hoy
+          </button>
+          <button
+            type="button"
+            class="filter-btn-neuro filter-btn-neuro--history"
+            [class.active]="periodFilter === 'week'"
+            (click)="periodFilterChange.emit('week')"
+            i18n="@@nursePatientHistoryTab.periodWeek"
+          >
+            Semana
+          </button>
+          <button
+            type="button"
+            class="filter-btn-neuro filter-btn-neuro--history"
+            [class.active]="periodFilter === 'month'"
+            (click)="periodFilterChange.emit('month')"
+            i18n="@@nursePatientHistoryTab.periodMonth"
+          >
+            Mes
+          </button>
+        </div>
+      </div>
+      <div class="history-filter-row">
+        <span class="history-filter-label" i18n="@@nursePatientHistoryTab.labelOutcome">Resultado</span>
+        <div class="history-filters history-filters--padded">
+          <button
+            type="button"
+            class="filter-btn-neuro filter-btn-neuro--history"
+            [class.active]="outcomeFilter === 'all'"
+            (click)="outcomeFilterChange.emit('all')"
+            i18n="@@nursePatientHistoryTab.outcomeAll"
+          >
+            Todos
+          </button>
+          <button
+            type="button"
+            class="filter-btn-neuro filter-btn-neuro--history"
+            [class.active]="outcomeFilter === 'done'"
+            (click)="outcomeFilterChange.emit('done')"
+            i18n="@@nursePatientHistoryTab.outcomeDone"
+          >
+            Realizados
+          </button>
+          <button
+            type="button"
+            class="filter-btn-neuro filter-btn-neuro--history"
+            [class.active]="outcomeFilter === 'postponed'"
+            (click)="outcomeFilterChange.emit('postponed')"
+            i18n="@@nursePatientHistoryTab.outcomePostponed"
+          >
+            Pospuestos
+          </button>
+          <button
+            type="button"
+            class="filter-btn-neuro filter-btn-neuro--history"
+            [class.active]="outcomeFilter === 'not_done'"
+            (click)="outcomeFilterChange.emit('not_done')"
+            i18n="@@nursePatientHistoryTab.outcomeNotDone"
+          >
+            No realizados
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="table-wrapper-neuro unified-table-container nurse-table-shell-flat" *ngIf="records.length > 0">
+  <table class="unified-tasks-table neuro-table medications-modal-table nurse-history-table">
+    <thead>
+      <tr>
+        <th i18n="@@nursePatientHistoryTab.colDate">Fecha</th>
+        <th i18n="@@nursePatientHistoryTab.colTime">Hora</th>
+        <th i18n="@@nursePatientHistoryTab.colType">Tipo</th>
+        <th i18n="@@nursePatientHistoryTab.colDescription">Descripción</th>
+        <th i18n="@@nursePatientHistoryTab.colStatus">Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr
+        *ngFor="let record of records"
+        [class.history-row-administered]="record.status === 'administered'"
+        [class.history-row-not-done]="record.status === 'not_administered' || record.status === 'missed'"
+        [class.history-row-postponed]="record.status === 'postponed' || record.source === 'postpone'"
+        class="admin-table-row--clickable"
+        role="button"
+        tabindex="0"
+        [attr.aria-label]="'Abrir detalle del historial ' + record.date + ' ' + record.time"
+        (click)="openRowActions(record)"
+        (keydown.enter)="openRowActions(record)"
+        (keydown.space)="$event.preventDefault(); openRowActions(record)"
+      >
+        <td>{{ record.date }}</td>
+        <td>{{ record.time }}</td>
+        <td><span class="frequency-text">{{ record.type }}</span></td>
+        <td>
+          <div class="med-name-table-modal history-desc-stack">
+            <span class="history-desc-title">{{ record.description }}</span>
+            <span *ngIf="record.medication" class="history-desc-med">
+              {{ record.medication }}<span *ngIf="record.dosage"> · {{ record.dosage }}</span>
+            </span>
+          </div>
+        </td>
+        <td class="history-status-cell">
+          <span
+            class="history-status-text"
+            [class.history-status-text--done]="record.status === 'administered'"
+            [class.history-status-text--bad]="record.status === 'not_administered' || record.status === 'missed'"
+            [class.history-status-text--postponed]="record.status === 'postponed' || record.source === 'postpone'"
+          >
+            {{ statusLabel(record) }}
+          </span>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<app-admin-table-row-actions-modal
+  [open]="!!selectedRecordForActions"
+  [title]="recordTitle(selectedRecordForActions)"
+  [summaryLines]="recordSummaryLines(selectedRecordForActions)"
+  (dismissed)="closeRowActions()"
+>
+  <button type="button" class="neuro-btn" *ngIf="selectedRecordForActions" (click)="execViewDetail()">
+    👁️ Ver detalle
+  </button>
+  <button
+    type="button"
+    class="neuro-btn"
+    *ngIf="canEditOrDelete(selectedRecordForActions)"
+    (click)="execEdit()"
+  >
+    ✏️ Editar
+  </button>
+  <button
+    type="button"
+    class="neuro-btn"
+    *ngIf="canEditOrDelete(selectedRecordForActions)"
+    (click)="execDelete()"
+  >
+    🗑️ Eliminar
+  </button>
+</app-admin-table-row-actions-modal>
+
+<p *ngIf="records.length === 0" class="empty-message nurse-patient-history-tab-empty" i18n="@@nursePatientHistoryTab.empty">
+  No hay registros para los filtros seleccionados
+</p>

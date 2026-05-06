@@ -30,36 +30,36 @@ const consoleFormat = winston.format.combine(
 // Crear directorio de logs si no existe
 const logsDir = path.join(__dirname, '../../logs');
 
-// Logger principal
+const prodConsoleFormat = winston.format.combine(
+  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+  winston.format.printf(({ timestamp, level, message, ...meta }) => {
+    const extra = Object.keys(meta).length ? ` ${JSON.stringify(meta)}` : '';
+    return `${timestamp} [${level}]: ${message}${extra}`;
+  })
+);
+
+// Logger principal: archivos + consola (stdout) en todos los entornos (Railway/Docker leen stdout)
 export const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
   format: logFormat,
   defaultMeta: { service: 'nursehelper-api' },
   transports: [
-    // Errores en archivo separado
     new winston.transports.File({
       filename: path.join(logsDir, 'error.log'),
       level: 'error',
       maxsize: 5242880, // 5MB
       maxFiles: 5,
     }),
-    // Todos los logs en archivo combinado
     new winston.transports.File({
       filename: path.join(logsDir, 'combined.log'),
       maxsize: 5242880, // 5MB
       maxFiles: 5,
     }),
+    new winston.transports.Console({
+      format: process.env.NODE_ENV === 'production' ? prodConsoleFormat : consoleFormat,
+    }),
   ],
 });
-
-// En desarrollo, también mostrar en consola
-if (process.env.NODE_ENV !== 'production') {
-  logger.add(
-    new winston.transports.Console({
-      format: consoleFormat,
-    })
-  );
-}
 
 // Logger específico para API requests
 export const apiLogger = logger.child({ module: 'api' });

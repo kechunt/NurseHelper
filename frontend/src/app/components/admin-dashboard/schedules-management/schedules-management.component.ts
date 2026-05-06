@@ -14,6 +14,25 @@ import {
   ShiftAttendanceHistoryItem,
 } from '../../../services/shifts.service';
 import { ShiftRealtimeService } from '../../../shared/services/shift-realtime.service';
+import { ConfirmationService } from '../../../services/confirmation.service';
+import { ToastService } from '../../../services/toast.service';
+import {
+  adminConfirmScheduleAssignWeekMessage,
+  adminConfirmScheduleBulkAssignMessage,
+  adminConfirmScheduleClearNurseMessage,
+  ADMIN_CONFIRM_SCHEDULE_ASSIGN_WEEK_TITLE,
+  ADMIN_CONFIRM_SCHEDULE_BULK_ASSIGN_TITLE,
+  ADMIN_CONFIRM_SCHEDULE_CLEAR_ALL_MESSAGE,
+  ADMIN_CONFIRM_SCHEDULE_CLEAR_ALL_TITLE,
+  ADMIN_CONFIRM_SCHEDULE_CLEAR_NURSE_TITLE,
+  ADMIN_CONFIRM_SCHEDULE_DAY_OFF_BULK_MESSAGE,
+  ADMIN_CONFIRM_SCHEDULE_DAY_OFF_MESSAGE,
+  ADMIN_CONFIRM_SCHEDULE_DAY_OFF_TITLE,
+  ADMIN_CONFIRM_SCHEDULE_YES_ASSIGN,
+  ADMIN_CONFIRM_SCHEDULE_YES_CLEAR_ALL,
+  ADMIN_CONFIRM_SCHEDULE_YES_CLEAR_NURSE,
+} from '../admin-confirmation-copy.helpers';
+import { AdminTableRowActionsModalComponent } from '../../../shared/components/admin-table-row-actions-modal/admin-table-row-actions-modal.component';
 
 type Shift = ShiftInterface & { id: string };
 type WeeklySchedule = WeeklyScheduleInterface;
@@ -21,7 +40,7 @@ type WeeklySchedule = WeeklyScheduleInterface;
 @Component({
   selector: 'app-schedules-management',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, AdminTableRowActionsModalComponent],
   templateUrl: './schedules-management.component.html',
   styleUrl: './schedules-management.component.css',
 })
@@ -71,12 +90,23 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
   selectedShiftAttendanceId: number | null = null;
   attendanceItems: ShiftAttendanceItem[] = [];
   savingAttendance = false;
+  /** Coalesce varios clics seguidos en una sola petición de guardado. */
+  private attendancePersistTimer: ReturnType<typeof setTimeout> | null = null;
   liveDateTimeLabel = '';
   liveCurrentShiftLabel = '';
   private clockTimer: ReturnType<typeof setInterval> | null = null;
   showShiftConfigSection = false;
-  attendanceSummaryFilter: ShiftAttendanceStatus | 'all' = 'all';
+  /** Por defecto: solo presentes en la tabla resumen (no todas como ausentes). */
+  attendanceSummaryFilter: ShiftAttendanceStatus | 'all' = 'present';
   attendanceSearchQuery = '';
+  /** Listado completo con acciones de toma de lista: visible solo si el usuario lo pide. */
+  showAttendanceNurseList = false;
+  /** Configuración de turnos: fila → acciones en modal. */
+  shiftConfigActionsRow: any = null;
+  /** Tabla resumen asistencia: fila → acciones en modal. */
+  summaryAttendanceActionsItem: ShiftAttendanceItem | null = null;
+  /** Listado toma de lista: fila → acciones en modal. */
+  attendanceListActionsItem: ShiftAttendanceItem | null = null;
   attendanceAreaFilter: number | null = null;
   showHistoryModal = false;
   attendanceHistory: ShiftAttendanceHistoryItem[] = [];
@@ -84,6 +114,10 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
   historyDateFrom = '';
   historyDateTo = '';
   historyShiftId: number | null = null;
+
+  /** Sustituye `prompt()` al elegir día de descanso en asignación semanal / rápida. */
+  showDayOffPickerModal = false;
+  private dayOffPickerResolve: ((value: string | null) => void) | null = null;
   
   days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
   dayNames: { [key: string]: string } = {
@@ -110,8 +144,32 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
     private adminService: AdminService,
     private shiftsService: ShiftsService,
     private exportService: ExportService,
-    private shiftRealtimeService: ShiftRealtimeService
+    private shiftRealtimeService: ShiftRealtimeService,
+    private confirmationService: ConfirmationService,
+    private toastService: ToastService
   ) {}
+
+  /** Promise resuelta al elegir día (`monday`…`sunday`) o cancelar. */
+  private pickDayOffDayAsync(): Promise<string | null> {
+    return new Promise((resolve) => {
+      this.dayOffPickerResolve = resolve;
+      this.showDayOffPickerModal = true;
+    });
+  }
+
+  confirmDayOffChoice(dayKey: string): void {
+    this.showDayOffPickerModal = false;
+    const r = this.dayOffPickerResolve;
+    this.dayOffPickerResolve = null;
+    r?.(dayKey);
+  }
+
+  cancelDayOffPicker(): void {
+    this.showDayOffPickerModal = false;
+    const r = this.dayOffPickerResolve;
+    this.dayOffPickerResolve = null;
+    r?.(null);
+  }
 
   ngOnInit(): void {
     this.initializeWeek();
@@ -126,6 +184,10 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
     if (this.clockTimer) {
       clearInterval(this.clockTimer);
       this.clockTimer = null;
+    }
+    if (this.attendancePersistTimer) {
+      clearTimeout(this.attendancePersistTimer);
+      this.attendancePersistTimer = null;
     }
   }
 
@@ -321,7 +383,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
         this.applyFilters();
         this.loading = false;
         
-        alert('⚠️ Error al cargar los turnos. Revisa la consola para más detalles.');
+        this.toastService.error('Error al cargar los turnos. Revisa la consola para más detalles.');
       }
     });
   }
@@ -476,12 +538,12 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
         this.applyFilters();
         this.generateNursesByAreaAndShift();
         this.loading = false;
-        alert('✅ Área y turno base actualizados para la enfermera');
+        this.toastService.success('Área y turno base actualizados para la enfermera');
         this.closeEditNurseSummaryModal();
       },
       error: (error) => {
         this.loading = false;
-        alert(`❌ Error al actualizar enfermera: ${error.error?.message || error.message}`);
+        this.toastService.error(`Error al actualizar enfermera: ${error.error?.message || error.message}`);
       },
     });
   }
@@ -497,14 +559,14 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
     });
     
     if (!this.selectedShift.startTime || !this.selectedShift.endTime) {
-      alert('⚠️ Las horas de inicio y fin son requeridas');
+      this.toastService.warning('Las horas de inicio y fin son requeridas');
       return;
     }
 
     const normalizedStartTime = this.normalizeTimeToHHMM(this.selectedShift.startTime);
     const normalizedEndTime = this.normalizeTimeToHHMM(this.selectedShift.endTime);
     if (!normalizedStartTime || !normalizedEndTime) {
-      alert('⚠️ Formato de hora inválido. Usa HH:MM');
+      this.toastService.warning('Formato de hora inválido. Usa HH:MM');
       return;
     }
     this.selectedShift.startTime = normalizedStartTime;
@@ -517,7 +579,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
     
     if (isNaN(shiftId)) {
       console.error('❌ ID de turno inválido:', this.selectedShift.id);
-      alert('⚠️ Error: ID de turno inválido. Por favor, recarga la página.');
+      this.toastService.warning('ID de turno inválido. Recarga la página.');
       return;
     }
 
@@ -545,7 +607,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
           };
         }
         
-        alert(`✅ Horario de ${this.selectedShift!.name} actualizado exitosamente`);
+        this.toastService.success(`Horario de ${this.selectedShift!.name} actualizado`);
         this.closeEditShiftModal();
         
         // Limpiar caché para recargar turnos actualizados
@@ -561,7 +623,9 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
           startTime: this.selectedShift.startTime,
           endTime: this.selectedShift.endTime
         });
-        alert(`Error al actualizar el horario del turno: ${error.error?.message || error.message || 'Error desconocido'}`);
+        this.toastService.error(
+          `Error al actualizar el horario del turno: ${error.error?.message || error.message || 'Error desconocido'}`
+        );
       }
     });
   }
@@ -598,22 +662,29 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
 
   // ========== TOMA DE LISTA POR TURNO ==========
 
-  loadShiftAttendance(): void {
+  loadShiftAttendance(options?: { silent?: boolean }): void {
     if (!this.attendanceDate || !this.selectedShiftAttendanceId) {
       this.attendanceItems = [];
       return;
     }
 
-    this.loading = true;
+    const silent = options?.silent === true;
+    if (!silent) {
+      this.loading = true;
+    }
     this.shiftsService.getShiftAttendance(this.attendanceDate, this.selectedShiftAttendanceId).subscribe({
       next: (items) => {
         this.attendanceItems = (items && items.length > 0) ? items : this.buildFallbackAttendanceItems();
-        this.loading = false;
+        if (!silent) {
+          this.loading = false;
+        }
       },
       error: (error) => {
         console.error('Error cargando asistencia de turno:', error);
         this.attendanceItems = this.buildFallbackAttendanceItems();
-        this.loading = false;
+        if (!silent) {
+          this.loading = false;
+        }
       },
     });
   }
@@ -630,10 +701,13 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
     }));
   }
 
+  /**
+   * Actualiza estado en memoria y programa guardado en BD (mismo flujo para present, late, justified, missing, absent).
+   */
   setAttendanceStatus(item: ShiftAttendanceItem, status: ShiftAttendanceStatus): void {
     const currentShiftId = this.resolveCurrentShiftId();
     if (!currentShiftId) {
-      alert('⚠️ No se pudo detectar el turno actual del sistema');
+      this.toastService.warning('No se pudo detectar el turno actual del sistema');
       return;
     }
     this.attendanceDate = new Date().toISOString().split('T')[0];
@@ -648,14 +722,118 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
       item.checkInAt = null;
       item.checkOutAt = null;
     }
+
+    this.schedulePersistAttendance();
   }
 
-  saveAttendanceList(): void {
-    const currentShiftId = this.resolveCurrentShiftId();
-    if (!currentShiftId) {
-      alert('⚠️ No se pudo detectar el turno actual del sistema');
+  markPresent(item: ShiftAttendanceItem): void {
+    this.setAttendanceStatus(item, 'present');
+  }
+
+  markLate(item: ShiftAttendanceItem): void {
+    this.setAttendanceStatus(item, 'late');
+  }
+
+  markJustified(item: ShiftAttendanceItem): void {
+    this.setAttendanceStatus(item, 'justified');
+  }
+
+  markMissing(item: ShiftAttendanceItem): void {
+    this.setAttendanceStatus(item, 'missing');
+  }
+
+  markAbsent(item: ShiftAttendanceItem): void {
+    this.setAttendanceStatus(item, 'absent');
+  }
+
+  openShiftConfigRowSheet(shift: any): void {
+    this.shiftConfigActionsRow = shift;
+  }
+
+  closeShiftConfigRowSheet(): void {
+    this.shiftConfigActionsRow = null;
+  }
+
+  onShiftConfigRowKeydown(shift: any, event: KeyboardEvent): void {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      this.openShiftConfigRowSheet(shift);
+    }
+  }
+
+  fromShiftConfigSheetEdit(): void {
+    const s = this.shiftConfigActionsRow;
+    if (!s) {
       return;
     }
+    this.closeShiftConfigRowSheet();
+    this.openEditShiftModal(s);
+  }
+
+  openSummaryAttendanceSheet(item: ShiftAttendanceItem): void {
+    this.summaryAttendanceActionsItem = item;
+  }
+
+  closeSummaryAttendanceSheet(): void {
+    this.summaryAttendanceActionsItem = null;
+  }
+
+  onSummaryAttendanceKeydown(item: ShiftAttendanceItem, event: KeyboardEvent): void {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      this.openSummaryAttendanceSheet(item);
+    }
+  }
+
+  openAttendanceListSheet(item: ShiftAttendanceItem): void {
+    this.attendanceListActionsItem = item;
+  }
+
+  closeAttendanceListSheet(): void {
+    this.attendanceListActionsItem = null;
+  }
+
+  onAttendanceListKeydown(item: ShiftAttendanceItem, event: KeyboardEvent): void {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      this.openAttendanceListSheet(item);
+    }
+  }
+
+  summaryAttendanceSheetSummary(item: ShiftAttendanceItem): string[] {
+    return [
+      item.nurseName,
+      `${this.getAreaName(item.assignedAreaId)}`,
+      `${this.getAttendanceStatusLabel(item.status)}`,
+      this.formatDateTime(item.checkInAt),
+    ];
+  }
+
+  attendanceListSheetSummary(item: ShiftAttendanceItem): string[] {
+    return [
+      item.nurseName,
+      `${this.getAreaName(item.assignedAreaId)}`,
+      `${this.getAttendanceStatusLabel(item.status)}`,
+    ];
+  }
+
+  /** Agrupa cambios rápidos y persiste la lista completa en la BD (mismo endpoint que antes el botón Guardar). */
+  private schedulePersistAttendance(): void {
+    if (this.attendancePersistTimer) {
+      clearTimeout(this.attendancePersistTimer);
+    }
+    this.attendancePersistTimer = setTimeout(() => {
+      this.attendancePersistTimer = null;
+      this.persistAttendanceList();
+    }, 450);
+  }
+
+  private persistAttendanceList(): void {
+    const currentShiftId = this.resolveCurrentShiftId();
+    if (!currentShiftId || !this.attendanceItems.length) {
+      return;
+    }
+
     this.attendanceDate = new Date().toISOString().split('T')[0];
     this.selectedShiftAttendanceId = currentShiftId;
 
@@ -668,19 +846,17 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
     });
 
     this.savingAttendance = true;
-    this.shiftsService
-      .saveShiftAttendance(this.attendanceDate, this.selectedShiftAttendanceId, payload)
-      .subscribe({
-        next: (response) => {
-          this.savingAttendance = false;
-          alert(`✅ Lista guardada exitosamente (${response.saved} registros)`);
-          this.loadShiftAttendance();
-        },
-        error: (error) => {
-          this.savingAttendance = false;
-          alert(`❌ Error guardando lista: ${error.error?.message || error.message}`);
-        },
-      });
+    this.shiftsService.saveShiftAttendance(this.attendanceDate, currentShiftId, payload).subscribe({
+      next: () => {
+        this.savingAttendance = false;
+        this.loadShiftAttendance({ silent: true });
+      },
+      error: (error) => {
+        this.savingAttendance = false;
+        this.toastService.error(`No se pudo guardar en el servidor: ${error.error?.message || error.message}`);
+        this.loadShiftAttendance({ silent: true });
+      },
+    });
   }
 
   getAttendanceCount(status: ShiftAttendanceStatus): number {
@@ -689,10 +865,33 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
 
   setAttendanceSummaryFilter(status: ShiftAttendanceStatus): void {
     this.attendanceSummaryFilter = this.attendanceSummaryFilter === status ? 'all' : status;
+    this.summaryAttendanceActionsItem = null;
   }
 
   toggleShiftConfigSection(): void {
     this.showShiftConfigSection = !this.showShiftConfigSection;
+  }
+
+  toggleAttendanceNurseList(): void {
+    this.showAttendanceNurseList = !this.showAttendanceNurseList;
+  }
+
+  /** Título de la tabla resumen según la pastilla de estado activa. */
+  getAttendanceTableTitle(): string {
+    switch (this.attendanceSummaryFilter) {
+      case 'present':
+        return 'Presentes en este turno';
+      case 'late':
+        return 'Llegadas tarde en este turno';
+      case 'justified':
+        return 'Ausencias justificadas';
+      case 'absent':
+        return 'Ausentes en este turno';
+      case 'missing':
+        return 'Faltas en este turno';
+      default:
+        return 'Todas las enfermeras en este turno';
+    }
   }
 
   clearAttendanceFilters(): void {
@@ -784,7 +983,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
 
   exportAttendanceHistoryCsv(): void {
     if (!this.attendanceHistory.length) {
-      alert('⚠️ No hay datos en el historial para exportar');
+      this.toastService.warning('No hay datos en el historial para exportar');
       return;
     }
 
@@ -805,7 +1004,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
 
   exportAttendanceHistoryExcel(): void {
     if (!this.attendanceHistory.length) {
-      alert('⚠️ No hay datos en el historial para exportar');
+      this.toastService.warning('No hay datos en el historial para exportar');
       return;
     }
 
@@ -981,7 +1180,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
   /**
    * Asigna el mismo turno a toda la semana (L-D) con día de descanso
    */
-  assignWeekShift(schedule: any, shiftValue: any): void {
+  async assignWeekShift(schedule: any, shiftValue: any): Promise<void> {
     if (!shiftValue) return;
     
     console.log('🔄 Asignando turno semanal:', { shiftValue, schedule });
@@ -1001,33 +1200,36 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
     const nurse = this.nurses.find(n => n.id === schedule.nurseId);
     const shiftName = this.getShiftName(shiftId);
     
-    if (!confirm(`¿Asignar ${shiftName} de Lunes a Domingo para ${nurse?.firstName} ${nurse?.lastName}?`)) {
+    const proceed = await this.confirmationService.confirm({
+      title: ADMIN_CONFIRM_SCHEDULE_ASSIGN_WEEK_TITLE,
+      message: adminConfirmScheduleAssignWeekMessage(
+        shiftName,
+        nurse?.firstName,
+        nurse?.lastName
+      ),
+      type: 'warning',
+      confirmText: ADMIN_CONFIRM_SCHEDULE_YES_ASSIGN,
+      cancelText: 'Cancelar',
+    });
+    if (!proceed) {
       return;
     }
     
     // Preguntar por día de descanso (solo si no es "Descanso" el turno)
     let dayOffOption = '';
     if (shiftId !== 'off') {
-      const dayOffConfirm = confirm('¿Deseas asignar un día de descanso?');
+      const dayOffConfirm = await this.confirmationService.confirm({
+        title: ADMIN_CONFIRM_SCHEDULE_DAY_OFF_TITLE,
+        message: ADMIN_CONFIRM_SCHEDULE_DAY_OFF_MESSAGE,
+        type: 'info',
+        confirmText: 'Sí',
+        cancelText: 'No',
+      });
       
       if (dayOffConfirm) {
-        const dayOffChoice = prompt(
-          'Selecciona el día de descanso:\n' +
-          '1 - Lunes\n' +
-          '2 - Martes\n' +
-          '3 - Miércoles\n' +
-          '4 - Jueves\n' +
-          '5 - Viernes\n' +
-          '6 - Sábado\n' +
-          '7 - Domingo',
-          '7'
-        );
-        
-        if (dayOffChoice) {
-          const dayIndex = parseInt(dayOffChoice) - 1;
-          if (dayIndex >= 0 && dayIndex < 7) {
-            dayOffOption = this.days[dayIndex];
-          }
+        const picked = await this.pickDayOffDayAsync();
+        if (picked) {
+          dayOffOption = picked;
         }
       }
     }
@@ -1043,7 +1245,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
     console.log('✅ Turno semanal asignado:', schedule);
     this.generateNursesByAreaAndShift();
     const dayOffText = dayOffOption ? ` (con ${this.dayNames[dayOffOption]} de descanso)` : '';
-    alert(`✅ ${shiftName} asignado de Lunes a Domingo${dayOffText}`);
+    this.toastService.success(`${shiftName} asignado de lunes a domingo${dayOffText}`);
   }
 
   getShiftName(shiftType: string | number): string {
@@ -1107,10 +1309,17 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
     return colors[String(shiftType)] || '#e0e5ec';
   }
 
-  clearAllSchedules(): void {
-    if (!confirm('¿Estás seguro de limpiar TODOS los turnos programados?')) {
-        return;
-      }
+  async clearAllSchedules(): Promise<void> {
+    const ok = await this.confirmationService.confirm({
+      title: ADMIN_CONFIRM_SCHEDULE_CLEAR_ALL_TITLE,
+      message: ADMIN_CONFIRM_SCHEDULE_CLEAR_ALL_MESSAGE,
+      type: 'danger',
+      confirmText: ADMIN_CONFIRM_SCHEDULE_YES_CLEAR_ALL,
+      cancelText: 'Cancelar',
+    });
+    if (!ok) {
+      return;
+    }
 
     this.weeklySchedules.forEach(schedule => {
       this.days.forEach(day => {
@@ -1119,12 +1328,19 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
     });
     
     this.generateNursesByAreaAndShift();
-    alert('✅ Todos los turnos han sido limpiados');
+    this.toastService.success('Todos los turnos han sido limpiados');
   }
 
-  clearNurseSchedule(nurseId: number): void {
+  async clearNurseSchedule(nurseId: number): Promise<void> {
     const nurse = this.nurses.find(n => n.id === nurseId);
-    if (!confirm(`¿Limpiar todos los turnos de ${nurse?.firstName} ${nurse?.lastName}?`)) {
+    const ok = await this.confirmationService.confirm({
+      title: ADMIN_CONFIRM_SCHEDULE_CLEAR_NURSE_TITLE,
+      message: adminConfirmScheduleClearNurseMessage(nurse?.firstName, nurse?.lastName),
+      type: 'warning',
+      confirmText: ADMIN_CONFIRM_SCHEDULE_YES_CLEAR_NURSE,
+      cancelText: 'Cancelar',
+    });
+    if (!ok) {
       return;
     }
 
@@ -1134,7 +1350,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
         (schedule as any)[day] = '';
       });
       this.generateNursesByAreaAndShift();
-      alert(`✅ Turnos de ${nurse?.firstName} ${nurse?.lastName} limpiados`);
+      this.toastService.success(`Turnos de ${nurse?.firstName} ${nurse?.lastName} limpiados`);
     }
   }
 
@@ -1144,7 +1360,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
   saveNurseSchedule(nurseId: number): void {
     const nurse = this.nurses.find(n => n.id === nurseId);
     if (!nurse) {
-      alert('⚠️ Enfermera no encontrada');
+      this.toastService.warning('Enfermera no encontrada');
       return;
     }
 
@@ -1155,7 +1371,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
     });
 
     if (!schedule) {
-      alert('⚠️ No se encontró la programación de esta enfermera');
+      this.toastService.warning('No se encontró la programación de esta enfermera');
       return;
     }
 
@@ -1213,7 +1429,9 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
     });
     
     if (nurseSchedule.shifts.length === 0) {
-      alert(`⚠️ No hay turnos asignados para ${nurse.firstName} ${nurse.lastName}.\n\nPor favor, asigna turnos antes de guardar.`);
+      this.toastService.warning(
+        `No hay turnos asignados para ${nurse.firstName} ${nurse.lastName}. Asigna turnos antes de guardar.`
+      );
       return;
     }
     
@@ -1224,7 +1442,9 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
       next: (response) => {
         console.log('✅ Turnos guardados exitosamente:', response);
         this.loading = false;
-        alert(`✅ Turnos de ${nurse.firstName} ${nurse.lastName} guardados exitosamente!\n\n${response.shiftsCreated || nurseSchedule.shifts.length} turnos guardados en la base de datos.`);
+        this.toastService.success(
+          `Turnos guardados (${nurse.firstName} ${nurse.lastName}): ${response.shiftsCreated || nurseSchedule.shifts.length} en base de datos`
+        );
         
         // Recargar los schedules después de guardar
         setTimeout(() => {
@@ -1236,7 +1456,9 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
         this.loading = false;
         console.error('❌ Error al guardar turnos:', error);
         const errorMsg = error.error?.message || error.message || 'Error desconocido';
-        alert(`❌ Error al guardar los turnos de ${nurse.firstName} ${nurse.lastName}:\n\n${errorMsg}\n\nRevisa la consola (F12) para más detalles.`);
+        this.toastService.error(
+          `Error al guardar turnos (${nurse.firstName} ${nurse.lastName}): ${errorMsg}`
+        );
       }
     });
   }
@@ -1320,7 +1542,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
     console.log('Datos completos:', JSON.stringify(schedulesToSave, null, 2));
     
     if (schedulesToSave.length === 0) {
-      alert('⚠️ No hay turnos asignados para guardar.\n\nPor favor, asigna turnos a las enfermeras antes de guardar.');
+      this.toastService.warning('No hay turnos asignados para guardar. Asigna turnos antes de guardar.');
       return;
     }
     
@@ -1332,7 +1554,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
         console.log(`Turnos guardados en BD: ${response.shiftsCreated}`);
         
         this.loading = false;
-        alert(`✅ ¡Programación guardada exitosamente!\n\n${response.shiftsCreated} turnos guardados en la base de datos.`);
+        this.toastService.success(`Programación guardada: ${response.shiftsCreated} turnos en base de datos`);
         
         // Recargar inmediatamente
         setTimeout(() => {
@@ -1349,7 +1571,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
         console.error('Datos enviados:', schedulesToSave);
         
         const errorMsg = error.error?.message || error.message || 'Error desconocido';
-        alert(`❌ Error al guardar:\n\n${errorMsg}\n\nRevisa la consola (F12) para más detalles.`);
+        this.toastService.error(`Error al guardar programación: ${errorMsg}`);
       }
     });
   }
@@ -1598,46 +1820,45 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
     }
   }
 
-  applyQuickAssignment(): void {
+  async applyQuickAssignment(): Promise<void> {
     if (!this.quickAssignShift) {
       return;
     }
 
     if (this.selectedNurses.size === 0) {
-      alert('⚠️ Por favor, selecciona al menos una enfermera');
+      this.toastService.warning('Selecciona al menos una enfermera');
       return;
     }
 
     const shiftName = this.getShiftName(this.quickAssignShift);
     const nurseCount = this.selectedNurses.size;
 
-    if (!confirm(`¿Asignar turno ${shiftName} a las ${nurseCount} enfermera(s) seleccionada(s)?`)) {
+    const proceed = await this.confirmationService.confirm({
+      title: ADMIN_CONFIRM_SCHEDULE_BULK_ASSIGN_TITLE,
+      message: adminConfirmScheduleBulkAssignMessage(shiftName, nurseCount),
+      type: 'warning',
+      confirmText: ADMIN_CONFIRM_SCHEDULE_YES_ASSIGN,
+      cancelText: 'Cancelar',
+    });
+    if (!proceed) {
       return;
     }
 
     // Preguntar por día de descanso
     let dayOffOption = '';
     if (this.quickAssignShift !== 'off') {
-      const dayOffConfirm = confirm('¿Deseas asignar un día de descanso automáticamente?');
+      const dayOffConfirm = await this.confirmationService.confirm({
+        title: ADMIN_CONFIRM_SCHEDULE_DAY_OFF_TITLE,
+        message: ADMIN_CONFIRM_SCHEDULE_DAY_OFF_BULK_MESSAGE,
+        type: 'info',
+        confirmText: 'Sí',
+        cancelText: 'No',
+      });
       
       if (dayOffConfirm) {
-        const dayOffChoice = prompt(
-          'Selecciona el día de descanso:\n' +
-          '1 - Lunes\n' +
-          '2 - Martes\n' +
-          '3 - Miércoles\n' +
-          '4 - Jueves\n' +
-          '5 - Viernes\n' +
-          '6 - Sábado\n' +
-          '7 - Domingo',
-          '7'
-        );
-        
-        if (dayOffChoice) {
-          const dayIndex = parseInt(dayOffChoice) - 1;
-          if (dayIndex >= 0 && dayIndex < 7) {
-            dayOffOption = this.days[dayIndex];
-          }
+        const picked = await this.pickDayOffDayAsync();
+        if (picked) {
+          dayOffOption = picked;
         }
       }
     }
@@ -1657,7 +1878,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
 
     this.generateNursesByAreaAndShift();
     const dayOffText = dayOffOption ? ` (con ${this.dayNames[dayOffOption]} de descanso)` : '';
-    alert(`✅ Turno ${shiftName} asignado a ${nurseCount} enfermera(s)${dayOffText}`);
+    this.toastService.success(`Turno ${shiftName} asignado a ${nurseCount} enfermera(s)${dayOffText}`);
     this.quickAssignShift = '';
     this.selectedNurses.clear();
   }

@@ -1,0 +1,181 @@
+/* Formulario agregar medicamento (encapsulado; antes en nurse-dashboard). */
+.modal-content.modal-medication {
+  max-width: 700px;
+}
+
+.medication-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-row {
+  display: flex;
+  gap: 1rem;
+}
+
+.form-row.two-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.form-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group label {
+  color: #4a5568;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.day-checkbox {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+}
+
+.day-checkbox input[type='checkbox'] {
+  display: none;
+}
+
+.hint-text {
+  color: #a0aec0;
+  font-weight: 400;
+  font-size: 0.8rem;
+}
+
+.neuro-input {
+  padding: 12px 16px;
+  background: #e0e5ec;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  color: #4a5568;
+  box-shadow: inset 6px 6px 12px #bebebe, inset -6px -6px 12px #ffffff;
+  transition: all 0.2s ease;
+}
+
+.neuro-input:focus {
+  outline: none;
+  box-shadow: inset 8px 8px 16px #bebebe, inset -8px -8px 16px #ffffff;
+}
+
+.neuro-input.small {
+  padding: 8px 12px;
+  font-size: 0.9rem;
+}
+
+.times-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.time-input-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.remove-time-btn {
+  background: #e0e5ec;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: #4a5568;
+  cursor: pointer;
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+}
+
+.remove-time-btn:hover {
+  box-shadow: 2px 2px 4px #bebebe, -2px -2px 4px #ffffff;
+}
+
+.add-time-btn {
+  background: #e0e5ec;
+  color: #4a5568;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+  transition: all 0.2s ease;
+  align-self: flex-start;
+}
+
+.add-time-btn:hover {
+  box-shadow: 2px 2px 4px #bebebe, -2px -2px 4px #ffffff;
+}
+
+.days-selector {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.day-label {
+  background: #e0e5ec;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #4a5568;
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+  transition: all 0.2s ease;
+  min-width: 50px;
+  text-align: center;
+  user-select: none;
+  border: none;
+  outline: none;
+}
+
+.day-label:hover {
+  box-shadow: 2px 2px 4px #bebebe, -2px -2px 4px #ffffff;
+}
+
+.day-checkbox input[type='checkbox']:checked + .day-label {
+  background: #a7f3d0 !important;
+  box-shadow: 4px 4px 8px #86efac, -4px -4px 8px #c8fde1 !important;
+  border: none !important;
+  color: #065f46;
+  font-weight: 700;
+}
+
+.day-checkbox input[type='checkbox']:checked + .day-label:hover {
+  background: #86efac !important;
+  box-shadow: 2px 2px 4px #6ee7b7, -2px -2px 4px #a7f3d0 !important;
+  border: none !important;
+}
+
+.select-all-btn {
+  background: #e0e5ec;
+  color: #4a5568;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+  transition: all 0.2s ease;
+}
+
+.select-all-btn:hover {
+  box-shadow: 2px 2px 4px #bebebe, -2px -2px 4px #ffffff;
+}

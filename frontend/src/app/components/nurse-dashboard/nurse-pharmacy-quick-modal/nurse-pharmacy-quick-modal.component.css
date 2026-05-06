@@ -1,0 +1,176 @@
+.tasks-actions.header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.summary-inline {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.summary-badge {
+  background: #e0e5ec;
+  padding: 6px 14px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  color: #4a5568;
+  font-weight: 600;
+  box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
+  white-space: nowrap;
+}
+
+.nurse-quick-modal-shell {
+  max-width: min(960px, 96vw);
+  border-radius: 22px;
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.42);
+  border: none;
+}
+
+.nurse-quick-modal-body {
+  max-height: min(70vh, 34rem);
+  overflow: auto;
+  padding: 0.5rem 1.5rem 1rem;
+}
+
+.nurse-quick-modal-body .table-wrapper-neuro.nurse-table-shell-flat {
+  padding: 0.45rem 0.4rem;
+  box-sizing: border-box;
+  border-radius: 12px;
+}
+
+.nurse-quick-modal-body .unified-tasks-table th,
+.nurse-quick-modal-body .unified-tasks-table td {
+  padding: 0.45rem 0.5rem;
+  vertical-align: middle;
+}
+
+.nurse-quick-modal-toolbar {
+  justify-content: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+.pharmacy-footer--modal {
+  margin-top: 1rem;
+  padding-top: 0.25rem;
+}
+
+.med-name-compact {
+  font-weight: 600;
+  color: #4a5568;
+  font-size: 0.95rem;
+}
+
+.pharmacy-dose-count-plain {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #4a5568;
+  white-space: nowrap;
+}
+
+.pharmacy-dosage-plain {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.pharmacy-view-patients-btn {
+  appearance: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #4a5568;
+  background: #e0e5ec;
+  border: none;
+  border-radius: 14px;
+  padding: 0.5rem 1.1rem;
+  box-shadow: 5px 5px 10px rgba(163, 177, 198, 0.55), -5px -5px 10px rgba(255, 255, 255, 0.85);
+  transition: box-shadow 0.18s ease, transform 0.12s ease;
+  white-space: nowrap;
+}
+
+.pharmacy-view-patients-btn:hover {
+  box-shadow: 6px 6px 12px rgba(163, 177, 198, 0.6), -6px -6px 12px rgba(255, 255, 255, 0.95);
+}
+
+.pharmacy-view-patients-btn:active {
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+  transform: scale(0.98);
+}
+
+.pharmacy-patients-cell {
+  vertical-align: middle !important;
+  text-align: center;
+}
+
+.pharmacy-patients-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.pharmacy-patient-count-text {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.pharmacy-footer {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: center;
+}
+
+.pharmacy-footer .neuro-btn.btn-primary-neuro.large {
+  min-width: min(100%, 360px);
+  border-radius: 50px;
+}
+
+.empty-message {
+  text-align: center;
+  padding: 3rem;
+  color: #a0aec0;
+  font-style: italic;
+  font-size: 1rem;
+}
+
+.nurse-reports-modal-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 1rem 1.5rem 1.25rem;
+}
+
+.nurse-reports-modal-footer .btn-primary-neuro {
+  margin-left: auto;
+}
+
+.status-indicator {
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  display: inline-block;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.status-indicator.pending {
+  background: #e0e5ec;
+  color: #4a5568;
+  box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
+}
+
+.status-indicator.done {
+  background: #e0e5ec;
+  color: #4a5568;
+  box-shadow: 3px 3px 6px #bebebe, -3px -3px 6px #ffffff;
+  opacity: 0.7;
+}

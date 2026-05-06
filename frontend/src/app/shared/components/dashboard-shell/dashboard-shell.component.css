@@ -1,0 +1,7 @@
+/**
+ * Layout en `dashboard-layout.css` (import global en `src/styles.css`)
+ * para que `.nurse-dashboard .dashboard-header` coincida con el host del shell.
+ */
+:host {
+  display: block;
+}

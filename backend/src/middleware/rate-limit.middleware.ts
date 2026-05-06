@@ -23,8 +23,10 @@ class RateLimiter {
     this.windowMs = windowMs;
     this.maxRequests = maxRequests;
 
-    // Limpiar entradas expiradas cada minuto
-    setInterval(() => this.cleanup(), 60000);
+    // Limpiar entradas expiradas cada minuto (omitir en tests Jest para no dejar handles abiertos)
+    if (process.env.NODE_ENV !== 'test') {
+      setInterval(() => this.cleanup(), 60000);
+    }
   }
 
   private cleanup(): void {

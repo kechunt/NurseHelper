@@ -10,6 +10,7 @@ import { AreasManagementComponent } from '../admin-dashboard/areas-management/ar
 import { BedsManagementComponent } from '../admin-dashboard/beds-management/beds-management.component';
 import { PatientsManagementComponent } from '../admin-dashboard/patients-management/patients-management.component';
 import { SchedulesManagementComponent } from '../admin-dashboard/schedules-management/schedules-management.component';
+import { DashboardUserProfileModalComponent } from '../../shared/components/dashboard-user-profile-modal/dashboard-user-profile-modal.component';
 
 @Component({
   selector: 'app-supervisor-dashboard',
@@ -17,6 +18,7 @@ import { SchedulesManagementComponent } from '../admin-dashboard/schedules-manag
   imports: [
     CommonModule,
     RouterModule,
+    DashboardUserProfileModalComponent,
     OverviewComponent,
     UsersManagementComponent,
     StaffManagementComponent,
@@ -34,6 +36,16 @@ export class SupervisorDashboardComponent implements OnInit {
   private readonly allowedTabs = new Set(['overview', 'users', 'staff', 'areas', 'beds', 'patients', 'schedules']);
   private readonly visitedTabs = new Set<string>(['overview']);
 
+  readonly supervisorTabOrder: readonly string[] = [
+    'overview',
+    'users',
+    'staff',
+    'areas',
+    'beds',
+    'patients',
+    'schedules',
+  ];
+
   constructor(
     private authService: AuthService,
     private adminService: AdminService,
@@ -42,6 +54,12 @@ export class SupervisorDashboardComponent implements OnInit {
   
   get currentUser() {
     return this.authService.currentUser;
+  }
+
+  get headerUserPhoneLine(): string | null {
+    const p = this.authService.currentUser()?.phone;
+    const s = p != null ? String(p).trim() : '';
+    return s.length > 0 ? `📞 ${s}` : null;
   }
 
   ngOnInit(): void {
@@ -72,6 +90,35 @@ export class SupervisorDashboardComponent implements OnInit {
     this.activeTab = tab;
     this.visitedTabs.add(tab);
     this.persistActiveTab();
+  }
+
+  onSupervisorTabKeydown(event: KeyboardEvent, currentTab: string): void {
+    const key = event.key;
+    if (key !== 'ArrowLeft' && key !== 'ArrowRight' && key !== 'Home' && key !== 'End') {
+      return;
+    }
+    event.preventDefault();
+
+    let idx = this.supervisorTabOrder.indexOf(currentTab);
+    if (idx < 0) {
+      return;
+    }
+
+    if (key === 'Home') {
+      idx = 0;
+    } else if (key === 'End') {
+      idx = this.supervisorTabOrder.length - 1;
+    } else if (key === 'ArrowRight') {
+      idx = Math.min(this.supervisorTabOrder.length - 1, idx + 1);
+    } else {
+      idx = Math.max(0, idx - 1);
+    }
+
+    const next = this.supervisorTabOrder[idx];
+    this.setActiveTab(next);
+    queueMicrotask(() => {
+      document.getElementById(`supervisor-tab-${next}`)?.focus();
+    });
   }
 
   goToOverviewFromLogo(): void {

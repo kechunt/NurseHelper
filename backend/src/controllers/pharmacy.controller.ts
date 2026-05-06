@@ -17,6 +17,8 @@ import {
   EXPIRING_SOON_DAYS,
 } from '../utils/inventory-expiry';
 import { Between } from 'typeorm';
+import { randomUUID } from 'crypto';
+import { logger } from '../utils/logger';
 
 /** Stock + caducidad (columna `expiryDate`). Lotes futuros: tabla aparte por entrada. */
 function applyMedicationStockAndStatus(medication: Medication, stock: number): void {
@@ -199,7 +201,7 @@ export const getMedicationRequests = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error('Error al obtener solicitudes:', error);
+    logger.error('Error al obtener solicitudes:', error);
     res.status(500).json({ message: 'Error al obtener solicitudes' });
   }
 };
@@ -252,7 +254,7 @@ export const updateRequestStatus = async (req: Request, res: Response) => {
     await requestRepo.save(request);
     res.json({ message: 'Estado actualizado', request });
   } catch (error) {
-    console.error('Error al actualizar estado:', error);
+    logger.error('Error al actualizar estado:', error);
     res.status(500).json({ message: 'Error al actualizar estado' });
   }
 };
@@ -331,7 +333,7 @@ export const deliverMedication = async (req: Request, res: Response) => {
       delivery
     });
   } catch (error) {
-    console.error('Error al registrar entrega:', error);
+    logger.error('Error al registrar entrega:', error);
     res.status(500).json({ message: 'Error al registrar entrega' });
   }
 };
@@ -349,6 +351,7 @@ export const getDeliveryHistory = async (req: Request, res: Response) => {
       .leftJoinAndSelect('dh.medication', 'medication')
       .leftJoinAndSelect('dh.requestedBy', 'nurse')
       .leftJoinAndSelect('dh.deliveredBy', 'pharmacist')
+      .leftJoinAndSelect('dh.request', 'request')
       .orderBy('dh.deliveredAt', 'DESC');
 
     if (startDate && endDate) {
@@ -389,6 +392,8 @@ export const getDeliveryHistory = async (req: Request, res: Response) => {
     const history = {
       deliveries: deliveries.map(d => ({
         ...d,
+        requestedAt: (d as any).request?.createdAt ?? null,
+        statusUpdatedAt: (d as any).request?.updatedAt ?? null,
         type: 'delivery'
       })),
       cancelled: cancelledRequests.map(r => ({
@@ -398,6 +403,7 @@ export const getDeliveryHistory = async (req: Request, res: Response) => {
         dosage: r.dosage,
         quantity: r.quantity,
         requestedBy: r.requestedBy,
+        requestedAt: r.createdAt,
         cancelledAt: r.updatedAt,
         notes: r.notes,
         patientsInfo: r.patientsInfo,
@@ -431,7 +437,7 @@ export const getDeliveryHistory = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error('Error al obtener historial:', error);
+    logger.error('Error al obtener historial:', error);
     res.status(500).json({ message: 'Error al obtener historial' });
   }
 };
@@ -465,7 +471,7 @@ export const getInventory = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error('Error al obtener inventario:', error);
+    logger.error('Error al obtener inventario:', error);
     res.status(500).json({ message: 'Error al obtener inventario' });
   }
 };
@@ -491,7 +497,7 @@ export const updateMedicationStock = async (req: Request, res: Response) => {
     await medicationRepo.save(medication);
     res.json({ message: 'Stock actualizado', medication });
   } catch (error) {
-    console.error('Error al actualizar stock:', error);
+    logger.error('Error al actualizar stock:', error);
     res.status(500).json({ message: 'Error al actualizar stock' });
   }
 };
@@ -591,7 +597,7 @@ export const postInventoryMovement = async (req: Request, res: Response) => {
       await queryRunner.release();
     }
   } catch (error) {
-    console.error('Error al registrar movimiento de inventario:', error);
+    logger.error('Error al registrar movimiento de inventario:', error);
     res.status(500).json({ message: 'Error al registrar movimiento de inventario' });
   }
 };
@@ -652,7 +658,7 @@ export const getInventoryMovements = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error('Error al obtener movimientos de inventario:', error);
+    logger.error('Error al obtener movimientos de inventario:', error);
     res.status(500).json({ message: 'Error al obtener movimientos de inventario' });
   }
 };
@@ -698,7 +704,7 @@ export const createMedication = async (req: Request, res: Response) => {
     await medicationRepo.save(medication);
     res.json({ message: 'Medicamento creado exitosamente', medication });
   } catch (error) {
-    console.error('Error al crear medicamento:', error);
+    logger.error('Error al crear medicamento:', error);
     res.status(500).json({ message: 'Error al crear medicamento' });
   }
 };
@@ -720,14 +726,14 @@ export const deleteMedication = async (req: Request, res: Response) => {
 
     res.json({ message: 'Medicamento eliminado exitosamente' });
   } catch (error) {
-    console.error('Error al eliminar medicamento:', error);
+    logger.error('Error al eliminar medicamento:', error);
     res.status(500).json({ message: 'Error al eliminar medicamento' });
   }
 };
 
 export const createMedicationRequest = async (req: Request, res: Response) => {
   try {
-    console.log('📥 Solicitud recibida para crear medicamento:', {
+    logger.info('📥 Solicitud recibida para crear medicamento:', {
       body: req.body,
       headers: req.headers.authorization ? 'Token presente' : 'Sin token'
     });
@@ -744,33 +750,39 @@ export const createMedicationRequest = async (req: Request, res: Response) => {
     const authReq = req as AuthRequest;
     const nurseId = authReq.user?.id;
 
-    console.log('👤 Usuario autenticado:', {
+    logger.info('👤 Usuario autenticado:', {
       nurseId: nurseId,
       user: authReq.user ? `${authReq.user.firstName} ${authReq.user.lastName}` : 'No encontrado'
     });
 
     if (!nurseId) {
-      console.error('❌ Error: Usuario no autenticado');
+      logger.error('❌ Error: Usuario no autenticado');
       return res.status(401).json({ message: 'Usuario no autenticado' });
     }
 
-    if (!medicationName || !dosage || !quantity) {
-      console.error('❌ Error: Datos faltantes', {
+    const quantityNum =
+      typeof quantity === 'number' && Number.isFinite(quantity)
+        ? Math.floor(quantity)
+        : parseInt(String(quantity ?? '').trim(), 10);
+
+    if (!medicationName || !dosage || !quantity || Number.isNaN(quantityNum) || quantityNum < 1) {
+      logger.error('❌ Error: Datos faltantes o cantidad inválida', {
         medicationName: !!medicationName,
         dosage: !!dosage,
-        quantity: !!quantity
+        quantity: !!quantity,
+        quantityNum,
       });
-      return res.status(400).json({ 
-        message: 'Nombre del medicamento, dosis y cantidad son requeridos',
+      return res.status(400).json({
+        message: 'Nombre del medicamento, dosis y cantidad son requeridos (cantidad entera ≥ 1)',
         received: {
           medicationName: medicationName || 'faltante',
           dosage: dosage || 'faltante',
-          quantity: quantity || 'faltante'
-        }
+          quantity: quantity || 'faltante',
+        },
       });
     }
 
-    console.log('🔍 Buscando medicamento en BD:', { medicationName, dosage });
+    logger.info('🔍 Buscando medicamento en BD:', { medicationName, dosage });
     const medicationRepo = AppDataSource.getRepository(Medication);
     let medication = await medicationRepo.findOne({
       where: { name: medicationName, dosage: dosage, isActive: true }
@@ -778,7 +790,7 @@ export const createMedicationRequest = async (req: Request, res: Response) => {
 
     // Si el medicamento no existe, crearlo automáticamente
     if (!medication) {
-      console.log('➕ Creando nuevo medicamento en BD...');
+      logger.info('➕ Creando nuevo medicamento en BD...');
       medication = new Medication();
       medication.name = medicationName;
       medication.dosage = dosage;
@@ -789,28 +801,35 @@ export const createMedicationRequest = async (req: Request, res: Response) => {
       medication.description = `Medicamento solicitado desde enfermería`;
       
       medication = await medicationRepo.save(medication);
-      console.log(`✅ Medicamento creado automáticamente: ID=${medication.id}, ${medicationName} ${dosage}`);
+      logger.info(`✅ Medicamento creado automáticamente: ID=${medication.id}, ${medicationName} ${dosage}`);
     } else {
-      console.log(`✅ Medicamento encontrado: ID=${medication.id}`);
+      logger.info(`✅ Medicamento encontrado: ID=${medication.id}`);
     }
 
-    console.log('📝 Creando solicitud de medicamento...');
+    logger.info('📝 Creando solicitud de medicamento...');
     const requestRepo = AppDataSource.getRepository(MedicationRequest);
-    const requestCount = await requestRepo.count();
-    const requestId = `REQ-${new Date().getFullYear()}-${String(requestCount + 1).padStart(3, '0')}`;
+    /** ID único: `count()+1` chocaba con POST paralelos (p. ej. varios medicamentos a la vez desde enfermería). */
+    const year = new Date().getFullYear();
+    const requestId = `REQ-${year}-${randomUUID()}`;
+
+    const priorityValues = Object.values(RequestPriority) as string[];
+    const priorityResolved =
+      priority && priorityValues.includes(String(priority))
+        ? (priority as RequestPriority)
+        : RequestPriority.NORMAL;
 
     const request = new MedicationRequest();
     request.requestId = requestId;
     request.requestedById = nurseId;
     request.medicationId = medication.id;
     request.dosage = dosage;
-    request.quantity = quantity;
+    request.quantity = quantityNum;
     request.patientsInfo = patientsInfo || [];
     request.status = RequestStatus.PENDING;
-    request.priority = priority || RequestPriority.NORMAL;
+    request.priority = priorityResolved;
     request.notes = notes || '';
 
-    console.log('💾 Guardando solicitud en BD...', {
+    logger.info('💾 Guardando solicitud en BD...', {
       requestId,
       medicationId: medication.id,
       quantity,
@@ -818,7 +837,7 @@ export const createMedicationRequest = async (req: Request, res: Response) => {
     });
 
     const savedRequest = await requestRepo.save(request);
-    console.log(`✅ Solicitud guardada en BD con ID: ${savedRequest.id}`);
+    logger.info(`✅ Solicitud guardada en BD con ID: ${savedRequest.id}`);
 
     // Cargar la solicitud con todas las relaciones para devolverla completa
     const requestWithRelations = await requestRepo.findOne({
@@ -827,23 +846,35 @@ export const createMedicationRequest = async (req: Request, res: Response) => {
     });
 
     if (!requestWithRelations) {
-      console.error('❌ Error: No se pudo cargar la solicitud con relaciones');
+      logger.error('❌ Error: No se pudo cargar la solicitud con relaciones');
       return res.status(500).json({ message: 'Error al cargar la solicitud creada' });
     }
 
-    console.log(`✅ Solicitud de medicamento creada exitosamente: ${requestId} - ${medicationName} ${dosage} - Cantidad: ${quantity}`);
+    logger.info(`✅ Solicitud de medicamento creada exitosamente: ${requestId} - ${medicationName} ${dosage} - Cantidad: ${quantity}`);
 
     res.status(201).json({
       message: 'Solicitud creada exitosamente',
       requestId,
       request: requestWithRelations
     });
-  } catch (error: any) {
-    console.error('❌ Error al crear solicitud:', error);
-    console.error('Stack trace:', error.stack);
-    res.status(500).json({ 
+  } catch (error: unknown) {
+    const err = error as { message?: string; stack?: string; code?: string; errno?: number };
+    logger.error('❌ Error al crear solicitud:', error);
+    if (err.stack) {
+      logger.error('Stack trace:', err.stack);
+    }
+    const isDup =
+      err.code === 'ER_DUP_ENTRY' ||
+      err.errno === 1062 ||
+      (typeof err.message === 'string' && err.message.includes('Duplicate'));
+    res.status(500).json({
       message: 'Error al crear solicitud',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Error interno del servidor'
+      error:
+        process.env.NODE_ENV === 'development'
+          ? err.message || String(error)
+          : isDup
+            ? 'Identificador duplicado (reintenta o contacta soporte)'
+            : 'Error interno del servidor',
     });
   }
 };

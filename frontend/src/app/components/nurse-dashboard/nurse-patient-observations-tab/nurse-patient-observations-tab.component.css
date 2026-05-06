@@ -1,0 +1,344 @@
+/* Pestaña observaciones del modal paciente (antes en nurse-dashboard.component.css). */
+
+.patient-modal-tab-h4 {
+  color: #4a5568;
+  font-weight: 500;
+  font-size: 1.2rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0;
+}
+
+.observations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.observation-card {
+  background: #e0e5ec;
+  padding: 1.5rem;
+  border-radius: 15px;
+  box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
+}
+
+.observation-card.full-width {
+  grid-column: 1 / -1;
+}
+
+.observation-card h5 {
+  color: #4a5568;
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.observation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.edit-observation-btn {
+  background: #e0e5ec;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+  transition: all 0.2s ease;
+  color: #4a5568;
+}
+
+.edit-observation-btn:hover {
+  box-shadow: 2px 2px 4px #bebebe, -2px -2px 4px #ffffff;
+}
+
+.edit-observation-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.edit-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.save-observation-btn-neuro.small {
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  width: auto;
+}
+
+.cancel-edit-btn {
+  background: #e0e5ec;
+  color: #4a5568;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
+  transition: all 0.2s ease;
+}
+
+.cancel-edit-btn:hover {
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+}
+
+.observation-card p {
+  color: #718096;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.observations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.observations-list--dense {
+  gap: 0.5rem;
+}
+
+.observation-item {
+  background: #e0e5ec;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  color: #4a5568;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  transition: all 0.2s ease;
+}
+
+.observation-item:hover {
+  box-shadow: 3px 3px 6px #bebebe, -3px -3px 6px #ffffff;
+}
+
+.observation-item--verbatim {
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+button.observation-item--link {
+  display: block;
+  width: 100%;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+}
+
+button.observation-item--link:focus-visible {
+  outline: 2px solid #718096;
+  outline-offset: 2px;
+}
+
+.append-note-inset {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-top: 1.25rem;
+  padding: 1rem 1.1rem;
+  border-radius: 12px;
+  background: #e0e5ec;
+  box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
+}
+
+.append-note-lead {
+  margin: 0;
+  font-weight: 600;
+  color: #4a5568;
+  font-size: 0.95rem;
+}
+
+.append-note-hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #718096;
+  line-height: 1.35;
+}
+
+.append-note-inset .observation-input {
+  margin-bottom: 0;
+}
+
+.save-observation-btn-neuro.append-note-submit {
+  width: fit-content;
+  min-width: 12rem;
+  margin-bottom: 0;
+}
+
+.no-data-text {
+  color: #a0aec0;
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+.no-observations {
+  color: #a0aec0;
+  font-style: italic;
+  margin: 0;
+}
+
+.observation-input {
+  width: 100%;
+  padding: 12px 16px;
+  background: #e0e5ec;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  color: #4a5568;
+  box-shadow: inset 6px 6px 12px #bebebe, inset -6px -6px 12px #ffffff;
+  font-family: inherit;
+  resize: vertical;
+  margin-bottom: 1rem;
+  transition: box-shadow 0.2s ease;
+  box-sizing: border-box;
+}
+
+.observation-input:focus {
+  outline: none;
+  box-shadow: inset 8px 8px 16px #bebebe, inset -8px -8px 16px #ffffff;
+}
+
+.save-observation-btn-neuro {
+  background: #e0e5ec;
+  color: #4a5568;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
+  width: 100%;
+  transition: all 0.2s ease;
+}
+
+.save-observation-btn-neuro:hover {
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+}
+
+.save-observation-btn-neuro:active {
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+}
+
+.save-observation-btn-neuro:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.clinical-note-detail-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 12000;
+  background: rgba(45, 55, 72, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.clinical-note-detail-dialog {
+  background: #e8ecf1;
+  border-radius: 16px;
+  padding: 1.25rem 1.5rem;
+  max-width: 420px;
+  width: 100%;
+  box-shadow: 8px 8px 20px #bebebe, -6px -6px 16px #ffffff;
+  color: #2d3748;
+}
+
+.clinical-note-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.clinical-note-detail-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.clinical-note-detail-close {
+  flex-shrink: 0;
+  border: none;
+  background: #e0e5ec;
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  color: #4a5568;
+  box-shadow: 3px 3px 6px #bebebe, -2px -2px 5px #ffffff;
+}
+
+.clinical-note-detail-meta {
+  margin: 0 0 1rem 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.35rem 1rem;
+  font-size: 0.9rem;
+}
+
+.clinical-note-detail-meta dt {
+  margin: 0;
+  font-weight: 600;
+  color: #718096;
+}
+
+.clinical-note-detail-meta dd {
+  margin: 0;
+  color: #2d3748;
+}
+
+.clinical-note-detail-body-label {
+  margin: 0 0 0.35rem 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #718096;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.clinical-note-detail-body {
+  margin: 0 0 1.25rem 0;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.clinical-note-detail-done {
+  width: 100%;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  background: #e0e5ec;
+  color: #4a5568;
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+}
+
+@media (max-width: 768px) {
+  .observations-grid {
+    grid-template-columns: 1fr;
+  }
+}

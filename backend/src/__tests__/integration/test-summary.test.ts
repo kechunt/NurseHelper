@@ -5,19 +5,20 @@
 
 import request from 'supertest';
 import app from '../../app-test';
+import { logger } from '../../utils/logger';
 
 describe('Endpoints Summary Test', () => {
   describe('Health Endpoints (No requieren BD)', () => {
     it('GET /health-basic debería responder', async () => {
       const response = await request(app).get('/health-basic');
       expect([200, 503]).toContain(response.status);
-      console.log(`✅ /health-basic: ${response.status}`);
+      logger.info(`✅ /health-basic: ${response.status}`);
     });
 
     it('GET /health/live debería responder', async () => {
       const response = await request(app).get('/health/live');
       expect([200, 503]).toContain(response.status);
-      console.log(`✅ /health/live: ${response.status}`);
+      logger.info(`✅ /health/live: ${response.status}`);
     });
   });
 
@@ -30,7 +31,7 @@ describe('Endpoints Summary Test', () => {
       // Esperamos 400 o 401 (no 404)
       expect([400, 401, 500]).toContain(response.status);
       expect(response.status).not.toBe(404);
-      console.log(`✅ /api/auth/login: ${response.status}`);
+      logger.info(`✅ /api/auth/login: ${response.status}`);
     });
 
     it('POST /api/auth/register debería estar disponible', async () => {
@@ -40,7 +41,7 @@ describe('Endpoints Summary Test', () => {
       
       expect([400, 500]).toContain(response.status);
       expect(response.status).not.toBe(404);
-      console.log(`✅ /api/auth/register: ${response.status}`);
+      logger.info(`✅ /api/auth/register: ${response.status}`);
     });
   });
 
@@ -78,7 +79,7 @@ describe('Endpoints Summary Test', () => {
         
         expect(expectedStatus).toContain(response.status);
         expect(response.status).not.toBe(404);
-        console.log(`✅ ${method} ${path}: ${response.status}`);
+        logger.info(`✅ ${method} ${path}: ${response.status}`);
       });
     });
   });
@@ -89,14 +90,14 @@ describe('Endpoints Summary Test', () => {
       if (response.status === 200) {
         expect(response.body).toHaveProperty('status');
         expect(response.body).toHaveProperty('timestamp');
-        console.log('✅ Estructura de health check correcta');
+        logger.info('✅ Estructura de health check correcta');
       }
     });
 
     it('Error 404 debería tener estructura correcta', async () => {
       const response = await request(app).get('/api/nonexistent');
       expect(response.status).toBe(404);
-      console.log('✅ Manejo de 404 correcto');
+      logger.info('✅ Manejo de 404 correcto');
     });
   });
 });

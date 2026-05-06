@@ -1,4 +1,5 @@
 import { MigrationInterface, QueryRunner, TableColumn, TableForeignKey } from 'typeorm';
+import { logger } from '../utils/logger';
 
 export class AddPatientBedIdColumn1733800000000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -11,7 +12,7 @@ export class AddPatientBedIdColumn1733800000000 implements MigrationInterface {
     const hasBedIdColumn = table.findColumnByName('bedId');
 
     if (!hasBedIdColumn) {
-      console.log('🔄 Agregando columna bedId a la tabla patients...');
+      logger.info('🔄 Agregando columna bedId a la tabla patients...');
       
       // Agregar la columna bedId
       await queryRunner.addColumn(
@@ -26,7 +27,7 @@ export class AddPatientBedIdColumn1733800000000 implements MigrationInterface {
       // Crear la foreign key si la tabla beds existe
       const bedsTable = await queryRunner.getTable('beds');
       if (bedsTable) {
-        console.log('🔄 Creando foreign key para bedId...');
+        logger.info('🔄 Creando foreign key para bedId...');
         await queryRunner.createForeignKey(
           'patients',
           new TableForeignKey({
@@ -39,16 +40,16 @@ export class AddPatientBedIdColumn1733800000000 implements MigrationInterface {
         );
       }
       
-      console.log('✅ Columna bedId agregada exitosamente');
+      logger.info('✅ Columna bedId agregada exitosamente');
     } else {
-      console.log('ℹ️ La columna bedId ya existe en la tabla patients');
+      logger.info('ℹ️ La columna bedId ya existe en la tabla patients');
     }
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     const table = await queryRunner.getTable('patients');
     if (!table) {
-      console.log('ℹ️ La tabla patients no existe');
+      logger.info('ℹ️ La tabla patients no existe');
       return;
     }
     
@@ -58,13 +59,13 @@ export class AddPatientBedIdColumn1733800000000 implements MigrationInterface {
       // Eliminar foreign key primero
       const foreignKeys = table.foreignKeys.filter(fk => fk.columnNames.includes('bedId'));
       for (const fk of foreignKeys) {
-        console.log(`🔄 Eliminando foreign key ${fk.name}...`);
+        logger.info(`🔄 Eliminando foreign key ${fk.name}...`);
         await queryRunner.dropForeignKey('patients', fk);
       }
       
-      console.log('🔄 Eliminando columna bedId de la tabla patients...');
+      logger.info('🔄 Eliminando columna bedId de la tabla patients...');
       await queryRunner.dropColumn('patients', 'bedId');
-      console.log('✅ Columna bedId eliminada exitosamente');
+      logger.info('✅ Columna bedId eliminada exitosamente');
     }
   }
 }

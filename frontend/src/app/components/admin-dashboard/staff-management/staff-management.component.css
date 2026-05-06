@@ -43,6 +43,21 @@
   box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
 }
 
+.neuro-btn.outlined {
+  background: transparent;
+  border: 2px solid #4a5568;
+  box-shadow: none;
+}
+
+.neuro-btn.outlined:hover {
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+}
+
+.neuro-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* Filtros */
 .filters-container {
   background: #e0e5ec;
@@ -318,6 +333,92 @@
   color: #c53030;
 }
 
+/* Pastilla de turno (misma escala visual que Activo/Inactivo) */
+.nurse-shift-status {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  text-align: right;
+  max-width: 55%;
+  line-height: 1.25;
+}
+
+.nurse-shift-status.on-shift {
+  background: #c6f6d5;
+  color: #22543d;
+}
+
+.nurse-shift-status.justified {
+  background: #bee3f8;
+  color: #2c5282;
+}
+
+.nurse-shift-status.absent-shift {
+  background: #fed7d7;
+  color: #9b2c2c;
+}
+
+.nurse-shift-status.off-shift {
+  background: #e2e8f0;
+  color: #4a5568;
+}
+
+.nurse-shift-status.unknown-shift {
+  background: #edf2f7;
+  color: #718096;
+}
+
+.nurse-info--compact .nurse-name {
+  margin-bottom: 0.35rem;
+}
+
+.nurse-phone {
+  color: #4a5568;
+  font-size: 0.85rem;
+  margin: 0.35rem 0 0 0;
+  font-weight: 500;
+}
+
+.nurse-card-compact-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  padding-top: 0.25rem;
+}
+
+.staff-card-neuro-btn {
+  padding: 8px 14px;
+  font-size: 0.82rem;
+  border-radius: 12px;
+}
+
+.nurse-toggle-detail-btn {
+  margin-left: auto;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+}
+
+.nurse-expanded-block {
+  margin-top: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(174, 174, 192, 0.35);
+  animation: nurseExpandFade 0.25s ease;
+}
+
+@keyframes nurseExpandFade {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .nurse-details {
   display: flex;
   flex-direction: column;
@@ -347,6 +448,28 @@
   font-weight: 700;
 }
 
+.detail-item--area {
+  align-items: flex-start;
+}
+
+.detail-value-with-action {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem 0.75rem;
+  max-width: min(100%, 72%);
+  text-align: right;
+}
+
+.staff-area-change-btn {
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  border-radius: 10px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 /* Tabla de Pacientes en Tarjeta */
 .patients-table-section {
   margin-top: 1rem;
@@ -366,24 +489,6 @@
   font-size: 0.95rem;
   font-weight: 600;
   margin: 0;
-}
-
-.manage-patients-btn {
-  padding: 6px 12px;
-  background: #e0e5ec;
-  border: none;
-  border-radius: 8px;
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: #4a5568;
-  cursor: pointer;
-  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
-  transition: all 0.2s ease;
-}
-
-.manage-patients-btn:hover {
-  box-shadow: 2px 2px 4px #bebebe, -2px -2px 4px #ffffff;
-  transform: translateY(-1px);
 }
 
 .patients-table-container {
@@ -502,23 +607,8 @@
   box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
 }
 
-.assign-first-btn {
+.no-patients-message .staff-card-neuro-btn {
   margin-top: 0.75rem;
-  padding: 8px 16px;
-  background: #c6f6d5;
-  border: none;
-  border-radius: 8px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: #22543d;
-  cursor: pointer;
-  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
-  transition: all 0.2s ease;
-}
-
-.assign-first-btn:hover {
-  box-shadow: 2px 2px 4px #bebebe, -2px -2px 4px #ffffff;
-  transform: translateY(-1px);
 }
 
 .action-btn-small {
@@ -785,15 +875,40 @@
   box-shadow: inset 2px 2px 4px #bebebe, inset -2px -2px 4px #ffffff;
 }
 
-.btn-secondary-neuro.close-patients-modal-btn {
-  background: #e0e5ec;
-  color: #4a5568;
-  box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
+/* Cerrar modal pacientes: neumorfismo elevado (sin borde outlined) */
+.neuro-btn.close-patients-modal-btn {
+  min-width: 7.5rem;
+  padding: 11px 26px;
+  border-radius: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  box-shadow: 7px 7px 14px #bebebe, -7px -7px 14px #ffffff;
 }
 
-.btn-secondary-neuro.close-patients-modal-btn:hover {
-  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
-  transform: translateY(-1px);
+.neuro-btn.close-patients-modal-btn:hover {
+  box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #ffffff;
+}
+
+/* CTA a camas: misma familia visual, relieve un poco más marcado */
+.neuro-btn.staff-modal-beds-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 14px 22px;
+  border-radius: 16px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.35;
+  box-shadow: 8px 8px 16px #bebebe, -8px -8px 16px #ffffff;
+}
+
+.neuro-btn.staff-modal-beds-btn:hover {
+  box-shadow: 5px 5px 12px #bebebe, -5px -5px 12px #ffffff;
+}
+
+.neuro-btn.staff-modal-beds-btn:active {
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
 }
 
 /* Formularios */
@@ -939,6 +1054,28 @@
   font-size: 1.1rem;
   font-weight: 500;
   margin: 0 0 1rem 0;
+}
+
+.staff-modal-hint {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.85rem;
+  color: #718096;
+  line-height: 1.4;
+}
+
+.info-box-area-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 0.75rem;
+  margin: 0.5rem 0 0 0;
+}
+
+.staff-modal-beds-cta {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(74, 85, 104, 0.15);
 }
 
 .patients-list {

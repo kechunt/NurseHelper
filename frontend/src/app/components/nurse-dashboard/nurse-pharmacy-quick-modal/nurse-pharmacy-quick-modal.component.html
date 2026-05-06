@@ -1,0 +1,119 @@
+<div
+  class="modal-backdrop modal-confirmation nurse-modal-backdrop-dim"
+  role="presentation"
+  (click)="onBackdropClick()"
+  style="z-index: 2291"
+>
+  <div
+    class="modal-content modal-large nurse-quick-modal-shell"
+    appModalFocusTrap
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="nurse-pharmacy-quick-dialog-title"
+    (click)="$event.stopPropagation()"
+  >
+    <div class="modal-header">
+      <h3 id="nurse-pharmacy-quick-dialog-title" i18n="@@nursePharmacyQuickModal.title">
+        💊 Medicamentos a solicitar a farmacia
+      </h3>
+      <button
+        type="button"
+        class="close-btn"
+        aria-label="Cerrar"
+        i18n-aria-label="@@nursePharmacyQuickModal.closeAriaLabel"
+        (click)="dismissed.emit()"
+      >
+        ✕
+      </button>
+    </div>
+    <div class="modal-body nurse-quick-modal-body">
+      <div class="tasks-actions header-actions nurse-quick-modal-toolbar">
+        <div class="summary-inline">
+          <span class="summary-badge" i18n="@@nursePharmacyQuickModal.uniqueMedicationsBadge">
+            📦 {{ uniqueMedicationsCount }} medicamentos
+          </span>
+          <span class="summary-badge" i18n="@@nursePharmacyQuickModal.totalDosesBadge">💉 {{ totalDosesToday }} dosis</span>
+        </div>
+      </div>
+      <div class="table-wrapper-neuro unified-table-container nurse-table-shell-flat">
+        <table class="unified-tasks-table neuro-table medications-modal-table nurse-tasks-table">
+          <thead>
+            <tr>
+              <th style="width: 40px;">
+                <input
+                  type="checkbox"
+                  (change)="toggleAllMedications($event)"
+                  title="Seleccionar todos"
+                  i18n-title="@@nursePharmacyQuickModal.selectAllTitle"
+                />
+              </th>
+              <th i18n="@@nursePharmacyQuickModal.colMedication">Medicamento</th>
+              <th i18n="@@nursePharmacyQuickModal.colDosage">Dosis</th>
+              <th i18n="@@nursePharmacyQuickModal.colQuantity">Cantidad</th>
+              <th i18n="@@nursePharmacyQuickModal.colPatients">Pacientes</th>
+              <th i18n="@@nursePharmacyQuickModal.colStatus">Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let med of medications">
+              <td>
+                <input type="checkbox" [(ngModel)]="med.requested" (change)="onRowCheckboxChange()" />
+              </td>
+              <td>
+                <div class="med-name-compact">{{ med.name }}</div>
+              </td>
+              <td>
+                <span class="pharmacy-dosage-plain">{{ med.dosage }}</span>
+              </td>
+              <td>
+                <span class="pharmacy-dose-count-plain" i18n="@@nursePharmacyQuickModal.dosesCount">{{ med.totalDoses }} dosis</span>
+              </td>
+              <td class="pharmacy-patients-cell">
+                <div class="pharmacy-patients-summary">
+                  <span
+                    class="pharmacy-patient-count-text"
+                    i18n="@@nursePharmacyQuickModal.patientsSummary"
+                  >{med.patientsCount, plural,
+                    =1 {{{med.patientsCount}} paciente}
+                    other {{{med.patientsCount}} pacientes}}</span>
+                  <button
+                    type="button"
+                    class="pharmacy-view-patients-btn"
+                    (click)="viewPatients.emit(med)"
+                    title="Ver quiénes requieren este medicamento hoy"
+                    i18n-title="@@nursePharmacyQuickModal.viewPatientsTitle"
+                    i18n="@@nursePharmacyQuickModal.viewPatients"
+                  >
+                    Ver pacientes
+                  </button>
+                </div>
+              </td>
+              <td>
+                <span *ngIf="med.requested" class="status-indicator done" i18n="@@nursePharmacyQuickModal.statusRequested"
+                  >✓ Solicitado</span>
+                <span *ngIf="!med.requested" class="status-indicator pending" i18n="@@nursePharmacyQuickModal.statusPending"
+                  >⏳ Pendiente</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pharmacy-footer pharmacy-footer--modal">
+        <button type="button" class="neuro-btn btn-primary-neuro large" (click)="sendRequest.emit()" i18n="@@nursePharmacyQuickModal.sendRequest">
+          📤 Enviar solicitud ({{ requestedSelectedCount }} seleccionados)
+        </button>
+      </div>
+      <p *ngIf="medications.length === 0" class="empty-message" i18n="@@nursePharmacyQuickModal.emptyMedications">
+        No hay medicamentos programados para hoy
+      </p>
+    </div>
+    <div class="modal-footer nurse-reports-modal-footer">
+      <button type="button" class="neuro-btn neuro-btn-sm" (click)="openFullModule.emit()" i18n="@@nursePharmacyQuickModal.openFullModule">
+        💊 Abrir módulo Farmacia
+      </button>
+      <button type="button" class="btn-primary-neuro" (click)="dismissed.emit()" i18n="@@nursePharmacyQuickModal.close">
+        Cerrar
+      </button>
+    </div>
+  </div>
+</div>

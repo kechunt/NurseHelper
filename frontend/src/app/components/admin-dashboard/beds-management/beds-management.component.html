@@ -67,8 +67,13 @@
       <div class="beds-grid">
         <div
           *ngFor="let bed of getBedsByArea(area.id!)"
-          class="bed-card"
+          class="bed-card bed-card--clickable"
           [ngClass]="getBedClass(bed)"
+          tabindex="0"
+          role="button"
+          [attr.aria-label]="'Acciones para cama ' + bed.bedNumber"
+          (click)="openBedCardActionsSheet(bed)"
+          (keydown)="onBedCardKeydown(bed, $event)"
         >
           <div class="bed-number">{{ bed.bedNumber }}</div>
           <div class="bed-status">
@@ -82,18 +87,6 @@
           <div *ngIf="getBedStatusLabel(bed) === 'Ocupada'" class="bed-patient">
             👤 {{ getPatientNameForBed(bed) }}
           </div>
-          <div class="bed-actions">
-            <button
-              *ngIf="getBedStatusLabel(bed) === 'Ocupada'"
-              class="patient-info-btn"
-              (click)="openOccupiedPatientModal(bed)"
-              title="Ver paciente asignado"
-            >
-              👤
-            </button>
-            <button class="edit-bed-btn" (click)="openEditBedModal(bed)" title="Editar cama">✏️</button>
-            <button class="delete-bed-btn" (click)="deleteBed(bed)" title="Eliminar cama">🗑️</button>
-          </div>
         </div>
       </div>
     </div>
@@ -102,6 +95,24 @@
       <p>No hay camas que coincidan con los filtros seleccionados</p>
     </div>
   </div>
+
+  <app-admin-table-row-actions-modal
+    [open]="!!bedCardActionsTarget"
+    [title]="'Cama'"
+    [summaryLines]="bedCardActionsTarget ? bedCardActionsSummary(bedCardActionsTarget) : []"
+    (dismissed)="closeBedCardActionsSheet()"
+  >
+    <button
+      type="button"
+      class="neuro-btn"
+      *ngIf="bedCardActionsTarget && getBedStatusLabel(bedCardActionsTarget) === 'Ocupada'"
+      (click)="fromBedSheetViewPatient()"
+    >
+      👤 Ver paciente
+    </button>
+    <button type="button" class="neuro-btn" (click)="fromBedSheetEdit()">✏️ Editar cama</button>
+    <button type="button" class="neuro-btn outlined delete-bed-btn" (click)="fromBedSheetDelete()">🗑️ Eliminar cama</button>
+  </app-admin-table-row-actions-modal>
 
   <!-- Modal para editar cama -->
   <div *ngIf="showEditBedModal" class="modal-backdrop" (click)="closeEditBedModal()">

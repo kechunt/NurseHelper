@@ -5,11 +5,12 @@
 
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import { logger } from '../utils/logger';
 
 const execAsync = promisify(exec);
 
 async function runFullTest() {
-  console.log('🚀 Iniciando test completo del sistema...\n');
+  logger.info('🚀 Iniciando test completo del sistema...\n');
 
   const tests = [
     {
@@ -27,8 +28,8 @@ async function runFullTest() {
   ];
 
   for (const test of tests) {
-    console.log(`\n📋 Ejecutando: ${test.name}`);
-    console.log('─'.repeat(50));
+    logger.info(`\n📋 Ejecutando: ${test.name}`);
+    logger.info('─'.repeat(50));
 
     try {
       const { stdout, stderr } = await execAsync(
@@ -36,21 +37,21 @@ async function runFullTest() {
       );
 
       if (stdout) {
-        console.log(stdout);
+        logger.info(stdout);
       }
       if (stderr && !stderr.includes('PASS')) {
-        console.error(stderr);
+        logger.error(stderr);
       }
 
-      console.log(`✅ ${test.name} completado\n`);
+      logger.info(`✅ ${test.name} completado\n`);
     } catch (error: any) {
-      console.error(`❌ Error en ${test.name}:`, error.message);
-      if (error.stdout) console.log(error.stdout);
-      if (error.stderr) console.error(error.stderr);
+      logger.error(`❌ Error en ${test.name}:`, error.message);
+      if (error.stdout) logger.info(error.stdout);
+      if (error.stderr) logger.error(error.stderr);
     }
   }
 
-  console.log('\n🎉 Tests completados');
+  logger.info('\n🎉 Tests completados');
 }
 
-runFullTest().catch(console.error);
+runFullTest().catch((error) => logger.error(error));

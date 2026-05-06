@@ -11,6 +11,7 @@
     "seed:schedules": "ts-node src/seeds/seed-schedules.ts",
     "migration:generate": "typeorm-ts-node-commonjs migration:generate -d src/data-source.ts",
     "migration:run": "typeorm-ts-node-commonjs migration:run -d src/data-source.ts",
+    "migration:run:prod": "node ./node_modules/typeorm/cli.js migration:run -d ./dist/data-source.js",
     "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/data-source.ts",
     "migration:validate": "ts-node src/utils/migration-helper.ts validate",
     "backup:create": "ts-node -e \"import('./src/services/backup.service').then(m => m.backupService.createBackup())\"",

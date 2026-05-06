@@ -1,0 +1,19 @@
+import {
+  NURSE_DASHBOARD_CONFIRM_DELETE_HISTORY_MESSAGE,
+  NURSE_DASHBOARD_CONFIRM_DELETE_HISTORY_TITLE,
+  NURSE_DASHBOARD_CONFIRM_DELETE_PENDING_TREATMENT_MESSAGE,
+  NURSE_DASHBOARD_CONFIRM_DELETE_PENDING_TREATMENT_TITLE,
+  NURSE_DASHBOARD_CONFIRM_DELETE_YES,
+} from './nurse-dashboard-confirmation-copy.helpers';
+
+describe('nurseDashboardConfirmationCopy', () => {
+  it('expone títulos, mensajes y botón de confirmación estables', () => {
+    expect(NURSE_DASHBOARD_CONFIRM_DELETE_HISTORY_TITLE.trim().length).toBeGreaterThan(0);
+    expect(NURSE_DASHBOARD_CONFIRM_DELETE_HISTORY_MESSAGE).toContain('historial');
+    expect(NURSE_DASHBOARD_CONFIRM_DELETE_PENDING_TREATMENT_MESSAGE).toContain('tratamiento');
+    expect(NURSE_DASHBOARD_CONFIRM_DELETE_PENDING_TREATMENT_TITLE).not.toBe(
+      NURSE_DASHBOARD_CONFIRM_DELETE_HISTORY_TITLE
+    );
+    expect(NURSE_DASHBOARD_CONFIRM_DELETE_YES.length).toBeGreaterThan(0);
+  });
+});

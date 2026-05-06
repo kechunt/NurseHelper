@@ -22,6 +22,7 @@ export class RegisterComponent {
     password: '',
     firstName: '',
     lastName: '',
+    phone: '',
     role: 'nurse',
   };
 
@@ -120,6 +121,12 @@ export class RegisterComponent {
 
     if (this.formData.password.length < 6) {
       this.error = 'La contraseña debe tener al menos 6 caracteres';
+      return false;
+    }
+
+    const ph = (this.formData.phone || '').trim();
+    if (ph.length > 30) {
+      this.error = 'El teléfono no puede superar 30 caracteres';
       return false;
     }
 

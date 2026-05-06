@@ -1,0 +1,63 @@
+<app-dashboard-user-profile-modal #dashProfileModal />
+
+<div class="dashboard-header">
+  <div class="header-content">
+    <div
+      class="logo-section"
+      role="button"
+      tabindex="0"
+      [attr.aria-label]="logoSectionAriaLabel ?? null"
+      (click)="logoClick.emit()"
+      (keydown.enter)="logoClick.emit()"
+      (keydown.space)="logoClick.emit(); $event.preventDefault()"
+    >
+      <img
+        src="/nursehelper.png"
+        class="header-logo"
+        [attr.alt]="headerLogoAlt !== null && headerLogoAlt !== undefined ? headerLogoAlt : 'NurseHelper'"
+      />
+      <div class="title-section">
+        <h1 class="dashboard-title" [attr.id]="panelHeadingId || null">{{ panelTitle }}</h1>
+        <span class="dashboard-subtitle" *ngIf="subtitle">{{ subtitle }}</span>
+      </div>
+    </div>
+    <div class="user-section">
+      <ng-content select="[appDashboardHeaderActions]"></ng-content>
+      <button
+        *ngIf="profileEditable"
+        type="button"
+        class="user-info profile-trigger-btn"
+        (click)="dashProfileModal.open()"
+        title="Editar mi información"
+        aria-label="Editar mi información de usuario"
+      >
+        <span class="user-name">{{ userName }}</span>
+        <span class="user-role">{{ roleLabel }}</span>
+        <span class="user-phone-line" *ngIf="userPhoneLine">{{ userPhoneLine }}</span>
+      </button>
+      <div *ngIf="!profileEditable" class="user-info">
+        <span class="user-name">{{ userName }}</span>
+        <span class="user-role">{{ roleLabel }}</span>
+        <span class="user-phone-line" *ngIf="userPhoneLine">{{ userPhoneLine }}</span>
+      </div>
+      <button
+        type="button"
+        class="neuro-btn-icon logout-btn"
+        (click)="onLogout()"
+        title="Cerrar Sesión"
+        aria-label="Cerrar sesión"
+      >
+        🚪
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="dashboard-body">
+  <nav class="dashboard-nav" [attr.aria-label]="navAriaLabel" [attr.role]="navRoleTablist ? 'tablist' : null">
+    <ng-content select="[appDashboardNav]"></ng-content>
+  </nav>
+  <ng-content></ng-content>
+</div>
+
+<ng-content select="[appDashboardOverlays]"></ng-content>

@@ -1,18 +1,19 @@
 import { AppDataSource } from '../data-source';
 import { Medication, MedicationStatus } from '../entities/Medication';
+import { logger } from '../utils/logger';
 
 const seedMedications = async () => {
   try {
     await AppDataSource.initialize();
-    console.log('🌱 Conectado a la base de datos para seeding de medicamentos...');
+    logger.info('🌱 Conectado a la base de datos para seeding de medicamentos...');
 
     const medicationRepo = AppDataSource.getRepository(Medication);
 
     // Verificar si ya hay medicamentos
     const existingCount = await medicationRepo.count();
     if (existingCount > 0) {
-      console.log(`⚠️  Ya existen ${existingCount} medicamentos en la base de datos.`);
-      console.log('¿Deseas agregar más medicamentos? (S/N)');
+      logger.info(`⚠️  Ya existen ${existingCount} medicamentos en la base de datos.`);
+      logger.info('¿Deseas agregar más medicamentos? (S/N)');
       await AppDataSource.destroy();
       return;
     }
@@ -67,15 +68,15 @@ const seedMedications = async () => {
 
     await medicationRepo.save(medicationsToSave);
 
-    console.log(`✅ ${medicationsToSave.length} medicamentos creados exitosamente en la base de datos`);
-    console.log(`📊 Resumen:`);
-    console.log(`   - Disponibles: ${medicationsToSave.filter(m => m.status === MedicationStatus.AVAILABLE).length}`);
-    console.log(`   - Stock bajo: ${medicationsToSave.filter(m => m.status === MedicationStatus.LOW_STOCK).length}`);
-    console.log(`   - Sin stock: ${medicationsToSave.filter(m => m.status === MedicationStatus.OUT_OF_STOCK).length}`);
+    logger.info(`✅ ${medicationsToSave.length} medicamentos creados exitosamente en la base de datos`);
+    logger.info(`📊 Resumen:`);
+    logger.info(`   - Disponibles: ${medicationsToSave.filter(m => m.status === MedicationStatus.AVAILABLE).length}`);
+    logger.info(`   - Stock bajo: ${medicationsToSave.filter(m => m.status === MedicationStatus.LOW_STOCK).length}`);
+    logger.info(`   - Sin stock: ${medicationsToSave.filter(m => m.status === MedicationStatus.OUT_OF_STOCK).length}`);
 
     await AppDataSource.destroy();
   } catch (error) {
-    console.error('❌ Error al crear medicamentos:', error);
+    logger.error('❌ Error al crear medicamentos:', error);
     await AppDataSource.destroy();
     process.exit(1);
   }

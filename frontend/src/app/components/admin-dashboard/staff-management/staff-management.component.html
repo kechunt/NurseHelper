@@ -32,6 +32,7 @@
       <select id="presence-filter" class="neuro-select" [(ngModel)]="selectedShiftPresenceFilter">
         <option value="all">Todas</option>
         <option value="onShift">En turno (presentes)</option>
+        <option value="offShift">Fuera de turno / no en turno actual</option>
       </select>
     </div>
     <div class="filter-group" *ngIf="searchQuery || selectedArea || selectedShiftPresenceFilter !== 'all'">
@@ -73,86 +74,106 @@
     
     <div *ngFor="let nurse of getFilteredNurses(); trackBy: trackByNurseId" class="nurse-card">
       <div class="nurse-card-header">
-        <div class="nurse-info">
+        <div class="nurse-info nurse-info--compact">
           <h3 class="nurse-name">{{ nurse.firstName }} {{ nurse.lastName }}</h3>
-          <p class="nurse-username">@{{ nurse.username }}</p>
           <p class="nurse-email">{{ nurse.email }}</p>
+          <p class="nurse-phone">📞 {{ getNursePhoneDisplay(nurse) }}</p>
         </div>
-        <div class="nurse-status" [class.active]="nurse.isActive" [class.inactive]="!nurse.isActive">
-          {{ nurse.isActive ? '✅ Activo' : '❌ Inactivo' }}
-        </div>
-      </div>
-
-      <div class="nurse-details">
-        <div class="detail-item">
-          <span class="detail-label">⏱️ Turno actual:</span>
-          <span class="detail-value" [class.at-capacity]="!nurse.onCurrentShift">
-            {{ getOperationalStatusLabel(nurse) }}
-          </span>
-        </div>
-        <div class="detail-item">
-          <span class="detail-label">🕒 En curso:</span>
-          <span class="detail-value">{{ liveShiftName }}</span>
-        </div>
-        <div class="detail-item">
-          <span class="detail-label">📍 Área:</span>
-          <span class="detail-value">{{ getAreaName(nurse.assignedAreaId) }}</span>
-        </div>
-        <div class="detail-item">
-          <span class="detail-label">👥 Capacidad:</span>
-          <span class="detail-value" [class.at-capacity]="nurse.assignedPatientsCount >= (nurse.maxPatients || 0) && (nurse.maxPatients || 0) > 0">
-            {{ nurse.assignedPatientsCount }} / {{ nurse.maxPatients || 0 }}
-          </span>
+        <div [class]="getShiftPresenceBadgeClass(nurse)">
+          {{ getShiftPresenceBadgeLabel(nurse) }}
         </div>
       </div>
 
-      <!-- Tabla de Pacientes Asignados -->
-      <div class="patients-table-section">
-        <div class="table-header">
-          <h4>Pacientes Asignados ({{ nurse.assignedPatientsCount }})</h4>
-          <button class="manage-patients-btn" (click)="openPatientsModal(nurse)" title="Gestionar pacientes">
-            ✏️ Gestionar
-          </button>
-        </div>
-        
-        <div class="patients-table-container" *ngIf="nurse.assignedPatients.length > 0">
-          <table class="patients-table">
-            <thead>
-              <tr>
-                <th>Nombre</th>
-                <th>Cama</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let patient of nurse.assignedPatients">
-                <td>{{ patient.firstName }} {{ patient.lastName }}</td>
-                <td>{{ getPatientBed(patient) }}</td>
-                <td>
-                  <button class="action-btn-small remove" (click)="removePatientFromNurse(patient, nurse)" title="Remover">
-                    ✕
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        
-        <div *ngIf="nurse.assignedPatients.length === 0" class="no-patients-message">
-          <p>No hay pacientes asignados</p>
-          <button class="assign-first-btn" (click)="openPatientsModal(nurse)">
-            ➕ Asignar Primer Paciente
-          </button>
-        </div>
-      </div>
-
-      <div class="nurse-actions">
-        <button class="action-btn primary" (click)="openEditModal(nurse)" title="Editar información">
+      <div class="nurse-card-compact-actions">
+        <button type="button" class="neuro-btn staff-card-neuro-btn" (click)="openEditModal(nurse)" title="Editar enfermera">
           ✏️ Editar
         </button>
-        <button class="action-btn patients" (click)="openPatientsModal(nurse)" title="Gestionar pacientes">
+        <button type="button" class="neuro-btn staff-card-neuro-btn" (click)="openPatientsModal(nurse)" title="Gestionar pacientes">
           👥 Pacientes
         </button>
+        <button
+          *ngIf="canShowDetailToggle(nurse)"
+          type="button"
+          class="neuro-btn nurse-toggle-detail-btn"
+          (click)="toggleNurseDetail(nurse)"
+        >
+          {{ isNurseDetailExpanded(nurse) ? '▲ Ocultar' : '▼ Mostrar' }}
+        </button>
+      </div>
+
+      <div class="nurse-expanded-block" *ngIf="canShowDetailToggle(nurse) && isNurseDetailExpanded(nurse)">
+        <div class="nurse-details">
+          <div class="detail-item">
+            <span class="detail-label">⏱️ Estado operativo:</span>
+            <span class="detail-value" [class.at-capacity]="!nurse.onCurrentShift">
+              {{ getOperationalStatusLabel(nurse) }}
+            </span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">🕒 Turno en curso:</span>
+            <span class="detail-value">{{ liveShiftName }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">👤 Usuario:</span>
+            <span class="detail-value">{{ '@' + nurse.username }}</span>
+          </div>
+          <div class="detail-item detail-item--area">
+            <span class="detail-label">📍 Área:</span>
+            <div class="detail-value-with-action">
+              <span class="detail-value">{{ getAreaName(nurse.assignedAreaId) }}</span>
+              <button type="button" class="neuro-btn staff-area-change-btn" (click)="openChangeAreaModal(nurse)">
+                Cambiar área
+              </button>
+            </div>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">👥 Capacidad:</span>
+            <span class="detail-value" [class.at-capacity]="nurse.assignedPatientsCount >= (nurse.maxPatients || 0) && (nurse.maxPatients || 0) > 0">
+              {{ nurse.assignedPatientsCount }} / {{ nurse.maxPatients || 0 }}
+            </span>
+          </div>
+        </div>
+
+        <div class="patients-table-section">
+          <div class="table-header">
+            <h4>Pacientes asignados ({{ nurse.assignedPatientsCount }})</h4>
+            <button type="button" class="neuro-btn staff-card-neuro-btn" (click)="openPatientsModal(nurse)" title="Gestionar pacientes">
+              ✏️ Gestionar
+            </button>
+          </div>
+
+          <div class="patients-table-container" *ngIf="nurse.assignedPatients.length > 0">
+            <table class="patients-table">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Cama</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  *ngFor="let patient of nurse.assignedPatients"
+                  class="admin-table-row--clickable"
+                  tabindex="0"
+                  role="button"
+                  [attr.aria-label]="'Acciones paciente ' + patient.firstName"
+                  (click)="openStaffPatientSheet({ kind: 'card-assigned', nurse, patient })"
+                  (keydown)="onStaffPatientRowKeydown({ kind: 'card-assigned', nurse, patient }, $event)"
+                >
+                  <td>{{ patient.firstName }} {{ patient.lastName }}</td>
+                  <td>{{ getPatientBed(patient) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div *ngIf="nurse.assignedPatients.length === 0" class="no-patients-message">
+            <p>No hay pacientes asignados</p>
+            <button type="button" class="neuro-btn staff-card-neuro-btn" (click)="openPatientsModal(nurse)">
+              ➕ Asignar primer paciente
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -160,6 +181,27 @@
       <p>No se encontraron enfermeras con los filtros seleccionados</p>
     </div>
   </div>
+
+  <app-admin-table-row-actions-modal
+    [open]="!!staffPatientSheet"
+    [title]="staffPatientSheetTitle()"
+    [summaryLines]="staffPatientSheetSummary()"
+    (dismissed)="closeStaffPatientSheet()"
+  >
+    <button
+      type="button"
+      class="neuro-btn"
+      *ngIf="
+        staffPatientSheet && (staffPatientSheet.kind === 'card-assigned' || staffPatientSheet.kind === 'modal-assigned')
+      "
+      (click)="execStaffPatientRemove()"
+    >
+      ✕ Quitar asignación
+    </button>
+    <button type="button" class="neuro-btn" *ngIf="staffPatientSheet?.kind === 'modal-available'" (click)="execStaffPatientAssign()">
+      ➕ Asignar con cama
+    </button>
+  </app-admin-table-row-actions-modal>
 
   <!-- Modal: Editar Enfermera -->
   <div *ngIf="showEditModal" class="modal-backdrop" (click)="closeEditModal()">
@@ -187,6 +229,10 @@
             <input type="email" class="neuro-input" [(ngModel)]="editForm.email" />
           </div>
           <div class="input-group">
+            <label>Teléfono</label>
+            <input type="tel" class="neuro-input" [(ngModel)]="editForm.phone" maxlength="30" placeholder="Opcional" />
+          </div>
+          <div class="input-group">
             <label>Capacidad Máxima</label>
             <input type="number" class="neuro-input" [(ngModel)]="editForm.maxPatients" min="0" max="50" />
           </div>
@@ -208,8 +254,8 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn-secondary-neuro" (click)="closeEditModal()">Cancelar</button>
-        <button class="btn-primary-neuro" (click)="saveNurse()">💾 Guardar</button>
+        <button type="button" class="neuro-btn outlined" (click)="closeEditModal()">Cancelar</button>
+        <button type="button" class="neuro-btn" (click)="saveNurse()">💾 Guardar</button>
       </div>
     </div>
   </div>
@@ -224,7 +270,10 @@
       <div class="modal-body">
         <div class="info-box">
           <p><strong>Capacidad:</strong> {{ selectedNursePatients.length }} / {{ selectedNurse?.maxPatients || 0 }}</p>
-          <p><strong>Área:</strong> {{ getAreaName(selectedNurse?.assignedAreaId) }}</p>
+          <p class="info-box-area-row" *ngIf="selectedNurse as sn">
+            <span><strong>Área actual:</strong> {{ getAreaName(sn.assignedAreaId) }}</span>
+            <button type="button" class="neuro-btn staff-area-change-btn" (click)="openChangeAreaModal(sn)">Cambiar área</button>
+          </p>
         </div>
 
         <div class="patients-section">
@@ -235,21 +284,22 @@
                 <tr>
                   <th>Nombre</th>
                   <th>Cama</th>
-                  <th>Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let patient of selectedNursePatients">
+                <tr
+                  *ngFor="let patient of selectedNursePatients"
+                  class="admin-table-row--clickable"
+                  tabindex="0"
+                  role="button"
+                  (click)="openStaffPatientSheet({ kind: 'modal-assigned', patient })"
+                  (keydown)="onStaffPatientRowKeydown({ kind: 'modal-assigned', patient }, $event)"
+                >
                   <td>{{ patient.firstName }} {{ patient.lastName }}</td>
                   <td>{{ getPatientBed(patient) }}</td>
-                  <td>
-                    <button class="action-btn-small remove" (click)="removePatientFromNurse(patient)" title="Remover">
-                      ✕ Remover
-                    </button>
-                  </td>
                 </tr>
                 <tr *ngIf="selectedNursePatients.length === 0">
-                  <td colspan="3" class="no-data">No hay pacientes asignados</td>
+                  <td colspan="2" class="no-data">No hay pacientes asignados</td>
                 </tr>
               </tbody>
             </table>
@@ -257,36 +307,70 @@
         </div>
 
         <div class="patients-section">
-          <h4>Pacientes Disponibles para Asignar</h4>
+          <h4>Pacientes disponibles (sin cama asignada)</h4>
+          <p class="staff-modal-hint">
+            Solo aparecen pacientes activos sin cama; primero asigna cama en Camas si hace falta.
+          </p>
           <div class="patients-table-container-modal">
             <table class="patients-table">
               <thead>
                 <tr>
                   <th>Nombre</th>
-                  <th>Cama</th>
-                  <th>Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let patient of availablePatients">
+                <tr
+                  *ngFor="let patient of availablePatients"
+                  class="admin-table-row--clickable"
+                  tabindex="0"
+                  role="button"
+                  (click)="openStaffPatientSheet({ kind: 'modal-available', patient })"
+                  (keydown)="onStaffPatientRowKeydown({ kind: 'modal-available', patient }, $event)"
+                >
                   <td>{{ patient.firstName }} {{ patient.lastName }}</td>
-                  <td>{{ getPatientBed(patient) }}</td>
-                  <td>
-                    <button class="action-btn-small assign" (click)="assignPatientToNurse(patient)" title="Asignar">
-                      ➕ Asignar con cama
-                    </button>
-                  </td>
                 </tr>
                 <tr *ngIf="availablePatients.length === 0">
-                  <td colspan="3" class="no-data">No hay pacientes disponibles</td>
+                  <td colspan="1" class="no-data">No hay pacientes sin cama disponibles para asignar</td>
                 </tr>
               </tbody>
             </table>
           </div>
+          <div class="staff-modal-beds-cta">
+            <button type="button" class="neuro-btn staff-modal-beds-btn" (click)="goToAdminBedsTab()">
+              🛏️ Ir a gestión de camas y asignación (paciente / cama / área)
+            </button>
+          </div>
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn-secondary-neuro close-patients-modal-btn" (click)="closePatientsModal()">Cerrar</button>
+        <button type="button" class="neuro-btn close-patients-modal-btn" (click)="closePatientsModal()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Cambiar área (después del de pacientes en el DOM para quedar encima si ambos están abiertos) -->
+  <div *ngIf="showChangeAreaModal" class="modal-backdrop" (click)="closeChangeAreaModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>📍 Cambiar área: {{ changeAreaNurse?.firstName }} {{ changeAreaNurse?.lastName }}</h3>
+        <button type="button" class="close-btn" (click)="closeChangeAreaModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="input-group">
+          <label for="change-area-select">Área asignada</label>
+          <select id="change-area-select" class="neuro-select" [(ngModel)]="changeAreaSelectedId">
+            <option [ngValue]="null">Sin área</option>
+            <option *ngFor="let area of areas" [ngValue]="area.id">
+              {{ area.name }}
+            </option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="neuro-btn outlined" (click)="closeChangeAreaModal()">Cancelar</button>
+        <button type="button" class="neuro-btn" (click)="saveChangeAreaModal()" [disabled]="savingChangeArea">
+          {{ savingChangeArea ? '⏳ Guardando…' : '💾 Guardar' }}
+        </button>
       </div>
     </div>
   </div>
@@ -315,8 +399,8 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn-secondary-neuro" (click)="closeAssignBedModal()">Cancelar</button>
-        <button class="btn-primary-neuro" (click)="confirmAssignPatientToNurseWithBed()" [disabled]="!selectedBedIdForAssign">
+        <button type="button" class="neuro-btn outlined" (click)="closeAssignBedModal()">Cancelar</button>
+        <button type="button" class="neuro-btn" (click)="confirmAssignPatientToNurseWithBed()" [disabled]="!selectedBedIdForAssign">
           Guardar asignación
         </button>
       </div>

@@ -4,6 +4,7 @@ import { AppDataSource } from '../data-source';
 import { Patient } from '../entities/Patient';
 import { Schedule, ScheduleType, ScheduleStatus } from '../entities/Schedule';
 import { User } from '../entities/User';
+import { logger } from '../utils/logger';
 
 loadEnv();
 
@@ -52,9 +53,9 @@ function getRandomElements<T>(array: T[], count: number): T[] {
 
 async function seedSchedules() {
   try {
-    console.log('🔄 Inicializando conexión a la base de datos...');
+    logger.info('🔄 Inicializando conexión a la base de datos...');
     await AppDataSource.initialize();
-    console.log('✅ Conexión establecida\n');
+    logger.info('✅ Conexión establecida\n');
 
     const patientRepo = AppDataSource.getRepository(Patient);
     const scheduleRepo = AppDataSource.getRepository(Schedule);
@@ -64,16 +65,16 @@ async function seedSchedules() {
       where: { isActive: true }
     });
 
-    console.log(`👥 Pacientes encontrados: ${patients.length}\n`);
+    logger.info(`👥 Pacientes encontrados: ${patients.length}\n`);
 
     if (patients.length === 0) {
-      console.log('❌ No hay pacientes en la BD');
+      logger.info('❌ No hay pacientes en la BD');
       return;
     }
 
-    console.log('🗑️ Limpiando horarios existentes...');
+    logger.info('🗑️ Limpiando horarios existentes...');
     await scheduleRepo.clear();
-    console.log('✅ Horarios limpiados\n');
+    logger.info('✅ Horarios limpiados\n');
 
     let totalSchedulesCreated = 0;
 
@@ -81,7 +82,7 @@ async function seedSchedules() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    console.log('📅 Generando horarios para cada paciente...\n');
+    logger.info('📅 Generando horarios para cada paciente...\n');
 
     for (const patient of patients) {
       const patientWithBed = await patientRepo.findOne({
@@ -91,7 +92,7 @@ async function seedSchedules() {
       const bed = patientWithBed?.bed ?? null;
 
       if (!bed) {
-        console.log(`⚠️ Paciente ${patient.firstName} ${patient.lastName} sin cama, saltando...`);
+        logger.info(`⚠️ Paciente ${patient.firstName} ${patient.lastName} sin cama, saltando...`);
         continue;
       }
 
@@ -106,7 +107,7 @@ async function seedSchedules() {
 
       const assignedNurse = nurses[0];
 
-      console.log(`👤 ${patient.firstName} ${patient.lastName} (Cama: ${bed.bedNumber})`);
+      logger.info(`👤 ${patient.firstName} ${patient.lastName} (Cama: ${bed.bedNumber})`);
 
       // 1. Agregar 2-4 medicamentos aleatorios
       const patientMedications = getRandomElements(medications, 2 + Math.floor(Math.random() * 3));
@@ -131,7 +132,7 @@ async function seedSchedules() {
           await scheduleRepo.save(schedule);
           totalSchedulesCreated++;
         }
-        console.log(`   💊 ${med.name} ${med.dosage} (${med.times.length} dosis)`);
+        logger.info(`   💊 ${med.name} ${med.dosage} (${med.times.length} dosis)`);
       }
 
       // 2. Agregar 3-6 cuidados/tratamientos diarios aleatorios
@@ -156,17 +157,17 @@ async function seedSchedules() {
         await scheduleRepo.save(schedule);
         totalSchedulesCreated++;
       }
-      console.log(`   🩺 ${patientCares.length} cuidados programados`);
-      console.log('');
+      logger.info(`   🩺 ${patientCares.length} cuidados programados`);
+      logger.info('');
     }
 
-    console.log('\n🎉 ¡Horarios generados exitosamente!\n');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('📊 RESUMEN:');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log(`   👥 Pacientes procesados: ${patients.length}`);
-    console.log(`   📅 Total horarios creados: ${totalSchedulesCreated}`);
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    logger.info('\n🎉 ¡Horarios generados exitosamente!\n');
+    logger.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    logger.info('📊 RESUMEN:');
+    logger.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    logger.info(`   👥 Pacientes procesados: ${patients.length}`);
+    logger.info(`   📅 Total horarios creados: ${totalSchedulesCreated}`);
+    logger.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     
     // Resumen por tipo
     const medicationsCount = await scheduleRepo.count({
@@ -177,29 +178,29 @@ async function seedSchedules() {
       where: { type: ScheduleType.TREATMENT }
     });
 
-    console.log('\n📋 Por tipo:');
-    console.log(`   💊 Medicamentos: ${medicationsCount}`);
-    console.log(`   🩺 Tratamientos/Cuidados: ${treatmentsCount}`);
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+    logger.info('\n📋 Por tipo:');
+    logger.info(`   💊 Medicamentos: ${medicationsCount}`);
+    logger.info(`   🩺 Tratamientos/Cuidados: ${treatmentsCount}`);
+    logger.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
   } catch (error) {
-    console.error('❌ Error al generar horarios:', error);
+    logger.error('❌ Error al generar horarios:', error);
     throw error;
   } finally {
     if (AppDataSource.isInitialized) {
       await AppDataSource.destroy();
-      console.log('🔌 Conexión cerrada');
+      logger.info('🔌 Conexión cerrada');
     }
   }
 }
 
 seedSchedules()
   .then(() => {
-    console.log('✅ Proceso completado');
+    logger.info('✅ Proceso completado');
     process.exit(0);
   })
   .catch((error) => {
-    console.error('❌ Error fatal:', error);
+    logger.error('❌ Error fatal:', error);
     process.exit(1);
   });
 

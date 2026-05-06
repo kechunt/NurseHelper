@@ -1,0 +1,289 @@
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.48);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  padding: 2rem;
+}
+
+.modal-backdrop.modal-confirmation {
+  z-index: 2000 !important;
+}
+
+.modal-content {
+  background: #e0e5ec;
+  border-radius: 30px;
+  max-width: 900px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+  position: relative;
+}
+
+.modal-content.modal-small {
+  max-width: 600px;
+}
+
+.modal-content.nurse-aux-modal {
+  max-width: 520px;
+  border-radius: 20px;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.42);
+  border: none;
+}
+
+.modal-header {
+  padding: 2rem 2rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  flex-shrink: 0;
+  background: #e0e5ec;
+  border-radius: 30px 30px 0 0;
+}
+
+.modal-content.nurse-aux-modal .modal-header {
+  padding: 1.2rem 1.5rem 1rem;
+  border-radius: 20px 20px 0 0;
+}
+
+.modal-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 2rem;
+  right: 2rem;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(174, 174, 192, 0.2), transparent);
+}
+
+.modal-content.nurse-aux-modal .modal-header h3 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.modal-header h3 {
+  color: #4a5568;
+  font-size: 1.5rem;
+  font-weight: 300;
+  margin: 0;
+}
+
+.close-btn {
+  background: #e0e5ec;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 1.5rem;
+  color: #4a5568;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.28);
+}
+
+.close-btn:active {
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+}
+
+.modal-body {
+  padding: 2rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  min-height: 0;
+}
+
+.modal-content.nurse-aux-modal .modal-body {
+  padding: 0.75rem 1.5rem 1.25rem;
+}
+
+.medication-day-detail-body {
+  max-height: 72vh;
+  overflow-y: auto;
+}
+
+.modal-footer {
+  padding: 1.5rem 2rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  position: relative;
+  flex-shrink: 0;
+  background: #e0e5ec;
+  border-radius: 0 0 30px 30px;
+}
+
+.modal-footer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 2rem;
+  right: 2rem;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(174, 174, 192, 0.2), transparent);
+}
+
+.modal-content.nurse-aux-modal .modal-footer.nurse-aux-modal__footer {
+  padding: 1rem 1.5rem 1.35rem;
+  justify-content: center;
+}
+
+.modal-content.nurse-aux-modal .modal-footer.nurse-aux-modal__footer::before {
+  display: none;
+}
+
+.nurse-aux-modal__inset {
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.85rem;
+  background: #e0e5ec;
+  border-radius: 15px;
+  box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
+}
+
+.nurse-aux-modal__inset--compact {
+  margin-bottom: 0.65rem;
+}
+
+.history-detail-sep {
+  border: none;
+  border-top: 1px solid rgba(174, 174, 192, 0.45);
+  margin: 0.75rem 0;
+}
+
+.med-day-detail-line {
+  margin: 0.4rem 0;
+  font-size: 0.92rem;
+  color: #2d3748;
+  line-height: 1.45;
+}
+
+.med-day-detail-note-block {
+  margin: 0.35rem 0 0.75rem;
+  padding: 0.75rem;
+  background: #e0e5ec;
+  border-radius: 14px;
+  border: none;
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+  font-size: 0.9rem;
+  color: #2d3748;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* —— Vista táctil / móvil: panel ancho, acciones apiladas —— */
+.nurse-pending-task-detail-backdrop.modal-backdrop {
+  padding: 0.75rem;
+  align-items: flex-end;
+}
+
+@media (min-width: 600px) {
+  .nurse-pending-task-detail-backdrop.modal-backdrop {
+    align-items: center;
+    padding: 2rem;
+  }
+}
+
+.nurse-pending-task-detail-sheet.modal-content.nurse-aux-modal {
+  width: 100%;
+  max-width: min(520px, calc(100vw - 1.5rem));
+}
+
+@media (max-width: 599px) {
+  .nurse-pending-task-detail-sheet.modal-content.nurse-aux-modal {
+    max-width: 100%;
+    border-radius: 18px 18px 12px 12px;
+    margin-bottom: 0;
+  }
+}
+
+.nurse-pending-task-detail-body.modal-body {
+  padding-bottom: 0.5rem;
+}
+
+.nurse-pending-task-detail-footer.modal-footer.nurse-aux-modal__footer {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.85rem;
+  padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+}
+
+.nurse-pending-task-detail-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  width: 100%;
+}
+
+.nurse-pending-task-detail-action {
+  width: 100%;
+  min-height: 48px;
+  padding: 0.65rem 1rem;
+  border: none;
+  border-radius: 14px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  color: #2d3748;
+  box-shadow: 4px 4px 10px #bebebe, -3px -3px 8px #ffffff;
+  transition: box-shadow 0.15s ease;
+}
+
+.nurse-pending-task-detail-action:disabled {
+  opacity: 0.48;
+  cursor: not-allowed;
+}
+
+.nurse-pending-task-detail-action:active:not(:disabled) {
+  box-shadow: inset 3px 3px 8px #bebebe, inset -2px -2px 6px #ffffff;
+}
+
+.nurse-pending-task-detail-action--complete {
+  background: linear-gradient(145deg, #e8f5e9, #dcecdf);
+}
+
+.nurse-pending-task-detail-action--missed {
+  background: linear-gradient(145deg, #ffebee, #f8dce0);
+}
+
+.nurse-pending-task-detail-action--postpone {
+  background: linear-gradient(145deg, #e3f2fd, #d7e8f5);
+}
+
+.nurse-pending-task-detail-close-footer {
+  width: 100%;
+  justify-content: center;
+}
+
+.nurse-pending-task-detail-status-value {
+  font-weight: 600;
+  margin-left: 0.25rem;
+}
+
+.nurse-pending-task-detail-reason {
+  margin: 0.5rem 0 0;
+  font-size: 0.88rem;
+  color: #c53030;
+  line-height: 1.4;
+}

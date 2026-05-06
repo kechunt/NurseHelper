@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { AuthRequest } from '../middleware/auth.middleware';
 import { LessThan } from 'typeorm';
 import { AppDataSource } from '../data-source';
 import { User, UserRole } from '../entities/User';
@@ -6,6 +7,7 @@ import { PendingRegistration } from '../entities/PendingRegistration';
 import { generateToken } from '../utils/jwt';
 import { auditService, AuditService } from '../services/audit.service';
 import { emailService } from '../services/email.service';
+import { logger } from '../utils/logger';
 
 export class AuthController {
   async login(req: Request, res: Response): Promise<void> {
@@ -95,10 +97,11 @@ export class AuthController {
           firstName: user.firstName,
           lastName: user.lastName,
           role: user.role,
+          phone: user.phone ?? null,
         },
       });
     } catch (error) {
-      console.error('Error en login:', error);
+      logger.error('Error en login:', error);
       res.status(500).json({ message: 'Error interno del servidor' });
     }
   }
@@ -111,6 +114,7 @@ export class AuthController {
         password,
         firstName,
         lastName,
+        phone: phoneRaw,
         role = UserRole.NURSE,
       } = req.body;
 
@@ -119,6 +123,16 @@ export class AuthController {
           message: 'Todos los campos son requeridos',
         });
         return;
+      }
+
+      let phoneNorm: string | null = null;
+      if (phoneRaw !== undefined && phoneRaw !== null && String(phoneRaw).trim() !== '') {
+        const p = String(phoneRaw).trim();
+        if (p.length > 30) {
+          res.status(400).json({ message: 'El teléfono no puede superar 30 caracteres' });
+          return;
+        }
+        phoneNorm = p;
       }
 
       if (!Object.values(UserRole).includes(role)) {
@@ -183,6 +197,7 @@ export class AuthController {
       pending.password = password;
       pending.firstName = firstName;
       pending.lastName = lastName;
+      pending.phone = phoneNorm;
       pending.role = role;
       pending.verificationCode = verificationCode;
       pending.verificationCodeExpires = verificationCodeExpires;
@@ -192,7 +207,7 @@ export class AuthController {
       try {
         await emailService.sendVerificationCode(email, verificationCode, firstName);
       } catch (error) {
-        console.error('Error enviando código de verificación:', error);
+        logger.error('Error enviando código de verificación:', error);
       }
 
       res.status(201).json({
@@ -208,10 +223,11 @@ export class AuthController {
           lastName: pending.lastName,
           role: pending.role,
           emailVerified: false,
+          phone: pending.phone,
         },
       });
     } catch (error) {
-      console.error('Error en registro:', error);
+      logger.error('Error en registro:', error);
       res.status(500).json({ message: 'Error interno del servidor' });
     }
   }
@@ -268,6 +284,7 @@ export class AuthController {
           u.password = pending.password;
           u.firstName = pending.firstName;
           u.lastName = pending.lastName;
+          u.phone = pending.phone ?? null;
           u.role = pending.role;
           u.emailVerified = true;
           u.verificationCode = null;
@@ -292,6 +309,7 @@ export class AuthController {
             lastName: savedUser.lastName,
             role: savedUser.role,
             emailVerified: true,
+            phone: savedUser.phone ?? null,
           },
         });
         return;
@@ -347,10 +365,11 @@ export class AuthController {
           lastName: user.lastName,
           role: user.role,
           emailVerified: true,
+          phone: user.phone ?? null,
         },
       });
     } catch (error) {
-      console.error('Error en verifyEmail:', error);
+      logger.error('Error en verifyEmail:', error);
       res.status(500).json({ message: 'Error interno del servidor' });
     }
   }
@@ -385,7 +404,7 @@ export class AuthController {
         try {
           await emailService.sendVerificationCode(email, verificationCode, pending.firstName);
         } catch (error) {
-          console.error('Error enviando código de verificación:', error);
+          logger.error('Error enviando código de verificación:', error);
           res.status(500).json({
             message: 'Error al enviar el código de verificación. Por favor intenta más tarde.',
           });
@@ -432,7 +451,7 @@ export class AuthController {
       try {
         await emailService.sendVerificationCode(email, verificationCode, user.firstName);
       } catch (error) {
-        console.error('Error enviando código de verificación:', error);
+        logger.error('Error enviando código de verificación:', error);
         res.status(500).json({
           message: 'Error al enviar el código de verificación. Por favor intenta más tarde.',
         });
@@ -448,14 +467,131 @@ export class AuthController {
         smtpConfigured,
       });
     } catch (error) {
-      console.error('Error en resendVerificationCode:', error);
+      logger.error('Error en resendVerificationCode:', error);
+      res.status(500).json({ message: 'Error interno del servidor' });
+    }
+  }
+
+  async updateMe(req: Request, res: Response): Promise<void> {
+    try {
+      const authReq = req as AuthRequest;
+      const me = authReq.user;
+
+      if (!me?.id) {
+        res.status(401).json({ message: 'Usuario no autenticado' });
+        return;
+      }
+
+      const { username, email, firstName, lastName, phone: phoneBody } = req.body;
+
+      if (
+        username === undefined ||
+        email === undefined ||
+        firstName === undefined ||
+        lastName === undefined
+      ) {
+        res.status(400).json({
+          message: 'Nombre, apellido, usuario y email son requeridos',
+        });
+        return;
+      }
+
+      const usernameTrim = String(username).trim();
+      const emailTrim = String(email).trim();
+      const firstNameTrim = String(firstName).trim();
+      const lastNameTrim = String(lastName).trim();
+
+      if (!firstNameTrim || !lastNameTrim || !usernameTrim || !emailTrim) {
+        res.status(400).json({ message: 'Completa todos los campos' });
+        return;
+      }
+
+      if (usernameTrim.length < 3 || usernameTrim.length > 50) {
+        res.status(400).json({
+          message: 'El nombre de usuario debe tener entre 3 y 50 caracteres',
+        });
+        return;
+      }
+
+      const userRepository = AppDataSource.getRepository(User);
+      const user = await userRepository.findOne({ where: { id: me.id } });
+
+      if (!user) {
+        res.status(404).json({ message: 'Usuario no encontrado' });
+        return;
+      }
+
+      if (usernameTrim !== user.username) {
+        const existingUsername = await userRepository.findOne({
+          where: { username: usernameTrim },
+        });
+        if (existingUsername) {
+          res.status(400).json({ message: 'El nombre de usuario ya está en uso' });
+          return;
+        }
+        user.username = usernameTrim;
+      }
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(emailTrim)) {
+        res.status(400).json({ message: 'Email inválido' });
+        return;
+      }
+
+      if (emailTrim !== user.email) {
+        const existingEmail = await userRepository.findOne({
+          where: { email: emailTrim },
+        });
+        if (existingEmail) {
+          res.status(400).json({ message: 'El correo electrónico ya está en uso' });
+          return;
+        }
+        user.email = emailTrim;
+      }
+
+      user.firstName = firstNameTrim;
+      user.lastName = lastNameTrim;
+
+      if (Object.prototype.hasOwnProperty.call(req.body, 'phone')) {
+        if (phoneBody === null || phoneBody === '') {
+          user.phone = null;
+        } else {
+          const p = String(phoneBody).trim();
+          if (p.length > 30) {
+            res.status(400).json({ message: 'El teléfono no puede superar 30 caracteres' });
+            return;
+          }
+          user.phone = p.length > 0 ? p : null;
+        }
+      }
+
+      await userRepository.save(user);
+
+      res.json({
+        message: 'Información actualizada',
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.role,
+          emailVerified: user.emailVerified || false,
+          isActive: user.isActive,
+          maxPatients: user.maxPatients,
+          assignedAreaId: user.assignedAreaId ?? null,
+          phone: user.phone ?? null,
+        },
+      });
+    } catch (error) {
+      logger.error('Error en updateMe:', error);
       res.status(500).json({ message: 'Error interno del servidor' });
     }
   }
 
   async me(req: Request, res: Response): Promise<void> {
     try {
-      const authReq = req as any;
+      const authReq = req as AuthRequest;
       const user = authReq.user;
 
       if (!user) {
@@ -472,10 +608,11 @@ export class AuthController {
           lastName: user.lastName,
           role: user.role,
           emailVerified: user.emailVerified || false,
+          phone: user.phone ?? null,
         },
       });
     } catch (error) {
-      console.error('Error en me:', error);
+      logger.error('Error en me:', error);
       res.status(500).json({ message: 'Error interno del servidor' });
     }
   }

@@ -25,6 +25,12 @@ jest.mock('../../../services/cache.service', () => ({
   },
 }));
 
+jest.mock('../../../services/patient-clinical-note.service', () => ({
+  insertPatientClinicalNote: jest.fn().mockResolvedValue({ id: 1 }),
+  observationScopeToCategory: jest.requireActual('../../../services/patient-clinical-note.service')
+    .observationScopeToCategory,
+}));
+
 describe('PatientService', () => {
   let patientService: PatientService;
   let mockPatientRepository: any;
@@ -41,6 +47,7 @@ describe('PatientService', () => {
       findOne: jest.fn(),
       find: jest.fn(),
       save: jest.fn(),
+      update: jest.fn().mockResolvedValue({ affected: 1 }),
       remove: jest.fn(),
     };
 
@@ -123,20 +130,64 @@ describe('PatientService', () => {
   });
 
   describe('saveObservation', () => {
-    it('debería guardar observación exitosamente', async () => {
+    it('debería guardar observación en tabla clínica', async () => {
       const patient = { id: 1, generalObservations: null };
       const dto: SaveObservationDto = { observation: 'Nueva observación' };
+      const { cacheService } = require('../../../services/cache.service');
+      const { insertPatientClinicalNote } = require('../../../services/patient-clinical-note.service');
 
+      cacheService.get.mockResolvedValue(null);
       mockPatientRepository.findOne.mockResolvedValue(patient);
-      mockPatientRepository.save.mockResolvedValue({
-        ...patient,
-        generalObservations: '[timestamp] Nueva observación',
+
+      await patientService.saveObservation(1, dto, 42);
+
+      expect(insertPatientClinicalNote).toHaveBeenCalledWith({
+        patientId: 1,
+        category: 'general',
+        body: 'Nueva observación',
+        authorUserId: 42,
       });
+      expect(mockPatientRepository.save).not.toHaveBeenCalled();
+      expect(cacheService.delete).toHaveBeenCalled();
+    });
 
-      const result = await patientService.saveObservation(1, dto);
+    it('debería usar categoría medical cuando scope es medical', async () => {
+      const patient = { id: 1, medicalObservations: 'prev', generalObservations: null };
+      const dto: SaveObservationDto = { observation: 'Evolución estable', scope: 'medical' };
+      const { cacheService } = require('../../../services/cache.service');
+      const { insertPatientClinicalNote } = require('../../../services/patient-clinical-note.service');
 
-      expect(mockPatientRepository.save).toHaveBeenCalled();
-      expect(result).toBeDefined();
+      cacheService.get.mockResolvedValue(null);
+      mockPatientRepository.findOne.mockResolvedValue(patient);
+
+      await patientService.saveObservation(1, dto, 5);
+
+      expect(insertPatientClinicalNote).toHaveBeenCalledWith(
+        expect.objectContaining({
+          category: 'medical',
+          body: 'Evolución estable',
+          authorUserId: 5,
+        })
+      );
+    });
+
+    it('debería usar categoría diagnosis cuando scope es diagnosis', async () => {
+      const patient = { id: 1, medicalHistory: 'prev', generalObservations: null };
+      const dto: SaveObservationDto = { observation: 'Nuevo hallazgo', scope: 'diagnosis' };
+      const { cacheService } = require('../../../services/cache.service');
+      const { insertPatientClinicalNote } = require('../../../services/patient-clinical-note.service');
+
+      cacheService.get.mockResolvedValue(null);
+      mockPatientRepository.findOne.mockResolvedValue(patient);
+
+      await patientService.saveObservation(1, dto, 5);
+
+      expect(insertPatientClinicalNote).toHaveBeenCalledWith(
+        expect.objectContaining({
+          category: 'diagnosis',
+          body: 'Nuevo hallazgo',
+        })
+      );
     });
 
     it('debería lanzar ValidationError si observación está vacía', async () => {
@@ -144,28 +195,35 @@ describe('PatientService', () => {
       const dto: SaveObservationDto = { observation: '' };
       const { cacheService } = require('../../../services/cache.service');
 
-      // Mock getPatientById para que retorne un paciente válido
       cacheService.get.mockResolvedValue(null);
       mockPatientRepository.findOne.mockResolvedValue(patient);
 
-      await expect(patientService.saveObservation(1, dto)).rejects.toThrow(ValidationError);
+      await expect(patientService.saveObservation(1, dto, 1)).rejects.toThrow(ValidationError);
+    });
+
+    it('debería lanzar ValidationError si falta authorUserId', async () => {
+      const patient = { id: 1, generalObservations: null };
+      const dto: SaveObservationDto = { observation: 'Texto' };
+      const { cacheService } = require('../../../services/cache.service');
+
+      cacheService.get.mockResolvedValue(null);
+      mockPatientRepository.findOne.mockResolvedValue(patient);
+
+      await expect(patientService.saveObservation(1, dto, 0)).rejects.toThrow(ValidationError);
     });
   });
 
   describe('deletePatient', () => {
-    it('debería eliminar paciente y desasignar cama', async () => {
+    it('debería eliminar paciente y desasignar cama (bedId null)', async () => {
       const patient = { id: 1 };
-      const bed = { id: 1, patientId: 1 };
 
       mockPatientRepository.findOne.mockResolvedValue(patient);
-      mockBedRepository.findOne.mockResolvedValue(bed);
-      mockBedRepository.save.mockResolvedValue({ ...bed, patientId: null });
       mockScheduleRepository.delete.mockResolvedValue({});
       mockPatientRepository.remove.mockResolvedValue(patient);
 
       await patientService.deletePatient(1);
 
-      expect(mockBedRepository.save).toHaveBeenCalledWith({ ...bed, patientId: null });
+      expect(mockPatientRepository.update).toHaveBeenCalledWith({ id: 1 }, { bedId: null });
       expect(mockScheduleRepository.delete).toHaveBeenCalledWith({ patientId: 1 });
       expect(mockPatientRepository.remove).toHaveBeenCalledWith(patient);
     });

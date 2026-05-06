@@ -114,17 +114,16 @@ if (-not (Test-Path $frontendModules)) {
 }
 Write-Host ''
 
-Write-Info '🔄 Verificando migraciones pendientes...'
+Write-Info '🔄 Ejecutando migraciones TypeORM (pacientes, observaciones clínicas, etc.)...'
 Push-Location (Join-Path $RepoRoot 'backend')
 try {
-  $migrationOutput = npm run migration:run 2>&1 | Out-String
-  if ($migrationOutput -match 'No migrations') {
-    Write-Ok '✅ No hay migraciones pendientes'
-  } else {
-    Write-Ok '✅ Migraciones ejecutadas'
+  npm run migration:run
+  if ($LASTEXITCODE -ne 0) {
+    Write-Err '❌ Las migraciones fallaron. Revise MySQL y variables DB_* (.env.local).'
+    Write-Err '   Manual: cd backend; npm run migration:run'
+    exit 1
   }
-} catch {
-  Write-Warn "⚠️  No se pudieron ejecutar migraciones: $($_.Exception.Message)"
+  Write-Ok '✅ Migraciones aplicadas o ya estaban al día'
 } finally {
   Pop-Location
 }

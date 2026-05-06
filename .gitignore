@@ -2,5 +2,6 @@ node_modules
 .angular/
 .DS_Store
 **/.DS_Store
-frontend/.angular/cache/
+# Caché del Angular CLI bajo el proyecto frontend (no versionar)
+frontend/.angular/
 *.tsbuildinfo

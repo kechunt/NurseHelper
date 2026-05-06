@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import { loadEnv } from './utils/env';
+import { logger } from './utils/logger';
 import { AppDataSource } from './data-source';
 import { setupSwagger } from './config/swagger';
 import { errorHandler } from './utils/error-handler';
@@ -61,7 +62,7 @@ const corsOptions: cors.CorsOptions = {
     if (isAllowed) {
       callback(null, true);
     } else {
-      console.warn(`⚠️ CORS bloqueado para origin: ${origin}`);
+      logger.warn(`⚠️ CORS bloqueado para origin: ${origin}`);
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -84,12 +85,12 @@ app.use(metricsMiddleware);
 app.use(rateLimitMiddleware());
 
 // Swagger Documentation
-console.log('🔄 Configurando Swagger...');
+logger.info('🔄 Configurando Swagger...');
 setupSwagger(app);
-console.log('✅ Swagger configurado');
+logger.info('✅ Swagger configurado');
 
 // Rutas
-console.log('🔄 Registrando rutas...');
+logger.info('🔄 Registrando rutas...');
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/areas', areasRoutes);
@@ -106,7 +107,7 @@ app.use('/api/notifications', notificationsRoutes);
 app.use('/api/backup', backupRoutes);
 app.use('/api/diagnostic', diagnosticRoutes);
 app.use('/health', healthRoutes);
-console.log('✅ Rutas registradas');
+logger.info('✅ Rutas registradas');
 
 /**
  * @swagger
@@ -185,14 +186,14 @@ app.use(errorHandler);
  */
 
 // Inicializar base de datos y servidor
-console.log('🔄 Iniciando conexión a la base de datos...');
+logger.info('🔄 Iniciando conexión a la base de datos...');
 AppDataSource.initialize()
   .then(() => {
-    console.log('✅ Base de datos conectada exitosamente');
-    console.log(`📊 Base de datos: ${process.env.DB_DATABASE || 'nursehelper'}`);
-    console.log(`🖥️  Host: ${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || '3306'}`);
+    logger.info('✅ Base de datos conectada exitosamente');
+    logger.info(`📊 Base de datos: ${process.env.DB_DATABASE || 'nursehelper'}`);
+    logger.info(`🖥️  Host: ${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || '3306'}`);
     
-    console.log('🔄 Iniciando servidor HTTP...');
+    logger.info('🔄 Iniciando servidor HTTP...');
     // Escuchar en todas las interfaces (0.0.0.0) para permitir conexiones locales y remotas
     const server = app.listen(PORT, '0.0.0.0', () => {
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4200';
@@ -202,28 +203,28 @@ AppDataSource.initialize()
         ? `${address.address}:${address.port}` 
         : `0.0.0.0:${PORT}`;
       
-      console.log(`🚀 Backend: ${backendUrl}`);
-      console.log(`🌐 Frontend: ${frontendUrl}`);
-      console.log(`📚 Swagger: ${backendUrl}/api-docs`);
-      console.log(`🔌 Escuchando en: ${actualAddress}`);
-      console.log(`✅ Servidor iniciado correctamente y listo para recibir conexiones`);
-      console.log(`\n💡 Para verificar: curl http://localhost:${PORT}/health\n`);
+      logger.info(`🚀 Backend: ${backendUrl}`);
+      logger.info(`🌐 Frontend: ${frontendUrl}`);
+      logger.info(`📚 Swagger: ${backendUrl}/api-docs`);
+      logger.info(`🔌 Escuchando en: ${actualAddress}`);
+      logger.info(`✅ Servidor iniciado correctamente y listo para recibir conexiones`);
+      logger.info(`\n💡 Para verificar: curl http://localhost:${PORT}/health\n`);
     });
 
     server.on('error', (error: any) => {
       if (error.code === 'EADDRINUSE') {
-        console.error(`❌ El puerto ${PORT} ya está en uso.`);
+        logger.error(`❌ El puerto ${PORT} ya está en uso.`);
         if (process.env.NODE_ENV !== 'production') {
-          console.error(`💡 En desarrollo puedes liberar el puerto: lsof -ti:${PORT} | xargs kill -9`);
+          logger.error(`💡 En desarrollo puedes liberar el puerto: lsof -ti:${PORT} | xargs kill -9`);
         }
-        console.error(`💡 O define otro puerto en el entorno, por ejemplo: PORT=3001`);
+        logger.error(`💡 O define otro puerto en el entorno, por ejemplo: PORT=3001`);
       } else if (error.code === 'EACCES') {
-        console.error(`❌ No tienes permisos para usar el puerto ${PORT}`);
-        console.error(`💡 Intenta usar un puerto mayor a 1024 o ejecuta con sudo`);
+        logger.error(`❌ No tienes permisos para usar el puerto ${PORT}`);
+        logger.error(`💡 Intenta usar un puerto mayor a 1024 o ejecuta con sudo`);
       } else {
-        console.error('❌ Error al iniciar el servidor:', error);
-        console.error(`   Código: ${error.code}`);
-        console.error(`   Mensaje: ${error.message}`);
+        logger.error('❌ Error al iniciar el servidor:', error);
+        logger.error(`   Código: ${error.code}`);
+        logger.error(`   Mensaje: ${error.message}`);
       }
       process.exit(1);
     });
@@ -233,49 +234,49 @@ AppDataSource.initialize()
       const address = server.address();
       if (address) {
         const addr = typeof address === 'string' ? address : `${address.address}:${address.port}`;
-        console.log(`🔌 Servidor escuchando en: ${addr}`);
+        logger.info(`🔌 Servidor escuchando en: ${addr}`);
       }
     });
   })
   .catch((error) => {
-    console.error('❌ Error al conectar la base de datos:', error);
+    logger.error('❌ Error al conectar la base de datos:', error);
     
     // Manejo específico de errores comunes
     if (error.code === 'ER_ACCESS_DENIED_ERROR') {
-      console.error('💡 Verifica las credenciales en las variables de entorno');
-      console.error('   Variables a verificar: DB_USERNAME, DB_PASSWORD');
+      logger.error('💡 Verifica las credenciales en las variables de entorno');
+      logger.error('   Variables a verificar: DB_USERNAME, DB_PASSWORD');
     } else if (error.code === 'ER_BAD_DB_ERROR') {
-      console.error('💡 ERROR: La base de datos especificada no existe');
-      console.error(`   Base de datos intentada: ${process.env.DB_DATABASE || 'nursehelper'}`);
-      console.error('');
-      console.error('🔧 SOLUCIÓN:');
-      console.error('   1. Verifica que la variable DB_DATABASE en Railway esté correcta');
-      console.error('   2. Asegúrate de que el nombre de la BD coincida exactamente');
-      console.error('   3. Si usas Railway, verifica que la BD esté creada y activa');
-      console.error('');
+      logger.error('💡 ERROR: La base de datos especificada no existe');
+      logger.error(`   Base de datos intentada: ${process.env.DB_DATABASE || 'nursehelper'}`);
+      logger.error('');
+      logger.error('🔧 SOLUCIÓN:');
+      logger.error('   1. Verifica que la variable DB_DATABASE en Railway esté correcta');
+      logger.error('   2. Asegúrate de que el nombre de la BD coincida exactamente');
+      logger.error('   3. Si usas Railway, verifica que la BD esté creada y activa');
+      logger.error('');
       if (process.env.DB_DATABASE?.toLowerCase().includes('raikway')) {
-        console.error('⚠️  DETECTADO: El nombre contiene "raikway" (error de tipeo)');
-        console.error('   Debe ser "railway" (con "l" después de "rai")');
+        logger.error('⚠️  DETECTADO: El nombre contiene "raikway" (error de tipeo)');
+        logger.error('   Debe ser "railway" (con "l" después de "rai")');
       }
     } else if (error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT') {
-      console.error('💡 ERROR: No se puede conectar al servidor de base de datos');
-      console.error(`   Host intentado: ${process.env.DB_HOST || 'localhost'}`);
-      console.error(`   Puerto intentado: ${process.env.DB_PORT || '3306'}`);
-      console.error('');
-      console.error('🔧 POSIBLES SOLUCIONES:');
-      console.error('   1. Verifica que el servidor de base de datos esté corriendo');
-      console.error('   2. Verifica las variables DB_HOST y DB_PORT en tu archivo .env');
-      console.error('   3. Si usas Railway, verifica que el servicio esté activo');
-      console.error('   4. Para desarrollo local, asegúrate de que MySQL esté corriendo:');
-      console.error('      brew services start mysql');
-      console.error('   5. Puedes aumentar el timeout con: DB_CONNECT_TIMEOUT=60000');
-      console.error('');
+      logger.error('💡 ERROR: No se puede conectar al servidor de base de datos');
+      logger.error(`   Host intentado: ${process.env.DB_HOST || 'localhost'}`);
+      logger.error(`   Puerto intentado: ${process.env.DB_PORT || '3306'}`);
+      logger.error('');
+      logger.error('🔧 POSIBLES SOLUCIONES:');
+      logger.error('   1. Verifica que el servidor de base de datos esté corriendo');
+      logger.error('   2. Verifica las variables DB_HOST y DB_PORT en tu archivo .env');
+      logger.error('   3. Si usas Railway, verifica que el servicio esté activo');
+      logger.error('   4. Para desarrollo local, asegúrate de que MySQL esté corriendo:');
+      logger.error('      brew services start mysql');
+      logger.error('   5. Puedes aumentar el timeout con: DB_CONNECT_TIMEOUT=60000');
+      logger.error('');
       if (process.env.DB_HOST && !process.env.DB_HOST.includes('localhost') && !process.env.DB_HOST.includes('127.0.0.1')) {
-        console.error('⚠️  Estás intentando conectarte a un servidor remoto.');
-        console.error('   Para desarrollo local, considera usar:');
-        console.error('   DB_HOST=localhost');
-        console.error('   DB_PORT=3306');
-        console.error('   DB_DATABASE=nursehelper');
+        logger.error('⚠️  Estás intentando conectarte a un servidor remoto.');
+        logger.error('   Para desarrollo local, considera usar:');
+        logger.error('   DB_HOST=localhost');
+        logger.error('   DB_PORT=3306');
+        logger.error('   DB_DATABASE=nursehelper');
       }
     }
     

@@ -12,6 +12,7 @@ import { Area } from '../../entities/Area';
 import { Bed } from '../../entities/Bed';
 import { generateToken } from '../../utils/jwt';
 import bcrypt from 'bcryptjs';
+import { logger } from '../../utils/logger';
 
 describe('Full System Integration Tests', () => {
   let adminToken: string;
@@ -26,17 +27,17 @@ describe('Full System Integration Tests', () => {
 
   beforeAll(async () => {
     // Inicializar conexión a BD
-    console.log('🔄 Inicializando conexión a base de datos...');
+    logger.info('🔄 Inicializando conexión a base de datos...');
     
     try {
       if (!AppDataSource.isInitialized) {
         await AppDataSource.initialize();
-        console.log('✅ Base de datos conectada');
+        logger.info('✅ Base de datos conectada');
       }
 
       // Verificar conexión
       await AppDataSource.query('SELECT 1');
-      console.log('✅ Conexión a BD verificada');
+      logger.info('✅ Conexión a BD verificada');
       canConnect = true;
 
       // Crear usuarios de prueba
@@ -54,7 +55,7 @@ describe('Full System Integration Tests', () => {
         isActive: true,
       });
       adminToken = generateToken(adminUser.id, adminUser.role);
-      console.log('✅ Usuario admin creado');
+      logger.info('✅ Usuario admin creado');
 
       // Nurse user
       const hashedPasswordNurse = await bcrypt.hash('nurse123', 10);
@@ -68,7 +69,7 @@ describe('Full System Integration Tests', () => {
         isActive: true,
       });
       nurseToken = generateToken(nurseUser.id, nurseUser.role);
-      console.log('✅ Usuario enfermera creado');
+      logger.info('✅ Usuario enfermera creado');
 
       // Crear área de prueba
       const areaRepository = AppDataSource.getRepository(Area);
@@ -77,7 +78,7 @@ describe('Full System Integration Tests', () => {
         description: 'Área de prueba',
         isActive: true,
       });
-      console.log('✅ Área de prueba creada');
+      logger.info('✅ Área de prueba creada');
 
       // Crear cama de prueba
       const bedRepository = AppDataSource.getRepository(Bed);
@@ -87,18 +88,18 @@ describe('Full System Integration Tests', () => {
         isOccupied: false,
         isActive: true,
       });
-      console.log('✅ Cama de prueba creada');
+      logger.info('✅ Cama de prueba creada');
 
     } catch (error: any) {
-      console.warn('⚠️ No se pudo conectar a BD. Algunos tests se saltarán.');
-      console.warn('   Error:', error.message);
-      console.warn('   Esto es normal si MySQL no está corriendo.');
+      logger.warn('⚠️ No se pudo conectar a BD. Algunos tests se saltarán.');
+      logger.warn('   Error:', error.message);
+      logger.warn('   Esto es normal si MySQL no está corriendo.');
       canConnect = false;
     }
   });
 
   afterAll(async () => {
-    console.log('🔄 Limpiando datos de prueba...');
+    logger.info('🔄 Limpiando datos de prueba...');
     
     try {
       const patientRepository = AppDataSource.getRepository(Patient);
@@ -132,10 +133,10 @@ describe('Full System Integration Tests', () => {
       // Cerrar conexión
       if (AppDataSource.isInitialized) {
         await AppDataSource.destroy();
-        console.log('✅ Conexión cerrada');
+        logger.info('✅ Conexión cerrada');
       }
     } catch (error) {
-      console.error('❌ Error en afterAll:', error);
+      logger.error('❌ Error en afterAll:', error);
     }
   });
 
@@ -148,9 +149,9 @@ describe('Full System Integration Tests', () => {
       if (response.status === 200) {
         expect(response.body).toHaveProperty('status');
         expect(response.body).toHaveProperty('timestamp');
-        console.log('✅ Health check básico: OK');
+        logger.info('✅ Health check básico: OK');
       } else {
-        console.log('⚠️ Health check básico: BD no disponible');
+        logger.info('⚠️ Health check básico: BD no disponible');
       }
     });
 
@@ -488,31 +489,31 @@ describe('Full System Integration Tests', () => {
   describe('14. Validación de Base de Datos', () => {
     it('debería tener conexión activa', async () => {
       if (!canConnect) {
-        console.log('⏭️ Test saltado - BD no disponible');
+        logger.info('⏭️ Test saltado - BD no disponible');
         return;
       }
       expect(AppDataSource.isInitialized).toBe(true);
       
       const result = await AppDataSource.query('SELECT 1 as test');
       expect(result[0].test).toBe(1);
-      console.log('✅ Conexión activa verificada');
+      logger.info('✅ Conexión activa verificada');
     });
 
     it('debería poder ejecutar queries complejas', async () => {
       if (!canConnect) {
-        console.log('⏭️ Test saltado - BD no disponible');
+        logger.info('⏭️ Test saltado - BD no disponible');
         return;
       }
       const result = await AppDataSource.query(`
         SELECT COUNT(*) as count FROM users WHERE isActive = 1
       `);
       expect(result[0].count).toBeGreaterThanOrEqual(0);
-      console.log('✅ Query compleja ejecutada');
+      logger.info('✅ Query compleja ejecutada');
     });
 
     it('debería tener todas las entidades registradas', () => {
       if (!canConnect) {
-        console.log('⏭️ Test saltado - BD no disponible');
+        logger.info('⏭️ Test saltado - BD no disponible');
         return;
       }
       const entities = AppDataSource.entityMetadatas;
@@ -523,7 +524,7 @@ describe('Full System Integration Tests', () => {
       expect(entityNames).toContain('Area');
       expect(entityNames).toContain('Bed');
       expect(entityNames).toContain('Schedule');
-      console.log('✅ Entidades registradas:', entityNames.length);
+      logger.info('✅ Entidades registradas:', entityNames.length);
     });
   });
 

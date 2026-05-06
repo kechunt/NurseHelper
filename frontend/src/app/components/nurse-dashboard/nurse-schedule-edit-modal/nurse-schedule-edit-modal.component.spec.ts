@@ -1,0 +1,89 @@
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { of, throwError } from 'rxjs';
+import { NurseScheduleEditModalComponent } from './nurse-schedule-edit-modal.component';
+import { NurseService } from '../../../services/nurse.service';
+import { ToastService } from '../../../services/toast.service';
+
+function ensureLocalizeShim(): void {
+  const g = globalThis as any;
+  if (typeof g.$localize === 'function') {
+    return;
+  }
+  g.$localize = (strings: TemplateStringsArray, ...expr: unknown[]) =>
+    strings.reduce((acc, rawPart, idx) => {
+      const part = idx === 0 ? rawPart.replace(/^:.*?:/, '') : rawPart;
+      return acc + part + (idx < expr.length ? String(expr[idx]) : '');
+    }, '');
+}
+
+describe('NurseScheduleEditModalComponent', () => {
+  let fixture: ComponentFixture<NurseScheduleEditModalComponent>;
+  const nurseMock = {
+    patchPatientSchedule: jasmine.createSpy('patchPatientSchedule').and.returnValue(of({ ok: true })),
+  };
+  const toastMock = {
+    success: jasmine.createSpy('success'),
+    error: jasmine.createSpy('error'),
+  };
+
+  beforeEach(async () => {
+    ensureLocalizeShim();
+    await TestBed.configureTestingModule({
+      imports: [NurseScheduleEditModalComponent],
+      providers: [
+        { provide: NurseService, useValue: nurseMock },
+        { provide: ToastService, useValue: toastMock },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(NurseScheduleEditModalComponent);
+    fixture.componentRef.setInput('patientId', 5);
+    fixture.componentRef.setInput('edit', {
+      scheduleId: 99,
+      description: 'Curación inicial',
+      notes: 'Nota previa',
+    });
+    fixture.detectChanges();
+    nurseMock.patchPatientSchedule.calls.reset();
+    nurseMock.patchPatientSchedule.and.returnValue(of({ ok: true }));
+    toastMock.success.calls.reset();
+    toastMock.error.calls.reset();
+  });
+
+  it('ngOnChanges copia descripción y notas desde edit', () => {
+    expect(fixture.componentInstance.description).toBe('Curación inicial');
+    expect(fixture.componentInstance.notes).toBe('Nota previa');
+  });
+
+  it('save delega a NurseService y emite saved en éxito', () => {
+    let saved = false;
+    const sub = fixture.componentInstance.saved.subscribe(() => {
+      saved = true;
+    });
+    fixture.componentInstance.description = 'Nueva desc';
+    fixture.componentInstance.notes = 'Nueva nota';
+    fixture.componentInstance.save();
+    expect(nurseMock.patchPatientSchedule).toHaveBeenCalledWith(5, 99, {
+      description: 'Nueva desc',
+      notes: 'Nueva nota',
+    });
+    expect(toastMock.success).toHaveBeenCalled();
+    expect(saved).toBeTrue();
+    sub.unsubscribe();
+  });
+
+  it('save muestra error si el servicio falla', () => {
+    nurseMock.patchPatientSchedule.and.returnValue(throwError(() => ({ status: 500 })));
+    fixture.componentInstance.save();
+    expect(toastMock.error).toHaveBeenCalledWith('Error al guardar');
+  });
+
+  it('emite dismissed al hacer clic en backdrop', () => {
+    let n = 0;
+    const sub = fixture.componentInstance.dismissed.subscribe(() => n++);
+    const backdrop = fixture.nativeElement.querySelector('.nurse-schedule-edit-backdrop') as HTMLElement;
+    backdrop.click();
+    expect(n).toBe(1);
+    sub.unsubscribe();
+  });
+});

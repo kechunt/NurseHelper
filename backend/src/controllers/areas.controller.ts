@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { AppDataSource } from '../data-source';
 import { Area } from '../entities/Area';
+import { logger } from '../utils/logger';
 
 export class AreasController {
   async getAll(req: Request, res: Response): Promise<void> {
@@ -13,7 +14,7 @@ export class AreasController {
 
       res.json(areas);
     } catch (error) {
-      console.error('Error al obtener áreas:', error);
+      logger.error('Error al obtener áreas:', error);
       res.status(500).json({ message: 'Error interno del servidor' });
     }
   }
@@ -36,7 +37,7 @@ export class AreasController {
             (errorMessage.includes('bedId') || errorMessage.includes('bed') || 
              errorMessage.includes('assignedToId') || errorMessage.includes('assignedTo') ||
              errorMessage.includes('Patient'))) {
-          console.warn('⚠️ Columna bedId o assignedToId no encontrada. Cargando área sin relación de pacientes.');
+          logger.warn('⚠️ Columna bedId o assignedToId no encontrada. Cargando área sin relación de pacientes.');
           area = await areaRepository.findOne({
             where: { id: parseInt(id) },
             relations: ['beds'],
@@ -58,7 +59,7 @@ export class AreasController {
 
       res.json(area);
     } catch (error) {
-      console.error('Error al obtener área:', error);
+      logger.error('Error al obtener área:', error);
       res.status(500).json({ message: 'Error interno del servidor' });
     }
   }
@@ -82,7 +83,7 @@ export class AreasController {
 
       res.status(201).json({ message: 'Área creada exitosamente', area });
     } catch (error) {
-      console.error('Error al crear área:', error);
+      logger.error('Error al crear área:', error);
       res.status(500).json({ message: 'Error interno del servidor' });
     }
   }
@@ -108,7 +109,7 @@ export class AreasController {
 
       res.json({ message: 'Área actualizada exitosamente', area });
     } catch (error) {
-      console.error('Error al actualizar área:', error);
+      logger.error('Error al actualizar área:', error);
       res.status(500).json({ message: 'Error interno del servidor' });
     }
   }
@@ -137,7 +138,7 @@ export class AreasController {
 
       res.json({ message: 'Área eliminada exitosamente' });
     } catch (error) {
-      console.error('Error al eliminar área:', error);
+      logger.error('Error al eliminar área:', error);
       res.status(500).json({ message: 'Error interno del servidor' });
     }
   }

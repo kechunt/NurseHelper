@@ -1,18 +1,34 @@
 <div class="admin-dashboard">
+  <app-dashboard-user-profile-modal #adminProfile />
   <div class="dashboard-header">
     <div class="header-content">
-      <div class="logo-section" (click)="goToOverviewFromLogo()" role="button" tabindex="0" (keydown.enter)="goToOverviewFromLogo()" (keydown.space)="goToOverviewFromLogo(); $event.preventDefault()">
-        <img src="/nursehelper.png" alt="NurseHelper" class="header-logo" />
+      <div
+        class="logo-section"
+        (click)="goToOverviewFromLogo()"
+        role="button"
+        tabindex="0"
+        aria-label="Ir al resumen del panel"
+        (keydown.enter)="goToOverviewFromLogo()"
+        (keydown.space)="goToOverviewFromLogo(); $event.preventDefault()"
+      >
+        <img src="/nursehelper.png" alt="" class="header-logo" />
         <div class="title-section">
-          <h1 class="dashboard-title">Panel de Administración</h1>
+          <h1 class="dashboard-title" id="admin-dashboard-heading">Panel de Administración</h1>
         </div>
       </div>
       <div class="user-section">
-        <button class="user-info profile-trigger-btn" (click)="openProfileModal()" title="Editar mi información">
+        <button
+          type="button"
+          class="user-info profile-trigger-btn"
+          (click)="adminProfile.open()"
+          title="Editar mi información"
+          aria-label="Editar mi información de usuario"
+        >
           <span class="user-name">{{ currentUser()?.firstName || '' }} {{ currentUser()?.lastName || '' }}</span>
           <span class="user-role">Administrador</span>
+          <span class="user-phone-line" *ngIf="headerUserPhoneLine as hp">{{ hp }}</span>
         </button>
-        <button class="neuro-btn-icon logout-btn" (click)="logout()" title="Cerrar Sesión">
+        <button type="button" class="neuro-btn-icon logout-btn" (click)="logout()" title="Cerrar Sesión" aria-label="Cerrar sesión">
           🚪
         </button>
       </div>
@@ -20,147 +36,179 @@
   </div>
 
   <div class="dashboard-body">
-    <nav class="dashboard-nav">
+    <nav class="dashboard-nav" role="tablist" aria-label="Secciones del panel de administración">
       <button
+        type="button"
+        role="tab"
+        id="admin-tab-overview"
         class="nav-link"
         [class.active]="activeTab === 'overview'"
+        [attr.aria-selected]="activeTab === 'overview'"
+        aria-controls="admin-panel-overview"
         (click)="setActiveTab('overview')"
+        (keydown)="onAdminTabKeydown($event, 'overview')"
       >
         📊 Resumen
       </button>
       <button
+        type="button"
+        role="tab"
+        id="admin-tab-users"
         class="nav-link"
         [class.active]="activeTab === 'users'"
+        [attr.aria-selected]="activeTab === 'users'"
+        aria-controls="admin-panel-users"
         (click)="setActiveTab('users')"
+        (keydown)="onAdminTabKeydown($event, 'users')"
       >
         👥 Usuarios
       </button>
       <button
+        type="button"
+        role="tab"
+        id="admin-tab-staff"
         class="nav-link"
         [class.active]="activeTab === 'staff'"
+        [attr.aria-selected]="activeTab === 'staff'"
+        aria-controls="admin-panel-staff"
         (click)="setActiveTab('staff')"
+        (keydown)="onAdminTabKeydown($event, 'staff')"
       >
         👩‍⚕️ Gestión de Enfermeras
       </button>
       <button
+        type="button"
+        role="tab"
+        id="admin-tab-areas"
         class="nav-link"
         [class.active]="activeTab === 'areas'"
+        [attr.aria-selected]="activeTab === 'areas'"
+        aria-controls="admin-panel-areas"
         (click)="setActiveTab('areas')"
+        (keydown)="onAdminTabKeydown($event, 'areas')"
       >
         🏥 Áreas
       </button>
       <button
+        type="button"
+        role="tab"
+        id="admin-tab-beds"
         class="nav-link"
         [class.active]="activeTab === 'beds'"
+        [attr.aria-selected]="activeTab === 'beds'"
+        aria-controls="admin-panel-beds"
         (click)="setActiveTab('beds')"
+        (keydown)="onAdminTabKeydown($event, 'beds')"
       >
         🛏️ Camas
       </button>
       <button
+        type="button"
+        role="tab"
+        id="admin-tab-patients"
         class="nav-link"
         [class.active]="activeTab === 'patients'"
+        [attr.aria-selected]="activeTab === 'patients'"
+        aria-controls="admin-panel-patients"
         (click)="setActiveTab('patients')"
+        (keydown)="onAdminTabKeydown($event, 'patients')"
       >
         👤 Pacientes
       </button>
       <button
+        type="button"
+        role="tab"
+        id="admin-tab-schedules"
         class="nav-link"
         [class.active]="activeTab === 'schedules'"
+        [attr.aria-selected]="activeTab === 'schedules'"
+        aria-controls="admin-panel-schedules"
         (click)="setActiveTab('schedules')"
+        (keydown)="onAdminTabKeydown($event, 'schedules')"
       >
         📅 Horarios
       </button>
     </nav>
 
-    <div class="dashboard-content">
+    <main class="dashboard-content" id="admin-dashboard-main" aria-labelledby="admin-dashboard-heading">
       <!-- Resumen: *ngIf solo la primera vez; [hidden] evita destruir el componente al cambiar de pestaña -->
-      <div *ngIf="hasVisitedTab('overview')" [hidden]="activeTab !== 'overview'" class="tab-content">
+      <div
+        *ngIf="hasVisitedTab('overview')"
+        [hidden]="activeTab !== 'overview'"
+        class="tab-content"
+        role="tabpanel"
+        id="admin-panel-overview"
+        aria-labelledby="admin-tab-overview"
+      >
         <app-overview [onNavigate]="setActiveTab.bind(this)"></app-overview>
       </div>
 
-      <div *ngIf="hasVisitedTab('users')" [hidden]="activeTab !== 'users'" class="tab-content">
+      <div
+        *ngIf="hasVisitedTab('users')"
+        [hidden]="activeTab !== 'users'"
+        class="tab-content"
+        role="tabpanel"
+        id="admin-panel-users"
+        aria-labelledby="admin-tab-users"
+      >
         <app-users-management></app-users-management>
       </div>
 
-      <div *ngIf="hasVisitedTab('staff')" [hidden]="activeTab !== 'staff'" class="tab-content">
+      <div
+        *ngIf="hasVisitedTab('staff')"
+        [hidden]="activeTab !== 'staff'"
+        class="tab-content"
+        role="tabpanel"
+        id="admin-panel-staff"
+        aria-labelledby="admin-tab-staff"
+      >
         <app-staff-management></app-staff-management>
       </div>
 
-      <div *ngIf="hasVisitedTab('areas')" [hidden]="activeTab !== 'areas'" class="tab-content">
+      <div
+        *ngIf="hasVisitedTab('areas')"
+        [hidden]="activeTab !== 'areas'"
+        class="tab-content"
+        role="tabpanel"
+        id="admin-panel-areas"
+        aria-labelledby="admin-tab-areas"
+      >
         <app-areas-management></app-areas-management>
       </div>
 
-      <div *ngIf="hasVisitedTab('beds')" [hidden]="activeTab !== 'beds'" class="tab-content">
+      <div
+        *ngIf="hasVisitedTab('beds')"
+        [hidden]="activeTab !== 'beds'"
+        class="tab-content"
+        role="tabpanel"
+        id="admin-panel-beds"
+        aria-labelledby="admin-tab-beds"
+      >
         <app-beds-management></app-beds-management>
       </div>
 
-      <div *ngIf="hasVisitedTab('patients')" [hidden]="activeTab !== 'patients'" class="tab-content">
+      <div
+        *ngIf="hasVisitedTab('patients')"
+        [hidden]="activeTab !== 'patients'"
+        class="tab-content"
+        role="tabpanel"
+        id="admin-panel-patients"
+        aria-labelledby="admin-tab-patients"
+      >
         <app-patients-management></app-patients-management>
       </div>
 
-      <div *ngIf="hasVisitedTab('schedules')" [hidden]="activeTab !== 'schedules'" class="tab-content">
+      <div
+        *ngIf="hasVisitedTab('schedules')"
+        [hidden]="activeTab !== 'schedules'"
+        class="tab-content"
+        role="tabpanel"
+        id="admin-panel-schedules"
+        aria-labelledby="admin-tab-schedules"
+      >
         <app-schedules-management></app-schedules-management>
       </div>
-    </div>
-  </div>
-</div>
-
-<div *ngIf="showProfileModal" class="modal-backdrop" (click)="closeProfileModal()">
-  <div class="modal-content" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h3>✏️ Editar Usuario</h3>
-      <button class="close-btn" (click)="closeProfileModal()">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-grid">
-        <div class="input-group">
-          <label for="profile-firstName">Nombre *</label>
-          <input
-            type="text"
-            id="profile-firstName"
-            class="neuro-input"
-            [(ngModel)]="profileForm.firstName"
-            placeholder="Ingrese el nombre"
-          />
-        </div>
-        <div class="input-group">
-          <label for="profile-lastName">Apellido *</label>
-          <input
-            type="text"
-            id="profile-lastName"
-            class="neuro-input"
-            [(ngModel)]="profileForm.lastName"
-            placeholder="Ingrese el apellido"
-          />
-        </div>
-        <div class="input-group">
-          <label for="profile-username">Usuario *</label>
-          <input
-            type="text"
-            id="profile-username"
-            class="neuro-input"
-            [(ngModel)]="profileForm.username"
-            placeholder="Ingrese el nombre de usuario"
-          />
-        </div>
-        <div class="input-group">
-          <label for="profile-email">Email *</label>
-          <input
-            type="email"
-            id="profile-email"
-            class="neuro-input"
-            [(ngModel)]="profileForm.email"
-            placeholder="usuario@ejemplo.com"
-          />
-        </div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="neuro-btn outlined" (click)="closeProfileModal()">Cancelar</button>
-      <button class="neuro-btn" (click)="saveProfile()" [disabled]="savingProfile">
-        {{ savingProfile ? 'Guardando...' : 'Guardar cambios' }}
-      </button>
-    </div>
+    </main>
   </div>
 </div>
 

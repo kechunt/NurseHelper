@@ -1,0 +1,161 @@
+.nurse-history-detail-backdrop {
+  z-index: 2200 !important;
+}
+
+.history-detail-modal-body {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.nurse-aux-modal__inset {
+  background: #e0e5ec;
+  border-radius: 16px;
+  padding: 1rem 1rem 1.1rem;
+  box-shadow: inset 6px 6px 12px #cbccd1, inset -6px -6px 12px #fafbff;
+}
+
+.history-detail-title {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+.history-detail-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+}
+
+.history-detail-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #4a5568;
+  background: #edf2f7;
+  border: 1px solid rgba(66, 153, 225, 0.15);
+}
+
+.history-detail-badge--status {
+  background: #e6fffa;
+  border-color: rgba(56, 178, 172, 0.22);
+}
+
+.history-detail-badge--postponed {
+  background: #feebc8;
+  border-color: rgba(221, 107, 32, 0.25);
+}
+
+.history-detail-badge--notes {
+  background: #ebf8ff;
+  border-color: rgba(49, 130, 206, 0.22);
+}
+
+.history-detail-desc {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #2d3748;
+  line-height: 1.3;
+}
+
+.history-detail-sub {
+  margin-top: 0.25rem;
+  font-size: 0.85rem;
+  color: #718096;
+  font-weight: 600;
+}
+
+.history-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.6rem;
+  margin: 0.85rem 0 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .history-detail-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.history-detail-kv {
+  background: rgba(224, 229, 236, 0.8);
+  border-radius: 14px;
+  padding: 0.7rem 0.75rem;
+  box-shadow: 5px 5px 10px #cbccd1, -4px -4px 10px #fafbff;
+}
+
+.history-detail-k {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #718096;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.15rem;
+}
+
+.history-detail-v {
+  font-size: 0.9rem;
+  color: #2d3748;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.history-notes-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.history-detail-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.history-detail-note-card {
+  border-radius: 14px;
+  padding: 0.75rem 0.8rem;
+  background: #edf2f7;
+  border: 1px solid rgba(66, 153, 225, 0.14);
+}
+
+.history-detail-note-card--warn {
+  background: #fff5f5;
+  border-color: rgba(229, 62, 62, 0.22);
+}
+
+.history-notes-line {
+  font-size: 0.84rem;
+  line-height: 1.4;
+  color: #2d3748;
+}
+
+.history-notes-k {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #718096;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.08rem;
+}
+
+.history-notes-v {
+  display: block;
+  word-break: break-word;
+}
+
+.history-notes-line--warn .history-notes-v {
+  color: #c53030;
+  font-weight: 500;
+}
+
+.history-notes-line--muted .history-notes-v {
+  color: #718096;
+  font-size: 0.8rem;
+}

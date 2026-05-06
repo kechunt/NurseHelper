@@ -1,0 +1,303 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+/* Controles neumórficos: el shell del dashboard no estila inputs/selects dentro de este hijo encapsulado. */
+.filter-box-actions .filter-box-spacer {
+  visibility: hidden;
+  min-height: 1.25rem;
+  margin: 0;
+  padding: 0;
+}
+
+:host .filters-container.patients-filters-bar .filter-box label {
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.neuro-input-inline {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.neuro-select {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  padding-right: 2.5rem;
+  background: #e0e5ec;
+  border: none;
+  border-radius: 15px;
+  box-shadow: inset 6px 6px 12px #bebebe, inset -6px -6px 12px #ffffff;
+  color: #4a5568;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
+  font-family: inherit;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%234a5568' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+}
+
+.neuro-select:focus {
+  outline: none;
+  box-shadow: inset 8px 8px 16px #bebebe, inset -8px -8px 16px #ffffff;
+}
+
+.neuro-select:hover:not(:disabled) {
+  box-shadow: inset 7px 7px 14px #bebebe, inset -7px -7px 14px #ffffff;
+}
+
+.neuro-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.neuro-input {
+  width: 100%;
+  padding: 14px 18px;
+  background: #e0e5ec;
+  border: none;
+  border-radius: 15px;
+  font-size: 16px;
+  color: #4a5568;
+  box-shadow: inset 6px 6px 12px #bebebe, inset -6px -6px 12px #ffffff;
+  font-family: inherit;
+  transition: box-shadow 0.2s ease;
+  box-sizing: border-box;
+}
+
+.neuro-input:focus {
+  outline: none;
+  box-shadow: inset 8px 8px 16px #bebebe, inset -8px -8px 16px #ffffff;
+}
+
+.neuro-input::placeholder {
+  color: #a0aec0;
+}
+
+@media (max-width: 768px) {
+  :host .filters-container.patients-filters-bar {
+    padding: 1rem 0.9rem;
+    gap: 0.85rem;
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 576px) {
+  :host .filters-container.patients-filters-bar {
+    padding: 0.85rem 0.75rem;
+    border-radius: 12px;
+  }
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  position: relative;
+}
+
+.section-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(174, 174, 192, 0.2), transparent);
+}
+
+.section-title {
+  color: #4a5568;
+  font-size: 1.5rem;
+  font-weight: 300;
+  margin: 0;
+  text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8);
+}
+
+/* Rejilla de pacientes (misma idea que .nurses-grid en gestión de personal admin) */
+.patients-assigned-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 1400px) {
+  .patients-assigned-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.25rem;
+  }
+}
+
+@media (max-width: 992px) {
+  .patients-assigned-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+  }
+
+  .patient-assigned-card {
+    padding: 1.25rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .patients-assigned-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .patient-assigned-card {
+    padding: 1rem;
+  }
+
+  .patient-assigned-card-header {
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: stretch;
+  }
+
+  .patient-assigned-kpis {
+    align-items: flex-start;
+  }
+}
+
+.patient-assigned-card {
+  background: #e0e5ec;
+  border-radius: 20px;
+  padding: 1.5rem;
+  box-shadow: 15px 15px 30px #bebebe, -15px -15px 30px #ffffff;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  cursor: pointer;
+  text-align: left;
+  border: none;
+  font: inherit;
+  color: inherit;
+  box-sizing: border-box;
+}
+
+.patient-assigned-card:hover {
+  transform: translateY(-2px);
+}
+
+.patient-assigned-card:focus-visible {
+  outline: 2px solid rgba(43, 108, 176, 0.55);
+  outline-offset: 3px;
+}
+
+.patient-assigned-card--critical {
+  box-shadow:
+    15px 15px 30px #bebebe,
+    -15px -15px 30px #ffffff,
+    0 0 0 2px rgba(229, 62, 62, 0.38);
+}
+
+.patient-assigned-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(174, 174, 192, 0.3);
+}
+
+.patient-assigned-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.patient-assigned-card-name {
+  color: #4a5568;
+  font-size: 1.2rem;
+  font-weight: 500;
+  margin: 0 0 0.35rem 0;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.patient-assigned-card-meta {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #718096;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.35rem;
+}
+
+.patient-assigned-meta-sep {
+  opacity: 0.55;
+}
+
+.patient-assigned-kpis {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  align-items: flex-end;
+}
+
+.patient-assigned-task-pill {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  background: #e2e8f0;
+  color: #718096;
+  flex-shrink: 0;
+}
+
+.patient-assigned-task-pill--active {
+  background: #feebc8;
+  color: #c05621;
+}
+
+.patient-assigned-task-pill--muted {
+  background: #edf2f7;
+  color: #4a5568;
+}
+
+.patient-assigned-card-clinical {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 14px;
+  background: rgba(224, 229, 236, 0.85);
+  box-shadow: inset 5px 5px 10px #cbccd1, inset -4px -4px 10px #fafbff;
+}
+
+.patient-assigned-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem 0.85rem;
+  padding-top: 0.15rem;
+}
+
+.patient-assigned-action-btn {
+  flex: 0 1 auto;
+}
+
+.patient-assigned-action-btn--primary {
+  margin-left: auto;
+}
+
+.empty-message {
+  text-align: center;
+  padding: 3rem;
+  color: #a0aec0;
+  font-style: italic;
+  font-size: 1rem;
+}

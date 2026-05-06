@@ -1,0 +1,69 @@
+<div *ngIf="visible" class="modal-backdrop" (click)="close()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>✏️ Editar Usuario</h3>
+      <button type="button" class="close-btn" (click)="close()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="input-group">
+          <label for="dash-profile-firstName">Nombre *</label>
+          <input
+            type="text"
+            id="dash-profile-firstName"
+            class="neuro-input"
+            [(ngModel)]="profileForm.firstName"
+            placeholder="Ingrese el nombre"
+          />
+        </div>
+        <div class="input-group">
+          <label for="dash-profile-lastName">Apellido *</label>
+          <input
+            type="text"
+            id="dash-profile-lastName"
+            class="neuro-input"
+            [(ngModel)]="profileForm.lastName"
+            placeholder="Ingrese el apellido"
+          />
+        </div>
+        <div class="input-group">
+          <label for="dash-profile-username">Usuario *</label>
+          <input
+            type="text"
+            id="dash-profile-username"
+            class="neuro-input"
+            [(ngModel)]="profileForm.username"
+            placeholder="Ingrese el nombre de usuario"
+          />
+        </div>
+        <div class="input-group">
+          <label for="dash-profile-email">Email *</label>
+          <input
+            type="email"
+            id="dash-profile-email"
+            class="neuro-input"
+            [(ngModel)]="profileForm.email"
+            placeholder="usuario@ejemplo.com"
+          />
+        </div>
+        <div class="input-group">
+          <label for="dash-profile-phone">Teléfono</label>
+          <input
+            type="tel"
+            id="dash-profile-phone"
+            class="neuro-input"
+            [(ngModel)]="profileForm.phone"
+            placeholder="Opcional"
+            maxlength="30"
+          />
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="neuro-btn outlined" (click)="close()" [disabled]="saving">Cancelar</button>
+      <button type="button" class="neuro-btn" (click)="save()" [disabled]="saving">
+        {{ saving ? 'Guardando...' : 'Guardar cambios' }}
+      </button>
+    </div>
+  </div>
+</div>

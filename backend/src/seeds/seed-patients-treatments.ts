@@ -4,6 +4,7 @@ import { Bed } from '../entities/Bed';
 import { Schedule, ScheduleType, ScheduleStatus } from '../entities/Schedule';
 import { User } from '../entities/User';
 import { Area } from '../entities/Area';
+import { logger } from '../utils/logger';
 
 const medications = [
   { name: 'Paracetamol', dosage: '500mg' },
@@ -55,7 +56,7 @@ function getRandomTime(): string {
 async function seedPatientsAndTreatments() {
   try {
     await AppDataSource.initialize();
-    console.log('✅ Base de datos conectada');
+    logger.info('✅ Base de datos conectada');
 
     const patientRepo = AppDataSource.getRepository(Patient);
     const bedRepo = AppDataSource.getRepository(Bed);
@@ -65,7 +66,7 @@ async function seedPatientsAndTreatments() {
 
     const areas = await areaRepo.find({ where: { isActive: true } });
     if (areas.length === 0) {
-      console.error('❌ No hay áreas activas. Crea áreas primero.');
+      logger.error('❌ No hay áreas activas. Crea áreas primero.');
       return;
     }
 
@@ -74,7 +75,7 @@ async function seedPatientsAndTreatments() {
       take: 5 
     });
     if (nurses.length === 0) {
-      console.error('❌ No hay enfermeras activas. Crea enfermeras primero.');
+      logger.error('❌ No hay enfermeras activas. Crea enfermeras primero.');
       return;
     }
 
@@ -84,9 +85,9 @@ async function seedPatientsAndTreatments() {
     });
     const availableBeds = allBeds.filter((bed) => !bed.patients || bed.patients.length === 0);
 
-    console.log(`📊 Áreas disponibles: ${areas.length}`);
-    console.log(`👩‍⚕️ Enfermeras disponibles: ${nurses.length}`);
-    console.log(`🛏️ Camas disponibles: ${availableBeds.length}`);
+    logger.info(`📊 Áreas disponibles: ${areas.length}`);
+    logger.info(`👩‍⚕️ Enfermeras disponibles: ${nurses.length}`);
+    logger.info(`🛏️ Camas disponibles: ${availableBeds.length}`);
 
     const newPatients: Patient[] = [];
     for (let i = 0; i < 5 && i < availableBeds.length; i++) {
@@ -114,11 +115,11 @@ async function seedPatientsAndTreatments() {
       await patientRepo.save(savedPatient);
 
       newPatients.push(savedPatient);
-      console.log(`✅ Paciente creado: ${patient.firstName} ${patient.lastName} en cama ${bed.bedNumber}`);
+      logger.info(`✅ Paciente creado: ${patient.firstName} ${patient.lastName} en cama ${bed.bedNumber}`);
     }
 
     const allPatients = await patientRepo.find({ where: { isActive: true } });
-    console.log(`\n📋 Total de pacientes: ${allPatients.length}`);
+    logger.info(`\n📋 Total de pacientes: ${allPatients.length}`);
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -189,15 +190,15 @@ async function seedPatientsAndTreatments() {
         }
       }
 
-      console.log(`✅ Agregados tratamientos y medicamentos a ${patient.firstName} ${patient.lastName}`);
+      logger.info(`✅ Agregados tratamientos y medicamentos a ${patient.firstName} ${patient.lastName}`);
     }
 
-    console.log('\n✅ Seed completado exitosamente!');
-    console.log(`📊 Pacientes nuevos creados: ${newPatients.length}`);
-    console.log(`💊 Medicamentos y tratamientos agregados a ${allPatients.length} pacientes`);
+    logger.info('\n✅ Seed completado exitosamente!');
+    logger.info(`📊 Pacientes nuevos creados: ${newPatients.length}`);
+    logger.info(`💊 Medicamentos y tratamientos agregados a ${allPatients.length} pacientes`);
 
   } catch (error) {
-    console.error('❌ Error en seed:', error);
+    logger.error('❌ Error en seed:', error);
   } finally {
     await AppDataSource.destroy();
   }

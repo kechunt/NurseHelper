@@ -1,0 +1,47 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+:host .section-title {
+  margin: 0;
+}
+
+:host .nurse-module-header.section-header {
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(174, 174, 192, 0.28);
+}
+
+:host .section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+/* Mismo patrón que admin: dashboard-overview-stats.css + ajustes de segunda fila */
+:host .dashboard-overview .stats-grid + .stats-grid {
+  margin-top: 1.5rem;
+}
+
+:host .dashboard-overview .stat-card .stat-content {
+  min-width: 0;
+}
+
+:host .dashboard-overview .stat-card .stat-value {
+  overflow-wrap: break-word;
+}
+
+:host .dashboard-overview .nurse-attention-tile.stat-card {
+  appearance: none;
+  -webkit-appearance: none;
+  margin: 0;
+  border: none;
+  width: 100%;
+  font: inherit;
+  cursor: pointer;
+  color: inherit;
+  text-align: left;
+}

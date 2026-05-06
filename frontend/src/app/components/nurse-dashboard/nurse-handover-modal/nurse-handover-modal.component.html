@@ -1,0 +1,68 @@
+<div
+  class="modal-backdrop modal-confirmation nurse-modal-backdrop-dim"
+  role="presentation"
+  (click)="onBackdropClick()"
+  style="z-index: 2280"
+>
+  <div
+    class="modal-content modal-small nurse-aux-modal"
+    appModalFocusTrap
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="nurse-handover-dialog-title"
+    (click)="$event.stopPropagation()"
+  >
+    <div class="modal-header">
+      <h3 id="nurse-handover-dialog-title" i18n="@@nurseHandoverModal.title">📋 Nota de entrega</h3>
+      <button
+        type="button"
+        class="close-btn"
+        aria-label="Cerrar"
+        i18n-aria-label="@@nurseHandoverModal.closeAriaLabel"
+        (click)="dismissed.emit()"
+      >
+        ✕
+      </button>
+    </div>
+    <div class="modal-body medication-day-detail-body">
+      <div class="nurse-aux-modal__inset nurse-aux-modal__inset--compact">
+        <p class="handover-modal-intro">
+          Nota de <strong>paso de turno</strong> para tu <strong>área</strong>: pacientes a vigilar, incidencias, pendientes para quien releva, etc.
+        </p>
+        <p class="handover-modal-intro handover-modal-intro--muted">
+          Se guarda <strong>una nota por día y por área</strong>. Las demás enfermeras del mismo área pueden abrir aquí, elegir la fecha y leer o actualizar el texto. No aparece en otra pantalla del sistema; es un registro compartido al cambiar de turno.
+        </p>
+        <div class="input-group">
+          <label for="handover-date" i18n="@@nurseHandoverModal.dateLabel">Fecha</label>
+          <input
+            id="handover-date"
+            type="date"
+            class="neuro-input neuro-input-block"
+            [ngModel]="handoverDate"
+            (ngModelChange)="onDateChange($event)"
+          />
+        </div>
+        <div class="input-group">
+          <label for="handover-body" i18n="@@nurseHandoverModal.contentLabel">Contenido</label>
+          <textarea
+            id="handover-body"
+            class="neuro-input neuro-textarea-block"
+            rows="6"
+            [ngModel]="handoverBody"
+            (ngModelChange)="handoverBodyChange.emit($event)"
+            placeholder="Pacientes inestables, pendientes críticos, incidencias…"
+            i18n-placeholder="@@nurseHandoverModal.contentPlaceholder"
+          ></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer nurse-aux-modal__footer">
+      <button type="button" class="neuro-btn neuro-btn-sm" (click)="dismissed.emit()" [disabled]="handoverSaving">
+        <span i18n="@@nurseHandoverModal.cancel">Cancelar</span>
+      </button>
+      <button type="button" class="btn-primary-neuro" (click)="saveRequested.emit()" [disabled]="handoverSaving">
+        {{ handoverSaving ? 'Guardando…' : 'Guardar' }}
+      </button>
+    </div>
+  </div>
+</div>

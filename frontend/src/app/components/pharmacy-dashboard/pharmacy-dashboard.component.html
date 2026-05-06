@@ -1,41 +1,70 @@
-<div class="pharmacy-dashboard" id="pharmacy-top">
-  <!-- Header con Información de Usuario -->
-  <div class="dashboard-header">
-    <div class="header-content">
-      <div class="logo-section" (click)="goToRequestsFromLogo()" role="button" tabindex="0" (keydown.enter)="goToRequestsFromLogo()" (keydown.space)="goToRequestsFromLogo(); $event.preventDefault()">
-        <img src="/nursehelper.png" alt="NurseHelper" class="header-logo" />
-        <div class="title-section">
-          <h1 class="dashboard-title">Panel de Farmacia</h1>
-        </div>
-      </div>
-      <div class="user-section">
-        <div class="user-info">
-          <span class="user-name">{{ pharmacyUserName }}</span>
-          <span class="user-role">Farmacia</span>
-        </div>
-        <button class="neuro-btn-icon logout-btn" (click)="logout()" title="Cerrar Sesión">
-          🚪
-        </button>
-      </div>
-    </div>
-  </div>
+<app-dashboard-shell
+  panelSkin="pharmacy-dashboard"
+  topAnchorId="pharmacy-top"
+  [panelTitle]="'Panel de Farmacia'"
+  [userName]="headerUserName"
+  [roleLabel]="'Farmacia'"
+  [userPhoneLine]="headerUserPhoneLine"
+  [profileEditable]="true"
+  [navAriaLabel]="'Módulos de farmacia'"
+  [navRoleTablist]="true"
+  panelHeadingId="pharmacy-dashboard-heading"
+  [headerLogoAlt]="''"
+  [logoSectionAriaLabel]="'Ir al módulo de solicitudes'"
+  (logoClick)="goToRequestsFromLogo()"
+  (logoutClick)="logout()"
+>
+  <ng-container appDashboardNav>
+    <button
+      type="button"
+      role="tab"
+      id="pharmacy-tab-requests"
+      class="nav-link"
+      [class.active]="activeSection === 'requests'"
+      [attr.aria-selected]="activeSection === 'requests'"
+      aria-controls="pharmacy-panel-requests"
+      (click)="changeSection('requests')"
+      (keydown)="onPharmacyTabKeydown($event, 'requests')"
+    >
+      📝 Solicitudes
+    </button>
+    <button
+      type="button"
+      role="tab"
+      id="pharmacy-tab-history"
+      class="nav-link"
+      [class.active]="activeSection === 'history'"
+      [attr.aria-selected]="activeSection === 'history'"
+      aria-controls="pharmacy-panel-history"
+      (click)="changeSection('history')"
+      (keydown)="onPharmacyTabKeydown($event, 'history')"
+    >
+      📜 Historial
+    </button>
+    <button
+      type="button"
+      role="tab"
+      id="pharmacy-tab-inventory"
+      class="nav-link"
+      [class.active]="activeSection === 'inventory'"
+      [attr.aria-selected]="activeSection === 'inventory'"
+      aria-controls="pharmacy-panel-inventory"
+      (click)="changeSection('inventory')"
+      (keydown)="onPharmacyTabKeydown($event, 'inventory')"
+    >
+      📊 Inventario
+    </button>
+  </ng-container>
 
-  <div class="dashboard-body">
-    <nav class="dashboard-nav" aria-label="Módulos de farmacia">
-      <button type="button" class="nav-link" [class.active]="activeSection === 'requests'" (click)="changeSection('requests')">
-        📝 Solicitudes
-      </button>
-      <button type="button" class="nav-link" [class.active]="activeSection === 'history'" (click)="changeSection('history')">
-        📜 Historial
-      </button>
-      <button type="button" class="nav-link" [class.active]="activeSection === 'inventory'" (click)="changeSection('inventory')">
-        📊 Inventario
-      </button>
-    </nav>
-
-    <div class="dashboard-content">
+  <main class="dashboard-content" id="pharmacy-dashboard-main" aria-labelledby="pharmacy-dashboard-heading">
       <!-- Módulo: Solicitudes (KPI + tabla en un solo recuadro) -->
-      <div *ngIf="activeSection === 'requests'" class="tab-content">
+      <div
+        *ngIf="activeSection === 'requests'"
+        class="tab-content"
+        role="tabpanel"
+        id="pharmacy-panel-requests"
+        aria-labelledby="pharmacy-tab-requests"
+      >
         <div class="section-card pharmacy-module">
           <div class="section-header pharmacy-module-header">
             <h2 class="section-title">📝 Solicitudes de Medicamentos</h2>
@@ -52,6 +81,8 @@
                 <option value="pending">Pendientes</option>
                 <option value="in_preparation">En Preparación</option>
                 <option value="ready">Listas</option>
+                <option value="delivered">Entregadas</option>
+                <option value="cancelled">Rechazadas</option>
               </select>
             </div>
           </div>
@@ -93,56 +124,39 @@
     <div *ngIf="loadingRequests" class="module-feedback loading">Cargando solicitudes...</div>
     <div *ngIf="!loadingRequests && requestsError" class="module-feedback error">{{ requestsError }}</div>
 
-    <div class="table-container table-wrapper-neuro">
+          <div class="table-container table-wrapper-neuro">
       <table class="unified-tasks-table neuro-table">
         <thead>
           <tr>
-            <th>ID Solicitud</th>
-            <th>Solicitado por</th>
-            <th>Fecha/Hora</th>
             <th>Medicamento</th>
+            <th>Enfermera</th>
             <th>Cantidad</th>
             <th>Área</th>
-            <th>Pacientes</th>
-            <th>Prioridad</th>
-            <th>Estado</th>
-            <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let request of filteredRequests" class="request-row" [class.urgent]="request.priority === 'urgent'">
+                <tr
+                  *ngFor="let request of filteredRequests"
+                  class="request-row admin-table-row--clickable"
+                  [class.urgent]="request.priority === 'urgent'"
+                  tabindex="0"
+                  role="button"
+                  (click)="openRequestActions(request)"
+                  (keydown.enter)="openRequestActions(request)"
+                  (keydown.space)="openRequestActions(request)"
+                >
             <td>
-              <div class="request-id">{{ request.requestId }}</div>
+              <div class="med-info-compact">
+                <div class="med-name-strong">{{ request.medication }}</div>
+                <div class="med-dosage-small">{{ request.dosage }}</div>
+              </div>
             </td>
             <td>
               <div class="nurse-name-compact">{{ request.requestedBy }}</div>
             </td>
             <td>
-              <div class="datetime-cell-unified">
-                <span class="datetime-date">{{ getRequestDatePart(request) }}</span>
-                <span class="datetime-time" *ngIf="getRequestTimePart(request)">{{ getRequestTimePart(request) }}</span>
-              </div>
-            </td>
-            <td>
-              <div class="med-info-compact">
-                <div class="med-name-strong">{{ request.medication }}</div>
-                <div class="med-dosage-small">{{ request.dosage }}</div>
-                <div class="availability-indicator" [class.available]="isMedicationAvailable(request)" 
-                     [class.unavailable]="!isMedicationAvailable(request)">
-                  <span *ngIf="isMedicationAvailable(request)">✅ Disponible</span>
-                  <span *ngIf="!isMedicationAvailable(request)">⚠️ No disponible</span>
-                </div>
-              </div>
-            </td>
-            <td>
               <div class="quantity-stock-container">
                 <span class="quantity-badge-large">{{ request.quantity }}</span>
-                <span class="stock-info-badge" 
-                      [class.available]="isMedicationAvailable(request)"
-                      [class.unavailable]="!isMedicationAvailable(request)"
-                      title="Stock disponible en inventario">
-                  {{ isMedicationAvailable(request) ? '✅' : '⚠️' }} Stock: {{ request.stockAvailable || 0 }}
-                </span>
               </div>
             </td>
             <td>
@@ -153,68 +167,6 @@
                 <span *ngIf="!request.patients || request.patients.length === 0">
                   N/A
                 </span>
-              </div>
-            </td>
-            <td>
-              <div class="patients-list-compact">
-                <div *ngFor="let patient of request.patients" class="patient-item-inline">
-                  <span class="patient-icon">👤</span>
-                  <span class="patient-name-inline">{{ patient.patientName }}</span>
-                  <span class="bed-badge-tiny" title="Cama actualizada desde BD">{{ patient.bedNumber || 'Sin cama' }}</span>
-                </div>
-              </div>
-            </td>
-            <td>
-              <span class="priority-badge" [class.high]="request.priority === 'high' || request.priority === 'urgent'" 
-                    [class.urgent]="request.priority === 'urgent'">
-                {{ request.priority === 'urgent' ? '🚨 Urgente' : (request.priority === 'high' ? '⚡ Alta' : '📋 Normal') }}
-              </span>
-            </td>
-            <td>
-              <span class="status-badge" 
-                    [class.pending]="request.status === 'pending'"
-                    [class.preparing]="request.status === 'in_preparation'"
-                    [class.ready]="request.status === 'ready'"
-                    [class.delivered]="request.status === 'delivered'">
-                {{ getStatusLabel(request.status) }}
-              </span>
-            </td>
-            <td class="table-cell-actions">
-              <div class="unified-table-actions">
-                <button type="button" class="action-btn view-btn"
-                        (click)="viewRequestDetails(request)"
-                        [attr.aria-label]="'Ver detalles de solicitud ' + request.requestId"
-                        title="Ver detalles de la solicitud">
-                  Ver
-                </button>
-                <button type="button" class="action-btn assign-btn"
-                        (click)="changeRequestStatus(request, 'in_preparation')"
-                        [attr.aria-label]="'Aceptar solicitud ' + request.requestId"
-                        [disabled]="request.status !== 'pending'"
-                        title="Aceptar y poner en preparación">
-                  Aceptar
-                </button>
-                <button type="button" class="action-btn change-btn"
-                        (click)="changeRequestStatus(request, 'ready')"
-                        [attr.aria-label]="'Marcar solicitud ' + request.requestId + ' como surtida'"
-                        [disabled]="request.status !== 'in_preparation'"
-                        title="Marcar como surtido / listo para entregar">
-                  Surtido
-                </button>
-                <button type="button" class="action-btn success-btn"
-                        (click)="openDeliveryModal(request)"
-                        [attr.aria-label]="'Entregar solicitud ' + request.requestId"
-                        [disabled]="request.status !== 'ready'"
-                        title="Registrar entrega a enfermería">
-                  Entregar
-                </button>
-                <button type="button" class="action-btn danger-btn"
-                        (click)="changeRequestStatus(request, 'cancelled')"
-                        [attr.aria-label]="'Rechazar solicitud ' + request.requestId"
-                        [disabled]="request.status === 'delivered' || request.status === 'cancelled'"
-                        title="Rechazar solicitud">
-                  Rechazar
-                </button>
               </div>
             </td>
           </tr>
@@ -234,7 +186,13 @@
       </div>
 
       <!-- Módulo: Historial -->
-      <div *ngIf="activeSection === 'history'" class="tab-content">
+      <div
+        *ngIf="activeSection === 'history'"
+        class="tab-content"
+        role="tabpanel"
+        id="pharmacy-panel-history"
+        aria-labelledby="pharmacy-tab-history"
+      >
         <div class="section-card pharmacy-module pharmacy-module--history">
     <div class="section-header">
       <h2 class="section-title">📜 Historial de Entregas y Rechazos</h2>
@@ -260,6 +218,7 @@
           Se exportan los registros <strong>visibles</strong> con el buscador actual. El nombre del archivo incluye la fecha y hora en que se genera.
         </p>
         <div class="export-panel__actions">
+          <button type="button" class="export-btn export-btn--print" (click)="printHistory()">Imprimir</button>
           <button type="button" class="export-btn export-btn--csv" (click)="exportHistoryCsv()">Guardar CSV</button>
           <button type="button" class="export-btn export-btn--excel" (click)="exportHistoryExcel()">Guardar Excel</button>
         </div>
@@ -271,30 +230,30 @@
         <thead>
           <tr>
             <th>Tipo</th>
-            <th>ID</th>
             <th>Fecha/Hora</th>
             <th>Medicamento</th>
             <th>Cantidad</th>
             <th>Solicitado por</th>
-            <th>Pacientes</th>
-            <th>Entregado por / Razón</th>
-            <th>Notas</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let item of filteredHistory" 
-              class="history-row"
-              [class.delivery-row]="item.type === 'delivery'"
-              [class.cancelled-row]="item.type === 'cancelled'">
+          <tr
+            *ngFor="let item of filteredHistory"
+            class="history-row admin-table-row--clickable"
+            [class.delivery-row]="item.type === 'delivery'"
+            [class.cancelled-row]="item.type === 'cancelled'"
+            tabindex="0"
+            role="button"
+            (click)="openHistoryActions(item)"
+            (keydown.enter)="openHistoryActions(item)"
+            (keydown.space)="openHistoryActions(item)"
+          >
             <td>
               <span class="history-type-badge" 
                     [class.delivery-badge]="item.type === 'delivery'"
                     [class.cancelled-badge]="item.type === 'cancelled'">
                 {{ getHistoryTypeLabel(item.type) }}
               </span>
-            </td>
-            <td>
-              <div class="delivery-id">{{ item.deliveryId || item.requestId }}</div>
             </td>
             <td>
               <div class="datetime-compact">{{ getHistoryDate(item) }}</div>
@@ -310,25 +269,6 @@
             </td>
             <td>
               <div class="nurse-name-compact">{{ item.requestedBy }}</div>
-            </td>
-            <td>
-              <div class="patients-tags" *ngIf="item.patients">
-                <span *ngFor="let patient of item.patients" class="patient-tag-small">{{ patient }}</span>
-              </div>
-              <div class="patients-tags" *ngIf="item.patientsInfo">
-                <span *ngFor="let patient of item.patientsInfo" class="patient-tag-small">
-                  {{ patient.patientName }} ({{ patient.bedNumber }})
-                </span>
-              </div>
-            </td>
-            <td>
-              <div class="pharmacist-name" *ngIf="item.type === 'delivery'">{{ item.deliveredBy }}</div>
-              <div class="rejection-reason" *ngIf="item.type === 'cancelled'">
-                <span class="rejection-text">{{ item.notes }}</span>
-              </div>
-            </td>
-            <td>
-              <div class="notes-compact">{{ item.type === 'delivery' ? (item.notes || 'Sin observaciones') : '' }}</div>
             </td>
           </tr>
         </tbody>
@@ -347,7 +287,13 @@
       </div>
 
       <!-- Módulo: Inventario -->
-      <div *ngIf="activeSection === 'inventory'" class="tab-content">
+      <div
+        *ngIf="activeSection === 'inventory'"
+        class="tab-content"
+        role="tabpanel"
+        id="pharmacy-panel-inventory"
+        aria-labelledby="pharmacy-tab-inventory"
+      >
         <div class="section-card pharmacy-module pharmacy-module--inventory">
     <div class="inventory-stats-grid">
       <button class="inventory-stat-card" (click)="setInventoryStatusFilter('all')">
@@ -401,6 +347,7 @@
           Incluye medicamento, dosis, stock, mínimos, ubicación, caducidad y estado. Respeta <strong>filtros y búsqueda</strong> actuales. El archivo lleva fecha y hora de generación en el nombre.
         </p>
         <div class="export-panel__actions">
+          <button type="button" class="export-btn export-btn--print" (click)="printInventory()">Imprimir</button>
           <button type="button" class="export-btn export-btn--csv" (click)="exportInventoryCsv()">Guardar CSV</button>
           <button type="button" class="export-btn export-btn--excel" (click)="exportInventoryExcel()">Guardar Excel</button>
         </div>
@@ -421,15 +368,22 @@
             <th>Ubicación</th>
             <th>Fecha de Vencimiento</th>
             <th>Estado</th>
-            <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let item of filteredInventory" class="inventory-row" 
-              [class.low-stock]="item.status === 'low_stock' && item.expiryClassification !== 'expired'"
-              [class.out-of-stock]="item.status === 'out_of_stock' && item.expiryClassification !== 'expired'"
-              [class.inventory-expired]="item.expiryClassification === 'expired'"
-              [class.inventory-expiring]="item.expiryClassification === 'expiring_soon'">
+          <tr
+            *ngFor="let item of filteredInventory"
+            class="inventory-row admin-table-row--clickable"
+            [class.low-stock]="item.status === 'low_stock' && item.expiryClassification !== 'expired'"
+            [class.out-of-stock]="item.status === 'out_of_stock' && item.expiryClassification !== 'expired'"
+            [class.inventory-expired]="item.expiryClassification === 'expired'"
+            [class.inventory-expiring]="item.expiryClassification === 'expiring_soon'"
+            tabindex="0"
+            role="button"
+            (click)="openInventoryActions(item)"
+            (keydown.enter)="openInventoryActions(item)"
+            (keydown.space)="openInventoryActions(item)"
+          >
             <td>
               <div class="med-name-strong">{{ item.medication }}</div>
             </td>
@@ -460,25 +414,6 @@
                 {{ getInventoryStatusLabel(item) }}
               </span>
             </td>
-            <td class="table-cell-actions">
-              <div class="unified-table-actions">
-                <button type="button" class="action-btn assign-btn" (click)="openStockMovementModal(item, 'entry')" [attr.aria-label]="'Registrar entrada para ' + item.medication" title="Registrar entrada de stock">
-                  Entrada
-                </button>
-                <button type="button" class="action-btn change-btn" (click)="openStockMovementModal(item, 'exit')" [attr.aria-label]="'Registrar salida para ' + item.medication" title="Registrar salida de stock">
-                  Salida
-                </button>
-                <button type="button" class="action-btn view-btn" (click)="updateStock(item)" [attr.aria-label]="'Ajustar stock de ' + item.medication" title="Ajustar stock a un valor fijo">
-                  Ajuste
-                </button>
-                <button type="button" class="action-btn view-btn" (click)="openKardexModal(item)" [attr.aria-label]="'Abrir kardex de ' + item.medication" title="Kardex / movimientos">
-                  Kardex
-                </button>
-                <button type="button" class="action-btn danger-btn" (click)="openDeleteMedicationModal(item)" [attr.aria-label]="'Eliminar ' + item.medication + ' del inventario'" title="Dar de baja del inventario">
-                  Eliminar
-                </button>
-              </div>
-            </td>
           </tr>
         </tbody>
       </table>
@@ -494,8 +429,158 @@
     </p>
         </div>
       </div>
+  </main>
+
+  <div appDashboardOverlays>
+
+    <app-admin-table-row-actions-modal
+      [open]="!!selectedRequestForActions"
+      [title]="selectedRequestForActions ? requestActionsTitle(selectedRequestForActions) : ''"
+      [summaryLines]="selectedRequestForActions ? requestActionsSummary(selectedRequestForActions) : []"
+      (dismissed)="closeRequestActions()"
+    >
+      <button
+        type="button"
+        class="neuro-btn"
+        *ngIf="selectedRequestForActions as r"
+        (click)="openRequestDetailModal(r)"
+      >
+        👁️ Ver detalle
+      </button>
+      <button
+        type="button"
+        class="neuro-btn"
+        *ngIf="selectedRequestForActions as r"
+        [disabled]="!canAcceptRequest(r)"
+        (click)="closeRequestActions(); changeRequestStatus(r, 'in_preparation')"
+      >
+        ✅ Aceptar (en preparación)
+      </button>
+      <button
+        type="button"
+        class="neuro-btn"
+        *ngIf="selectedRequestForActions as r"
+        [disabled]="!canMarkReady(r)"
+        (click)="closeRequestActions(); changeRequestStatus(r, 'ready')"
+      >
+        📦 Marcar como lista
+      </button>
+      <button
+        type="button"
+        class="neuro-btn"
+        *ngIf="selectedRequestForActions as r"
+        [disabled]="!canDeliver(r)"
+        (click)="closeRequestActions(); openDeliveryModal(r)"
+      >
+        🚚 Entregar
+      </button>
+      <button
+        type="button"
+        class="neuro-btn"
+        *ngIf="selectedRequestForActions as r"
+        [disabled]="!canReject(r)"
+        (click)="closeRequestActions(); openRejectModal(r)"
+      >
+        ❌ Rechazar
+      </button>
+    </app-admin-table-row-actions-modal>
+
+    <div *ngIf="showRequestDetailModal && selectedRequestDetail as rd" class="modal-backdrop" (click)="closeRequestDetailModal()">
+      <div class="modal-content modal-delivery" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>📋 Detalle de solicitud {{ rd.requestId }}</h3>
+          <button class="close-btn" (click)="closeRequestDetailModal()">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="delivery-summary">
+            <div class="summary-row"><span class="summary-label">ID:</span><span class="summary-value">{{ rd.requestId }}</span></div>
+            <div class="summary-row"><span class="summary-label">Medicamento:</span><span class="summary-value">{{ rd.medication }} {{ rd.dosage }}</span></div>
+            <div class="summary-row"><span class="summary-label">Solicitada por:</span><span class="summary-value">{{ rd.requestedBy }}</span></div>
+            <div class="summary-row"><span class="summary-label">Cantidad:</span><span class="summary-value">{{ rd.quantity }}</span></div>
+            <div class="summary-row"><span class="summary-label">Estado:</span><span class="summary-value">{{ getStatusLabel(rd.status) }}</span></div>
+            <div class="summary-row"><span class="summary-label">Prioridad:</span><span class="summary-value">{{ rd.priority }}</span></div>
+            <div class="summary-row"><span class="summary-label">Solicitud:</span><span class="summary-value">{{ rd.requestedAt }}</span></div>
+            <div class="summary-row"><span class="summary-label">Último cambio:</span><span class="summary-value">{{ rd.statusUpdatedAtRaw ? (rd.statusUpdatedAtRaw | date:'dd/MM/yyyy, HH:mm') : '—' }}</span></div>
+            <div class="summary-row"><span class="summary-label">Stock:</span><span class="summary-value">{{ rd.stockAvailable || 0 }}</span></div>
+          </div>
+          <div class="patients-delivery-info">
+            <h4>Pacientes</h4>
+            <div *ngFor="let patient of rd.patients" class="patient-delivery-card">
+              <div class="patient-header-delivery">
+                <span class="patient-name-delivery">{{ patient.patientName }}</span>
+                <span class="bed-badge-delivery">{{ patient.bedNumber || 'Sin cama' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary-neuro" (click)="closeRequestDetailModal()">Cerrar</button>
+        </div>
+      </div>
     </div>
-  </div>
+
+    <app-admin-table-row-actions-modal
+      [open]="!!selectedInventoryForActions"
+      [title]="selectedInventoryForActions ? inventoryActionsTitle(selectedInventoryForActions) : ''"
+      [summaryLines]="selectedInventoryForActions ? inventoryActionsSummary(selectedInventoryForActions) : []"
+      (dismissed)="closeInventoryActions()"
+    >
+      <button
+        type="button"
+        class="neuro-btn"
+        *ngIf="selectedInventoryForActions as i"
+        (click)="closeInventoryActions(); openStockMovementModal(i, 'entry')"
+      >
+        ➕ Entrada
+      </button>
+      <button
+        type="button"
+        class="neuro-btn"
+        *ngIf="selectedInventoryForActions as i"
+        (click)="closeInventoryActions(); openStockMovementModal(i, 'exit')"
+      >
+        ➖ Salida
+      </button>
+      <button
+        type="button"
+        class="neuro-btn"
+        *ngIf="selectedInventoryForActions as i"
+        (click)="closeInventoryActions(); openStockMovementModal(i, 'adjustment')"
+      >
+        ⚙️ Ajuste
+      </button>
+      <button
+        type="button"
+        class="neuro-btn"
+        *ngIf="selectedInventoryForActions as i"
+        (click)="closeInventoryActions(); openKardexModal(i)"
+      >
+        📋 Kardex
+      </button>
+      <button
+        type="button"
+        class="neuro-btn"
+        *ngIf="selectedInventoryForActions as i"
+        (click)="closeInventoryActions(); openDeleteMedicationModal(i)"
+      >
+        🗑️ Eliminar
+      </button>
+    </app-admin-table-row-actions-modal>
+
+    <app-admin-table-row-actions-modal
+      [open]="!!selectedHistoryForActions"
+      [title]="selectedHistoryForActions ? historyActionsTitle(selectedHistoryForActions) : ''"
+      [summaryLines]="selectedHistoryForActions ? historyActionsSummary(selectedHistoryForActions) : []"
+      (dismissed)="closeHistoryActions()"
+    >
+      <button
+        type="button"
+        class="neuro-btn"
+        (click)="closeHistoryActions()"
+      >
+        Cerrar
+      </button>
+    </app-admin-table-row-actions-modal>
 
   <!-- Modal de Entrega -->
   <div *ngIf="showDeliveryModal" class="modal-backdrop" (click)="closeDeliveryModal()">
@@ -845,5 +930,6 @@
       </div>
     </div>
   </div>
-</div>
+  </div>
+</app-dashboard-shell>
 

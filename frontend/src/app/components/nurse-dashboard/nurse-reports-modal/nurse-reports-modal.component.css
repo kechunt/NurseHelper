@@ -1,0 +1,119 @@
+/* Contenido específico; chrome del modal en `nurse-neomorphic-modal.shared.css`. */
+
+.nurse-reports-modal-header {
+  padding-bottom: 1rem;
+}
+
+.nurse-reports-modal-body {
+  max-height: min(72vh, 38rem);
+  overflow: auto;
+}
+
+.nurse-reports-section {
+  min-width: 0;
+}
+
+.nurse-reports-period-line {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+  color: #4a5568;
+  padding: 0.65rem 0.85rem;
+  border-radius: 15px;
+  background: #e0e5ec;
+  border: none;
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+}
+
+.nurse-reports-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1.35rem;
+}
+
+.nurse-reports-section-title {
+  margin: 0 0 0.65rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.nurse-reports-kpi-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 0.85rem;
+}
+
+.nurse-reports-kpi {
+  flex: 1 1 5.5rem;
+  min-width: 5rem;
+  text-align: center;
+  padding: 0.55rem 0.4rem;
+  border-radius: 15px;
+  background: #e0e5ec;
+  border: none;
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+}
+
+.nurse-reports-kpi--ok .nurse-reports-kpi__val {
+  color: #276749;
+}
+
+.nurse-reports-kpi--warn .nurse-reports-kpi__val {
+  color: #c05621;
+}
+
+.nurse-reports-kpi--accent .nurse-reports-kpi__val {
+  color: #2b6cb0;
+}
+
+.nurse-reports-kpi__val {
+  display: block;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #2d3748;
+}
+
+.nurse-reports-kpi__lbl {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #718096;
+  margin-top: 0.2rem;
+}
+
+.nurse-reports-table-wrap {
+  max-height: 16rem;
+  overflow: auto;
+  padding: 0.65rem 0.75rem;
+  box-sizing: border-box;
+  border-radius: 15px;
+  background: #e0e5ec;
+  border: none;
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+}
+
+.nurse-reports-table-wrap .unified-tasks-table th,
+.nurse-reports-table-wrap .unified-tasks-table td {
+  padding: 0.55rem 0.65rem;
+  vertical-align: middle;
+}
+
+.nurse-reports-table-wrap .unified-tasks-table thead th {
+  padding-top: 0.65rem;
+  padding-bottom: 0.65rem;
+}
+
+.nurse-reports-modal-footer {
+  justify-content: flex-end;
+}
+
+.nurse-reports-modal-footer .btn-primary-neuro {
+  margin-left: auto;
+}
+
+.nurse-reports-error {
+  color: #c53030;
+}

@@ -1,0 +1,217 @@
+<div class="nurse-patient-modal-shell">
+  <div class="modal-backdrop" role="presentation" (click)="closed.emit()">
+    <div
+      class="modal-content modal-large"
+      appModalFocusTrap
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="nurse-patient-modal-title"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="modal-header">
+        <h3 id="nurse-patient-modal-title" i18n="@@nursePatientModalShell.title">📋 {{ patient.name }}</h3>
+        <button
+          type="button"
+          class="close-btn"
+          aria-label="Cerrar"
+          i18n-aria-label="@@nursePatientModalShell.closeAriaLabel"
+          (click)="closed.emit()"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div
+        class="patient-modal-nav"
+        role="tablist"
+        aria-label="Secciones de la ficha del paciente"
+        i18n-aria-label="@@nursePatientModalShell.tablistAriaLabel"
+      >
+        <button
+          type="button"
+          class="nav-link"
+          role="tab"
+          [attr.aria-selected]="activeTab === 'medications'"
+          id="nurse-patient-tab-medications"
+          aria-controls="nurse-patient-panel-medications"
+          [class.active]="activeTab === 'medications'"
+          (click)="activeTabChange.emit('medications')"
+          (keydown)="onPatientTabKeydown($event, 'medications')"
+        >
+          <span i18n="@@nursePatientModalShell.tabMedications">💊 Medicamentos</span>
+        </button>
+        <button
+          type="button"
+          class="nav-link"
+          role="tab"
+          [attr.aria-selected]="activeTab === 'schedule'"
+          id="nurse-patient-tab-schedule"
+          aria-controls="nurse-patient-panel-schedule"
+          [class.active]="activeTab === 'schedule'"
+          (click)="activeTabChange.emit('schedule')"
+          (keydown)="onPatientTabKeydown($event, 'schedule')"
+        >
+          <span i18n="@@nursePatientModalShell.tabTreatments">🩺 Tratamientos del día</span>
+        </button>
+        <button
+          type="button"
+          class="nav-link"
+          role="tab"
+          [attr.aria-selected]="activeTab === 'observations'"
+          id="nurse-patient-tab-observations"
+          aria-controls="nurse-patient-panel-observations"
+          [class.active]="activeTab === 'observations'"
+          (click)="activeTabChange.emit('observations')"
+          (keydown)="onPatientTabKeydown($event, 'observations')"
+        >
+          <span i18n="@@nursePatientModalShell.tabObservations">📝 Observaciones</span>
+        </button>
+        <button
+          type="button"
+          class="nav-link"
+          role="tab"
+          [attr.aria-selected]="activeTab === 'history'"
+          id="nurse-patient-tab-history"
+          aria-controls="nurse-patient-panel-history"
+          [class.active]="activeTab === 'history'"
+          (click)="activeTabChange.emit('history')"
+          (keydown)="onPatientTabKeydown($event, 'history')"
+        >
+          <span i18n="@@nursePatientModalShell.tabHistory">📜 Historial</span>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div
+          *ngIf="activeTab === 'medications'"
+          class="tab-content"
+          role="tabpanel"
+          id="nurse-patient-panel-medications"
+          aria-labelledby="nurse-patient-tab-medications"
+        >
+          <app-nurse-patient-medications-tab
+            [bedNumber]="patient.bedNumber"
+            [age]="patient.age"
+            [diagnosis]="patient.diagnosis"
+            [slots]="medicationsSlots"
+            (addMedication)="addMedication.emit()"
+            (openDayDetail)="openMedicationDayDetail.emit($event)"
+            (markGiven)="markMedicationGiven.emit($event)"
+            (markNotAdministered)="markMedicationNotAdministered.emit($event)"
+            (suspend)="suspendMedication.emit($event)"
+            (reactivate)="reactivateMedication.emit($event)"
+            (deleteSlot)="deleteMedicationSlot.emit($event)"
+          />
+        </div>
+
+        <div
+          *ngIf="activeTab === 'schedule'"
+          class="tab-content"
+          role="tabpanel"
+          id="nurse-patient-panel-schedule"
+          aria-labelledby="nurse-patient-tab-schedule"
+        >
+          <app-nurse-patient-treatments-day-tab
+            [slots]="treatmentsSlots"
+            (addTreatment)="addTreatment.emit()"
+            (openSlotDetail)="openTreatmentSlotDetail.emit($event)"
+            (markDone)="markTreatmentDone.emit($event)"
+            (postpone)="postponeTreatment.emit($event)"
+            (cancel)="cancelTreatment.emit($event)"
+            (edit)="editTreatmentSchedule.emit($event)"
+            (deleteSlot)="deleteTreatmentSlot.emit($event)"
+          />
+        </div>
+
+        <div
+          *ngIf="activeTab === 'observations'"
+          class="tab-content"
+          role="tabpanel"
+          id="nurse-patient-panel-observations"
+          aria-labelledby="nurse-patient-tab-observations"
+        >
+          <app-nurse-patient-observations-tab
+            [patientId]="patient.id"
+            [diagnosis]="patient.diagnosis"
+            [medicalObservations]="patient.medicalObservations ?? ''"
+            [allergies]="patient.allergies ?? ''"
+            [specialNeeds]="patient.specialNeeds ?? ''"
+            [generalObservations]="patient.generalObservations ?? ''"
+            [clinicalNotesDiagnosis]="patient.clinicalNotes?.diagnosis ?? []"
+            [clinicalNotesMedical]="patient.clinicalNotes?.medical ?? []"
+            [clinicalNotesAllergies]="patient.clinicalNotes?.allergies ?? []"
+            [clinicalNotesSpecialNeeds]="patient.clinicalNotes?.specialNeeds ?? []"
+            [clinicalNotesGeneral]="patient.clinicalNotes?.general ?? []"
+            [newDiagnosisNote]="newDiagnosisNote"
+            [newMedicalObservationNote]="newMedicalObservationNote"
+            [newAllergiesNote]="newAllergiesNote"
+            [newSpecialNeedsNote]="newSpecialNeedsNote"
+            [newGeneralObservationNote]="newGeneralObservationNote"
+            (newDiagnosisNoteChange)="newDiagnosisNoteChange.emit($event)"
+            (newMedicalObservationNoteChange)="newMedicalObservationNoteChange.emit($event)"
+            (newAllergiesNoteChange)="newAllergiesNoteChange.emit($event)"
+            (newSpecialNeedsNoteChange)="newSpecialNeedsNoteChange.emit($event)"
+            (newGeneralObservationNoteChange)="newGeneralObservationNoteChange.emit($event)"
+            [isSavingObservation]="isSavingObservation"
+            (saveDiagnosis)="saveDiagnosis.emit($event)"
+            (saveMedicalObservations)="saveMedicalObservations.emit($event)"
+            (saveAllergies)="saveAllergies.emit($event)"
+            (saveSpecialNeeds)="saveSpecialNeeds.emit($event)"
+            (saveGeneralObservationsFull)="saveGeneralObservationsFull.emit($event)"
+            (saveClinicalAppend)="saveClinicalAppend.emit($event)"
+          />
+        </div>
+
+        <div
+          *ngIf="activeTab === 'history'"
+          class="tab-content"
+          role="tabpanel"
+          id="nurse-patient-panel-history"
+          aria-labelledby="nurse-patient-tab-history"
+        >
+          <app-nurse-patient-history-tab
+            [records]="historyRecords"
+            [periodFilter]="historyFilter"
+            [outcomeFilter]="historyOutcomeFilter"
+            (periodFilterChange)="historyPeriodChange.emit($event)"
+            (outcomeFilterChange)="historyOutcomeChange.emit($event)"
+            (openDetail)="historyOpenDetail.emit($event)"
+            (openEdit)="historyOpenEdit.emit($event)"
+            (deleteRecord)="historyDeleteRecord.emit($event)"
+          />
+        </div>
+      </div>
+
+      <app-nurse-history-edit-modal
+        *ngIf="historyEditRecord"
+        [patientId]="+patient.id"
+        [record]="historyEditRecord"
+        (dismissed)="historyEditDismissed.emit()"
+        (saved)="historyEditSaved.emit()"
+      />
+
+      <app-nurse-schedule-edit-modal
+        *ngIf="scheduleEditContext"
+        [patientId]="+patient.id"
+        [edit]="scheduleEditContext"
+        (dismissed)="scheduleEditDismissed.emit()"
+        (saved)="scheduleEditSaved.emit()"
+      />
+
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary-neuro" (click)="closed.emit()" i18n="@@nursePatientModalShell.footerClose">
+          Cerrar
+        </button>
+        <button type="button" class="btn-secondary-neuro" (click)="exportTabCsv()">
+          📄 CSV
+        </button>
+        <button type="button" class="btn-secondary-neuro" (click)="exportTabExcel()">
+          📊 Excel
+        </button>
+        <button type="button" class="btn-primary-neuro" (click)="printRequested.emit()" i18n="@@nursePatientModalShell.footerPrint">
+          🖨️ Imprimir
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

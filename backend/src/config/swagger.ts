@@ -267,6 +267,11 @@ const options = {
         },
       },
     },
+    /**
+     * Seguridad por defecto para toda la API.
+     * En endpoints públicos, se puede sobrescribir con `security: []` en su bloque @swagger.
+     */
+    security: [{ bearerAuth: [] }],
   },
   apis: [
     path.join(__dirname, `../routes/*.${docExt}`),
@@ -282,7 +287,17 @@ export const setupSwagger = (app: Express): void => {
     '/api-docs',
     swaggerUi.serve,
     swaggerUi.setup(swaggerSpec, {
-      customCss: '.swagger-ui .topbar { display: none }',
+      customCss: `
+        .swagger-ui .topbar { display: none }
+        .swagger-ui .scheme-container { box-shadow: none; border-bottom: 1px solid rgba(0,0,0,0.06); }
+        .swagger-ui .info { margin: 20px 0 8px; }
+        .swagger-ui .info .title { font-weight: 800; }
+        .swagger-ui .opblock { border-radius: 12px; overflow: hidden; }
+        .swagger-ui .opblock-tag { border-bottom: 1px solid rgba(0,0,0,0.06); padding: 10px 0; }
+        .swagger-ui .btn.authorize { border-radius: 10px; }
+        .swagger-ui .btn.execute { border-radius: 10px; }
+        .swagger-ui input[type="text"], .swagger-ui textarea { border-radius: 10px; }
+      `,
       customSiteTitle: 'NurseHelper API Documentation',
       swaggerOptions: {
         persistAuthorization: true,
@@ -291,6 +306,7 @@ export const setupSwagger = (app: Express): void => {
         docExpansion: 'list',
         filter: true,
         showRequestHeaders: true,
+        deepLinking: true,
       },
     }) as any
   );

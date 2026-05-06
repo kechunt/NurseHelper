@@ -4,6 +4,7 @@ import { Shift } from '../entities/Shift';
 import { NurseShift } from '../entities/NurseShift';
 import { ShiftAttendance, ShiftAttendanceStatus } from '../entities/ShiftAttendance';
 import { User, UserRole } from '../entities/User';
+import { logger } from '../utils/logger';
 
 export const getShifts = async (req: Request, res: Response) => {
   try {
@@ -14,7 +15,7 @@ export const getShifts = async (req: Request, res: Response) => {
     });
     res.json(shifts);
   } catch (error) {
-    console.error('Error al obtener turnos:', error);
+    logger.error('Error al obtener turnos:', error);
     res.status(500).json({ message: 'Error al obtener turnos' });
   }
 };
@@ -24,7 +25,7 @@ export const updateShift = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { startTime, endTime } = req.body;
 
-    console.log('🔄 Actualizando turno:', {
+    logger.info('🔄 Actualizando turno:', {
       id,
       startTime,
       endTime
@@ -32,7 +33,7 @@ export const updateShift = async (req: Request, res: Response) => {
 
     const shiftId = parseInt(id);
     if (isNaN(shiftId)) {
-      console.error('❌ ID de turno inválido:', id);
+      logger.error('❌ ID de turno inválido:', id);
       return res.status(400).json({ message: 'ID de turno inválido' });
     }
 
@@ -40,11 +41,11 @@ export const updateShift = async (req: Request, res: Response) => {
     const shift = await shiftRepo.findOne({ where: { id: shiftId } });
 
     if (!shift) {
-      console.error('❌ Turno no encontrado:', shiftId);
+      logger.error('❌ Turno no encontrado:', shiftId);
       return res.status(404).json({ message: 'Turno no encontrado' });
     }
 
-    console.log('📋 Turno encontrado:', {
+    logger.info('📋 Turno encontrado:', {
       id: shift.id,
       type: shift.type,
       name: shift.name,
@@ -55,25 +56,25 @@ export const updateShift = async (req: Request, res: Response) => {
     // Validar formato de tiempo (HH:MM)
     const timeRegex = /^([0-1][0-9]|2[0-3]):[0-5][0-9]$/;
     if (startTime && !timeRegex.test(startTime)) {
-      console.error('❌ Formato de hora de inicio inválido:', startTime);
+      logger.error('❌ Formato de hora de inicio inválido:', startTime);
       return res.status(400).json({ message: 'Formato de hora de inicio inválido. Use HH:MM' });
     }
     if (endTime && !timeRegex.test(endTime)) {
-      console.error('❌ Formato de hora de fin inválido:', endTime);
+      logger.error('❌ Formato de hora de fin inválido:', endTime);
       return res.status(400).json({ message: 'Formato de hora de fin inválido. Use HH:MM' });
     }
 
     if (startTime) {
       shift.startTime = startTime;
-      console.log(`  ✏️ Hora de inicio actualizada: ${shift.startTime} → ${startTime}`);
+      logger.info(`  ✏️ Hora de inicio actualizada: ${shift.startTime} → ${startTime}`);
     }
     if (endTime) {
       shift.endTime = endTime;
-      console.log(`  ✏️ Hora de fin actualizada: ${shift.endTime} → ${endTime}`);
+      logger.info(`  ✏️ Hora de fin actualizada: ${shift.endTime} → ${endTime}`);
     }
 
     await shiftRepo.save(shift);
-    console.log('✅ Turno guardado exitosamente:', {
+    logger.info('✅ Turno guardado exitosamente:', {
       id: shift.id,
       type: shift.type,
       name: shift.name,
@@ -83,8 +84,8 @@ export const updateShift = async (req: Request, res: Response) => {
 
     res.json({ message: 'Turno actualizado exitosamente', shift });
   } catch (error) {
-    console.error('❌ Error al actualizar turno:', error);
-    console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
+    logger.error('❌ Error al actualizar turno:', error);
+    logger.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
     res.status(500).json({ 
       message: 'Error al actualizar turno',
       error: error instanceof Error ? error.message : 'Error desconocido'
@@ -96,7 +97,7 @@ export const getWeeklySchedule = async (req: Request, res: Response) => {
   try {
     const { weekStartDate } = req.query;
     
-    console.log('📅 Buscando horarios para semana:', weekStartDate);
+    logger.info('📅 Buscando horarios para semana:', weekStartDate);
     
     const nurseShiftRepo = AppDataSource.getRepository(NurseShift);
     const query = nurseShiftRepo.createQueryBuilder('ns')
@@ -117,17 +118,22 @@ export const getWeeklySchedule = async (req: Request, res: Response) => {
 
     const nurseShifts = await query.getMany();
     
-    console.log(`📊 Encontrados ${nurseShifts.length} turnos asignados`);
+    logger.info(`📊 Encontrados ${nurseShifts.length} turnos asignados`);
     
     if (nurseShifts.length > 0) {
-      console.log('📋 Primeros turnos encontrados:', nurseShifts.slice(0, 5).map(ns => ({
-        nurseId: ns.nurseId,
-        nurseName: `${ns.nurse.firstName} ${ns.nurse.lastName}`,
-        dayOfWeek: ns.dayOfWeek,
-        shiftType: ns.shift?.type,
-        shiftId: ns.shiftId,
-        weekStartDate: ns.weekStartDate
-      })));
+      logger.info(
+        '📋 Primeros turnos encontrados:',
+        nurseShifts.slice(0, 5).map(ns => ({
+          nurseId: ns.nurseId,
+          nurseName: ns.nurse
+            ? `${ns.nurse.firstName} ${ns.nurse.lastName}`
+            : '(sin enfermera)',
+          dayOfWeek: ns.dayOfWeek,
+          shiftType: ns.shift?.type,
+          shiftId: ns.shiftId,
+          weekStartDate: ns.weekStartDate,
+        }))
+      );
     }
 
     const dayMap: { [key: number]: string } = {
@@ -143,12 +149,12 @@ export const getWeeklySchedule = async (req: Request, res: Response) => {
     const groupedByNurse: any = {};
     nurseShifts.forEach(ns => {
       if (!ns.nurse) {
-        console.warn(`⚠️ Turno sin enfermera asociada:`, ns);
+        logger.warn(`⚠️ Turno sin enfermera asociada:`, ns);
         return;
       }
       
       if (!ns.shift) {
-        console.warn(`⚠️ Turno sin shift asociado:`, ns);
+        logger.warn(`⚠️ Turno sin shift asociado:`, ns);
         return;
       }
       
@@ -169,20 +175,20 @@ export const getWeeklySchedule = async (req: Request, res: Response) => {
       if (dayName && ns.shift) {
         // Devolver el tipo del turno ('morning', 'afternoon', 'night')
         groupedByNurse[ns.nurseId][dayName] = ns.shift.type;
-        console.log(`  📅 ${ns.nurse.firstName} ${ns.nurse.lastName} - ${dayName}: ${ns.shift.type} (shiftId: ${ns.shiftId})`);
+        logger.info(`  📅 ${ns.nurse.firstName} ${ns.nurse.lastName} - ${dayName}: ${ns.shift.type} (shiftId: ${ns.shiftId})`);
       }
     });
 
     const result = Object.values(groupedByNurse);
-    console.log(`✅ Programación semanal procesada: ${result.length} enfermeras con turnos`);
+    logger.info(`✅ Programación semanal procesada: ${result.length} enfermeras con turnos`);
     
     if (result.length > 0) {
-      console.log('📋 Primeros schedules procesados:', result.slice(0, 3));
+      logger.info('📋 Primeros schedules procesados:', result.slice(0, 3));
     }
     
     res.json(result);
   } catch (error) {
-    console.error('Error al obtener programación semanal:', error);
+    logger.error('Error al obtener programación semanal:', error);
     res.status(500).json({ message: 'Error al obtener programación semanal' });
   }
 };
@@ -191,7 +197,7 @@ export const saveWeeklySchedule = async (req: Request, res: Response) => {
   try {
     const { schedules, weekStartDate } = req.body;
 
-    console.log('📥 Recibiendo programación semanal:', { schedules, weekStartDate });
+    logger.info('📥 Recibiendo programación semanal:', { schedules, weekStartDate });
 
     if (!schedules || !Array.isArray(schedules)) {
       return res.status(400).json({ message: 'Datos de programación inválidos' });
@@ -214,16 +220,16 @@ export const saveWeeklySchedule = async (req: Request, res: Response) => {
     }
     
     const weekStartStr = weekStart.toISOString().split('T')[0];
-    console.log('📅 Semana normalizada:', weekStartStr);
+    logger.info('📅 Semana normalizada:', weekStartStr);
 
     const allShifts = await shiftRepo.find();
-    console.log('📋 Turnos disponibles en BD:', allShifts.map(s => ({ id: s.id, type: s.type, name: s.name })));
+    logger.info('📋 Turnos disponibles en BD:', allShifts.map(s => ({ id: s.id, type: s.type, name: s.name })));
 
     const shiftIdMap: { [key: string]: number } = {};
     allShifts.forEach(shift => {
       shiftIdMap[shift.type] = shift.id;
     });
-    console.log('📋 Mapa de tipos a IDs:', shiftIdMap);
+    logger.info('📋 Mapa de tipos a IDs:', shiftIdMap);
 
     const savedShifts = [];
     
@@ -231,12 +237,12 @@ export const saveWeeklySchedule = async (req: Request, res: Response) => {
       const { nurseId, shifts: nurseShifts } = nurseSchedule;
       
       if (!nurseId) {
-        console.warn('⚠️ Schedule sin nurseId, saltando...');
+        logger.warn('⚠️ Schedule sin nurseId, saltando...');
         continue;
       }
       
-      console.log(`\n👤 Procesando enfermera ID ${nurseId}:`);
-      console.log(`  Turnos a asignar: ${nurseShifts.length}`);
+      logger.info(`\n👤 Procesando enfermera ID ${nurseId}:`);
+      logger.info(`  Turnos a asignar: ${nurseShifts.length}`);
       
       try {
         // Eliminar turnos anteriores de esta enfermera para esta semana
@@ -249,26 +255,26 @@ export const saveWeeklySchedule = async (req: Request, res: Response) => {
           .andWhere('DATE(weekStartDate) = DATE(:weekStartDate)', { weekStartDate: weekStartDateOnly })
           .execute();
         
-        console.log(`  🗑️ Eliminados ${deleted.affected || 0} turnos anteriores para esta semana`);
+        logger.info(`  🗑️ Eliminados ${deleted.affected || 0} turnos anteriores para esta semana`);
       } catch (deleteError) {
-        console.error(`  ⚠️ Error eliminando turnos anteriores:`, deleteError);
+        logger.error(`  ⚠️ Error eliminando turnos anteriores:`, deleteError);
         // Continuar aunque falle la eliminación
       }
 
       for (const shiftData of nurseShifts) {
         const { dayOfWeek, shiftId } = shiftData;
         
-        console.log(`  📅 Día ${dayOfWeek}, turno recibido: ${shiftId} (tipo: ${typeof shiftId})`);
+        logger.info(`  📅 Día ${dayOfWeek}, turno recibido: ${shiftId} (tipo: ${typeof shiftId})`);
         
         // Validar dayOfWeek primero
         if (dayOfWeek === undefined || dayOfWeek === null || isNaN(parseInt(String(dayOfWeek)))) {
-          console.warn(`  ⚠️ dayOfWeek inválido: ${dayOfWeek}`);
+          logger.warn(`  ⚠️ dayOfWeek inválido: ${dayOfWeek}`);
           continue;
         }
         
         const dayOfWeekNum = parseInt(String(dayOfWeek));
         if (dayOfWeekNum < 0 || dayOfWeekNum > 6) {
-          console.warn(`  ⚠️ dayOfWeek fuera de rango (0-6): ${dayOfWeekNum}`);
+          logger.warn(`  ⚠️ dayOfWeek fuera de rango (0-6): ${dayOfWeekNum}`);
           continue;
         }
         
@@ -279,9 +285,9 @@ export const saveWeeklySchedule = async (req: Request, res: Response) => {
           // Buscar en el mapa de tipos a IDs
           actualShiftId = shiftIdMap[shiftId];
           if (actualShiftId) {
-            console.log(`  🔄 Convertido tipo '${shiftId}' → ID ${actualShiftId}`);
+            logger.info(`  🔄 Convertido tipo '${shiftId}' → ID ${actualShiftId}`);
           } else {
-            console.warn(`  ⚠️ Tipo de turno '${shiftId}' no encontrado en el mapa. Turnos disponibles:`, Object.keys(shiftIdMap));
+            logger.warn(`  ⚠️ Tipo de turno '${shiftId}' no encontrado en el mapa. Turnos disponibles:`, Object.keys(shiftIdMap));
             continue; // Saltar este turno si no se encuentra
           }
         } else if (typeof shiftId === 'number') {
@@ -289,19 +295,19 @@ export const saveWeeklySchedule = async (req: Request, res: Response) => {
           const shiftExists = allShifts.find(s => s.id === shiftId);
           if (shiftExists) {
             actualShiftId = shiftId;
-            console.log(`  ✅ ID numérico ${shiftId} válido`);
+            logger.info(`  ✅ ID numérico ${shiftId} válido`);
           } else {
-            console.warn(`  ⚠️ ID de turno ${shiftId} no existe en BD`);
+            logger.warn(`  ⚠️ ID de turno ${shiftId} no existe en BD`);
             continue;
           }
         } else {
-          console.warn(`  ⚠️ shiftId tiene tipo inválido: ${typeof shiftId}`);
+          logger.warn(`  ⚠️ shiftId tiene tipo inválido: ${typeof shiftId}`);
           continue;
         }
         
         // Ignorar si es 'off' (descanso) o si no se pudo obtener un ID válido
         if (shiftId === 'off' || !actualShiftId) {
-          console.log(`  ⏭️ Saltando: ${shiftId} (descanso o inválido)`);
+          logger.info(`  ⏭️ Saltando: ${shiftId} (descanso o inválido)`);
           continue;
         }
         
@@ -311,15 +317,15 @@ export const saveWeeklySchedule = async (req: Request, res: Response) => {
         nurseShift.dayOfWeek = dayOfWeekNum;
         nurseShift.weekStartDate = weekStart;
         
-        console.log(`  💾 Guardando: enfermera ${nurseId}, turno ${actualShiftId}, día ${dayOfWeekNum}, semana ${weekStartStr}`);
+        logger.info(`  💾 Guardando: enfermera ${nurseId}, turno ${actualShiftId}, día ${dayOfWeekNum}, semana ${weekStartStr}`);
         
         try {
           const saved = await nurseShiftRepo.save(nurseShift);
           savedShifts.push(saved);
-          console.log(`  ✅ Turno guardado (ID BD: ${saved.id})`);
+          logger.info(`  ✅ Turno guardado (ID BD: ${saved.id})`);
         } catch (saveError) {
-          console.error(`  ❌ Error guardando turno:`, saveError);
-          console.error(`  Detalles:`, {
+          logger.error(`  ❌ Error guardando turno:`, saveError);
+          logger.error(`  Detalles:`, {
             nurseId,
             shiftId: actualShiftId,
             dayOfWeek: dayOfWeekNum,
@@ -330,10 +336,10 @@ export const saveWeeklySchedule = async (req: Request, res: Response) => {
         }
       }
       
-      console.log(`  ✅ Enfermera ${nurseId}: ${savedShifts.length} turnos guardados hasta ahora`);
+      logger.info(`  ✅ Enfermera ${nurseId}: ${savedShifts.length} turnos guardados hasta ahora`);
     }
 
-    console.log(`✅ Guardados ${savedShifts.length} turnos en base de datos`);
+    logger.info(`✅ Guardados ${savedShifts.length} turnos en base de datos`);
 
     res.json({ 
       message: 'Programación semanal guardada exitosamente',
@@ -341,7 +347,7 @@ export const saveWeeklySchedule = async (req: Request, res: Response) => {
       weekStartDate: weekStart
     });
   } catch (error) {
-    console.error('❌ Error al guardar programación semanal:', error);
+    logger.error('❌ Error al guardar programación semanal:', error);
     res.status(500).json({ message: 'Error al guardar programación semanal' });
   }
 };
@@ -392,7 +398,7 @@ export const getShiftAttendance = async (req: Request, res: Response) => {
 
     res.json(items);
   } catch (error) {
-    console.error('Error al obtener asistencia del turno:', error);
+    logger.error('Error al obtener asistencia del turno:', error);
     res.status(500).json({ message: 'Error al obtener asistencia del turno' });
   }
 };
@@ -456,7 +462,7 @@ export const saveShiftAttendance = async (req: Request, res: Response) => {
       saved: savedRows.length,
     });
   } catch (error) {
-    console.error('Error al guardar asistencia del turno:', error);
+    logger.error('Error al guardar asistencia del turno:', error);
     res.status(500).json({ message: 'Error al guardar asistencia del turno' });
   }
 };
@@ -498,7 +504,7 @@ export const getPresentNursesByShift = async (req: Request, res: Response) => {
 
     res.json(nurses);
   } catch (error) {
-    console.error('Error al obtener enfermeras presentes:', error);
+    logger.error('Error al obtener enfermeras presentes:', error);
     res.status(500).json({ message: 'Error al obtener enfermeras presentes' });
   }
 };
@@ -555,7 +561,7 @@ export const getShiftAttendanceHistory = async (req: Request, res: Response) => 
 
     res.json(items);
   } catch (error) {
-    console.error('Error al obtener historial de turnos:', error);
+    logger.error('Error al obtener historial de turnos:', error);
     res.status(500).json({ message: 'Error al obtener historial de turnos' });
   }
 };

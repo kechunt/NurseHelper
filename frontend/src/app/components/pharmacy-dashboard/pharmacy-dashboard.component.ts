@@ -11,12 +11,16 @@ import {
 } from '../../services/pharmacy.service';
 import { ToastService } from '../../services/toast.service';
 import { ConfirmationService } from '../../services/confirmation.service';
+import { DashboardShellComponent } from '../../shared/components/dashboard-shell/dashboard-shell.component';
+import { AdminTableRowActionsModalComponent } from '../../shared/components/admin-table-row-actions-modal/admin-table-row-actions-modal.component';
 
 interface MedicationRequest {
   id: number;
   requestId: string;
   requestedBy: string;
   requestedAt: string;
+  requestedAtRaw?: string | null;
+  statusUpdatedAtRaw?: string | null;
   medication: string;
   dosage: string;
   quantity: number;
@@ -53,6 +57,7 @@ interface DeliveryHistoryItem {
   dosage: string;
   quantity: number;
   requestedBy: string;
+  requestedAt?: string | null;
   deliveredAt?: string;
   deliveredAtRaw?: Date; // Fecha original para comparación
   cancelledAt?: string;
@@ -89,18 +94,30 @@ interface InventoryItem {
 @Component({
   selector: 'app-pharmacy-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, DashboardShellComponent, AdminTableRowActionsModalComponent],
   templateUrl: './pharmacy-dashboard.component.html',
   styleUrls: [
     '../../shared/styles/admin-table-unified.css',
-    '../../shared/styles/admin-panel-responsive.css',
-    '../../shared/styles/dashboard-layout.css',
     './pharmacy-dashboard.component.css',
   ],
 })
 export class PharmacyDashboardComponent implements OnInit {
   pharmacyUserName: string = 'Farmacia Central';
-  
+
+  get headerUserName(): string {
+    const u = this.authService.currentUser();
+    if (u) {
+      return `${u.firstName || ''} ${u.lastName || ''}`.trim();
+    }
+    return this.pharmacyUserName;
+  }
+
+  get headerUserPhoneLine(): string | null {
+    const p = this.authService.currentUser()?.phone;
+    const s = p != null ? String(p).trim() : '';
+    return s.length > 0 ? `📞 ${s}` : null;
+  }
+
   pendingRequestsCount: number = 0;
   inPreparationCount: number = 0;
   readyForDeliveryCount: number = 0;
@@ -125,6 +142,8 @@ export class PharmacyDashboardComponent implements OnInit {
   private readonly storageKey = 'pharmacy-dashboard-ui-v1';
   private readonly allowedSections = new Set(['requests', 'history', 'inventory']);
 
+  readonly pharmacySectionOrder: readonly string[] = ['requests', 'history', 'inventory'];
+
   loadingInventory = false;
   loadingRequests = false;
   loadingHistory = false;
@@ -147,6 +166,9 @@ export class PharmacyDashboardComponent implements OnInit {
 
   showDeliveryModal: boolean = false;
   selectedRequest: MedicationRequest | null = null;
+  showRequestDetailModal = false;
+  selectedRequestDetail: MedicationRequest | null = null;
+  selectedRequestForActions: MedicationRequest | null = null;
   deliveryNotes: string = '';
   
   // Modal de rechazo
@@ -159,6 +181,7 @@ export class PharmacyDashboardComponent implements OnInit {
   showStockMovementModal = false;
   selectedMedicationForDelete: InventoryItem | null = null;
   selectedInventoryItem: InventoryItem | null = null;
+  selectedInventoryForActions: InventoryItem | null = null;
   stockMovementForm: {
     type: 'entry' | 'exit' | 'adjustment';
     quantity: number;
@@ -196,6 +219,7 @@ export class PharmacyDashboardComponent implements OnInit {
   
   // Historial completo (entregas y rechazos)
   fullHistory: CombinedHistoryItem[] = [];
+  selectedHistoryForActions: CombinedHistoryItem | null = null;
   private requestSearchDebounce: ReturnType<typeof setTimeout> | null = null;
   private historySearchDebounce: ReturnType<typeof setTimeout> | null = null;
   private inventorySearchDebounce: ReturnType<typeof setTimeout> | null = null;
@@ -231,6 +255,20 @@ export class PharmacyDashboardComponent implements OnInit {
 
   private notifyInfo(message: string): void {
     this.toastService.info(message);
+  }
+
+  /** Nombre visible + teléfono si el backend lo envía (User en relaciones). */
+  private staffContactLabel(
+    u: { firstName?: string; lastName?: string; phone?: string | null } | null | undefined,
+    suffix?: string
+  ): string {
+    if (!u) {
+      return '—';
+    }
+    const name = `${u.firstName || ''} ${u.lastName || ''}`.trim();
+    const ph = u.phone != null && String(u.phone).trim() ? ` · ${String(u.phone).trim()}` : '';
+    const suf = suffix ? ` ${suffix}` : '';
+    return `${name}${suf}${ph}`;
   }
 
   loadData(): void {
@@ -307,14 +345,16 @@ export class PharmacyDashboardComponent implements OnInit {
           return {
             id: r.id,
             requestId: r.requestId,
-            requestedBy: `${r.requestedBy.firstName} ${r.requestedBy.lastName} (Enfermera)`,
+            requestedBy: this.staffContactLabel(r.requestedBy, '(Enfermera)'),
             requestedAt: new Date(r.createdAt).toLocaleString('es-ES'),
+            requestedAtRaw: r.createdAt ?? null,
+            statusUpdatedAtRaw: (r as any).updatedAt ?? null,
             medication: r.medication.name,
             dosage: r.dosage,
             quantity: r.quantity,
             patients: r.patientsInfo || [],
-            status: r.status,
-            priority: r.priority,
+            status: (r.status || 'pending') as MedicationRequest['status'],
+            priority: (r.priority || 'normal') as MedicationRequest['priority'],
             notes: r.notes || '',
             medicationId: r.medication.id,
             availableInStock: isAvailable,
@@ -361,10 +401,11 @@ export class PharmacyDashboardComponent implements OnInit {
             medication: h.medication.name,
             dosage: h.dosage,
             quantity: h.quantity,
-            requestedBy: `${h.requestedBy.firstName} ${h.requestedBy.lastName}`,
+            requestedBy: this.staffContactLabel(h.requestedBy),
+            requestedAt: h.requestedAt ?? null,
             deliveredAt: deliveredDate.toLocaleString('es-ES'),
             deliveredAtRaw: deliveredDate, // Guardar fecha original para comparación
-            deliveredBy: `${h.deliveredBy.firstName} ${h.deliveredBy.lastName}`,
+            deliveredBy: this.staffContactLabel(h.deliveredBy),
             patients: h.patients || [],
             notes: h.notes || 'Sin observaciones',
             type: 'delivery',
@@ -381,7 +422,8 @@ export class PharmacyDashboardComponent implements OnInit {
             medication: r.medication.name,
             dosage: r.dosage,
             quantity: r.quantity,
-            requestedBy: `${r.requestedBy.firstName} ${r.requestedBy.lastName}`,
+            requestedBy: this.staffContactLabel(r.requestedBy),
+            requestedAt: r.requestedAt ?? null,
             cancelledAt: cancelledDate.toLocaleString('es-ES'),
             notes: r.notes || '',
             patientsInfo: r.patientsInfo || [],
@@ -517,6 +559,35 @@ export class PharmacyDashboardComponent implements OnInit {
     this.persistUiState();
   }
 
+  onPharmacyTabKeydown(event: KeyboardEvent, currentSection: string): void {
+    const key = event.key;
+    if (key !== 'ArrowLeft' && key !== 'ArrowRight' && key !== 'Home' && key !== 'End') {
+      return;
+    }
+    event.preventDefault();
+
+    let idx = this.pharmacySectionOrder.indexOf(currentSection);
+    if (idx < 0) {
+      return;
+    }
+
+    if (key === 'Home') {
+      idx = 0;
+    } else if (key === 'End') {
+      idx = this.pharmacySectionOrder.length - 1;
+    } else if (key === 'ArrowRight') {
+      idx = Math.min(this.pharmacySectionOrder.length - 1, idx + 1);
+    } else {
+      idx = Math.max(0, idx - 1);
+    }
+
+    const next = this.pharmacySectionOrder[idx];
+    this.changeSection(next);
+    queueMicrotask(() => {
+      document.getElementById(`pharmacy-tab-${next}`)?.focus();
+    });
+  }
+
   goToRequestsFromLogo(): void {
     this.changeSection('requests');
   }
@@ -646,6 +717,7 @@ export class PharmacyDashboardComponent implements OnInit {
   }
 
   async changeRequestStatus(request: MedicationRequest, newStatus: 'pending' | 'in_preparation' | 'ready' | 'delivered' | 'cancelled'): Promise<void> {
+    this.closeRequestActions();
     // Si es rechazo, abrir modal para razón
     if (newStatus === 'cancelled') {
       this.openRejectModal(request);
@@ -793,6 +865,142 @@ export class PharmacyDashboardComponent implements OnInit {
     this.notifyInfo(`Solicitud ${request.requestId}: ${request.medication} ${request.dosage}, cantidad ${request.quantity}. Pacientes: ${request.patients.length}.`);
   }
 
+  openRequestDetailModal(request: MedicationRequest): void {
+    this.closeRequestActions();
+    this.selectedRequestDetail = request;
+    this.showRequestDetailModal = true;
+  }
+
+  closeRequestDetailModal(): void {
+    this.showRequestDetailModal = false;
+    this.selectedRequestDetail = null;
+  }
+
+  openRequestActions(request: MedicationRequest): void {
+    this.selectedRequestForActions = request;
+  }
+
+  closeRequestActions(): void {
+    this.selectedRequestForActions = null;
+  }
+
+  requestActionsTitle(r: MedicationRequest): string {
+    return `📝 Solicitud ${r.requestId}`;
+  }
+
+  requestActionsSummary(r: MedicationRequest): string[] {
+    const area =
+      r.patients && r.patients.length > 0
+        ? r.patients[0].areaName || r.patients[0].area || 'N/A'
+        : 'N/A';
+    const stock = Number.isFinite(r.stockAvailable as number) ? String(r.stockAvailable) : '0';
+    const requested = r.requestedAtRaw ? new Date(r.requestedAtRaw).toLocaleString('es-ES') : r.requestedAt;
+    const updated =
+      r.statusUpdatedAtRaw && !Number.isNaN(new Date(r.statusUpdatedAtRaw).getTime())
+        ? new Date(r.statusUpdatedAtRaw).toLocaleString('es-ES')
+        : null;
+    const statusLine =
+      r.status === 'pending'
+        ? 'Pendiente'
+        : r.status === 'in_preparation'
+          ? 'Aceptada / en preparación'
+          : r.status === 'ready'
+            ? 'Lista para entrega'
+            : r.status === 'delivered'
+              ? 'Entregada'
+              : 'Rechazada';
+    return [
+      `Solicitada: ${requested}`,
+      updated ? `Último cambio: ${updated} (${statusLine})` : `Estado: ${this.getStatusLabel(r.status)}`,
+      `Solicitó: ${r.requestedBy}`,
+      `Medicamento: ${r.medication} ${r.dosage}`,
+      `Cantidad: ${r.quantity}`,
+      `Área: ${area}`,
+      `Pacientes: ${(r.patients || []).length}`,
+      `Prioridad: ${r.priority}`,
+      `Stock: ${stock} ${this.isMedicationAvailable(r) ? '✅' : '⚠️'}`,
+    ];
+  }
+
+  private normalizeRequestStatus(
+    status: MedicationRequest['status'] | string | null | undefined
+  ): MedicationRequest['status'] {
+    const s = String(status || '').trim();
+    if (s === 'pending' || s === 'in_preparation' || s === 'ready' || s === 'delivered' || s === 'cancelled') {
+      return s;
+    }
+    return 'pending';
+  }
+
+  canAcceptRequest(r: MedicationRequest): boolean {
+    return this.normalizeRequestStatus(r.status) === 'pending';
+  }
+
+  canMarkReady(r: MedicationRequest): boolean {
+    return this.normalizeRequestStatus(r.status) === 'in_preparation';
+  }
+
+  canDeliver(r: MedicationRequest): boolean {
+    return this.normalizeRequestStatus(r.status) === 'ready';
+  }
+
+  canReject(r: MedicationRequest): boolean {
+    const st = this.normalizeRequestStatus(r.status);
+    return st !== 'delivered' && st !== 'cancelled';
+  }
+
+  openInventoryActions(item: InventoryItem): void {
+    this.selectedInventoryForActions = item;
+  }
+
+  closeInventoryActions(): void {
+    this.selectedInventoryForActions = null;
+  }
+
+  inventoryActionsTitle(i: InventoryItem): string {
+    return `📦 ${i.medication} ${i.dosage}`;
+  }
+
+  inventoryActionsSummary(i: InventoryItem): string[] {
+    const cad = i.expiryDateRaw ? String(i.expiryDateRaw).slice(0, 10) : '—';
+    return [
+      `Stock: ${i.stock} (mín: ${i.minStock})`,
+      `Ubicación: ${i.location || '—'}`,
+      `Caducidad: ${cad}`,
+      `Estado: ${this.getInventoryStatusLabel(i)}`,
+    ];
+  }
+
+  openHistoryActions(item: CombinedHistoryItem): void {
+    this.selectedHistoryForActions = item;
+  }
+
+  closeHistoryActions(): void {
+    this.selectedHistoryForActions = null;
+  }
+
+  historyActionsTitle(i: CombinedHistoryItem): string {
+    return `${i.type === 'delivery' ? '📦 Entrega' : '❌ Rechazo'} ${i.deliveryId || i.requestId || ''}`;
+  }
+
+  historyActionsSummary(i: CombinedHistoryItem): string[] {
+    const when = this.getHistoryDate(i);
+    const requestedAt =
+      i.requestedAt && !Number.isNaN(new Date(i.requestedAt).getTime())
+        ? new Date(i.requestedAt).toLocaleString('es-ES')
+        : null;
+    const who = i.requestedBy || '—';
+    const detail = i.type === 'delivery' ? (i.deliveredBy || '—') : (i.notes || '—');
+    return [
+      requestedAt ? `Solicitada: ${requestedAt}` : null,
+      `Fecha: ${when}`,
+      `Medicamento: ${i.medication} ${i.dosage}`,
+      `Cantidad: ${i.quantity}`,
+      `Solicitado por: ${who}`,
+      i.type === 'delivery' ? `Entregado por: ${detail}` : `Razón: ${detail}`,
+    ].filter(Boolean) as string[];
+  }
+
   updateStock(item: InventoryItem): void {
     this.openStockMovementModal(item, 'adjustment');
   }
@@ -821,6 +1029,60 @@ export class PharmacyDashboardComponent implements OnInit {
       return `"${s.replace(/"/g, '""')}"`;
     }
     return s;
+  }
+
+  private escapeHtml(value: string | number | null | undefined): string {
+    const s = String(value ?? '');
+    return s
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
+  }
+
+  private printRowsAsTable(title: string, headers: string[], rows: Array<Array<string | number>>): void {
+    if (!rows.length) {
+      this.notifyWarning('No hay datos para imprimir con los filtros actuales.');
+      return;
+    }
+    const now = new Date().toLocaleString('es-ES');
+    const thead = `<tr>${headers.map((h) => `<th>${this.escapeHtml(h)}</th>`).join('')}</tr>`;
+    const tbody = rows
+      .map((r) => `<tr>${r.map((c) => `<td>${this.escapeHtml(c)}</td>`).join('')}</tr>`)
+      .join('');
+    const html = `<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>${this.escapeHtml(title)}</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 16px; color: #1a202c; }
+      h1 { margin: 0 0 6px; font-size: 18px; }
+      p { margin: 0 0 12px; color: #4a5568; font-size: 12px; }
+      table { width: 100%; border-collapse: collapse; font-size: 12px; }
+      th, td { border: 1px solid #cbd5e0; padding: 6px 8px; text-align: left; vertical-align: top; }
+      th { background: #edf2f7; font-weight: 700; }
+    </style>
+  </head>
+  <body>
+    <h1>${this.escapeHtml(title)}</h1>
+    <p>Generado: ${this.escapeHtml(now)}</p>
+    <table>
+      <thead>${thead}</thead>
+      <tbody>${tbody}</tbody>
+    </table>
+    <script>window.onload = () => { window.print(); };</script>
+  </body>
+</html>`;
+    const w = window.open('', '_blank', 'noopener,noreferrer');
+    if (!w) {
+      this.notifyError('No se pudo abrir la vista de impresión.');
+      return;
+    }
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
   }
 
   private formatHistoryPatients(item: DeliveryHistoryItem): string {
@@ -904,6 +1166,20 @@ export class PharmacyDashboardComponent implements OnInit {
     this.notifySuccess('Historial exportado a Excel');
   }
 
+  printHistory(): void {
+    const headers = ['Tipo', 'ID', 'Fecha', 'Medicamento', 'Dosis', 'Cantidad', 'Solicitado por'];
+    const rows = this.filteredHistory.map((item) => [
+      item.type === 'delivery' ? 'Entrega' : 'Rechazo',
+      item.deliveryId || item.requestId || '',
+      this.getHistoryDate(item),
+      item.medication,
+      item.dosage,
+      item.quantity,
+      item.requestedBy,
+    ]);
+    this.printRowsAsTable('Historial de farmacia', headers, rows);
+  }
+
   exportInventoryCsv(): void {
     if (!this.filteredInventory.length) {
       this.notifyWarning('No hay filas de inventario para exportar (revisa filtros).');
@@ -965,6 +1241,20 @@ export class PharmacyDashboardComponent implements OnInit {
     XLSX.utils.book_append_sheet(wb, ws, 'Bodega');
     XLSX.writeFile(wb, `${this.buildExportFilename('bodega_inventario')}.xlsx`);
     this.notifySuccess('Inventario de bodega exportado a Excel');
+  }
+
+  printInventory(): void {
+    const headers = ['Medicamento', 'Dosis', 'Stock actual', 'Stock mínimo', 'Ubicación', 'Caducidad', 'Estado'];
+    const rows = this.filteredInventory.map((item) => [
+      item.medication,
+      item.dosage,
+      item.stock,
+      item.minStock,
+      item.location,
+      item.expiryDateRaw ? String(item.expiryDateRaw).slice(0, 10) : '',
+      this.getInventoryStatusLabel(item),
+    ]);
+    this.printRowsAsTable('Inventario de farmacia', headers, rows);
   }
 
   getStatusLabel(status: string): string {

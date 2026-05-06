@@ -1,0 +1,33 @@
+.treatment-patient-context {
+  margin: 0 0 1rem;
+  color: #4a5568;
+  font-size: 0.95rem;
+}
+
+.empty-state-modal {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: #a0aec0;
+}
+
+.empty-state-modal .empty-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  display: block;
+}
+
+.empty-state-modal .empty-message {
+  color: #718096;
+  font-size: 1.1rem;
+  font-weight: 600;
+  font-style: normal;
+  margin-bottom: 0.5rem;
+  padding: 0;
+}
+
+.empty-state-modal .empty-hint {
+  color: #a0aec0;
+  font-size: 0.9rem;
+  font-style: italic;
+  padding: 0;
+}
