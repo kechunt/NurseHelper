@@ -23,8 +23,8 @@
   box-sizing: border-box;
   border: 1px solid rgba(255, 255, 255, 0.45);
   box-shadow:
-    inset 5px 5px 12px rgba(163, 168, 176, 0.52),
-    inset -4px -4px 11px rgba(255, 255, 255, 0.88);
+    8px 8px 18px rgba(174, 181, 190, 0.34),
+    -7px -7px 16px rgba(255, 255, 255, 0.92);
 }
 
 :host .nurse-tasks-pending-well {
@@ -34,9 +34,11 @@
 :host .nurse-day-history-nested {
   margin-top: 0;
   background: linear-gradient(160deg, #d8dde5 0%, #e4e9ef 55%, #dfe4ea 100%);
-  box-shadow:
-    inset 6px 6px 14px rgba(163, 168, 176, 0.62),
-    inset -5px -5px 12px rgba(255, 255, 255, 0.84);
+}
+
+:host .nurse-tasks-pending-well,
+:host .nurse-day-history-nested {
+  min-height: 168px;
 }
 
 :host .nurse-tasks-pending-stack.nurse-module-stack {
@@ -303,8 +305,33 @@
 }
 
 /* toggle-btn-neuro viene de admin-table-unified; refuerzo hover/active dentro del panel */
+:host .nurse-day-history-nested .toggle-btn-neuro {
+  border: none;
+  border-radius: 999px;
+  padding: 8px 14px;
+  min-height: 36px;
+  min-width: 104px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #4a5568;
+  background: #e0e5ec;
+  box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+:host .nurse-day-history-nested .toggle-btn-neuro:hover {
+  box-shadow: 3px 3px 6px #bebebe, -3px -3px 6px #ffffff;
+  transform: translateY(-1px);
+}
+
 :host .nurse-day-history-nested .toggle-btn-neuro:active {
-  box-shadow: inset 4px 4px 8px #bebebe, inset -3px -3px 8px #ffffff;
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+  transform: translateY(0);
 }
 
 .empty-hint {

@@ -6,7 +6,7 @@
   [attr.aria-atomic]="true"
 >
   <div class="toast-content">
-    <span class="toast-icon" aria-hidden="true">{{ getIcon(toast.type) }}</span>
+    <span class="toast-icon" aria-hidden="true"><app-hero-icon [name]="getIconName(toast.type)" /></span>
     <div class="toast-message">
       <p>{{ toast.message }}</p>
       <div *ngIf="toast.action" class="toast-action">
@@ -27,7 +27,7 @@
       aria-label="Cerrar notificación"
       tabindex="0"
     >
-      <span aria-hidden="true">×</span>
+      ✕
     </button>
   </div>
   <div class="toast-progress" *ngIf="toast.duration && toast.duration > 0">

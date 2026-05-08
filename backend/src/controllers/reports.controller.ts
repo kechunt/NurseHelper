@@ -2,18 +2,18 @@
  * Controlador de reportes
  */
 
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { reportService } from '../services/report.service';
 import { asyncHandler } from '../utils/error-handler';
 import { AuthRequest } from '../middleware/auth.middleware';
-import { UserRole } from '../entities/User';
+import { resolveReportPatientScope } from './reports-scope.helpers';
 
 export class ReportsController {
   /**
    * Generar reporte de medicamentos
    */
   generateMedicationReport = asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { startDate, endDate, patientId } = req.query;
+    const { startDate, endDate, patientId, nurseUserId } = req.query;
 
     if (!startDate || !endDate) {
       return res.status(400).json({
@@ -24,24 +24,18 @@ export class ReportsController {
 
     const start = new Date(startDate as string);
     const end = new Date(endDate as string);
-    const patientIdNum = patientId ? parseInt(patientId as string) : undefined;
+    const patientIdNum = patientId ? parseInt(patientId as string, 10) : undefined;
 
-    let restrictToPatientIds: number[] | undefined;
-    if (req.user?.role === UserRole.NURSE) {
-      restrictToPatientIds = await reportService.getPatientIdsVisibleToNurse(req.user.id);
-      if (patientIdNum !== undefined && !restrictToPatientIds.includes(patientIdNum)) {
-        return res.status(403).json({
-          message: 'No tienes acceso a datos de reporte de este paciente',
-          code: 'FORBIDDEN',
-        });
-      }
+    const scoped = await resolveReportPatientScope(req, patientIdNum, nurseUserId);
+    if (!scoped.ok) {
+      return res.status(scoped.status).json(scoped.body);
     }
 
     const report = await reportService.generateMedicationReport(
       start,
       end,
       patientIdNum,
-      restrictToPatientIds
+      scoped.restrictToPatientIds
     );
 
     res.json({
@@ -58,7 +52,7 @@ export class ReportsController {
    * Generar estadísticas de cumplimiento
    */
   generateComplianceStats = asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { startDate, endDate, patientId } = req.query;
+    const { startDate, endDate, patientId, nurseUserId } = req.query;
 
     if (!startDate || !endDate) {
       return res.status(400).json({
@@ -69,24 +63,18 @@ export class ReportsController {
 
     const start = new Date(startDate as string);
     const end = new Date(endDate as string);
-    const patientIdNum = patientId ? parseInt(patientId as string) : undefined;
+    const patientIdNum = patientId ? parseInt(patientId as string, 10) : undefined;
 
-    let restrictToPatientIds: number[] | undefined;
-    if (req.user?.role === UserRole.NURSE) {
-      restrictToPatientIds = await reportService.getPatientIdsVisibleToNurse(req.user.id);
-      if (patientIdNum !== undefined && !restrictToPatientIds.includes(patientIdNum)) {
-        return res.status(403).json({
-          message: 'No tienes acceso a datos de reporte de este paciente',
-          code: 'FORBIDDEN',
-        });
-      }
+    const scoped = await resolveReportPatientScope(req, patientIdNum, nurseUserId);
+    if (!scoped.ok) {
+      return res.status(scoped.status).json(scoped.body);
     }
 
     const stats = await reportService.generateComplianceStats(
       start,
       end,
       patientIdNum,
-      restrictToPatientIds
+      scoped.restrictToPatientIds
     );
 
     res.json({
@@ -103,7 +91,7 @@ export class ReportsController {
    * Exportar reporte
    */
   exportReport = asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { type, format, startDate, endDate, patientId } = req.query;
+    const { type, format, startDate, endDate, patientId, nurseUserId } = req.query;
 
     if (!type || !format || !startDate || !endDate) {
       return res.status(400).json({
@@ -114,17 +102,11 @@ export class ReportsController {
 
     const start = new Date(startDate as string);
     const end = new Date(endDate as string);
-    const patientIdNum = patientId ? parseInt(patientId as string) : undefined;
+    const patientIdNum = patientId ? parseInt(patientId as string, 10) : undefined;
 
-    let restrictToPatientIds: number[] | undefined;
-    if (req.user?.role === UserRole.NURSE) {
-      restrictToPatientIds = await reportService.getPatientIdsVisibleToNurse(req.user.id);
-      if (patientIdNum !== undefined && !restrictToPatientIds.includes(patientIdNum)) {
-        return res.status(403).json({
-          message: 'No tienes acceso a datos de reporte de este paciente',
-          code: 'FORBIDDEN',
-        });
-      }
+    const scoped = await resolveReportPatientScope(req, patientIdNum, nurseUserId);
+    if (!scoped.ok) {
+      return res.status(scoped.status).json(scoped.body);
     }
 
     let report: any;
@@ -133,14 +115,14 @@ export class ReportsController {
         start,
         end,
         patientIdNum,
-        restrictToPatientIds
+        scoped.restrictToPatientIds
       );
     } else if (type === 'compliance') {
       report = await reportService.generateComplianceStats(
         start,
         end,
         patientIdNum,
-        restrictToPatientIds
+        scoped.restrictToPatientIds
       );
     } else {
       return res.status(400).json({

@@ -12,7 +12,7 @@ import { Area } from './Area';
 import { User } from './User';
 
 @Entity('shift_handover_notes')
-@Index(['areaId', 'noteDate'], { unique: true })
+@Index(['areaId', 'noteDate', 'shiftSlot'], { unique: true })
 export class ShiftHandoverNote {
   @PrimaryGeneratedColumn()
   id: number;
@@ -26,6 +26,10 @@ export class ShiftHandoverNote {
 
   @Column({ type: 'date', name: 'note_date' })
   noteDate: Date;
+
+  /** Alineado con `ShiftType`: morning | afternoon | night */
+  @Column({ type: 'varchar', length: 16, name: 'shift_slot' })
+  shiftSlot: string;
 
   @Column({ type: 'text' })
   body: string;

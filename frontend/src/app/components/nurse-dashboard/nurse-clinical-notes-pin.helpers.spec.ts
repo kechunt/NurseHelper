@@ -28,7 +28,7 @@ describe('nurse-clinical-notes-pin.helpers', () => {
     expect(clinicalNotesPreviewSlice(notes, [], scope)).toEqual([]);
   });
 
-  it('con 👁 solo muestra las marcadas (en orden guardado)', () => {
+  it('con visibles solo muestra las marcadas (en orden guardado)', () => {
     const notes: PatientClinicalNoteDto[] = [
       { id: 1, body: 'A', authorName: null, createdAt: '2020-01-01T10:00:00Z', legacy: false },
       { id: 2, body: 'B', authorName: null, createdAt: '2021-01-01T10:00:00Z', legacy: false },

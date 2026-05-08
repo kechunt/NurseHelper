@@ -2,32 +2,20 @@
   z-index: 2400 !important;
 }
 
-.input-group {
-  margin-top: 1.5rem;
+.nurse-edit-bed-body {
+  max-height: min(72vh, 36rem);
 }
 
-.input-group:first-child {
-  margin-top: 0;
-}
-
-.input-group label {
-  display: block;
-  color: #4a5568;
-  font-size: 0.9rem;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-}
-
-.neuro-select {
+.neuro-select-full {
   width: 100%;
-  padding: 0.75rem 1rem;
+  padding: 14px 18px;
   padding-right: 2.5rem;
   background: #e0e5ec;
   border: none;
-  border-radius: 12px;
+  border-radius: 15px;
   box-shadow: inset 6px 6px 12px #bebebe, inset -6px -6px 12px #ffffff;
   color: #4a5568;
-  font-size: 0.95rem;
+  font-size: 16px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -36,27 +24,20 @@
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%234a5568' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 1rem center;
+  box-sizing: border-box;
 }
 
-.neuro-select:focus {
+.neuro-select-full:focus {
   outline: none;
   box-shadow: inset 8px 8px 16px #bebebe, inset -8px -8px 16px #ffffff;
 }
 
-.neuro-select:hover {
-  box-shadow: inset 7px 7px 14px #bebebe, inset -7px -7px 14px #ffffff;
-}
-
-.neuro-select:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.input-group small {
+.nurse-edit-bed-scope-hint {
   display: block;
   color: #718096;
   font-size: 0.8rem;
-  margin-top: 0.25rem;
+  margin-top: 0.35rem;
+  line-height: 1.35;
 }
 
 .nurse-edit-bed-hint--ok {
@@ -67,33 +48,60 @@
   color: #f56565;
 }
 
-.search-input {
-  padding: 12px 18px;
+.nurse-edit-bed-inset {
+  padding: 1rem 1.15rem;
+  margin-bottom: 0.85rem;
   background: #e0e5ec;
-  border: none;
   border-radius: 15px;
-  font-size: 0.95rem;
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+}
+
+.nurse-edit-bed-inset--compact {
+  margin-bottom: 1rem;
+}
+
+.nurse-pick-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.92rem;
   color: #4a5568;
-  box-shadow: inset 6px 6px 12px #bebebe, inset -6px -6px 12px #ffffff;
-  min-width: 250px;
-  width: 100%;
-  box-sizing: border-box;
+  font-weight: 600;
 }
 
-.search-input:focus {
-  outline: none;
-  box-shadow: inset 8px 8px 16px #bebebe, inset -8px -8px 16px #ffffff;
+.nurse-pick-sub {
+  margin: 0 0 0.75rem;
+  font-size: 0.88rem;
+  color: #718096;
 }
 
-.patient-selection {
-  margin-top: 0.5rem;
-}
-
-.patient-search-header {
+.nurse-radio-list {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
   margin-bottom: 1rem;
+}
+
+.nurse-radio-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  cursor: pointer;
+  font-size: 0.92rem;
+  color: #4a5568;
+}
+
+.nurse-pick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  justify-content: flex-end;
+}
+
+.search-input {
+  margin-top: 0.25rem;
+}
+
+.patient-selection {
+  margin-top: 0.5rem;
 }
 
 .patient-search-header label {
@@ -103,10 +111,10 @@
 }
 
 .patients-list-container {
-  max-height: 400px;
+  max-height: min(320px, 40vh);
   overflow-y: auto;
   background: #e0e5ec;
-  border-radius: 12px;
+  border-radius: 15px;
   padding: 0.5rem;
   box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
 }
@@ -122,22 +130,21 @@
   cursor: pointer;
   transition: all 0.2s ease;
   background: #e0e5ec;
-  border-radius: 10px;
-  box-shadow: 3px 3px 6px #bebebe, -3px -3px 6px #ffffff;
+  border-radius: 12px;
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
 }
 
 .patient-item:hover {
-  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+  box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #ffffff;
   transform: translateY(-1px);
 }
 
 .patient-item.has-bed {
   background: #fef5e7;
-  box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
 }
 
-.patient-item.has-bed:hover {
-  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+.patient-item.other-area {
+  border-left: 3px solid #ed8936;
 }
 
 .patient-item-info {
@@ -147,7 +154,7 @@
 }
 
 .patient-item-info strong {
-  color: #4a5568;
+  color: #2d3748;
   font-size: 0.95rem;
   font-weight: 600;
 }
@@ -169,6 +176,12 @@
   font-weight: 600;
 }
 
+.patient-area-badge {
+  color: #c05621;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
 .no-patients-message {
   text-align: center;
   padding: 2rem;
@@ -185,10 +198,6 @@
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
-  padding: 1rem;
-  background: #e0e5ec;
-  border-radius: 12px;
-  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
 }
 
 .patient-info {
@@ -198,25 +207,5 @@
 }
 
 .release-bed-btn {
-  background: #e0e5ec;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 10px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #4a5568;
-  cursor: pointer;
-  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
-  transition: all 0.3s ease;
-  white-space: nowrap;
-}
-
-.release-bed-btn:hover {
-  box-shadow: 2px 2px 4px #bebebe, -2px -2px 4px #ffffff;
-  transform: translateY(-1px);
-}
-
-.release-bed-btn:active {
-  box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
-  transform: translateY(0);
+  flex-shrink: 0;
 }

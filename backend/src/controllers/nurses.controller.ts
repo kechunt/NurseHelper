@@ -4,9 +4,11 @@ import { UserRole } from '../entities/User';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { logger } from '../utils/logger';
 import {
-  findHandoverNoteForAreaAndDate,
+  findHandoverNoteForAreaDateAndShift,
+  isValidHandoverShiftSlot,
   upsertHandoverNoteForArea,
 } from '../services/shift-handover-note.service';
+import { ShiftType } from '../entities/Shift';
 import { fetchNurseDayTasksHistory } from '../services/nurse-day-tasks-history.service';
 import { computeNurseStats } from '../services/nurse-stats.service';
 import { fetchNurseTodayTasksGrouped } from '../services/nurse-today-tasks.service';
@@ -481,7 +483,7 @@ export const deleteNursePatientSchedule = async (req: AuthRequest, res: Response
 };
 
 
-/** Nota de entrega de turno por área y día (una fila por área + fecha). */
+/** Query `shift`: morning | afternoon | night — nota por área + fecha + turno. */
 export const getNurseHandoverNote = async (req: AuthRequest, res: Response) => {
   try {
     const me = req.user;
@@ -499,7 +501,10 @@ export const getNurseHandoverNote = async (req: AuthRequest, res: Response) => {
         ? req.query.date
         : new Date().toISOString().split('T')[0];
 
-    const note = await findHandoverNoteForAreaAndDate(me.assignedAreaId, raw);
+    const shiftRaw = typeof req.query.shift === 'string' ? req.query.shift : ShiftType.MORNING;
+    const shiftSlot = isValidHandoverShiftSlot(shiftRaw) ? shiftRaw : ShiftType.MORNING;
+
+    const note = await findHandoverNoteForAreaDateAndShift(me.assignedAreaId, raw, shiftSlot);
     if (!note) {
       return res.json({ note: null });
     }
@@ -523,13 +528,19 @@ export const putNurseHandoverNote = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ message: 'Sin área asignada; no se puede guardar la nota' });
     }
 
-    const { noteDate, body } = req.body as { noteDate?: string; body?: string };
+    const { noteDate, shiftSlot: shiftBody, body } = req.body as {
+      noteDate?: string;
+      shiftSlot?: string;
+      body?: string;
+    };
     if (!noteDate || typeof body !== 'string') {
       return res.status(400).json({ message: 'noteDate y body son requeridos' });
     }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(noteDate)) {
       return res.status(400).json({ message: 'noteDate debe ser YYYY-MM-DD' });
     }
+    const shiftSlotParsed =
+      typeof shiftBody === 'string' && isValidHandoverShiftSlot(shiftBody) ? shiftBody : ShiftType.MORNING;
     const trimmed = body.trim();
     if (!trimmed.length) {
       return res.status(400).json({ message: 'El texto no puede estar vacío' });
@@ -542,6 +553,7 @@ export const putNurseHandoverNote = async (req: AuthRequest, res: Response) => {
       areaId: me.assignedAreaId,
       authorUserId: me.id,
       noteDate,
+      shiftSlot: shiftSlotParsed,
       body: trimmed,
     });
 

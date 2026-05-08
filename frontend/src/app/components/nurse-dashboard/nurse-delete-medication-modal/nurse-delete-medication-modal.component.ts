@@ -4,6 +4,7 @@ import { ModalFocusTrapDirective } from '../../../shared/directives/modal-focus-
 import { FormsModule } from '@angular/forms';
 import { ToastService } from '../../../services/toast.service';
 import { NURSE_MODAL_DELETE_MED_WARN_REASON_LENGTH } from '../nurse-modal-component-toasts.helpers';
+import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
 
 export interface DeleteMedicationModalMed {
   name: string;
@@ -13,7 +14,7 @@ export interface DeleteMedicationModalMed {
 @Component({
   selector: 'app-nurse-delete-medication-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, ModalFocusTrapDirective],
+  imports: [CommonModule, FormsModule, ModalFocusTrapDirective, HeroIconComponent],
   templateUrl: './nurse-delete-medication-modal.component.html',
   styleUrls: [
     '../nurse-postpone-task-modal/nurse-postpone-task-modal.component.css',

@@ -2,15 +2,17 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import type { BedDisplay } from '../nurse-dashboard.types';
 import { NurseClinicalNotesScopeBlockComponent } from '../nurse-clinical-notes-scope-block/nurse-clinical-notes-scope-block.component';
+import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
 
 @Component({
   selector: 'app-nurse-beds-section',
   standalone: true,
-  imports: [CommonModule, NurseClinicalNotesScopeBlockComponent],
+  imports: [CommonModule, NurseClinicalNotesScopeBlockComponent, HeroIconComponent],
   templateUrl: './nurse-beds-section.component.html',
   styleUrls: [
     '../../../shared/styles/admin-panel-responsive.css',
     '../../../shared/styles/admin-table-unified.css',
+    '../shared/nurse-patient-card-inline-actions.shared.css',
     './nurse-beds-section.component.css',
   ],
 })

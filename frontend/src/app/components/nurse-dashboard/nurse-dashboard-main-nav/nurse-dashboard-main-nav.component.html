@@ -15,7 +15,7 @@
     (click)="select('summary')"
     (keydown)="onMainViewTabKeydown($event, 'summary')"
   >
-    <span i18n="@@nurseDashboardMainNav.tab.summary">📊 Resumen</span>
+    <app-hero-icon name="chart-bar" /> <span i18n="@@nurseDashboardMainNav.tab.summary">Resumen</span>
   </button>
   <button
     type="button"
@@ -28,7 +28,7 @@
     (click)="select('tasks')"
     (keydown)="onMainViewTabKeydown($event, 'tasks')"
   >
-    <span i18n="@@nurseDashboardMainNav.tab.tasks">⏰ Tareas</span>
+    <app-hero-icon name="clock" /> <span i18n="@@nurseDashboardMainNav.tab.tasks">Tareas</span>
   </button>
   <button
     type="button"
@@ -41,7 +41,7 @@
     (click)="select('pharmacy')"
     (keydown)="onMainViewTabKeydown($event, 'pharmacy')"
   >
-    <span i18n="@@nurseDashboardMainNav.tab.pharmacy">💊 Farmacia</span>
+    <app-hero-icon name="beaker" /> <span i18n="@@nurseDashboardMainNav.tab.pharmacy">Farmacia</span>
   </button>
   <button
     type="button"
@@ -54,7 +54,7 @@
     (click)="select('beds')"
     (keydown)="onMainViewTabKeydown($event, 'beds')"
   >
-    <span i18n="@@nurseDashboardMainNav.tab.beds">🛏️ Camas</span>
+    <app-hero-icon name="rectangle-group" /> <span i18n="@@nurseDashboardMainNav.tab.beds">Camas</span>
   </button>
   <button
     type="button"
@@ -67,7 +67,7 @@
     (click)="select('patients')"
     (keydown)="onMainViewTabKeydown($event, 'patients')"
   >
-    <span i18n="@@nurseDashboardMainNav.tab.patients">👥 Pacientes</span>
+    <app-hero-icon name="users" /> <span i18n="@@nurseDashboardMainNav.tab.patients">Pacientes</span>
   </button>
 </div>
 <div
@@ -85,7 +85,9 @@
     i18n-title="@@nurseDashboardMainNav.quick.handoverTitle"
     i18n-aria-label="@@nurseDashboardMainNav.quick.handoverAriaLabel"
   >
-    <span i18n="@@nurseDashboardMainNav.quick.handover">📋 Entrega</span>
+    <app-hero-icon name="clipboard-document" />
+    <span i18n="@@nurseDashboardMainNav.quick.handover">Entrega</span>
+    <span *ngIf="handoverPendingNotice" class="quick-pending-chip">Pendiente</span>
   </button>
   <button
     type="button"
@@ -96,6 +98,7 @@
     i18n-title="@@nurseDashboardMainNav.quick.reportsTitle"
     i18n-aria-label="@@nurseDashboardMainNav.quick.reportsAriaLabel"
   >
-    <span i18n="@@nurseDashboardMainNav.quick.reports">📈 Reportes</span>
+    <app-hero-icon name="chart-bar" />
+    <span i18n="@@nurseDashboardMainNav.quick.reports">Reportes</span>
   </button>
 </div>

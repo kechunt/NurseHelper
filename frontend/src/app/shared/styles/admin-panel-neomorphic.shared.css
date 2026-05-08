@@ -1,0 +1,547 @@
+/*
+ * Tokens neumórficos alineados con «Gestión de Áreas» (panel admin).
+ * Importar desde componentes (p. ej. gestión de camas) para modales, botones y tarjetas.
+ */
+
+.apm-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3100;
+  padding: 2rem;
+  backdrop-filter: blur(4px);
+  box-sizing: border-box;
+}
+
+/* Segundo nivel (p. ej. modal sobre modal en gestión de camas). */
+.apm-backdrop--nested {
+  z-index: 3200;
+}
+
+.apm-shell {
+  background: #e0e5ec;
+  border-radius: 30px;
+  max-width: 500px;
+  width: 100%;
+  max-height: calc(100vh - 4rem);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow:
+    30px 30px 60px rgba(0, 0, 0, 0.3),
+    -30px -30px 60px rgba(255, 255, 255, 0.1);
+}
+
+.apm-shell--large {
+  max-width: 800px;
+}
+
+.apm-header {
+  padding: 2rem 2rem 1rem;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  border-bottom: 1px solid rgba(174, 174, 192, 0.3);
+}
+
+.apm-header h3 {
+  color: #4a5568;
+  font-size: 1.5rem;
+  font-weight: 300;
+  margin: 0;
+  line-height: 1.25;
+}
+
+.apm-close {
+  flex-shrink: 0;
+  background: #e0e5ec;
+  border: none;
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  font-size: 20px;
+  color: #4a5568;
+  cursor: pointer;
+  box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.apm-close:hover {
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+}
+
+.apm-body {
+  padding: 2rem;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.apm-desc {
+  color: #718096;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  margin: 0 0 1rem;
+}
+
+.apm-section {
+  margin-top: 1.5rem;
+}
+
+.apm-section:first-child {
+  margin-top: 0;
+}
+
+.apm-field-label {
+  display: block;
+  color: #4a5568;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.apm-input,
+.apm-select,
+textarea.apm-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 14px 18px;
+  background: #e0e5ec;
+  border: none;
+  border-radius: 15px;
+  font-size: 16px;
+  color: #4a5568;
+  box-shadow: inset 6px 6px 12px #bebebe, inset -6px -6px 12px #ffffff;
+  font-family: inherit;
+}
+
+textarea.apm-input {
+  min-height: 5.5rem;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.apm-input:focus,
+.apm-select:focus {
+  outline: none;
+  box-shadow: inset 8px 8px 16px #bebebe, inset -8px -8px 16px #ffffff;
+}
+
+.apm-select {
+  cursor: pointer;
+}
+
+.apm-hint {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: #718096;
+}
+
+.apm-hint--ok {
+  color: #2f855a;
+}
+
+.apm-hint--warn {
+  color: #c05621;
+}
+
+.apm-hint--muted {
+  color: #718096;
+}
+
+.apm-footer {
+  padding: 1rem 2rem 2rem;
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: flex-end;
+  align-items: center;
+  border-top: 1px solid rgba(174, 174, 192, 0.3);
+}
+
+.apm-btn {
+  background: #e0e5ec;
+  color: #4a5568;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 50px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 8px 8px 16px #bebebe, -8px -8px 16px #ffffff;
+}
+
+.apm-btn:hover:not(:disabled) {
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+}
+
+.apm-btn:active:not(:disabled) {
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+}
+
+.apm-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Secundario = mismo volumen neumórfico, sin contornos oscuros */
+.apm-btn--outline {
+  background: #e0e5ec;
+  color: #4a5568;
+  border: none;
+  box-shadow: 8px 8px 16px #bebebe, -8px -8px 16px #ffffff;
+}
+
+.apm-btn--outline:hover:not(:disabled) {
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+}
+
+.apm-btn--outline:active:not(:disabled) {
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+}
+
+/* Destructivo: mismo botón; solo matiz de texto, sin bordes de color */
+.apm-btn--danger {
+  color: #b83232;
+  border: none;
+  box-shadow: 8px 8px 16px #bebebe, -8px -8px 16px #ffffff;
+}
+
+.apm-btn--danger:hover:not(:disabled) {
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+}
+
+.apm-btn--danger:active:not(:disabled) {
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+}
+
+.apm-btn--filter {
+  padding: 10px 16px;
+  font-size: 0.85rem;
+}
+
+/* Activo = mismo lenguaje que :active del botón base (hundido neumórfico), sin bloque oscuro */
+.apm-btn--filter.active {
+  background: #e0e5ec;
+  color: #4a5568;
+  font-weight: 600;
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+}
+
+.apm-btn.apm-btn--filter.active:hover:not(:disabled) {
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+}
+
+.apm-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+/* Cobertura de turno (paridad visual con Gestión de Áreas) */
+.apm-shift-block {
+  margin-bottom: 1.25rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 12px;
+  background: #e0e5ec;
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+}
+
+.apm-shift-heading {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #718096;
+  margin-bottom: 0.45rem;
+}
+
+.apm-shift-turn-hint {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: normal;
+  color: #a0aec0;
+}
+
+.apm-shift-nurse-list {
+  margin: 0;
+  padding-left: 1.15rem;
+  color: #2d3748;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.apm-shift-nurse-list li {
+  margin-bottom: 0.15rem;
+}
+
+.apm-shift-alert {
+  margin: 0.5rem 0 0;
+  padding: 0.55rem 0.65rem;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: #9c4221;
+  background: rgba(237, 137, 54, 0.14);
+  box-shadow: inset 2px 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+.apm-shift-alert--clickable {
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  border: none;
+  transition:
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+.apm-shift-alert--clickable:hover {
+  box-shadow:
+    inset 2px 2px 4px rgba(0, 0, 0, 0.08),
+    0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.apm-shift-alert--clickable:focus-visible {
+  outline: 2px solid rgba(43, 108, 176, 0.55);
+  outline-offset: 2px;
+}
+
+/* Panel inset tipo lista en modales de áreas */
+.apm-inset {
+  margin-top: 0.75rem;
+  padding: 1rem;
+  border-radius: 15px;
+  background: #d1d9e6;
+  box-shadow: inset 5px 5px 10px #bebebe, inset -5px -5px 10px #ffffff;
+  max-height: min(340px, 44vh);
+  overflow-y: auto;
+}
+
+.apm-inset-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  width: 100%;
+  margin-bottom: 0.65rem;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  border: none;
+  background: #e0e5ec;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  color: #2d3748;
+  box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
+}
+
+.apm-inset-row:last-child {
+  margin-bottom: 0;
+}
+
+.apm-inset-row:hover {
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+}
+
+.apm-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  align-items: flex-start;
+  min-width: 0;
+  flex: 1;
+}
+
+.apm-radio-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.5rem;
+  border-radius: 12px;
+  background: #e0e5ec;
+  box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #2d3748;
+}
+
+.apm-radio-row:last-child {
+  margin-bottom: 0;
+}
+
+.apm-radio-row:hover {
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+}
+
+.apm-empty {
+  text-align: center;
+  padding: 1.25rem 0.5rem;
+  color: #718096;
+  font-size: 0.9rem;
+}
+
+.apm-patient-bar {
+  padding: 1rem 1.25rem;
+  border-radius: 12px;
+  background: #e0e5ec;
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+}
+
+.apm-patient-bar__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Tarjetas como «area-card» en Gestión de Áreas */
+.apm-area-card {
+  background: #e0e5ec;
+  border-radius: 20px;
+  padding: 1.5rem;
+  box-shadow: 10px 10px 20px #bebebe, -10px -10px 20px #ffffff;
+  transition: transform 0.2s ease;
+}
+
+.apm-area-card:hover {
+  transform: translateY(-2px);
+}
+
+.apm-area-card--inactive {
+  opacity: 0.88;
+  transform: none;
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+}
+
+.apm-area-card--inactive:hover {
+  transform: none;
+}
+
+.apm-area-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.apm-area-card__title {
+  margin: 0;
+  color: #4a5568;
+  font-size: 1.2rem;
+  font-weight: 600;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.apm-status-pill {
+  padding: 6px 12px;
+  border-radius: 15px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+}
+
+.apm-status-pill--ok {
+  color: #38a169;
+}
+
+.apm-status-pill--busy {
+  color: #e53e3e;
+}
+
+.apm-status-pill--off {
+  color: #718096;
+}
+
+.apm-area-description {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #718096;
+  line-height: 1.45;
+}
+
+.apm-area-description strong {
+  color: #4a5568;
+  font-weight: 600;
+}
+
+.apm-area-description--muted {
+  color: #a0aec0;
+  font-style: italic;
+}
+
+@media (max-width: 768px) {
+  .apm-backdrop {
+    padding: 1rem;
+  }
+
+  .apm-shell {
+    max-height: calc(100vh - 2rem);
+    border-radius: 24px;
+  }
+
+  .apm-header {
+    padding: 1.5rem 1.5rem 1rem;
+  }
+
+  .apm-header h3 {
+    font-size: 1.25rem;
+  }
+
+  .apm-body {
+    padding: 1.5rem;
+  }
+
+  .apm-footer {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 1rem 1.5rem 1.5rem;
+  }
+
+  .apm-footer .apm-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .apm-input,
+  .apm-select,
+  textarea.apm-input {
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .apm-shell {
+    border-radius: 20px;
+  }
+
+  .apm-header h3 {
+    font-size: 1.1rem;
+  }
+}

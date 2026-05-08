@@ -9,8 +9,8 @@
   >
     <div class="modal-header">
       <h3 id="nurse-add-treatment-dialog-title">
-        <span *ngIf="isFromPatient" i18n="@@nurseAddTreatmentModal.titleFromPatient">🩺 Nuevo tratamiento</span>
-        <span *ngIf="!isFromPatient" i18n="@@nurseAddTreatmentModal.titleGlobal">🩺 Agregar Tratamiento Médico</span>
+        <span *ngIf="isFromPatient" i18n="@@nurseAddTreatmentModal.titleFromPatient"><app-hero-icon name="shield-check" /> Nuevo tratamiento</span>
+        <span *ngIf="!isFromPatient" i18n="@@nurseAddTreatmentModal.titleGlobal"><app-hero-icon name="shield-check" /> Agregar Tratamiento Médico</span>
       </h3>
       <button
         type="button"
@@ -26,8 +26,8 @@
 
     <div class="modal-body">
       <div *ngIf="patients.length === 0 && !isFromPatient" class="empty-state-modal">
-        <div class="empty-icon">👥</div>
-        <p class="empty-message" i18n="@@nurseAddTreatmentModal.emptyTitle">⚠️ No hay pacientes disponibles</p>
+        <div class="empty-icon"><app-hero-icon name="users" /></div>
+        <p class="empty-message" i18n="@@nurseAddTreatmentModal.emptyTitle"><app-hero-icon name="exclamation-triangle" /> No hay pacientes disponibles</p>
         <p class="empty-hint" i18n="@@nurseAddTreatmentModal.emptyHint">
           Asigna pacientes a tu área para poder agregar tratamientos
         </p>
@@ -75,8 +75,8 @@
               required
               (change)="onScheduleTypeChange()"
             >
-              <option value="single" i18n="@@nurseAddTreatmentModal.scheduleSingle">📅 Día y hora específica</option>
-              <option value="recurring" i18n="@@nurseAddTreatmentModal.scheduleRecurring">🔄 Recurrente (diario / días de semana)</option>
+              <option value="single" i18n="@@nurseAddTreatmentModal.scheduleSingle">Día y hora específica</option>
+              <option value="recurring" i18n="@@nurseAddTreatmentModal.scheduleRecurring">Recurrente (diario / días de semana)</option>
             </select>
           </div>
         </div>
@@ -111,7 +111,7 @@
                 </button>
               </div>
               <button type="button" class="add-time-btn" (click)="addTreatmentTime()" i18n="@@nurseAddTreatmentModal.addTimeBtn">
-                ➕ Agregar hora
+                <app-hero-icon name="plus-circle" /> Agregar hora
               </button>
             </div>
           </div>
@@ -177,9 +177,9 @@
         Cancelar
       </button>
       <button class="btn-primary-neuro" type="button" (click)="confirmAdd()" [disabled]="isAdding">
-        <span *ngIf="isAdding" i18n="@@nurseAddTreatmentModal.adding">⏳ Agregando...</span>
-        <span *ngIf="!isAdding && isFromPatient" i18n="@@nurseAddTreatmentModal.submitFromPatient">✅ Guardar tratamiento</span>
-        <span *ngIf="!isAdding && !isFromPatient" i18n="@@nurseAddTreatmentModal.submitGlobal">✅ Agregar Tratamiento</span>
+        <span *ngIf="isAdding" i18n="@@nurseAddTreatmentModal.adding"><app-hero-icon name="clock" /> Agregando...</span>
+        <span *ngIf="!isAdding && isFromPatient" i18n="@@nurseAddTreatmentModal.submitFromPatient"><app-hero-icon name="check-circle" /> Guardar tratamiento</span>
+        <span *ngIf="!isAdding && !isFromPatient" i18n="@@nurseAddTreatmentModal.submitGlobal"><app-hero-icon name="check-circle" /> Agregar Tratamiento</span>
       </button>
     </div>
   </div>

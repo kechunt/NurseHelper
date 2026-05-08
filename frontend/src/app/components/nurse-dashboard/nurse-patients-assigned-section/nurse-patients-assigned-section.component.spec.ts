@@ -98,6 +98,14 @@ describe('NursePatientsAssignedSectionComponent', () => {
     expect(fixture.componentInstance.openPatientDetails.emit).toHaveBeenCalledWith(patients[0]);
   });
 
+  it('emite openPatientDetails al pulsar el botón Detalles', () => {
+    spyOn(fixture.componentInstance.openPatientDetails, 'emit');
+    const btn = fixture.nativeElement.querySelector('.nurse-details-pill-btn') as HTMLButtonElement;
+    expect(btn?.textContent?.trim()).toBe('Detalles');
+    btn.click();
+    expect(fixture.componentInstance.openPatientDetails.emit).toHaveBeenCalledWith(patients[0]);
+  });
+
   it('no muestra botón de "ver dosis hoy" en la tarjeta', () => {
     const badge = fixture.nativeElement.querySelector('.patient-assigned-meds-trigger');
     expect(badge).toBeFalsy();

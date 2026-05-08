@@ -67,10 +67,11 @@ describe('NurseReportsModalComponent', () => {
   it('emite csvDownload al pulsar botones CSV', () => {
     const kinds: Array<'compliance' | 'medication'> = [];
     const sub = fixture.componentInstance.csvDownload.subscribe((k) => kinds.push(k));
-    const buttons = fixture.nativeElement.querySelectorAll('.modal-footer .neuro-btn');
-    expect(buttons.length).toBeGreaterThanOrEqual(2);
-    (buttons[0] as HTMLButtonElement).click();
-    (buttons[1] as HTMLButtonElement).click();
+    const buttons = Array.from(fixture.nativeElement.querySelectorAll('.modal-footer button')) as HTMLButtonElement[];
+    const csvButtons = buttons.filter((b) => (b.textContent || '').includes('CSV'));
+    expect(csvButtons.length).toBe(2);
+    csvButtons[0].click();
+    csvButtons[1].click();
     expect(kinds).toEqual(['compliance', 'medication']);
     sub.unsubscribe();
   });

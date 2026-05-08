@@ -7,6 +7,7 @@ import {
 import { CommonModule } from '@angular/common';
 import type { PatientClinicalNoteDto } from '../../../services/nurse.service';
 import { splitObservationLines } from '../nurse-patient-observations.helpers';
+import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
 import {
   clinicalNoteDisplayBody,
   clinicalNotesPreviewSlice,
@@ -20,7 +21,7 @@ import {
 @Component({
   selector: 'app-nurse-clinical-notes-scope-block',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, HeroIconComponent],
   templateUrl: './nurse-clinical-notes-scope-block.component.html',
   styleUrls: ['./nurse-clinical-notes-scope-block.component.css'],
 })

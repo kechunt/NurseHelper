@@ -49,9 +49,17 @@
 }
 
 .neuro-btn.outlined {
-  background: transparent;
-  border: 2px solid #4a5568;
-  box-shadow: none;
+  background: #e0e5ec;
+  border: none;
+  box-shadow: 8px 8px 16px #bebebe, -8px -8px 16px #ffffff;
+}
+
+.neuro-btn.outlined:hover {
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+}
+
+.neuro-btn.outlined:active {
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
 }
 
 /* ========== BOTÓN DE ACCIÓN COMPACTO - NORMALIZADO ========== */
@@ -143,8 +151,79 @@
 
 .area-description {
   color: #718096;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
   font-size: 0.9rem;
+}
+
+.area-shift-block {
+  margin-bottom: 1rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 12px;
+  background: #e0e5ec;
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+}
+
+.area-shift-heading {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #718096;
+  margin-bottom: 0.45rem;
+}
+
+.area-shift-turn-hint {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: normal;
+  color: #a0aec0;
+}
+
+.area-shift-nurse-list {
+  margin: 0;
+  padding-left: 1.15rem;
+  color: #2d3748;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.area-shift-nurse-list li {
+  margin-bottom: 0.15rem;
+}
+
+.area-shift-alert {
+  margin: 0;
+  padding: 0.55rem 0.65rem;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: #9c4221;
+  background: rgba(237, 137, 54, 0.14);
+  border: 1px solid rgba(237, 137, 54, 0.35);
+}
+
+button.area-shift-alert--clickable {
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  transition:
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+button.area-shift-alert--clickable:hover {
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+button.area-shift-alert--clickable:focus-visible {
+  outline: 2px solid rgba(43, 108, 176, 0.55);
+  outline-offset: 2px;
 }
 
 .area-stats {

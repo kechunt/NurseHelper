@@ -4,6 +4,7 @@ import { ModalFocusTrapDirective } from '../../../shared/directives/modal-focus-
 import type { MedicationTodaySlot } from '../medication-today-slot.model';
 import { medicationSlotStatusLabel } from '../nurse-patient-medication-helpers';
 import { nurseUiEmDash } from '../nurse-dashboard-ui-i18n.helpers';
+import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
 
 /** Fila de medicación del día (misma idea que `MedicationTodaySlot` en el dashboard). */
 export interface MedicationDayDetailSlot {
@@ -35,7 +36,7 @@ export interface MedicationDayDetailPauta {
 @Component({
   selector: 'app-nurse-medication-day-detail-modal',
   standalone: true,
-  imports: [CommonModule, ModalFocusTrapDirective],
+  imports: [CommonModule, ModalFocusTrapDirective, HeroIconComponent],
   templateUrl: './nurse-medication-day-detail-modal.component.html',
   styleUrls: [
     '../nurse-pending-task-detail-modal/nurse-pending-task-detail-modal.component.css',

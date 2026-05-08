@@ -30,6 +30,62 @@
   gap: 1rem;
 }
 
+/* Botón estándar para Mostrar/Ocultar en todo Admin */
+.admin-toggle-btn {
+  border: none;
+  border-radius: 12px;
+  padding: 8px 14px;
+  min-height: 36px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #4a5568;
+  background: #e0e5ec;
+  box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.admin-toggle-btn:hover {
+  box-shadow: 3px 3px 6px #bebebe, -3px -3px 6px #ffffff;
+  transform: translateY(-1px);
+}
+
+.admin-toggle-btn:active {
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+  transform: translateY(0);
+}
+
+/* Botón de cierre (X) estándar para TODO el panel admin */
+.admin-close-btn {
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  min-height: 36px !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 50% !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  font-size: 1.05rem !important;
+  font-weight: 700 !important;
+  color: #4a5568 !important;
+  background: #e0e5ec !important;
+  box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff !important;
+  transition: all 0.2s ease !important;
+}
+
+.admin-close-btn:hover {
+  box-shadow: 3px 3px 6px #bebebe, -3px -3px 6px #ffffff !important;
+  transform: translateY(-1px);
+}
+
+.admin-close-btn:active {
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff !important;
+  transform: translateY(0);
+}
+
 /* Filtros alineados con pacientes (admin) — reutilizable en enfermería / otros paneles */
 .filters-container {
   background: #e0e5ec;

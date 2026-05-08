@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ModalFocusTrapDirective } from '../../../shared/directives/modal-focus-trap.directive';
 import { FormsModule } from '@angular/forms';
 import { TaskItem } from '../../../services/nurse.service';
+import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
 
 export interface NurseTasksQuickPatientOption {
   id: string;
@@ -18,7 +19,7 @@ export interface NurseTasksQuickHourGroup {
 @Component({
   selector: 'app-nurse-tasks-quick-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, ModalFocusTrapDirective],
+  imports: [CommonModule, FormsModule, ModalFocusTrapDirective, HeroIconComponent],
   templateUrl: './nurse-tasks-quick-modal.component.html',
   styleUrls: [
     '../../../shared/styles/admin-panel-responsive.css',

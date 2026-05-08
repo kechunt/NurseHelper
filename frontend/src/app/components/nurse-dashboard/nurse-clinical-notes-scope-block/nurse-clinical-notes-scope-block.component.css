@@ -117,10 +117,16 @@
 }
 
 .ncnsb .neuro-btn.neuro-btn-sm {
-  padding: 8px 16px;
-  border-radius: 12px;
-  font-size: 0.85rem;
-  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  min-height: 36px;
+  min-width: 104px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .ncnsb__preview {

@@ -33,12 +33,12 @@
       >
         <span class="user-name">{{ userName }}</span>
         <span class="user-role">{{ roleLabel }}</span>
-        <span class="user-phone-line" *ngIf="userPhoneLine">{{ userPhoneLine }}</span>
+        <span class="user-phone-line" *ngIf="userPhoneLine"><app-hero-icon name="phone" /> {{ userPhoneLine }}</span>
       </button>
       <div *ngIf="!profileEditable" class="user-info">
         <span class="user-name">{{ userName }}</span>
         <span class="user-role">{{ roleLabel }}</span>
-        <span class="user-phone-line" *ngIf="userPhoneLine">{{ userPhoneLine }}</span>
+        <span class="user-phone-line" *ngIf="userPhoneLine"><app-hero-icon name="phone" /> {{ userPhoneLine }}</span>
       </div>
       <button
         type="button"
@@ -47,7 +47,7 @@
         title="Cerrar Sesión"
         aria-label="Cerrar sesión"
       >
-        🚪
+        <app-hero-icon name="arrow-right-on-rectangle" ariaLabel="Cerrar sesión" />
       </button>
     </div>
   </div>

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ModalFocusTrapDirective } from '../../../shared/directives/modal-focus-trap.directive';
 import type { TreatmentRecord } from '../nurse-treatment-record.model';
 import { historyRecordStatusLabel } from '../nurse-patient-history.helpers';
+import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
 
 /** Fila de historial (alineada con `TreatmentRecord` del dashboard). */
 export interface NurseHistoryDetailRecord {
@@ -24,7 +25,7 @@ export interface NurseHistoryDetailRecord {
 @Component({
   selector: 'app-nurse-history-detail-modal',
   standalone: true,
-  imports: [CommonModule, ModalFocusTrapDirective],
+  imports: [CommonModule, ModalFocusTrapDirective, HeroIconComponent],
   templateUrl: './nurse-history-detail-modal.component.html',
   styleUrls: [
     '../nurse-postpone-task-modal/nurse-postpone-task-modal.component.css',

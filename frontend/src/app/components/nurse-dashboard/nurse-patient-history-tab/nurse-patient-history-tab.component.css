@@ -99,10 +99,16 @@
 }
 
 .filter-btn-neuro.filter-btn-neuro--history {
-  padding: 0.55rem 1.2rem !important;
-  font-size: 0.93rem !important;
-  min-height: 42px;
-  line-height: 1.2;
+  padding: 8px 14px !important;
+  font-size: 0.84rem !important;
+  min-height: 36px;
+  min-width: 104px;
+  line-height: 1;
+  border-radius: 999px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .history-toolbar {
@@ -196,16 +202,22 @@
 }
 
 .filter-btn-neuro {
-  padding: 0.5rem 1rem;
+  padding: 8px 14px;
   background: #e0e5ec;
   border: none;
-  border-radius: 10px;
+  border-radius: 999px;
   color: #4a5568;
-  font-size: 0.9rem;
-  font-weight: 500;
+  font-size: 0.84rem;
+  font-weight: 700;
+  min-height: 36px;
+  min-width: 104px;
+  line-height: 1;
   cursor: pointer;
   box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
   transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .filter-btn-neuro:hover {

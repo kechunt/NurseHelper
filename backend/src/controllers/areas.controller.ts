@@ -2,8 +2,20 @@ import { Request, Response } from 'express';
 import { AppDataSource } from '../data-source';
 import { Area } from '../entities/Area';
 import { logger } from '../utils/logger';
+import { buildAreasShiftCoverage } from '../services/area-shift-coverage.service';
 
 export class AreasController {
+  /** Enfermeras marcadas presentes en el turno actual, agrupadas por área asignada (solo lectura, admin). */
+  async getShiftCoverage(req: Request, res: Response): Promise<void> {
+    try {
+      const payload = await buildAreasShiftCoverage();
+      res.json(payload);
+    } catch (error) {
+      logger.error('Error al obtener cobertura de turno por área:', error);
+      res.status(500).json({ message: 'Error interno del servidor' });
+    }
+  }
+
   async getAll(req: Request, res: Response): Promise<void> {
     try {
       const areaRepository = AppDataSource.getRepository(Area);

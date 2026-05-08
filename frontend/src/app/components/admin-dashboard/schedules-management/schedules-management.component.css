@@ -254,17 +254,22 @@
 
 .btn-attendance {
   border: none;
-  border-radius: 12px;
-  padding: 9px 14px;
-  margin: 2px;
+  border-radius: 999px;
+  padding: 8px 14px;
+  margin: 0;
   font-size: 0.84rem;
   font-weight: 700;
+  line-height: 1;
   cursor: pointer;
   color: #4a5568;
   background: #e0e5ec;
   box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #ffffff;
   transition: all 0.2s ease;
   min-height: 36px;
+  min-width: 104px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-attendance:hover {
@@ -306,7 +311,7 @@
   padding: 12px 28px;
   background: #e0e5ec;
   border: none;
-  border-radius: 15px;
+  border-radius: 999px;
   font-size: 1rem;
   font-weight: 700;
   color: #4a5568;
@@ -384,6 +389,69 @@
   border: 1px solid rgba(174, 174, 192, 0.22);
 }
 
+.coverage-alert-neuro {
+  padding: 1rem 1.15rem;
+  background: #dde4ee;
+  border: 1px solid rgba(174, 174, 192, 0.24);
+  border-radius: 16px;
+  box-shadow: 8px 8px 16px #c2c8d0, -8px -8px 16px #f6f9ff;
+}
+
+.coverage-alert-header-neuro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.coverage-alert-header-neuro .subsection-title-neuro {
+  margin: 0;
+}
+
+.coverage-alert-count-neuro {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #4a5568;
+  background: #e0e5ec;
+  box-shadow: inset 3px 3px 6px #c1c7cf, inset -3px -3px 6px #f5f8ff;
+  white-space: nowrap;
+}
+
+.coverage-alert-text-neuro {
+  margin: 0 0 0.55rem;
+  font-size: 0.84rem;
+  color: #4f5968;
+  line-height: 1.45;
+}
+
+.coverage-alert-tags-neuro {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-bottom: 0.55rem;
+}
+
+.coverage-alert-tag-neuro {
+  padding: 6px 11px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #4a5568;
+  background: #e0e5ec;
+  border: 1px solid rgba(174, 174, 192, 0.22);
+  box-shadow: 4px 4px 8px #c3c9d1, -4px -4px 8px #f4f7ff;
+}
+
+.coverage-alert-help-neuro {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #6b7482;
+  line-height: 1.45;
+}
+
 .shifts-table-neuro {
   width: 100%;
   border-collapse: collapse;
@@ -391,6 +459,21 @@
   min-width: 840px;
   border-radius: 12px;
   overflow: hidden;
+}
+
+.attendance-summary-table-neuro,
+.attendance-list-table-neuro {
+  min-width: 0;
+  table-layout: fixed;
+}
+
+.attendance-summary-table-neuro th,
+.attendance-summary-table-neuro td,
+.attendance-list-table-neuro th,
+.attendance-list-table-neuro td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .shifts-table-neuro thead {
@@ -640,23 +723,30 @@
 
 .management-footer-neuro {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: center;
   margin: 0;
   padding: 1rem 1.25rem;
   gap: 0.75rem;
   flex-wrap: wrap;
-  background: #e0e5ec;
-  border-radius: 15px;
-  box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
-  border: 1px solid rgba(174, 174, 192, 0.22);
+  background: #dde4ee;
+  border-radius: 16px;
+  box-shadow: 8px 8px 16px #c2c8d0, -8px -8px 16px #f6f9ff;
+  border: 1px solid rgba(174, 174, 192, 0.24);
+}
+
+.management-footer-neuro .subsection-title-neuro {
+  margin: 0;
 }
 
 .attendance-saving-hint-neuro {
-  margin-right: auto;
   font-size: 0.85rem;
   color: #718096;
   font-weight: 600;
+}
+
+.btn-module-show-neuro {
+  flex-shrink: 0;
 }
 
 .time-edit-row-neuro {
@@ -765,7 +855,7 @@
 
 .badge-shift-neuro {
   padding: 10px 18px;
-  border-radius: 12px;
+  border-radius: 999px;
   font-size: 1rem;
   font-weight: 700;
   color: #4a5568;
@@ -773,10 +863,21 @@
   box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
   border: none;
   cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .badge-shift-neuro.active {
   box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+}
+
+.badge-shift-neuro:hover {
+  box-shadow: 2px 2px 4px #bebebe, -2px -2px 4px #ffffff;
+  transform: translateY(-1px);
+}
+
+.badge-shift-neuro:active {
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+  transform: translateY(0);
 }
 
 .count-neuro {

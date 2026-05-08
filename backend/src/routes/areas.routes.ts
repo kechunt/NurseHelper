@@ -24,6 +24,13 @@ const areasController = new AreasController();
  *               items:
  *                 $ref: '#/components/schemas/Area'
  */
+router.get(
+  '/shift-coverage',
+  authMiddleware,
+  requireAdminOrSupervisor,
+  areasController.getShiftCoverage.bind(areasController)
+);
+
 router.get('/', authMiddleware, areasController.getAll.bind(areasController));
 
 /**

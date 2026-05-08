@@ -1,12 +1,12 @@
 <div class="medications-header medications-header--stack">
   <div>
-    <h4 i18n="@@nursePatientTreatmentsDayTab.sectionTitle">🩺 Tratamientos del día</h4>
+    <h4 i18n="@@nursePatientTreatmentsDayTab.sectionTitle"><app-hero-icon name="shield-check" /> Tratamientos del día</h4>
     <p class="treatments-day-hint" i18n="@@nursePatientTreatmentsDayTab.sectionHint">
       Una fila por cada horario programado para hoy; acciones aplican solo a esa fila.
     </p>
   </div>
   <button type="button" class="neuro-btn add-med-btn" (click)="addTreatment.emit()" i18n="@@nursePatientTreatmentsDayTab.addTreatmentBtn">
-    ➕ Agregar tratamiento
+    <app-hero-icon name="plus-circle" /> Agregar tratamiento
   </button>
 </div>
 
@@ -76,7 +76,7 @@
     (click)="executeMarkDone()"
     *ngIf="hasPendingSelectedSlot()"
   >
-    ✓ Marcar como realizado
+    <app-hero-icon name="check-circle" /> Marcar como realizado
   </button>
   <button
     type="button"
@@ -84,7 +84,7 @@
     (click)="executePostpone()"
     *ngIf="hasPendingSelectedSlot()"
   >
-    ⏱ Posponer
+    <app-hero-icon name="clock" /> Posponer
   </button>
   <button
     type="button"
@@ -92,7 +92,7 @@
     (click)="executeCancel()"
     *ngIf="hasPendingSelectedSlot()"
   >
-    ✕ Cancelar este horario
+    <app-hero-icon name="x-circle" /> Cancelar este horario
   </button>
   <button
     type="button"
@@ -100,7 +100,7 @@
     (click)="executeEdit()"
     *ngIf="hasPendingSelectedSlot()"
   >
-    ✏️ Editar descripción o notas
+    <app-hero-icon name="pencil" /> Editar descripción o notas
   </button>
   <button
     type="button"
@@ -108,7 +108,7 @@
     (click)="executeDelete()"
     *ngIf="hasPendingSelectedSlot()"
   >
-    🗑️ Eliminar horario pendiente
+    <app-hero-icon name="trash" /> Eliminar horario pendiente
   </button>
   <p class="admin-table-row-actions-line" *ngIf="selectedSlotForActions && !hasPendingSelectedSlot()">
     Este horario ya no está pendiente. No hay acciones de edición disponibles.

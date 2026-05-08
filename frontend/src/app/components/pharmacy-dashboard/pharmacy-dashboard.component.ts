@@ -13,6 +13,7 @@ import { ToastService } from '../../services/toast.service';
 import { ConfirmationService } from '../../services/confirmation.service';
 import { DashboardShellComponent } from '../../shared/components/dashboard-shell/dashboard-shell.component';
 import { AdminTableRowActionsModalComponent } from '../../shared/components/admin-table-row-actions-modal/admin-table-row-actions-modal.component';
+import { HeroIconComponent } from '../../shared/components/hero-icon/hero-icon.component';
 
 interface MedicationRequest {
   id: number;
@@ -94,7 +95,7 @@ interface InventoryItem {
 @Component({
   selector: 'app-pharmacy-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, DashboardShellComponent, AdminTableRowActionsModalComponent],
+  imports: [CommonModule, FormsModule, DashboardShellComponent, AdminTableRowActionsModalComponent, HeroIconComponent],
   templateUrl: './pharmacy-dashboard.component.html',
   styleUrls: [
     '../../shared/styles/admin-table-unified.css',
@@ -115,7 +116,7 @@ export class PharmacyDashboardComponent implements OnInit {
   get headerUserPhoneLine(): string | null {
     const p = this.authService.currentUser()?.phone;
     const s = p != null ? String(p).trim() : '';
-    return s.length > 0 ? `📞 ${s}` : null;
+    return s.length > 0 ? `Tel. ${s}` : null;
   }
 
   pendingRequestsCount: number = 0;
@@ -242,15 +243,15 @@ export class PharmacyDashboardComponent implements OnInit {
   }
 
   private notifySuccess(message: string): void {
-    this.toastService.success(message.replace(/^✅\s*/, ''));
+    this.toastService.success(message);
   }
 
   private notifyError(message: string): void {
-    this.toastService.error(message.replace(/^❌\s*/, ''));
+    this.toastService.error(message);
   }
 
   private notifyWarning(message: string): void {
-    this.toastService.warning(message.replace(/^⚠️\s*/, ''));
+    this.toastService.warning(message);
   }
 
   private notifyInfo(message: string): void {
@@ -745,9 +746,9 @@ export class PharmacyDashboardComponent implements OnInit {
         request.status = newStatus;
         
         const statusMessages: { [key: string]: string } = {
-          'in_preparation': '🔄 Solicitud en preparación',
-          'ready': '✅ Solicitud lista para entregar',
-          'delivered': '📦 Solicitud marcada como entregada'
+          in_preparation: 'Solicitud en preparación',
+          ready: 'Solicitud lista para entregar',
+          delivered: 'Solicitud marcada como entregada',
         };
 
         this.notifySuccess(statusMessages[newStatus] || 'Estado actualizado');
@@ -820,7 +821,7 @@ export class PharmacyDashboardComponent implements OnInit {
   }
 
   getHistoryTypeLabel(type: string): string {
-    return type === 'delivery' ? '📦 Entregada' : '❌ Rechazada';
+    return type === 'delivery' ? 'Entregada' : 'Rechazada';
   }
 
   getHistoryDate(item: any): string {
@@ -885,7 +886,7 @@ export class PharmacyDashboardComponent implements OnInit {
   }
 
   requestActionsTitle(r: MedicationRequest): string {
-    return `📝 Solicitud ${r.requestId}`;
+    return `Solicitud ${r.requestId}`;
   }
 
   requestActionsSummary(r: MedicationRequest): string[] {
@@ -918,7 +919,7 @@ export class PharmacyDashboardComponent implements OnInit {
       `Área: ${area}`,
       `Pacientes: ${(r.patients || []).length}`,
       `Prioridad: ${r.priority}`,
-      `Stock: ${stock} ${this.isMedicationAvailable(r) ? '✅' : '⚠️'}`,
+      `Stock: ${stock} ${this.isMedicationAvailable(r) ? '(ok)' : '(revisar)'}`,
     ];
   }
 
@@ -958,7 +959,7 @@ export class PharmacyDashboardComponent implements OnInit {
   }
 
   inventoryActionsTitle(i: InventoryItem): string {
-    return `📦 ${i.medication} ${i.dosage}`;
+    return `${i.medication} ${i.dosage}`;
   }
 
   inventoryActionsSummary(i: InventoryItem): string[] {
@@ -980,7 +981,7 @@ export class PharmacyDashboardComponent implements OnInit {
   }
 
   historyActionsTitle(i: CombinedHistoryItem): string {
-    return `${i.type === 'delivery' ? '📦 Entrega' : '❌ Rechazo'} ${i.deliveryId || i.requestId || ''}`;
+    return `${i.type === 'delivery' ? 'Entrega' : 'Rechazo'} ${i.deliveryId || i.requestId || ''}`;
   }
 
   historyActionsSummary(i: CombinedHistoryItem): string[] {
@@ -1259,30 +1260,30 @@ export class PharmacyDashboardComponent implements OnInit {
 
   getStatusLabel(status: string): string {
     const labels: { [key: string]: string } = {
-      'pending': '⏳ Pendiente',
-      'in_preparation': '🔄 Preparando',
-      'ready': '✅ Lista',
-      'delivered': '📦 Entregada'
+      pending: 'Pendiente',
+      in_preparation: 'Preparando',
+      ready: 'Lista',
+      delivered: 'Entregada',
     };
     return labels[status] || status;
   }
 
   getInventoryStatusLabel(item: InventoryItem): string {
     if (item.expiryClassification === 'expired') {
-      return '🚫 Vencido (caducidad)';
+      return 'Vencido (caducidad)';
     }
     if (item.expiryClassification === 'expiring_soon') {
       const d = item.daysToExpiry;
       const w = item.expiringSoonDays;
       return d != null
-        ? `⚠️ Por caducar (${d} días · ventana ${w}d)`
-        : `⚠️ Por caducar (ventana ${w}d)`;
+        ? `Por caducar (${d} días · ventana ${w}d)`
+        : `Por caducar (ventana ${w}d)`;
     }
     const labels: Record<string, string> = {
-      available: '✓ Disponible',
-      low_stock: '⚠️ Stock bajo',
-      expired: '🚫 Vencido',
-      out_of_stock: '❌ Sin stock',
+      available: 'Disponible',
+      low_stock: 'Stock bajo',
+      expired: 'Vencido',
+      out_of_stock: 'Sin stock',
     };
     return labels[item.status] || item.status;
   }
@@ -1540,4 +1541,3 @@ export class PharmacyDashboardComponent implements OnInit {
     return this.inventory.filter((i) => i.expiryClassification === 'expiring_soon').length;
   }
 }
-

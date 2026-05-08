@@ -1,0 +1,50 @@
+/*
+ * Fila nombre + botón «Detalles» (misma pastilla que «Ver todas» en notas clínicas).
+ * Compartido por Mis camas y Mis pacientes asignados.
+ */
+
+.nurse-patient-card-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  min-width: 0;
+  width: 100%;
+}
+
+.nurse-patient-card-title-row > .patient-assigned-card-name,
+.nurse-patient-card-title-row > .bed-patient-card-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+}
+
+button.nurse-details-pill-btn {
+  flex-shrink: 0;
+  box-sizing: border-box;
+  background: #e0e5ec;
+  color: #4a5568;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  line-height: 1;
+  min-height: 32px;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #ffffff;
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+button.nurse-details-pill-btn:hover {
+  box-shadow: 3px 3px 6px #bebebe, -3px -3px 6px #ffffff;
+}
+
+button.nurse-details-pill-btn:active {
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+}
+
+button.nurse-details-pill-btn:focus-visible {
+  outline: 2px solid rgba(43, 108, 176, 0.55);
+  outline-offset: 2px;
+}

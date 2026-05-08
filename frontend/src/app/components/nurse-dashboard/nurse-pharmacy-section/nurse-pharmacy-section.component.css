@@ -3,6 +3,30 @@
   width: 100%;
 }
 
+.pharmacy-modules-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.35rem;
+}
+
+.pharmacy-module-card {
+  padding: 1.15rem 1.3rem 1.35rem;
+  border-radius: 16px;
+  box-sizing: border-box;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  background: linear-gradient(168deg, #e6eaf1 0%, #eef2f7 48%, #e9eef5 100%);
+  box-shadow:
+    inset 5px 5px 12px rgba(163, 168, 176, 0.52),
+    inset -4px -4px 11px rgba(255, 255, 255, 0.88);
+}
+
+.pharmacy-module-card--history {
+  background: linear-gradient(160deg, #d8dde5 0%, #e4e9ef 55%, #dfe4ea 100%);
+  box-shadow:
+    inset 6px 6px 14px rgba(163, 168, 176, 0.62),
+    inset -5px -5px 12px rgba(255, 255, 255, 0.84);
+}
+
 .section-header {
   display: flex;
   justify-content: space-between;
@@ -152,7 +176,7 @@
 }
 
 .pharmacy-history-shell {
-  margin-top: 1.25rem;
+  margin-top: 0;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -195,7 +219,7 @@
   border-radius: 16px;
   background: #e0e5ec;
   box-shadow: inset 5px 5px 10px #cbccd1, inset -4px -4px 10px #fafbff;
-  border-top: 1px solid rgba(174, 174, 192, 0.3);
+  border-top: 1px solid rgba(174, 174, 192, 0.24);
 }
 
 .pharmacy-history-filters {
@@ -232,8 +256,33 @@
   font-weight: 600;
 }
 
+:host .pharmacy-history-shell .toggle-btn-neuro {
+  border: none;
+  border-radius: 999px;
+  padding: 8px 14px;
+  min-height: 36px;
+  min-width: 104px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #4a5568;
+  background: #e0e5ec;
+  box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+:host .pharmacy-history-shell .toggle-btn-neuro:hover {
+  box-shadow: 3px 3px 6px #bebebe, -3px -3px 6px #ffffff;
+  transform: translateY(-1px);
+}
+
 :host .pharmacy-history-shell .toggle-btn-neuro:active {
-  box-shadow: inset 4px 4px 8px #bebebe, inset -3px -3px 8px #ffffff;
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+  transform: translateY(0);
 }
 
 .pharmacy-history-id {
@@ -270,4 +319,11 @@
   background: transparent;
   box-shadow: none;
   padding: 0.5rem 0;
+}
+
+@media (max-width: 768px) {
+  .pharmacy-module-card {
+    padding: 1rem 0.95rem 1.15rem;
+    border-radius: 14px;
+  }
 }

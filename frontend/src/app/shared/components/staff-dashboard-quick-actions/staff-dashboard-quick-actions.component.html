@@ -1,0 +1,46 @@
+<div class="staff-dashboard-quick-actions" role="group" aria-label="Accesos de coordinación y reportes">
+  <button type="button" class="nav-link staff-dashboard-quick-link" (click)="openTeamHandover()">
+    <app-hero-icon name="chat-bubble-left-right" /> Coordinación
+    <span *ngIf="teamHandoverPendingNotice" class="quick-pending-chip">Pendiente</span>
+  </button>
+  <button type="button" class="nav-link staff-dashboard-quick-link" (click)="openReports()">
+    <app-hero-icon name="chart-bar" /> Reportes
+  </button>
+
+  <app-admin-team-handover-modal
+    *ngIf="showTeamHandover"
+    [handoverDate]="handoverDate"
+    [handoverShift]="handoverShift"
+    [handoverBody]="handoverBody"
+    [handoverSaving]="handoverSaving"
+    [handoverCanAcknowledge]="handoverCanAcknowledge"
+    (handoverDateChange)="handoverDate = $event"
+    (handoverDateCommitted)="onHandoverDateCommitted()"
+    (handoverShiftChange)="handoverShift = $event"
+    (handoverShiftCommitted)="onHandoverShiftCommitted()"
+    (handoverBodyChange)="handoverBody = $event"
+    (dismissed)="closeTeamHandover()"
+    (acknowledgeRequested)="acknowledgeTeamHandoverRead()"
+    (saveRequested)="saveTeamHandover()"
+  />
+
+  <app-nurse-reports-modal
+    *ngIf="showReports"
+    [periodLabel]="reportsPeriodLabel"
+    [loading]="reportsLoading"
+    [error]="reportsError"
+    [compliance]="reportsCompliance"
+    [medication]="reportsMedication"
+    [exporting]="reportsExporting"
+    [showStaffNurseFilter]="true"
+    [staffNurses]="nursesForReports"
+    [staffNurseUserId]="reportNurseUserId"
+    [staffScopeSuffix]="
+      'Todos los pacientes del centro si no eliges enfermera; al elegir una enfermera, solo su ámbito de pacientes.'
+    "
+    (dismissed)="closeReports()"
+    (csvDownload)="downloadCsv($event)"
+    (excelDownload)="downloadExcel($event)"
+    (staffNurseFilterChange)="onReportNurseFilterChange($event)"
+  />
+</div>

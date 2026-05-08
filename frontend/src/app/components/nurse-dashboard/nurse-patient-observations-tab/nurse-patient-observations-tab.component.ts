@@ -6,11 +6,12 @@ import type {
   PatientClinicalNoteDto,
 } from '../../../services/nurse.service';
 import { NurseClinicalNotesScopeBlockComponent } from '../nurse-clinical-notes-scope-block/nurse-clinical-notes-scope-block.component';
+import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
 
 @Component({
   selector: 'app-nurse-patient-observations-tab',
   standalone: true,
-  imports: [CommonModule, FormsModule, NurseClinicalNotesScopeBlockComponent],
+  imports: [CommonModule, FormsModule, NurseClinicalNotesScopeBlockComponent, HeroIconComponent],
   templateUrl: './nurse-patient-observations-tab.component.html',
   styleUrls: ['./nurse-patient-observations-tab.component.css'],
 })

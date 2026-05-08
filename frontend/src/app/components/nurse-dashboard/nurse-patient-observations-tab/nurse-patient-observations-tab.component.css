@@ -46,13 +46,20 @@
 .edit-observation-btn {
   background: #e0e5ec;
   border: none;
-  padding: 6px 12px;
-  border-radius: 8px;
-  font-size: 0.85rem;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  min-height: 36px;
+  min-width: 104px;
+  line-height: 1;
   cursor: pointer;
   box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
   transition: all 0.2s ease;
   color: #4a5568;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .edit-observation-btn:hover {
@@ -80,13 +87,19 @@
   background: #e0e5ec;
   color: #4a5568;
   border: none;
-  padding: 8px 16px;
-  border-radius: 12px;
-  font-size: 0.85rem;
-  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  min-height: 36px;
+  min-width: 104px;
+  line-height: 1;
   cursor: pointer;
   box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
   transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .cancel-edit-btn:hover {
@@ -217,14 +230,20 @@ button.observation-item--link:focus-visible {
   background: #e0e5ec;
   color: #4a5568;
   border: none;
-  padding: 12px 24px;
-  border-radius: 12px;
-  font-size: 0.95rem;
-  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  min-height: 36px;
+  min-width: 104px;
+  line-height: 1;
   cursor: pointer;
   box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
   width: 100%;
   transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .save-observation-btn-neuro:hover {

@@ -1,134 +1,172 @@
 /**
- * Fragmentos de plantilla / estilos alineados con el código real del proyecto.
- * Referencias: login, register, nurse-dashboard, patients-management, schedules-management, pagination, pharmacy-dashboard.
+ * Rutas de archivos fuente y ejemplos mínimos para copiar/pegar al normalizar UI.
+ * Los estilos reales se cargan vía design-catalog.imports.css (no hay CSS duplicado “fantasma”).
  */
+/**
+ * Lista alineada con `design-catalog.imports.css` (ruta relativa a `frontend/src/app/` salvo primera columna «shared»…).
+ */
+export const DESIGN_CATALOG_IMPORTS_MANIFEST = [
+  'shared/styles/table-actions-normalized.css',
+  'shared/styles/dashboard-layout.css',
+  'shared/styles/admin-panel-neomorphic.shared.css',
+  'shared/styles/admin-table-unified.css',
+  'shared/styles/admin-assign-modal.shared.css',
+  'shared/styles/admin-panel-responsive.css',
+  'shared/styles/dashboard-overview-stats.css',
+  'shared/styles/auth-pages.css',
+  'components/login/login.component.css',
+  'components/register/register.component.css',
+  'components/verify-email/verify-email.component.css',
+  'components/terms-modal/terms-modal.component.css',
+  'components/admin-dashboard/admin-dashboard.component.css',
+  'components/admin-dashboard/overview/overview.component.css',
+  'shared/components/pagination/pagination.component.css',
+  'shared/components/admin-table-row-actions-modal/admin-table-row-actions-modal.component.css',
+  'shared/components/admin-toggle-button/admin-toggle-button.component.css',
+  'shared/components/dashboard-user-profile-modal/dashboard-user-profile-modal.component.css',
+  'components/admin-dashboard/areas-management/areas-management.component.css',
+  'components/admin-dashboard/beds-management/beds-management.component.css',
+  'components/admin-dashboard/patients-management/patients-management.component.css',
+  'components/admin-dashboard/schedules-management/schedules-management.component.css',
+  'components/admin-dashboard/staff-management/staff-management.component.css',
+  'components/admin-dashboard/users-management/users-management.component.css',
+  'components/pharmacy-dashboard/pharmacy-dashboard.component.css',
+  'components/confirmation-modal/confirmation-modal.component.css',
+  'components/toast/toast.component.css',
+  'components/toast-container/toast-container.component.css',
+  'components/loading-spinner/loading-spinner.component.css',
+  'components/nurse-dashboard/nurse-neomorphic-modal.shared.css',
+  'components/nurse-dashboard/nurse-dashboard.component.css',
+  'components/nurse-dashboard/nurse-add-medication-modal/nurse-add-medication-modal.component.css',
+  'components/nurse-dashboard/nurse-add-treatment-modal/nurse-add-treatment-modal.component.css',
+  'components/nurse-dashboard/nurse-beds-section/nurse-beds-section.component.css',
+  'components/nurse-dashboard/nurse-clinical-notes-scope-block/nurse-clinical-notes-scope-block.component.css',
+  'components/nurse-dashboard/nurse-dashboard-header-search/nurse-dashboard-header-search.component.css',
+  'components/nurse-dashboard/nurse-dashboard-main-nav/nurse-dashboard-main-nav.component.css',
+  'components/nurse-dashboard/nurse-dashboard-overlays-stack/nurse-dashboard-overlays-stack.component.css',
+  'components/nurse-dashboard/nurse-delete-medication-modal/nurse-delete-medication-modal.component.css',
+  'components/nurse-dashboard/nurse-edit-bed-modal/nurse-edit-bed-modal.component.css',
+  'components/nurse-dashboard/nurse-handover-modal/nurse-handover-modal.component.css',
+  'components/nurse-dashboard/nurse-history-detail-modal/nurse-history-detail-modal.component.css',
+  'components/nurse-dashboard/nurse-history-edit-modal/nurse-history-edit-modal.component.css',
+  'components/nurse-dashboard/nurse-medication-day-detail-modal/nurse-medication-day-detail-modal.component.css',
+  'components/nurse-dashboard/nurse-not-completed-task-modal/nurse-not-completed-task-modal.component.css',
+  'components/nurse-dashboard/nurse-patient-history-tab/nurse-patient-history-tab.component.css',
+  'components/nurse-dashboard/nurse-patient-medications-tab/nurse-patient-medications-tab.component.css',
+  'components/nurse-dashboard/nurse-patient-modal-shell/nurse-patient-modal-shell.component.css',
+  'components/nurse-dashboard/nurse-patient-observations-tab/nurse-patient-observations-tab.component.css',
+  'components/nurse-dashboard/nurse-patient-treatments-day-tab/nurse-patient-treatments-day-tab.component.css',
+  'components/nurse-dashboard/nurse-patients-assigned-section/nurse-patients-assigned-section.component.css',
+  'components/nurse-dashboard/nurse-pending-task-detail-modal/nurse-pending-task-detail-modal.component.css',
+  'components/nurse-dashboard/nurse-pharmacy-section/nurse-pharmacy-section.component.css',
+  'components/nurse-dashboard/nurse-pharmacy-quick-modal/nurse-pharmacy-quick-modal.component.css',
+  'components/nurse-dashboard/nurse-pharmacy-patients-modal/nurse-pharmacy-patients-modal.component.css',
+  'components/nurse-dashboard/nurse-postpone-task-modal/nurse-postpone-task-modal.component.css',
+  'components/nurse-dashboard/nurse-reactivate-medication-modal/nurse-reactivate-medication-modal.component.css',
+  'components/nurse-dashboard/nurse-reports-modal/nurse-reports-modal.component.css',
+  'components/nurse-dashboard/nurse-schedule-edit-modal/nurse-schedule-edit-modal.component.css',
+  'components/nurse-dashboard/nurse-schedule-slots-modal/nurse-schedule-slots-modal.component.css',
+  'components/nurse-dashboard/nurse-summary-section/nurse-summary-section.component.css',
+  'components/nurse-dashboard/nurse-suspend-medication-modal/nurse-suspend-medication-modal.component.css',
+  'components/nurse-dashboard/nurse-tasks-quick-modal/nurse-tasks-quick-modal.component.css',
+  'components/nurse-dashboard/nurse-tasks-section/nurse-tasks-section.component.css',
+  'components/nurse-dashboard/nurse-treatment-postpone-modal/nurse-treatment-postpone-modal.component.css',
+  'components/use-case-diagram/use-case-diagram.component.css',
+].join('\n');
+
 export const DESIGN_CATALOG_SNIPPETS = {
-  loginCard:
-    `<div class="login-card">\n  <input class="neuro-input" type="email" placeholder="Correo" />\n  <button type="button" class="neuro-btn">Entrar</button>\n  <div class="error-message">Mensaje de error</div>\n</div>`,
+  importsManifest: DESIGN_CATALOG_IMPORTS_MANIFEST,
 
-  loginCss: `frontend/src/app/components/login/login.component.css`,
+  paths: {
+    adminNeomorphicShared: 'frontend/src/app/shared/styles/admin-panel-neomorphic.shared.css',
+    adminTableUnified: 'frontend/src/app/shared/styles/admin-table-unified.css',
+    adminAssignModalShared: 'frontend/src/app/shared/styles/admin-assign-modal.shared.css',
+    tableActionsNormalized: 'frontend/src/app/shared/styles/table-actions-normalized.css',
+    loginCss: 'frontend/src/app/components/login/login.component.css',
+    registerCss: 'frontend/src/app/components/register/register.component.css',
+    authPagesCss: 'frontend/src/app/shared/styles/auth-pages.css',
+    dashboardLayoutCss: 'frontend/src/app/shared/styles/dashboard-layout.css',
+    adminDashboardCss: 'frontend/src/app/components/admin-dashboard/admin-dashboard.component.css',
+    patientsCss: 'frontend/src/app/components/admin-dashboard/patients-management/patients-management.component.css',
+    staffCss: 'frontend/src/app/components/admin-dashboard/staff-management/staff-management.component.css',
+    bedsCss: 'frontend/src/app/components/admin-dashboard/beds-management/beds-management.component.css',
+    areasCss: 'frontend/src/app/components/admin-dashboard/areas-management/areas-management.component.css',
+    schedulesCss: 'frontend/src/app/components/admin-dashboard/schedules-management/schedules-management.component.css',
+    rowActionsModalCss:
+      'frontend/src/app/shared/components/admin-table-row-actions-modal/admin-table-row-actions-modal.component.css',
+    paginationCss: 'frontend/src/app/shared/components/pagination/pagination.component.css',
+    pharmacyCss: 'frontend/src/app/components/pharmacy-dashboard/pharmacy-dashboard.component.css',
+    nurseCss: 'frontend/src/app/components/nurse-dashboard/nurse-dashboard.component.css',
+    nurseModalSharedCss: 'frontend/src/app/components/nurse-dashboard/nurse-neomorphic-modal.shared.css',
+  },
 
-  registerSelectCheckbox:
-    `<select class="neuro-select">\n  <option>Rol</option>\n</select>\n<label class="neuro-checkbox">\n  <input type="checkbox" /> Acepto términos\n</label>`,
+  apmBtn: `<button type="button" class="apm-btn">Primario</button>
+<button type="button" class="apm-btn apm-btn--outline">Secundario</button>
+<button type="button" class="apm-btn apm-btn--danger">Destructivo (texto)</button>`,
 
-  registerCss: `frontend/src/app/components/register/register.component.css`,
+  apmFilter: `<button type="button" class="apm-btn apm-btn--filter">Disponibles</button>
+<button type="button" class="apm-btn apm-btn--filter active">Activo (hundido)</button>`,
 
-  primaryButtons:
-    `<button type="button" class="btn-primary-neuro">Primario</button>\n<button type="button" class="btn-secondary-neuro">Secundario</button>\n<button type="button" class="neuro-btn outlined">Outlined</button>`,
+  apmCard: `<div class="apm-area-card">
+  <div class="apm-area-card__header">
+    <h4 class="apm-area-card__title">SALA-12</h4>
+    <span class="apm-status-pill apm-status-pill--busy">OCUPADA</span>
+  </div>
+  <p class="apm-area-description"><strong>Paciente:</strong> Ejemplo</p>
+</div>`,
 
-  nurseActions:
-    `<button type="button" class="add-task-btn-neuro" title="Acción">+</button>\n<button type="button" class="filter-btn-neuro active">Filtro</button>\n<button type="button" class="view-patient-btn-neuro">Ver paciente</button>\n<button type="button" class="complete-btn-neuro">Completar</button>\n<button type="button" class="not-administered-btn-neuro">No administrado</button>\n<button type="button" class="save-observation-btn-neuro small">Guardar</button>`,
+  apmShift: `<div class="apm-shift-block">
+  <div class="apm-shift-heading">Enfermera(s) en este turno</div>
+  <ul class="apm-shift-nurse-list"><li>Ana López</li></ul>
+</div>
+<button type="button" class="apm-shift-alert apm-shift-alert--clickable">Aviso cobertura (clicable)</button>`,
 
-  nurseCss: `frontend/src/app/components/nurse-dashboard/nurse-dashboard.component.css`,
+  apmModalShell: `<div class="apm-backdrop">
+  <div class="apm-shell apm-shell--large" (ejemplo)>
+    <div class="apm-header"><h3>Título</h3></div>
+    <div class="apm-body">…</div>
+  </div>
+</div>`,
 
-  headerIcon:
-    `<button type="button" class="neuro-btn-icon logout-btn" title="Salir">⎋</button>`,
+  assignModal: `<div class="admin-assign-modal-backdrop">
+  <div class="admin-assign-modal-content">
+    <div class="admin-assign-modal-header"><h3>Modal asignación</h3></div>
+    <div class="admin-assign-modal-body"><p class="apm-field-label">Campo</p></div>
+  </div>
+</div>`,
 
-  tableActionsCss: `frontend/src/app/shared/styles/table-actions-normalized.css`,
+  neuroTable: `<table class="neuro-table">
+  <thead><tr><th>Nombre</th><th>Estado</th></tr></thead>
+  <tbody>
+    <tr class="admin-table-row--clickable"><td>Paciente</td><td><span class="neuro-status active">Activo</span></td></tr>
+  </tbody>
+</table>`,
 
-  neuroTable:
-    `<table class="neuro-table">\n  <thead><tr><th>Nombre</th><th>Estado</th><th>Acciones</th></tr></thead>\n  <tbody>\n    <tr>\n      <td><span>Ejemplo</span></td>\n      <td><span class="neuro-status active">Activo</span></td>\n      <td>\n        <div class="action-buttons-table">\n          <button type="button" class="neuro-btn-icon success" title="Ok">✓</button>\n          <button type="button" class="neuro-btn-icon danger" title="Eliminar">✕</button>\n        </div>\n      </td>\n    </tr>\n  </tbody>\n</table>`,
+  filtersStaff: `<div class="filters-container">
+  <div class="filter-group"><label>Área</label><select class="neuro-select"><option>Todas</option></select></div>
+</div>`,
 
-  patientsCss: `frontend/src/app/components/admin-dashboard/patients-management/patients-management.component.css`,
+  nurseCard: `<div class="nurse-card" style="max-width:320px">
+  <div class="nurse-card-header">…</div>
+</div>`,
 
-  toggleAndLarge:
-    `<button type="button" class="toggle-btn-neuro">Alternar sección</button>\n<button type="button" class="neuro-btn-large">neuro-btn-large</button>\n<button type="button" class="neuro-btn-small">Small</button>`,
+  pagination: `<div class="pagination-container">
+  <div class="pagination-controls">
+    <button type="button" class="pagination-btn">‹</button>
+    <button type="button" class="pagination-btn active">1</button>
+    <button type="button" class="pagination-btn">›</button>
+  </div>
+</div>`,
 
-  schedulesHeader:
-    `<div class="section-header-neuro">\n  <h2 class="section-title-neuro">Turnos</h2>\n  <button type="button" class="btn-save-neuro">Guardar</button>\n</div>`,
+  schedulesAttendance: `<button type="button" class="badge-shift-neuro active">Presentes: 3</button>
+<button type="button" class="btn-attendance">Marcar presente</button>
+<input class="input-neuro" placeholder="Buscar…" />`,
 
-  schedulesFilters:
-    `<div class="filters-neuro">\n  <div class="filter-item-neuro">\n    <label>Desde</label>\n    <input class="input-neuro" type="date" />\n  </div>\n  <div class="filter-item-neuro">\n    <label>Área</label>\n    <select class="select-neuro"><option>—</option></select>\n  </div>\n</div>`,
+  pharmacy: `<button type="button" class="btn-danger-neuro">Rechazar</button>
+<span class="stock-info-badge available">En stock</span>`,
 
-  schedulesExtraButtons:
-    `<button type="button" class="btn-save-nurse-neuro">Guardar enfermera</button>\n<button type="button" class="btn-close-neuro">Cerrar</button>\n<button type="button" class="btn-cancel-neuro">Cancelar</button>`,
-
-  schedulesCss: `frontend/src/app/components/admin-dashboard/schedules-management/schedules-management.component.css`,
-
-  pagination:
-    `<div class="pagination-container">\n  <div class="pagination-info">\n    <span>Mostrando 1 - 10 de 100</span>\n    <select class="items-per-page-select">\n      <option>10 por página</option>\n    </select>\n  </div>\n  <div class="pagination-controls">\n    <button type="button" class="pagination-btn">Anterior</button>\n    <button type="button" class="pagination-btn active">1</button>\n    <button type="button" class="pagination-btn">Siguiente</button>\n  </div>\n</div>`,
-
-  paginationCss: `frontend/src/app/shared/components/pagination/pagination.component.css`,
-
-  overviewStats:
-    `<div class="stats-grid">\n  <div class="stat-card">\n    <div class="stat-icon">👤</div>\n    <div class="stat-content">\n      <p class="stat-value">42</p>\n      <p class="stat-label">Pacientes</p>\n    </div>\n  </div>\n</div>`,
-
-  overviewCss: `frontend/src/app/components/admin-dashboard/overview/overview.component.css`,
-
-  bedsFilters:
-    `<button type="button" class="filter-btn">Todos</button>\n<button type="button" class="filter-btn active">Activos</button>`,
-
-  bedsCss: `frontend/src/app/components/admin-dashboard/beds-management/beds-management.component.css`,
-
-  areasStatus:
-    `<span class="neuro-status active">Activo</span>\n<span class="neuro-status inactive">Inactivo</span>`,
-
-  areasCss: `frontend/src/app/components/admin-dashboard/areas-management/areas-management.component.css`,
-
-  pharmacyDanger:
-    `<button type="button" class="btn-danger-neuro">Rechazar / peligro</button>\n<span class="stock-info-badge available">En stock</span>\n<span class="stock-info-badge unavailable">Agotado</span>`,
-
-  pharmacyCss: `frontend/src/app/components/pharmacy-dashboard/pharmacy-dashboard.component.css`,
-
-  termsModal:
-    `<button type="button" class="neuro-btn outlined">Cerrar términos</button>\n<button type="button" class="neuro-btn">Aceptar</button>`,
-
-  termsCss: `frontend/src/app/components/terms-modal/terms-modal.component.css`,
-
-  designTokens:
-    `design-catalog/css/design-tokens.css`,
-
-  neuroBase:
-    `design-catalog/css/neuro-base.css`,
-
-  statCardNurse:
-    `<div class="stat-card clickable">\n  <div class="stat-icon">📋</div>\n  <div class="stat-content">...</div>\n</div>`,
-
-  patientFormSection:
-    `<div class="patient-form-section">\n  <div class="form-section">\n    <h3>Datos</h3>\n    <input class="neuro-input" placeholder="Campo" />\n  </div>\n</div>`,
-
-  areaSectionBeds:
-    `<div class="area-section">\n  <p>Contenedor por área (gestión de camas)</p>\n</div>`,
-
-  filtersPatients:
-    `<div class="filters-container">\n  <div class="filter-box">\n    <label>Buscar</label>\n    <input class="neuro-input search-input" placeholder="..." />\n  </div>\n  <div class="filter-box">\n    <label>Estado</label>\n    <select class="neuro-select"><option>Todos</option></select>\n  </div>\n</div>`,
-
-  filtersUsers:
-    `<div class="filters-container">\n  <div class="filter-group">\n    <label>Rol</label>\n    <select class="neuro-select">...</select>\n  </div>\n  <div class="filter-group search-group">\n    <label>Buscar</label>\n    <input class="neuro-input search-input" />\n  </div>\n</div>`,
-
-  resultsInfo: `<div class="results-info"><p>Mostrando 10 de 120 usuarios</p></div>`,
-
-  shiftsTable:
-    `<div class="table-wrapper-neuro">\n  <table class="shifts-table-neuro">\n    <thead><tr><th>Enfermera</th><th>Lun</th><th>Acciones</th></tr></thead>\n    <tbody>\n      <tr class="row-neuro">\n        <td class="cell-nurse-neuro"><strong>Ana</strong></td>\n        <td class="cell-day-neuro">\n          <select class="select-day-neuro shift-morning"><option>Mañana</option></select>\n        </td>\n        <td class="cell-actions-neuro">\n          <button type="button" class="btn-save-nurse-neuro">Guardar</button>\n        </td>\n      </tr>\n    </tbody>\n  </table>\n</div>`,
-
-  schedulesSummary:
-    `<div class="summary-section-neuro">\n  <h3 class="title-summary-neuro">Resumen</h3>\n  <div class="area-box-neuro">...</div>\n</div>`,
-
-  schedulesLoading:
-    `<div class="loading-neuro"><p>Cargando turnos...</p></div>\n<div class="empty-neuro"><p>Sin datos</p></div>`,
-
-  unifiedTasksTable:
-    `<div class="unified-table-container">\n  <table class="unified-tasks-table">\n    <thead><tr><th>Tarea</th><th>Estado</th><th>Acciones</th></tr></thead>\n    <tbody>\n      <tr>\n        <td><span>Control signos</span></td>\n        <td><span>Pendiente</span></td>\n        <td>\n          <div class="action-buttons-table">\n            <button type="button" class="action-btn-compact success">✓</button>\n          </div>\n        </td>\n      </tr>\n    </tbody>\n  </table>\n</div>`,
-
-  patientsTableAreas:
-    `<div class="patients-table-container">\n  <table class="patients-table">\n    <thead><tr><th>Paciente</th><th>Cama</th></tr></thead>\n    <tbody><tr><td><span>López</span></td><td><span>12A</span></td></tr></tbody>\n  </table>\n</div>`,
-
-  roleCard:
-    `<div class="role-cards-container">\n  <div class="role-card">\n    <div class="role-card-content">\n      <div class="role-card-info">\n        <h4>María Supervisor</h4>\n        <p class="role-card-username">@msup</p>\n        <span class="neuro-status role-supervisor">Supervisor</span>\n      </div>\n      <div class="role-card-actions">\n        <button type="button" class="neuro-btn-icon" title="Rol">⚙</button>\n      </div>\n    </div>\n  </div>\n</div>`,
-
-  usersCss: `frontend/src/app/components/admin-dashboard/users-management/users-management.component.css`,
-
-  nurseCardStaff:
-    `<div class="nurses-grid">\n  <div class="nurse-card">\n    <div class="nurse-card-header">...</div>\n    <div class="nurse-details">\n      <div class="detail-item">\n        <span class="detail-label">Área</span>\n        <span class="detail-value">UCI</span>\n      </div>\n    </div>\n  </div>\n</div>`,
-
-  staffCss: `frontend/src/app/components/admin-dashboard/staff-management/staff-management.component.css`,
-
-  pharmacyRowBadges:
-    `<span class="priority-badge urgent">Urgente</span>\n<span class="priority-badge high">Alta</span>\n<span class="status-badge pending">Pendiente</span>\n<span class="status-badge ready">Lista</span>\n<div class="action-buttons-pharmacy">\n  <button type="button" class="action-btn-compact">👁</button>\n  <button type="button" class="action-btn-compact accept-btn">✓</button>\n</div>`,
-
-  modalPatientTabs:
-    `<div class="modal-backdrop">\n  <div class="modal-content">\n    <div class="modal-header">\n      <h3>Paciente</h3>\n      <button type="button" class="close-btn" aria-label="Cerrar">×</button>\n    </div>\n    <div class="tabs-container">\n      <button type="button" class="tab active">Datos</button>\n      <button type="button" class="tab">Historial</button>\n    </div>\n    <div class="modal-body scrollable">...</div>\n  </div>\n</div>`,
-
-  sectionHeaderCollapsible:
-    `<div class="section-header collapsible-header">\n  <h2 class="section-title">Ingreso de paciente</h2>\n  <div class="header-actions">\n    <button type="button" class="toggle-btn-neuro">Alternar</button>\n  </div>\n</div>`,
+  nurseActions: `<button type="button" class="add-task-btn-neuro">+</button>
+<button type="button" class="filter-btn-neuro active">Hoy</button>
+<button type="button" class="view-patient-btn-neuro">Ver paciente</button>
+<button type="button" class="complete-btn-neuro">Completar</button>`,
 } as const;

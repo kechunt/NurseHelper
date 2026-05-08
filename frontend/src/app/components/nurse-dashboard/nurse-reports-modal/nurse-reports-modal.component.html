@@ -13,7 +13,10 @@
     (click)="$event.stopPropagation()"
   >
     <div class="modal-header nurse-reports-modal-header">
-      <h3 id="nurse-reports-dialog-title" i18n="@@nurseReportsModal.title">📈 Reportes (últimos 7 días)</h3>
+      <h3 id="nurse-reports-dialog-title" i18n="@@nurseReportsModal.title">
+        <app-hero-icon name="chart-bar"></app-hero-icon>
+        Reportes (últimos 7 días)<span *ngIf="showStaffNurseFilter"> · gestión</span>
+      </h3>
       <button
         type="button"
         class="close-btn"
@@ -26,8 +29,21 @@
     </div>
     <div class="modal-body nurse-reports-modal-body">
       <p class="nurse-reports-period-line" *ngIf="periodLabel && !loading">
-        <strong>Periodo:</strong> {{ periodLabel }} · Solo tus pacientes / área.
+        <strong>Periodo:</strong> {{ periodLabel }} · {{ resolveScopeLine() }}
       </p>
+      <div class="nurse-reports-period-line nurse-reports-staff-filter" *ngIf="showStaffNurseFilter && staffNurses.length">
+        <label class="nurse-reports-staff-filter__label" for="staff-reports-nurse-select">Enfermera</label>
+        <select
+          id="staff-reports-nurse-select"
+          class="nurse-reports-staff-filter__select"
+          [value]="staffNurseUserId === null ? '' : staffNurseUserId"
+          (change)="onStaffNurseSelect($event)"
+          [disabled]="loading"
+        >
+          <option value="">Todas (todos los pacientes)</option>
+          <option *ngFor="let n of staffNurses" [value]="n.id">{{ n.name }}</option>
+        </select>
+      </div>
       <p class="empty-message nurse-reports-loading" *ngIf="loading">Cargando datos…</p>
       <p class="empty-message nurse-reports-error" *ngIf="!loading && error">{{ error }}</p>
 
@@ -108,26 +124,44 @@
       </div>
     </div>
     <div class="modal-footer nurse-reports-modal-footer">
+      <button type="button" class="btn-secondary-neuro" (click)="dismissed.emit()">
+        Cerrar
+      </button>
       <button
         type="button"
-        class="neuro-btn neuro-btn-sm"
+        class="btn-secondary-neuro"
         (click)="csvDownload.emit('compliance')"
         [disabled]="loading || !!error || exporting"
-        title="Descargar CSV del periodo mostrado"
+        title="Descargar CSV de cumplimiento"
       >
-        ⬇️ CSV cumplimiento
+        <app-hero-icon name="document-text"></app-hero-icon> CSV cumplimiento
       </button>
       <button
         type="button"
-        class="neuro-btn neuro-btn-sm"
+        class="btn-secondary-neuro"
         (click)="csvDownload.emit('medication')"
         [disabled]="loading || !!error || exporting"
-        title="Descargar CSV del periodo mostrado"
+        title="Descargar CSV de medicación"
       >
-        ⬇️ CSV medicación
+        <app-hero-icon name="document-text"></app-hero-icon> CSV medicación
       </button>
-      <button type="button" class="btn-primary-neuro" (click)="dismissed.emit()">
-        <span i18n="@@nurseReportsModal.close">Cerrar</span>
+      <button
+        type="button"
+        class="btn-secondary-neuro"
+        (click)="excelDownload.emit('compliance')"
+        [disabled]="loading || !!error || exporting"
+        title="Descargar Excel de cumplimiento"
+      >
+        <app-hero-icon name="table-cells"></app-hero-icon> Excel cumplimiento
+      </button>
+      <button
+        type="button"
+        class="btn-secondary-neuro"
+        (click)="excelDownload.emit('medication')"
+        [disabled]="loading || !!error || exporting"
+        title="Descargar Excel de medicación"
+      >
+        <app-hero-icon name="table-cells"></app-hero-icon> Excel medicación
       </button>
     </div>
   </div>

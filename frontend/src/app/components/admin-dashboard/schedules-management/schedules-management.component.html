@@ -1,7 +1,7 @@
 <div class="schedules-management">
   <div class="attendance-unified-neuro">
     <div class="realtime-shift-card-neuro">
-      <div class="realtime-icon-neuro">🕒</div>
+      <div class="realtime-icon-neuro"><app-hero-icon name="clock" /></div>
       <div class="realtime-content-neuro">
         <h3 class="realtime-value-neuro">{{ liveDateTimeLabel }}</h3>
         <p class="realtime-title-neuro">Fecha y hora actual</p>
@@ -10,7 +10,7 @@
     </div>
 
     <div class="section-header-neuro compact-header-neuro">
-      <h2 class="section-title-neuro">📝 Toma de lista por turno</h2>
+      <h2 class="section-title-neuro"><app-hero-icon name="clipboard-document" /> Toma de lista por turno</h2>
     </div>
 
     <div class="attendance-controls-neuro module-section-neuro">
@@ -23,39 +23,20 @@
       </div>
     </div>
 
-    <div class="module-toggle-header-neuro module-section-neuro" (click)="toggleShiftConfigSection()">
-      <h3 class="subsection-title-neuro">Configuración de horarios de turnos</h3>
-      <button type="button" class="toggle-btn-neuro">
-        {{ showShiftConfigSection ? 'Ocultar' : 'Mostrar' }}
-        <span class="toggle-chevron-neuro" [class.open]="showShiftConfigSection">▾</span>
-      </button>
-    </div>
-
-    <div class="table-wrapper-neuro shifts-config-wrapper module-section-neuro" *ngIf="showShiftConfigSection">
-      <table class="shifts-table-neuro patients-table">
-        <thead>
-          <tr>
-            <th>Turno</th>
-            <th>Hora inicio</th>
-            <th>Hora fin</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            *ngFor="let shift of getEditableShifts()"
-            class="admin-table-row--clickable"
-            tabindex="0"
-            role="button"
-            [attr.aria-label]="'Acciones para turno ' + shift.name"
-            (click)="openShiftConfigRowSheet(shift)"
-            (keydown)="onShiftConfigRowKeydown(shift, $event)"
-          >
-            <td>{{ shift.name }}</td>
-            <td>{{ shift.startTime }}</td>
-            <td>{{ shift.endTime }}</td>
-          </tr>
-        </tbody>
-      </table>
+    <div class="coverage-alert-neuro module-section-neuro" *ngIf="uncoveredAreasInCurrentShift.length > 0">
+      <div class="coverage-alert-header-neuro">
+        <h3 class="subsection-title-neuro">Cobertura pendiente por área</h3>
+        <span class="coverage-alert-count-neuro">{{ uncoveredAreasInCurrentShift.length }} área(s)</span>
+      </div>
+      <p class="coverage-alert-text-neuro">
+        Áreas sin enfermeras en turno (<strong>presente</strong>/<strong>tarde</strong>):
+      </p>
+      <div class="coverage-alert-tags-neuro">
+        <span class="coverage-alert-tag-neuro" *ngFor="let areaName of uncoveredAreasInCurrentShift">{{ areaName }}</span>
+      </div>
+      <p class="coverage-alert-help-neuro">
+        Asigna área a una o más enfermeras desde Gestión de Enfermeras para habilitar la asignación automática de pacientes.
+      </p>
     </div>
 
     <div class="table-wrapper-neuro module-section-neuro">
@@ -63,10 +44,7 @@
         {{ getAttendanceTableTitle() }}
         <span class="attendance-table-shift-label">· {{ liveCurrentShiftLabel || 'Sin turno activo' }}</span>
       </h3>
-      <p class="attendance-table-hint-neuro">
-        Por defecto se muestran las <strong>presentes</strong>. Usa las pastillas arriba para ver tarde, ausencias, etc.
-      </p>
-      <table class="shifts-table-neuro patients-table">
+      <table class="shifts-table-neuro patients-table attendance-summary-table-neuro">
         <thead>
           <tr>
             <th>Enfermera</th>
@@ -108,21 +86,20 @@
     <div class="attendance-nurse-list-panel module-section-neuro" *ngIf="!loading">
       <div class="attendance-list-header-row-neuro">
         <h3 class="subsection-title-neuro">Listado de enfermeras — Toma de lista</h3>
-        <button type="button" class="btn-attendance btn-toggle-attendance-list-neuro" (click)="toggleAttendanceNurseList()">
-          {{ showAttendanceNurseList ? '▲ Ocultar listado' : '▼ Mostrar listado' }}
-        </button>
+        <app-admin-toggle-button
+          class="btn-toggle-attendance-list-neuro"
+          [expanded]="showAttendanceNurseList"
+          (toggle)="toggleAttendanceNurseList()"
+        />
       </div>
-      <p class="attendance-table-hint-neuro" *ngIf="!showAttendanceNurseList">
-        Pulsa <strong>Mostrar listado</strong> para marcar presente, tarde, justificada o falta en todas las enfermeras del turno.
-      </p>
       <div class="attendance-nurse-list-body-neuro" *ngIf="showAttendanceNurseList">
       <div class="attendance-search-filters-neuro">
         <div class="filter-item-neuro">
-          <label>🔍 Buscar enfermera</label>
+          <label><app-hero-icon name="magnifying-glass" /> Buscar enfermera</label>
           <input type="text" class="input-neuro" [(ngModel)]="attendanceSearchQuery" placeholder="Nombre de enfermera..." />
         </div>
         <div class="filter-item-neuro">
-          <label>📍 Área</label>
+          <label><app-hero-icon name="building-office" /> Área</label>
           <select class="select-neuro" [(ngModel)]="attendanceAreaFilter">
             <option [ngValue]="null">Todas las áreas</option>
             <option *ngFor="let area of areas" [ngValue]="area.id">{{ area.name }}</option>
@@ -132,7 +109,7 @@
           <button type="button" class="btn-attendance" (click)="clearAttendanceFilters()">Limpiar filtros</button>
         </div>
       </div>
-      <table class="shifts-table-neuro patients-table">
+      <table class="shifts-table-neuro patients-table attendance-list-table-neuro">
         <thead>
           <tr>
             <th>Enfermera</th>
@@ -166,10 +143,46 @@
       </div>
     </div>
 
+    <div class="module-toggle-header-neuro module-section-neuro" (click)="toggleShiftConfigSection()">
+      <h3 class="subsection-title-neuro">Configuración de horarios de turnos</h3>
+      <app-admin-toggle-button
+        [expanded]="showShiftConfigSection"
+        (toggle)="toggleShiftConfigSection()"
+      />
+    </div>
+
+    <div class="table-wrapper-neuro shifts-config-wrapper module-section-neuro" *ngIf="showShiftConfigSection">
+      <table class="shifts-table-neuro patients-table">
+        <thead>
+          <tr>
+            <th>Turno</th>
+            <th>Hora inicio</th>
+            <th>Hora fin</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            *ngFor="let shift of getEditableShifts()"
+            class="admin-table-row--clickable"
+            tabindex="0"
+            role="button"
+            [attr.aria-label]="'Acciones para turno ' + shift.name"
+            (click)="openShiftConfigRowSheet(shift)"
+            (keydown)="onShiftConfigRowKeydown(shift, $event)"
+          >
+            <td>{{ shift.name }}</td>
+            <td>{{ shift.startTime }}</td>
+            <td>{{ shift.endTime }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
     <div class="management-footer-neuro module-section-neuro">
+      <h3 class="subsection-title-neuro">Historial de turnos</h3>
       <span *ngIf="savingAttendance" class="attendance-saving-hint-neuro" aria-live="polite">Guardando en el servidor…</span>
-      <button type="button" class="btn-save-neuro" (click)="openHistoryModal()" [disabled]="savingAttendance">
-        Ver historial de turnos
+      <button type="button" class="btn-attendance btn-module-show-neuro" (click)="openHistoryModal()" [disabled]="savingAttendance">
+        Mostrar
       </button>
     </div>
   </div>
@@ -233,7 +246,7 @@
     <div class="modal-content-neuro" (click)="$event.stopPropagation()">
       <div class="modal-header-neuro">
         <h3>Editar horario: {{ selectedShift?.name }}</h3>
-        <button class="btn-close-neuro" (click)="closeEditShiftModal()">✕</button>
+        <button class="btn-close-neuro admin-close-btn" (click)="closeEditShiftModal()">✕</button>
       </div>
       <div class="modal-body-neuro">
         <div class="form-group-neuro">
@@ -268,7 +281,7 @@
     <div class="modal-content-neuro modal-history-neuro" (click)="$event.stopPropagation()">
       <div class="modal-header-neuro">
         <h3>Historial de turnos y asistencia</h3>
-        <button class="btn-close-neuro" (click)="closeHistoryModal()">✕</button>
+        <button class="btn-close-neuro admin-close-btn" (click)="closeHistoryModal()">✕</button>
       </div>
       <div class="modal-body-neuro">
         <div class="attendance-controls-neuro history-filters-neuro">
@@ -333,7 +346,7 @@
     <div class="modal-content-neuro day-off-picker-modal-neuro" (click)="$event.stopPropagation()">
       <div class="modal-header-neuro">
         <h3>Día de descanso</h3>
-        <button type="button" class="btn-close-neuro" (click)="cancelDayOffPicker()">✕</button>
+        <button type="button" class="btn-close-neuro admin-close-btn" (click)="cancelDayOffPicker()">✕</button>
       </div>
       <div class="modal-body-neuro">
         <p class="day-off-picker-hint-neuro">Elige el día libre en la semana</p>

@@ -2,8 +2,10 @@ import { Request, Response } from 'express';
 import { AppDataSource } from '../data-source';
 import { Bed } from '../entities/Bed';
 import { Patient } from '../entities/Patient';
+import { User, UserRole } from '../entities/User';
 import { sendErrorResponse, handleControllerError, parseId } from '../utils/response.helper';
 import { logger } from '../utils/logger';
+import { patientAssignmentService } from '../services/patient-assignment.service';
 
 export class BedsController {
   private normalizeBedForClient(bed: any): any {
@@ -187,7 +189,7 @@ export class BedsController {
         return;
       }
 
-      const { patientId } = req.body;
+      const { patientId, assignedToId: assignedToIdRaw } = req.body;
       const bedRepository = AppDataSource.getRepository(Bed);
       const patientRepository = AppDataSource.getRepository(Patient);
       const bed = await bedRepository.findOne({
@@ -200,6 +202,35 @@ export class BedsController {
         return;
       }
 
+      let explicitNurseId: number | undefined;
+      if (patientId !== null && patientId !== undefined) {
+        if (assignedToIdRaw !== undefined && assignedToIdRaw !== null && assignedToIdRaw !== '') {
+          const parsedNurse = parseId(String(assignedToIdRaw));
+          if (!parsedNurse) {
+            sendErrorResponse(res, 400, 'ID de enfermera inválido', 'INVALID_ID');
+            return;
+          }
+          explicitNurseId = parsedNurse;
+          const userRepository = AppDataSource.getRepository(User);
+          const nurseUser = await userRepository.findOne({ where: { id: explicitNurseId } });
+          if (
+            !nurseUser ||
+            nurseUser.role !== UserRole.NURSE ||
+            !nurseUser.isActive ||
+            nurseUser.emailVerified !== true ||
+            nurseUser.assignedAreaId !== bed.areaId
+          ) {
+            sendErrorResponse(
+              res,
+              400,
+              'La enfermera seleccionada no es válida para esta área',
+              'INVALID_ASSIGNED_NURSE'
+            );
+            return;
+          }
+        }
+      }
+
       const queryRunner = AppDataSource.createQueryRunner();
       await queryRunner.connect();
       await queryRunner.startTransaction();
@@ -209,7 +240,7 @@ export class BedsController {
           await queryRunner.manager
             .createQueryBuilder()
             .update(Patient)
-            .set({ bedId: null })
+            .set({ bedId: null, assignmentStatus: 'pending', assignedToId: null, lastAssignmentAt: null })
             .where('bedId = :bedId', { bedId: bed.id })
             .andWhere('isActive = :isActive', { isActive: true })
             .execute();
@@ -259,7 +290,7 @@ export class BedsController {
           const updateResult = await queryRunner.manager
             .createQueryBuilder()
             .update(Patient)
-            .set({ bedId: bed.id, areaId: bed.areaId })
+            .set({ bedId: bed.id, areaId: bed.areaId, assignmentStatus: 'pending', assignedToId: null, lastAssignmentAt: null })
             .where('id = :id', { id: patientIdNum })
             .execute();
 
@@ -308,6 +339,40 @@ export class BedsController {
         ? `Cama ${bed.bedNumber} liberada exitosamente`
         : `Paciente asignado exitosamente`;
 
+      if (patientId !== null && patientId !== undefined) {
+        const patientIdNum = typeof patientId === 'number' ? patientId : parseInt(String(patientId), 10);
+        if (!Number.isNaN(patientIdNum)) {
+          if (explicitNurseId) {
+            try {
+              await patientRepository
+                .createQueryBuilder()
+                .update(Patient)
+                .set({
+                  assignedToId: explicitNurseId,
+                  assignmentStatus: 'assigned',
+                  lastAssignmentAt: new Date(),
+                })
+                .where('id = :id', { id: patientIdNum })
+                .execute();
+            } catch (assignExplicitErr) {
+              logger.warn('No se pudo fijar enfermera explícita tras assign POST', {
+                patientId: patientIdNum,
+                error: assignExplicitErr,
+              });
+            }
+          } else {
+            try {
+              await patientAssignmentService.autoAssignForShift({ patientIds: [patientIdNum] });
+            } catch (assignErr) {
+              logger.warn('No se pudo autoasignar enfermera tras asignar cama', {
+                patientId: patientIdNum,
+                error: assignErr,
+              });
+            }
+          }
+        }
+      }
+
       res.json({ message, bed: updatedBed ? this.normalizeBedForClient(updatedBed) : null });
     } catch (error) {
       handleControllerError(error, req, res, 'Error al asignar paciente a cama');
@@ -322,7 +387,7 @@ export class BedsController {
         return;
       }
 
-      const { bedNumber, notes, isActive, areaId, patientId } = req.body;
+      const { bedNumber, notes, isActive, areaId, patientId, assignedToId: assignedToIdRaw } = req.body;
       const bedRepository = AppDataSource.getRepository(Bed);
       const patientRepository = AppDataSource.getRepository(Patient);
       const bed = await bedRepository.findOne({ where: { id: bedId } });
@@ -389,10 +454,40 @@ export class BedsController {
           }
         } else {
           // Asignar paciente
+          let explicitNurseId: number | undefined;
+          if (assignedToIdRaw !== undefined && assignedToIdRaw !== null && assignedToIdRaw !== '') {
+            const parsedNurse = parseId(String(assignedToIdRaw));
+            if (!parsedNurse) {
+              sendErrorResponse(res, 400, 'ID de enfermera inválido', 'INVALID_ID');
+              return;
+            }
+            explicitNurseId = parsedNurse;
+          }
+
           const patientIdNum = typeof patientId === 'number' ? patientId : parseId(String(patientId));
           if (!patientIdNum) {
             sendErrorResponse(res, 400, 'ID de paciente inválido', 'INVALID_ID');
             return;
+          }
+
+          if (explicitNurseId) {
+            const userRepository = AppDataSource.getRepository(User);
+            const nurseUser = await userRepository.findOne({ where: { id: explicitNurseId } });
+            if (
+              !nurseUser ||
+              nurseUser.role !== UserRole.NURSE ||
+              !nurseUser.isActive ||
+              nurseUser.emailVerified !== true ||
+              nurseUser.assignedAreaId !== bed.areaId
+            ) {
+              sendErrorResponse(
+                res,
+                400,
+                'La enfermera seleccionada no es válida para esta área',
+                'INVALID_ASSIGNED_NURSE'
+              );
+              return;
+            }
           }
 
           logger.info('👤 Asignando paciente a cama', { bedId, patientId: patientIdNum });
@@ -482,6 +577,28 @@ export class BedsController {
                   bedId: savedBedId,
                   patientName: `${verifyPatient?.patient_firstName || ''} ${verifyPatient?.patient_lastName || ''}`
                 });
+
+                if (explicitNurseId) {
+                  await patientRepository
+                    .createQueryBuilder()
+                    .update(Patient)
+                    .set({
+                      assignedToId: explicitNurseId,
+                      assignmentStatus: 'assigned',
+                      lastAssignmentAt: new Date(),
+                    })
+                    .where('id = :id', { id: patientIdNum })
+                    .execute();
+                } else {
+                  try {
+                    await patientAssignmentService.autoAssignForShift({ patientIds: [patientIdNum] });
+                  } catch (assignErr) {
+                    logger.warn('No se pudo autoasignar enfermera tras actualizar cama (PATCH)', {
+                      patientId: patientIdNum,
+                      error: assignErr,
+                    });
+                  }
+                }
               } else {
                 logger.error('❌ ERROR DE VERIFICACIÓN: El paciente NO se guardó correctamente', {
                   expectedBedId: bed.id,

@@ -87,12 +87,17 @@
 <app-nurse-handover-modal
   *ngIf="vm.showHandoverModal"
   [handoverDate]="vm.handoverDate"
+  [handoverShift]="vm.handoverShift"
   [handoverBody]="vm.handoverBody"
   [handoverSaving]="vm.handoverSaving"
+  [handoverCanAcknowledge]="vm.handoverCanAcknowledge"
   (handoverDateChange)="handoverDateChange.emit($event)"
   (handoverDateCommitted)="handoverDateCommitted.emit()"
+  (handoverShiftChange)="handoverShiftChange.emit($event)"
+  (handoverShiftCommitted)="handoverShiftCommitted.emit()"
   (handoverBodyChange)="handoverBodyChange.emit($event)"
   (dismissed)="handoverDismissed.emit()"
+  (acknowledgeRequested)="handoverAcknowledgeRequested.emit()"
   (saveRequested)="handoverSaveRequested.emit()"
 />
 
@@ -106,6 +111,7 @@
   [exporting]="vm.nurseReportsExporting"
   (dismissed)="nurseReportsDismissed.emit()"
   (csvDownload)="nurseReportsCsvDownload.emit($event)"
+  (excelDownload)="nurseReportsExcelDownload.emit($event)"
 />
 
 <app-nurse-tasks-quick-modal

@@ -60,36 +60,8 @@
   align-items: center;
 }
 
-.filter-btn {
-  background: #e0e5ec !important;
-  color: #4a5568 !important;
-  border: none !important;
-  padding: 10px 16px !important;
-  border-radius: 15px !important;
-  font-size: 0.85rem !important;
-  font-weight: 500 !important;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff !important;
+.beds-management .filter-buttons .apm-btn--filter {
   white-space: nowrap;
-  flex-shrink: 0;
-  width: auto;
-  height: auto;
-  line-height: 1.2;
-}
-
-.filter-btn:hover {
-  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
-}
-
-.filter-btn:active {
-  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
-}
-
-.filter-btn.active {
-  background: #4a5568;
-  color: #e0e5ec;
-  box-shadow: inset 4px 4px 8px #2d3748, inset -4px -4px 8px #718096;
 }
 
 .state-unavailable-btn {
@@ -126,82 +98,28 @@
   font-weight: 400;
 }
 
+/* Rejilla al estilo tarjetas de área (min.ancho cómodo para cabecera + estado). */
 .beds-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
 }
 
-.bed-card {
-  background: #e0e5ec;
-  border-radius: 15px;
-  padding: 1rem;
-  text-align: center;
-  box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
-  transition: transform 0.2s;
-}
-
-.bed-card:hover {
-  transform: translateY(-2px);
-}
-
-.bed-card--clickable {
+.beds-management .beds-bed-card.bed-card--clickable {
   cursor: pointer;
 }
 
-.bed-card--clickable:focus-visible {
+.beds-management .beds-bed-card.bed-card--clickable:focus-visible {
   outline: 2px solid rgba(43, 108, 176, 0.55);
-  outline-offset: 2px;
+  outline-offset: 3px;
 }
 
-.bed-card.occupied {
-  background: #e0e5ec;
+.beds-mgmt-patient-inset {
+  margin-top: 0.85rem;
 }
 
-.bed-card.available {
-  background: #e0e5ec;
-}
-
-.bed-card.unavailable {
-  background: #d1d9e6;
-  opacity: 0.8;
-  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
-}
-
-.bed-number {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #4a5568;
-  margin-bottom: 0.5rem;
-}
-
-.status-badge {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 10px;
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-.status-badge.occupied {
-  background: #fed7d7;
-  color: #c53030;
-}
-
-.status-badge.available {
-  background: #c6f6d5;
-  color: #22543d;
-}
-
-.status-badge.unavailable {
-  background: #e2e8f0;
-  color: #4a5568;
-}
-
-.bed-patient {
-  margin-top: 0.5rem;
-  font-size: 0.85rem;
-  color: #718096;
+.beds-mgmt-empty-lead {
+  margin: 0 0 0.75rem;
 }
 
 .bed-actions {
@@ -211,8 +129,8 @@
   justify-content: center;
 }
 
-.edit-bed-btn,
-.delete-bed-btn {
+.bed-actions .edit-bed-btn,
+.bed-actions .delete-bed-btn {
   background: #e0e5ec;
   border: none;
   width: 28px;
@@ -247,23 +165,23 @@
   line-height: 1;
 }
 
-.edit-bed-btn {
+.bed-actions .edit-bed-btn {
   color: #4a5568;
 }
 
-.delete-bed-btn {
+.bed-actions .delete-bed-btn {
   color: #e53e3e;
 }
 
-.edit-bed-btn:hover,
-.delete-bed-btn:hover,
+.bed-actions .edit-bed-btn:hover,
+.bed-actions .delete-bed-btn:hover,
 .patient-info-btn:hover {
   box-shadow: 2px 2px 4px #bebebe, -2px -2px 4px #ffffff;
   transform: scale(1.1);
 }
 
-.edit-bed-btn:active,
-.delete-bed-btn:active,
+.bed-actions .edit-bed-btn:active,
+.bed-actions .delete-bed-btn:active,
 .patient-info-btn:active {
   box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
 }
@@ -272,73 +190,6 @@
   text-align: center;
   padding: 3rem;
   color: #718096;
-}
-
-/* Modal styles (si no están definidos globalmente) */
-.modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 2rem;
-  backdrop-filter: blur(4px);
-}
-
-.modal-content {
-  background: #e0e5ec;
-  border-radius: 30px;
-  max-width: 500px;
-  width: 100%;
-  box-shadow: 30px 30px 60px rgba(0, 0, 0, 0.3),
-    -30px -30px 60px rgba(255, 255, 255, 0.1);
-}
-
-.modal-content.modal-extra-large {
-  max-width: 1100px;
-}
-
-.modal-header {
-  padding: 2rem 2rem 1rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid rgba(174, 174, 192, 0.3);
-}
-
-.modal-header h3 {
-  color: #4a5568;
-  font-size: 1.5rem;
-  font-weight: 300;
-  margin: 0;
-}
-
-.close-btn {
-  background: #e0e5ec;
-  border: none;
-  width: 35px;
-  height: 35px;
-  border-radius: 50%;
-  font-size: 20px;
-  color: #4a5568;
-  cursor: pointer;
-  box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.close-btn:hover {
-  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
-}
-
-.modal-body {
-  padding: 2rem;
 }
 
 .tabs-container {
@@ -572,98 +423,11 @@
   font-weight: 500;
 }
 
-.neuro-input {
-  width: 100%;
-  padding: 14px 18px;
-  background: #e0e5ec;
-  border: none;
-  border-radius: 15px;
-  font-size: 16px;
-  color: #4a5568;
-  box-shadow: inset 6px 6px 12px #bebebe, inset -6px -6px 12px #ffffff;
-  font-family: inherit;
-  transition: all 0.2s ease;
-}
-
-.neuro-input:focus {
-  outline: none;
-  box-shadow: inset 8px 8px 16px #bebebe, inset -8px -8px 16px #ffffff;
-}
-
-.neuro-select {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  padding-right: 2.5rem;
-  background: #e0e5ec;
-  border: none;
-  border-radius: 12px;
-  box-shadow: inset 6px 6px 12px #bebebe, inset -6px -6px 12px #ffffff;
-  color: #4a5568;
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: inherit;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%234a5568' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 1rem center;
-}
-
-.neuro-select:focus {
-  outline: none;
-  box-shadow: inset 8px 8px 16px #bebebe, inset -8px -8px 16px #ffffff;
-}
-
-.neuro-select:hover {
-  box-shadow: inset 7px 7px 14px #bebebe, inset -7px -7px 14px #ffffff;
-}
-
-.neuro-select:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 .input-group small {
   display: block;
   color: #718096;
   font-size: 0.8rem;
   margin-top: 0.25rem;
-}
-
-.modal-footer {
-  padding: 1rem 2rem 2rem;
-  display: flex;
-  gap: 1rem;
-  justify-content: flex-end;
-  border-top: 1px solid rgba(174, 174, 192, 0.3);
-}
-
-.neuro-btn {
-  background: #e0e5ec;
-  color: #4a5568;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 50px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 8px 8px 16px #bebebe, -8px -8px 16px #ffffff;
-}
-
-.neuro-btn:hover {
-  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
-}
-
-.neuro-btn:active {
-  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
-}
-
-.neuro-btn.outlined {
-  background: transparent;
-  border: 2px solid #4a5568;
-  box-shadow: none;
 }
 
 /* ========== RESPONSIVE ========== */
@@ -682,14 +446,14 @@
     gap: 0.5rem;
   }
 
-  .filter-btn {
+  .beds-management .apm-btn--filter {
     padding: 10px 14px !important;
     font-size: 0.8rem !important;
   }
 
   .beds-grid {
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1rem;
   }
 
   .area-section {
@@ -722,7 +486,7 @@
     gap: 0.5rem;
   }
 
-  .filter-btn {
+  .beds-management .apm-btn--filter {
     padding: 8px 12px !important;
     font-size: 0.75rem !important;
     flex: 1 1 auto;
@@ -730,43 +494,12 @@
   }
 
   .beds-grid {
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    gap: 0.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0.75rem;
   }
 
-  .bed-card {
-    padding: 0.75rem;
-  }
-
-  .bed-number {
-    font-size: 1rem;
-  }
-
-  .status-badge {
-    font-size: 0.7rem;
-    padding: 3px 8px;
-  }
-
-  .modal-content {
-    width: 95%;
-    max-width: 95%;
-  }
-
-  .modal-header {
-    padding: 1.5rem 1.5rem 1rem;
-  }
-
-  .modal-body {
-    padding: 1.5rem;
-  }
-
-  .modal-footer {
-    padding: 1rem 1.5rem 1.5rem;
-    flex-direction: column;
-  }
-
-  .neuro-btn {
-    width: 100%;
+  .apm-area-card {
+    padding: 1.15rem;
   }
 }
 
@@ -779,22 +512,14 @@
     padding: 0.75rem;
   }
 
-  .filter-btn {
+  .beds-management .apm-btn--filter {
     padding: 8px 10px !important;
     font-size: 0.7rem !important;
     min-width: calc(50% - 0.25rem);
   }
 
   .beds-grid {
-    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-  }
-
-  .bed-card {
-    padding: 0.5rem;
-  }
-
-  .bed-number {
-    font-size: 0.9rem;
+    grid-template-columns: 1fr;
   }
 
   .bed-actions {
@@ -807,21 +532,4 @@
     height: 24px;
     font-size: 12px;
   }
-
-  .modal-content {
-    width: 98%;
-    border-radius: 20px;
-  }
-
-  .modal-header h3 {
-    font-size: 1.2rem;
-  }
-
-  .neuro-input,
-  .neuro-select {
-    font-size: 0.9rem;
-    padding: 12px 16px;
-  }
 }
-
-

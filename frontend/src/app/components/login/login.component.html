@@ -44,7 +44,7 @@
             [attr.aria-label]="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
             [attr.title]="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
           >
-            {{ showPassword ? '🙈' : '👁️' }}
+            <app-hero-icon [name]="showPassword ? 'eye-slash' : 'eye'" />
           </button>
         </div>
       </div>

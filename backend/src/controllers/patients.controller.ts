@@ -19,6 +19,7 @@ export class PatientsController {
       const areaIdQ = req.query.areaId as string | undefined;
       const hasBedQ = req.query.hasBed as string | undefined;
       const assignedToIdQ = req.query.assignedToId as string | undefined;
+      const assignmentStatusQ = req.query.assignmentStatus as string | undefined;
 
       const patientRepository = AppDataSource.getRepository(Patient);
       
@@ -86,6 +87,12 @@ export class PatientsController {
             queryBuilder.where('patient.assignedToId = :assignedToId', { assignedToId: atId });
           }
         }
+      }
+
+      if (assignmentStatusQ && (assignmentStatusQ === 'pending' || assignmentStatusQ === 'assigned')) {
+        queryBuilder.andWhere('patient.assignmentStatus = :assignmentStatus', {
+          assignmentStatus: assignmentStatusQ,
+        });
       }
 
       // Paginación
@@ -307,6 +314,8 @@ export class PatientsController {
       patient.treatmentHistory = treatmentHistory || null;
       patient.pendingTasks = pendingTasks || null;
       patient.isActive = true;
+      patient.assignmentStatus = 'pending';
+      patient.lastAssignmentAt = null;
 
       await patientRepository.save(patient);
 
@@ -375,7 +384,6 @@ export class PatientsController {
       const assignedToIdBody = req.body.assignedToId;
 
       const patientRepository = AppDataSource.getRepository(Patient);
-      const bedRepository = AppDataSource.getRepository(Bed);
       const patient = await patientRepository.findOne({ where: { id: patientId } });
 
       if (!patient) {
@@ -390,40 +398,38 @@ export class PatientsController {
         return;
       }
 
-      // Si es una enfermera, verificar que el paciente esté asignado a su área
+      // Enfermería: mismo criterio de acceso que saveObservation (enfermera asignada o cama en su área)
       const authReq = req as AuthRequest;
       const user = authReq.user;
-      if (user && user.role === UserRole.NURSE && user.assignedAreaId) {
-        // Verificar que el paciente esté en una cama del área de la enfermera
-        try {
-          if (patient.bedId) {
-            const bed = await bedRepository.findOne({ where: { id: patient.bedId } });
-            if (!bed || bed.areaId !== user.assignedAreaId) {
-              sendErrorResponse(res, 403, 'No tienes permisos para actualizar este paciente', 'FORBIDDEN');
-              return;
-            }
-          } else {
-            sendErrorResponse(res, 403, 'Paciente no asignado a una cama', 'FORBIDDEN');
-            return;
-          }
-        } catch (error: any) {
-          // Si bedId no existe, permitir la actualización (asumiendo que no hay restricción de área)
-          if (error?.code === 'ER_BAD_FIELD_ERROR' && error?.message?.includes('bedId')) {
-            logger.warn('⚠️ Columna bedId no encontrada. Saltando verificación de área para enfermera.');
-          } else {
-            throw error;
-          }
+      if (user && user.role === UserRole.NURSE) {
+        const gate = await assertNurseCanAccessPatient(user.id, user.assignedAreaId, patientId);
+        if (!gate.ok) {
+          sendErrorResponse(
+            res,
+            gate.status ?? 403,
+            gate.message ?? 'No tienes permisos para actualizar este paciente',
+            'FORBIDDEN',
+          );
+          return;
         }
-        // Enfermería: observaciones, alergias, necesidades, observaciones generales, diagnóstico (historial clínico)
-        if (firstName !== undefined || lastName !== undefined || identificationNumber !== undefined ||
-            dateOfBirth !== undefined || gender !== undefined || phone !== undefined ||
-            address !== undefined || emergencyContact !== undefined ||
-            emergencyPhone !== undefined || emergencyRelation !== undefined || isActive !== undefined) {
+        if (
+          firstName !== undefined ||
+          lastName !== undefined ||
+          identificationNumber !== undefined ||
+          dateOfBirth !== undefined ||
+          gender !== undefined ||
+          phone !== undefined ||
+          address !== undefined ||
+          emergencyContact !== undefined ||
+          emergencyPhone !== undefined ||
+          emergencyRelation !== undefined ||
+          isActive !== undefined
+        ) {
           sendErrorResponse(
             res,
             403,
             'Solo puedes actualizar diagnóstico (historial clínico), observaciones médicas, alergias, necesidades especiales y observaciones generales',
-            'FORBIDDEN'
+            'FORBIDDEN',
           );
           return;
         }
@@ -475,6 +481,8 @@ export class PatientsController {
         }
         if (assignedToIdBody === null || assignedToIdBody === '') {
           (patient as any).assignedToId = null;
+          (patient as any).assignmentStatus = 'pending';
+          (patient as any).lastAssignmentAt = null;
         } else {
           const aid = parseInt(String(assignedToIdBody), 10);
           if (isNaN(aid)) {
@@ -482,6 +490,8 @@ export class PatientsController {
             return;
           }
           (patient as any).assignedToId = aid;
+          (patient as any).assignmentStatus = 'assigned';
+          (patient as any).lastAssignmentAt = new Date();
         }
       }
 

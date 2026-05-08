@@ -119,4 +119,3 @@ export class OverviewComponent implements OnInit, OnDestroy {
     this.liveCurrentShiftLabel = this.shiftRealtimeService.formatShiftLabel(currentShift);
   }
 }
-

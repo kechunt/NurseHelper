@@ -15,6 +15,7 @@ import {
   NurseShiftContext,
   TaskItem,
   type ClinicalObservationAppendScope,
+  type HandoverShiftSlot,
 } from '../../services/nurse.service';
 import { AuthService } from '../../services/auth.service';
 import { PharmacyService, type MedicationRequest } from '../../services/pharmacy.service';
@@ -186,10 +187,13 @@ import {
 } from './nurse-dashboard-handover-messages.helpers';
 import {
   NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_EMPTY_CSV_WARNING,
+  NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_EMPTY_EXCEL_WARNING,
   NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_NO_PERIOD_WARNING,
+  NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_SUCCESS_EXCEL_TOAST,
   NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_SUCCESS_TOAST,
   nurseDashboardNurseReportsExportCsvErrorMessage,
   nurseDashboardNurseReportsLoadErrorMessage,
+  nurseDashboardNurseReportsExportExcelErrorMessage,
 } from './nurse-dashboard-nurse-reports-messages.helpers';
 import {
   NURSE_DASHBOARD_MEDICATION_SLOT_DELETE_ONLY_PENDING_WARNING,
@@ -421,11 +425,15 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
   nurseReportsStart: Date | null = null;
   nurseReportsEnd: Date | null = null;
 
-  /** Nota de entrega de turno (área + día). */
+  /** Nota de entrega de turno (área + día + franja). */
   showHandoverModal = false;
   handoverDate = '';
+  handoverShift: HandoverShiftSlot = 'morning';
   handoverBody = '';
   handoverSaving = false;
+  handoverPendingNotice = false;
+  handoverCanAcknowledge = false;
+  private handoverReadKeyForCurrentNote: string | null = null;
 
   /** Periodo del historial (fecha del evento). */
   historyFilter: 'all' | 'today' | 'week' | 'month' = 'all';
@@ -597,8 +605,10 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
     v.pendingTaskDetail = this.pendingTaskDetail;
     v.showHandoverModal = this.showHandoverModal;
     v.handoverDate = this.handoverDate;
+    v.handoverShift = this.handoverShift;
     v.handoverBody = this.handoverBody;
     v.handoverSaving = this.handoverSaving;
+    v.handoverCanAcknowledge = this.handoverCanAcknowledge;
     v.showNurseReportsModal = this.showNurseReportsModal;
     v.nurseReportsPeriodLabel = this.nurseReportsPeriodLabel;
     v.nurseReportsLoading = this.nurseReportsLoading;
@@ -685,6 +695,7 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
     }).subscribe({
       next: ({ tasks, medications, shiftContext }) => {
         this.nurseShiftContext = shiftContext;
+        this.refreshHandoverPendingNotice();
 
         // Procesar tareas
         this.allTasksGroupedByHour = tasks || [];
@@ -707,6 +718,7 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
         );
 
         this.nurseShiftContext = null;
+        this.handoverPendingNotice = false;
         this.allTasksGroupedByHour = [];
         this.tasksGroupedByHour = [];
         this.medicationsForPharmacy = [];
@@ -1261,9 +1273,71 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
     });
   }
 
+  downloadNurseReportExcel(kind: 'medication' | 'compliance'): void {
+    if (!this.nurseReportsStart || !this.nurseReportsEnd) {
+      this.toastService.warning(NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_NO_PERIOD_WARNING);
+      return;
+    }
+    this.nurseReportsExporting = true;
+    const start = this.nurseReportsStart;
+    const end = this.nurseReportsEnd;
+    const slug = `${start.toISOString().slice(0, 10)}_${end.toISOString().slice(0, 10)}`;
+    this.reportService.exportReport(kind, 'excel', start, end).subscribe({
+      next: (blob) => {
+        this.nurseReportsExporting = false;
+        if (!blob || blob.size === 0) {
+          this.toastService.warning(NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_EMPTY_EXCEL_WARNING);
+          return;
+        }
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `reporte-${kind}-${slug}.xlsx`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        this.toastService.success(NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_SUCCESS_EXCEL_TOAST);
+      },
+      error: (err) => {
+        this.nurseReportsExporting = false;
+        const msg = nurseDashboardNurseReportsExportExcelErrorMessage(err, readNurseDashboardHttpErrorMessage);
+        this.toastService.error(msg);
+      },
+    });
+  }
+
+  private inferHandoverShiftFromContext(): HandoverShiftSlot {
+    const s = this.nurseShiftContext?.shiftSlot;
+    return s === 'afternoon' || s === 'night' || s === 'morning' ? s : 'morning';
+  }
+
+  private currentShiftSlotFallback(): HandoverShiftSlot {
+    const h = new Date().getHours();
+    if (h >= 6 && h < 14) return 'morning';
+    if (h >= 14 && h < 22) return 'afternoon';
+    return 'night';
+  }
+
+  private previousShiftTarget(baseDateYmd: string, currentShift: HandoverShiftSlot): { date: string; shift: HandoverShiftSlot } {
+    if (currentShift === 'afternoon') {
+      return { date: baseDateYmd, shift: 'morning' };
+    }
+    if (currentShift === 'night') {
+      return { date: baseDateYmd, shift: 'afternoon' };
+    }
+    const d = new Date(`${baseDateYmd}T12:00:00`);
+    d.setDate(d.getDate() - 1);
+    return { date: formatLocalDateIsoYmd(d), shift: 'night' };
+  }
+
   openHandoverModal(): void {
     this.showHandoverModal = true;
-    this.handoverDate = new Date().toISOString().split('T')[0];
+    const today = formatLocalDateIsoYmd(new Date());
+    const currentShift = this.nurseShiftContext?.shiftSlot ?? this.inferHandoverShiftFromContext() ?? this.currentShiftSlotFallback();
+    const prev = this.previousShiftTarget(today, currentShift);
+    this.handoverDate = prev.date;
+    this.handoverShift = prev.shift;
     this.handoverBody = '';
     this.reloadHandoverForDate();
   }
@@ -1271,9 +1345,19 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
   closeHandoverModal(): void {
     this.showHandoverModal = false;
     this.handoverSaving = false;
+    this.handoverCanAcknowledge = false;
+    this.handoverReadKeyForCurrentNote = null;
   }
 
   onHandoverDateChange(): void {
+    this.reloadHandoverForDate();
+  }
+
+  onHandoverShiftPick(slot: HandoverShiftSlot): void {
+    this.handoverShift = slot;
+  }
+
+  onHandoverShiftChange(): void {
     this.reloadHandoverForDate();
   }
 
@@ -1281,13 +1365,85 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
     if (!this.handoverDate || !isValidIsoYmdDateString(this.handoverDate)) {
       return;
     }
-    this.nurseService.getHandoverNote(this.handoverDate).subscribe({
+    this.nurseService.getHandoverNote(this.handoverDate, this.handoverShift).subscribe({
       next: (res) => {
         this.handoverBody = res.note?.body ?? '';
+        const n = res.note;
+        if (n?.id && n?.updatedAt) {
+          const key = this.handoverReadStorageKey(
+            n.noteDate || this.handoverDate,
+            this.handoverShift,
+            n.id,
+            n.updatedAt
+          );
+          this.handoverReadKeyForCurrentNote = key;
+          this.handoverCanAcknowledge = !this.isHandoverRead(key);
+        } else {
+          this.handoverReadKeyForCurrentNote = null;
+          this.handoverCanAcknowledge = false;
+        }
       },
       error: () => {
         this.handoverBody = '';
+        this.handoverReadKeyForCurrentNote = null;
+        this.handoverCanAcknowledge = false;
         this.toastService.warning(NURSE_DASHBOARD_HANDOVER_LOAD_WARNING);
+      },
+    });
+  }
+
+  acknowledgeHandoverRead(): void {
+    if (!this.handoverReadKeyForCurrentNote) {
+      return;
+    }
+    this.markHandoverRead(this.handoverReadKeyForCurrentNote);
+    this.handoverCanAcknowledge = false;
+    this.refreshHandoverPendingNotice();
+    this.toastService.success('Nota marcada como leída.');
+  }
+
+  private handoverReadStorageKey(
+    noteDate: string,
+    shift: HandoverShiftSlot,
+    noteId: number,
+    updatedAt: string
+  ): string {
+    const userId = this.authService.currentUser()?.id ?? 'anon';
+    return `handover_read:nurse:${String(userId)}:${noteDate}:${shift}:${String(noteId)}:${updatedAt}`;
+  }
+
+  private isHandoverRead(key: string): boolean {
+    try {
+      return localStorage.getItem(key) === '1';
+    } catch {
+      return false;
+    }
+  }
+
+  private markHandoverRead(key: string): void {
+    try {
+      localStorage.setItem(key, '1');
+    } catch {
+      // noop
+    }
+  }
+
+  private refreshHandoverPendingNotice(): void {
+    const today = formatLocalDateIsoYmd(new Date());
+    const currentShift = this.nurseShiftContext?.shiftSlot ?? this.currentShiftSlotFallback();
+    const prev = this.previousShiftTarget(today, currentShift);
+    this.nurseService.getHandoverNote(prev.date, prev.shift).subscribe({
+      next: (res) => {
+        const n = res.note;
+        if (!n?.body?.trim() || !n?.id || !n?.updatedAt) {
+          this.handoverPendingNotice = false;
+          return;
+        }
+        const key = this.handoverReadStorageKey(prev.date, prev.shift, n.id, n.updatedAt);
+        this.handoverPendingNotice = !this.isHandoverRead(key);
+      },
+      error: () => {
+        this.handoverPendingNotice = false;
       },
     });
   }
@@ -1301,10 +1457,11 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
       return;
     }
     this.handoverSaving = true;
-    this.nurseService.putHandoverNote(this.handoverDate, this.handoverBody).subscribe({
+    this.nurseService.putHandoverNote(this.handoverDate, this.handoverBody, this.handoverShift).subscribe({
       next: () => {
         this.handoverSaving = false;
         this.toastService.success(NURSE_DASHBOARD_HANDOVER_SAVE_SUCCESS_TOAST);
+        this.refreshHandoverPendingNotice();
         this.closeHandoverModal();
       },
       error: (err) => {
@@ -1758,7 +1915,10 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
         this.toastService.success(NURSE_DASHBOARD_PATIENT_DIAGNOSIS_SUCCESS_TOAST);
         this.loadPatientDetails(this.selectedPatient!.id);
       },
-      error: () => this.toastService.error(NURSE_DASHBOARD_PATIENT_DIAGNOSIS_ERROR_TOAST),
+      error: (error) => {
+        const msg = readNurseDashboardHttpErrorMessage(error, NURSE_DASHBOARD_PATIENT_DIAGNOSIS_ERROR_TOAST);
+        this.toastService.error(msg);
+      },
     });
   }
 
@@ -2700,7 +2860,7 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
           <td>${item.time || '—'}</td>
           <td>${item.type === 'medication' ? 'Medicamento' : 'Tratamiento'}</td>
           <td>${item.description || '—'} ${item.dosage ? `(${item.dosage})` : ''}</td>
-          <td>${item.completed ? '✅ Completado' : item.notCompleted ? '⚠️ No realizado' : '⏳ Pendiente'}</td>
+          <td>${item.completed ? 'Completado' : item.notCompleted ? 'No realizado' : 'Pendiente'}</td>
         </tr>
         `).join('')}
       </tbody>
@@ -2719,5 +2879,4 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
     `;
   }
 }
-
 

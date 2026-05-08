@@ -4,11 +4,12 @@ import { FormsModule } from '@angular/forms';
 import type { NurseDayHistoryItem, TaskItem } from '../../../services/nurse.service';
 import type { Patient } from '../nurse-dashboard.types';
 import { pendingTaskDescriptionPreview } from '../nurse-pending-task-description.helpers';
+import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
 
 @Component({
   selector: 'app-nurse-tasks-section',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, HeroIconComponent],
   templateUrl: './nurse-tasks-section.component.html',
   styleUrls: [
     '../../../shared/styles/admin-panel-responsive.css',

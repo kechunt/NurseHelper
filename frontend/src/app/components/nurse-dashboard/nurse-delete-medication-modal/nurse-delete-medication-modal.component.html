@@ -12,7 +12,7 @@
     (click)="$event.stopPropagation()"
   >
     <div class="modal-header">
-      <h3 id="nurse-delete-medication-dialog-title" i18n="@@nurseDeleteMedicationModal.title">🗑️ Eliminar Medicamento</h3>
+      <h3 id="nurse-delete-medication-dialog-title" i18n="@@nurseDeleteMedicationModal.title"><app-hero-icon name="trash" /> Eliminar Medicamento</h3>
       <button
         type="button"
         class="close-btn"
@@ -27,7 +27,7 @@
     <div class="modal-body">
       <div class="warning-box">
         <p i18n="@@nurseDeleteMedicationModal.warning">
-          ⚠️ Esta acción eliminará PERMANENTEMENTE todas las dosis futuras programadas.
+          <app-hero-icon name="exclamation-triangle" /> Esta acción eliminará PERMANENTEMENTE todas las dosis futuras programadas.
         </p>
       </div>
 

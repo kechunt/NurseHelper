@@ -4,6 +4,7 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } 
 import { Subject, forkJoin } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 import { AdminService, Patient, Area, Bed } from '../../../services/admin.service';
+import { AdminPatientBedAssignmentService } from '../../../services/admin-patient-bed-assignment.service';
 import { ToastService } from '../../../services/toast.service';
 import { ConfirmationService } from '../../../services/confirmation.service';
 import {
@@ -14,6 +15,15 @@ import { ExportService } from '../../../shared/services/export.service';
 import { PaginationComponent, PaginationConfig } from '../../../shared/components/pagination/pagination.component';
 import { DebounceDirective } from '../../../shared/directives/debounce.directive';
 import { AdminTableRowActionsModalComponent } from '../../../shared/components/admin-table-row-actions-modal/admin-table-row-actions-modal.component';
+import { NursePatientModalShellComponent, NursePatientModalTabId } from '../../nurse-dashboard/nurse-patient-modal-shell/nurse-patient-modal-shell.component';
+import type { Patient as NursePatient } from '../../nurse-dashboard/nurse-dashboard.types';
+import type { MedicationTodaySlot } from '../../nurse-dashboard/medication-today-slot.model';
+import type { TreatmentTodayItem } from '../../nurse-dashboard/treatment-today-item.model';
+import type { TreatmentRecord as NurseTreatmentRecord } from '../../nurse-dashboard/nurse-treatment-record.model';
+import type { HistoryOutcomeFilter, HistoryPeriodFilter } from '../../nurse-dashboard/nurse-patient-history.helpers';
+import { buildAdminPatientModalViewModel } from '../shared/admin-patient-modal-adapter';
+import { AdminToggleButtonComponent } from '../../../shared/components/admin-toggle-button/admin-toggle-button.component';
+import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
 
 // Interfaces para el formulario extendido
 interface Medication {
@@ -52,6 +62,9 @@ interface PendingTask {
     PaginationComponent,
     DebounceDirective,
     AdminTableRowActionsModalComponent,
+    NursePatientModalShellComponent,
+    AdminToggleButtonComponent,
+    HeroIconComponent,
   ],
   templateUrl: './patients-management.component.html',
   styleUrl: './patients-management.component.css',
@@ -97,8 +110,21 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
   nurses: any[] = [];
   
   // Modal de edición
-  showEditModal = false;
+  showUnifiedPatientModal = false;
   selectedPatient: Patient | null = null;
+  unifiedPatient: NursePatient | null = null;
+  unifiedActiveTab: NursePatientModalTabId = 'medications';
+  unifiedNewDiagnosisNote = '';
+  unifiedNewMedicalObservationNote = '';
+  unifiedNewAllergiesNote = '';
+  unifiedNewSpecialNeedsNote = '';
+  unifiedNewGeneralObservationNote = '';
+  unifiedIsSavingObservation = false;
+  unifiedHistoryFilter: HistoryPeriodFilter = 'all';
+  unifiedHistoryOutcomeFilter: HistoryOutcomeFilter = 'all';
+  unifiedMedicationSlots: MedicationTodaySlot[] = [];
+  unifiedTreatmentSlots: TreatmentTodayItem[] = [];
+  unifiedHistoryRecords: NurseTreatmentRecord[] = [];
   /** Fila de la tabla: acciones en hoja inferior (móvil / tabla limpia). */
   patientRowActionsTarget: Patient | null = null;
   activeTab: string = 'personal';
@@ -132,6 +158,7 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
 
   constructor(
     private adminService: AdminService,
+    private bedAssign: AdminPatientBedAssignmentService,
     private fb: FormBuilder,
     private toastService: ToastService,
     private confirmationService: ConfirmationService,
@@ -217,12 +244,15 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
     isActive?: boolean;
     areaId?: number;
     assignedToId?: number;
+    assignmentStatus?: 'pending' | 'assigned';
     hasBed?: boolean;
   } {
     const st = this.selectedStatusFilter;
     const isActive = st === 'active' ? true : st === 'inactive' ? false : undefined;
     const areaId = this.selectedAreaFilter ? parseInt(this.selectedAreaFilter, 10) : undefined;
-    const assignedToId = this.selectedNurseFilter ? parseInt(this.selectedNurseFilter, 10) : undefined;
+    const isUnassignedFilter = this.selectedNurseFilter === '__unassigned__';
+    const assignedToId = !isUnassignedFilter && this.selectedNurseFilter ? parseInt(this.selectedNurseFilter, 10) : undefined;
+    const assignmentStatus: 'pending' | 'assigned' | undefined = isUnassignedFilter ? 'pending' : undefined;
     let hasBed: boolean | undefined;
     if (this.selectedBedFilter === 'assigned') {
       hasBed = true;
@@ -234,6 +264,7 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
       isActive,
       areaId: areaId != null && !isNaN(areaId) ? areaId : undefined,
       assignedToId: assignedToId != null && !isNaN(assignedToId) ? assignedToId : undefined,
+      assignmentStatus,
       hasBed,
     };
   }
@@ -276,7 +307,7 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
       })
       .subscribe({
         next: (res) => {
-          this.patients = res.items.map((p) => this.enrichPatientRow(p));
+          this.patients = this.sortPatientsByAssignment(res.items.map((p) => this.enrichPatientRow(p)));
           this.paginatedPatients = this.patients;
           this.paginationConfig = {
             ...this.paginationConfig,
@@ -345,6 +376,48 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
    */
   trackByPatientId(index: number, patient: Patient): number {
     return patient.id || index;
+  }
+
+  getAssignedNurseDisplay(patient: Patient): string {
+    const assigned = patient.assignedTo;
+    if (assigned?.firstName || assigned?.lastName) {
+      return `${assigned.firstName || ''} ${assigned.lastName || ''}`.trim();
+    }
+
+    const assignedToId = patient.assignedToId;
+    if (assignedToId != null) {
+      const nurse = this.nurses.find((n) => n?.id === assignedToId);
+      if (nurse) {
+        return `${nurse.firstName || ''} ${nurse.lastName || ''}`.trim();
+      }
+    }
+
+    return 'Sin asignar';
+  }
+
+  private isPatientUnassigned(patient: Patient): boolean {
+    return this.getAssignedNurseDisplay(patient) === 'Sin asignar';
+  }
+
+  private sortPatientsByAssignment(patients: Patient[]): Patient[] {
+    return [...patients].sort((a, b) => {
+      const aUnassigned = this.isPatientUnassigned(a);
+      const bUnassigned = this.isPatientUnassigned(b);
+      if (aUnassigned !== bUnassigned) {
+        return aUnassigned ? -1 : 1;
+      }
+
+      const nurseCmp = this
+        .getAssignedNurseDisplay(a)
+        .localeCompare(this.getAssignedNurseDisplay(b), 'es', { sensitivity: 'base' });
+      if (nurseCmp !== 0) {
+        return nurseCmp;
+      }
+
+      const aName = `${a.lastName || ''} ${a.firstName || ''}`.trim();
+      const bName = `${b.lastName || ''} ${b.firstName || ''}`.trim();
+      return aName.localeCompare(bName, 'es', { sensitivity: 'base' });
+    });
   }
 
   /**
@@ -523,9 +596,8 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
     const mh = typeof formValue.medicalHistory === 'string' ? formValue.medicalHistory.trim() : '';
     const mo = typeof formValue.medicalObservations === 'string' ? formValue.medicalObservations.trim() : '';
     const go = typeof formValue.generalObservations === 'string' ? formValue.generalObservations.trim() : '';
-    if (mh) {
-      patientData.medicalHistory = mh;
-    }
+    // Siempre enviamos diagnóstico/historial clínico (aunque vaya vacío) para mantener consistente el alta.
+    patientData.medicalHistory = mh;
     if (mo) {
       patientData.medicalObservations = mo;
     }
@@ -550,22 +622,32 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
         
         // Si hay una cama para asignar, asignar el paciente
         if (bedIdToAssign && patientId) {
-          this.adminService.assignPatientToBed(parseInt(bedIdToAssign), patientId).subscribe({
-            next: () => {
-              this.toastService.success(`Paciente ${formValue.firstName} ${formValue.lastName} ingresado exitosamente`);
-              this.resetForm();
-              this.loadPatientList(true);
-              this.loadBeds();
-              this.loading = false;
-            },
-            error: (error) => {
-              const errorMessage = error.error?.message || error.message || 'Error desconocido';
-              this.toastService.warning(`Paciente creado pero sin cama asignada: ${errorMessage}`);
-              this.resetForm();
-              this.loadPatientList(true);
-              this.loading = false;
-            },
-          });
+          const bid = parseInt(bedIdToAssign, 10);
+          const bedRow = this.allBeds.find((b) => b.id === bid);
+          const hint = `${formValue.firstName} ${formValue.lastName}`.trim() || 'Paciente';
+          this.bedAssign
+            .assignPatientToBed({
+              bedId: bid,
+              patientId,
+              areaId: bedRow?.areaId ?? (formValue.selectedAreaId ? Number(formValue.selectedAreaId) : undefined),
+              patientHint: hint,
+            })
+            .subscribe({
+              next: () => {
+                this.toastService.success(`Paciente ${formValue.firstName} ${formValue.lastName} ingresado exitosamente`);
+                this.resetForm();
+                this.loadPatientList(true);
+                this.loadBeds();
+                this.loading = false;
+              },
+              error: (error) => {
+                const errorMessage = error.error?.message || error.message || 'Error desconocido';
+                this.toastService.warning(`Paciente creado pero sin cama asignada: ${errorMessage}`);
+                this.resetForm();
+                this.loadPatientList(true);
+                this.loading = false;
+              },
+            });
         } else if (formValue.selectedAreaId && this.availableBeds.length === 0) {
           this.toastService.warning(`Paciente ${formValue.firstName} ${formValue.lastName} creado, pero no hay camas disponibles en el área seleccionada`);
           this.resetForm();
@@ -661,7 +743,13 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
       next: (fullPatient) => {
         const normalized = this.enrichPatientRow(fullPatient as any);
         this.selectedPatient = normalized;
-        this.activeTab = 'personal';
+        const vm = buildAdminPatientModalViewModel(normalized);
+        this.unifiedPatient = vm.patient;
+        this.unifiedMedicationSlots = vm.medicationsSlots;
+        this.unifiedTreatmentSlots = vm.treatmentsSlots;
+        this.unifiedHistoryRecords = vm.historyRecords;
+        this.unifiedActiveTab = 'medications';
+        this.showUnifiedPatientModal = true;
 
         this.editForm = {
           firstName: normalized.firstName || '',
@@ -692,7 +780,6 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
           this.availableBeds = [];
         }
 
-        this.showEditModal = true;
         this.cdr.markForCheck();
       },
       error: (error) => {
@@ -703,8 +790,32 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
   }
 
   closeEditModal(): void {
-    this.showEditModal = false;
+    this.showUnifiedPatientModal = false;
     this.selectedPatient = null;
+    this.unifiedPatient = null;
+    this.unifiedMedicationSlots = [];
+    this.unifiedTreatmentSlots = [];
+    this.unifiedHistoryRecords = [];
+  }
+
+  unifiedSaveDiagnosis(text: string): void {
+    const id = this.selectedPatient?.id;
+    if (!id || !this.unifiedPatient) {
+      return;
+    }
+    const medicalHistory = (text ?? '').trim();
+    this.adminService.updatePatient(id, { medicalHistory }).subscribe({
+      next: () => {
+        this.unifiedPatient!.diagnosis = medicalHistory;
+        this.editForm.medicalHistory = medicalHistory;
+        this.toastService.success('Diagnóstico guardado.');
+        this.cdr.markForCheck();
+      },
+      error: (error) => {
+        const msg = error.error?.message || error.message || 'No se pudo guardar el diagnóstico';
+        this.toastService.error(msg);
+      },
+    });
   }
 
   loadBedsForAreaEdit(areaId: number): void {
@@ -784,21 +895,31 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
               return;
             }
 
-            this.adminService.assignPatientToBed(bedIdToAssign, this.selectedPatient!.id!).subscribe({
-              next: () => {
-                this.toastService.success('Cambios guardados exitosamente');
-                this.closeEditModal();
-                this.loadPatientList(false);
-                this.loadBeds();
-              },
-              error: (error) => {
-                const errorMessage = error.error?.message || 'Datos guardados, pero hubo error al asignar cama';
-                this.toastService.warning(errorMessage);
-                this.closeEditModal();
-                this.loadPatientList(false);
-                this.loadBeds();
-              }
-            });
+            const bedRow = this.allBeds.find((b) => b.id === bedIdToAssign);
+            const hint =
+              `${this.selectedPatient!.firstName} ${this.selectedPatient!.lastName}`.trim() || 'Paciente';
+            this.bedAssign
+              .assignPatientToBed({
+                bedId: bedIdToAssign,
+                patientId: this.selectedPatient!.id!,
+                areaId: bedRow?.areaId,
+                patientHint: hint,
+              })
+              .subscribe({
+                next: () => {
+                  this.toastService.success('Cambios guardados exitosamente');
+                  this.closeEditModal();
+                  this.loadPatientList(false);
+                  this.loadBeds();
+                },
+                error: (error) => {
+                  const errorMessage = error.error?.message || 'Datos guardados, pero hubo error al asignar cama';
+                  this.toastService.warning(errorMessage);
+                  this.closeEditModal();
+                  this.loadPatientList(false);
+                  this.loadBeds();
+                },
+              });
           };
 
           if (currentBedId) {
@@ -1024,4 +1145,3 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
     }
   }
 }
-

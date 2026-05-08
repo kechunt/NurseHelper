@@ -5,6 +5,7 @@ import { NurseShift } from '../entities/NurseShift';
 import { ShiftAttendance, ShiftAttendanceStatus } from '../entities/ShiftAttendance';
 import { User, UserRole } from '../entities/User';
 import { logger } from '../utils/logger';
+import { patientAssignmentService } from '../services/patient-assignment.service';
 
 export const getShifts = async (req: Request, res: Response) => {
   try {
@@ -405,7 +406,7 @@ export const getShiftAttendance = async (req: Request, res: Response) => {
 
 export const saveShiftAttendance = async (req: Request, res: Response) => {
   try {
-    const { date, shiftId, attendance } = req.body;
+    const { date, shiftId, attendance, autoHandoff } = req.body;
     const authReq = req as any;
     const recordedBy = authReq.user?.id || null;
 
@@ -457,13 +458,48 @@ export const saveShiftAttendance = async (req: Request, res: Response) => {
       savedRows.push(await attendanceRepo.save(row));
     }
 
-    res.json({
+    const response: any = {
       message: 'Asistencia guardada exitosamente',
       saved: savedRows.length,
-    });
+    };
+
+    if (autoHandoff === true) {
+      response.handoff = await patientAssignmentService.autoAssignForShift({
+        date: String(date),
+        shiftId: shiftIdNumber,
+      });
+    }
+
+    res.json(response);
   } catch (error) {
     logger.error('Error al guardar asistencia del turno:', error);
     res.status(500).json({ message: 'Error al guardar asistencia del turno' });
+  }
+};
+
+export const runShiftHandoff = async (req: Request, res: Response) => {
+  try {
+    const date = typeof req.body?.date === 'string' ? req.body.date : undefined;
+    const shiftIdRaw = req.body?.shiftId;
+    const shiftId =
+      shiftIdRaw === null || shiftIdRaw === undefined || shiftIdRaw === ''
+        ? undefined
+        : parseInt(String(shiftIdRaw), 10);
+    if (shiftIdRaw !== undefined && shiftIdRaw !== null && shiftIdRaw !== '' && Number.isNaN(shiftId)) {
+      return res.status(400).json({ message: 'shiftId invalido' });
+    }
+
+    const result = await patientAssignmentService.autoAssignForShift({
+      date,
+      shiftId: shiftId ?? undefined,
+    });
+    res.json({
+      message: 'Handoff ejecutado correctamente',
+      ...result,
+    });
+  } catch (error) {
+    logger.error('Error al ejecutar handoff de turno:', error);
+    res.status(500).json({ message: 'Error al ejecutar handoff de turno' });
   }
 };
 

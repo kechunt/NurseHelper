@@ -105,6 +105,17 @@ function sortMergedNotesDesc(a: MergedClinicalNoteDto, b: MergedClinicalNoteDto)
   return (b.id ?? 0) - (a.id ?? 0);
 }
 
+/** Una línea para cabeceras (p. ej. modal medicación): todas las notas de diagnóstico unidas. */
+export function buildDiagnosisHeaderLine(mergedDiagnosisNotes: MergedClinicalNoteDto[]): string {
+  const bodies = mergedDiagnosisNotes
+    .map((n) => (n.body ?? '').trim())
+    .filter((b) => b.length > 0);
+  if (bodies.length === 0) {
+    return 'Sin diagnóstico';
+  }
+  return bodies.join(' · ');
+}
+
 export function mergeDbNotesWithLegacyColumn(
   dbNotes: PatientClinicalNote[],
   legacyColumn: string | null | undefined,

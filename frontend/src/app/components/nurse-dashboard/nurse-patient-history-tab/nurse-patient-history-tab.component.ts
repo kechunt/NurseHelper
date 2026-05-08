@@ -2,6 +2,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import type { TreatmentRecord } from '../nurse-treatment-record.model';
 import { AdminTableRowActionsModalComponent } from '../../../shared/components/admin-table-row-actions-modal/admin-table-row-actions-modal.component';
+import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
 import {
   type HistoryOutcomeFilter,
   type HistoryPeriodFilter,
@@ -13,7 +14,7 @@ import {
 @Component({
   selector: 'app-nurse-patient-history-tab',
   standalone: true,
-  imports: [CommonModule, AdminTableRowActionsModalComponent],
+  imports: [CommonModule, AdminTableRowActionsModalComponent, HeroIconComponent],
   templateUrl: './nurse-patient-history-tab.component.html',
   styleUrls: [
     '../../../shared/styles/admin-table-unified.css',

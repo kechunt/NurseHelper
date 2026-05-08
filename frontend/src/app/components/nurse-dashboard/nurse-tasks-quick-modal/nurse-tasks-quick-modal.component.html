@@ -13,7 +13,7 @@
     (click)="$event.stopPropagation()"
   >
     <div class="modal-header">
-      <h3 id="nurse-tasks-quick-dialog-title" i18n="@@nurseTasksQuickModal.title">⏰ Tareas pendientes</h3>
+      <h3 id="nurse-tasks-quick-dialog-title" i18n="@@nurseTasksQuickModal.title"><app-hero-icon name="clock" /> Tareas pendientes</h3>
       <button
         type="button"
         class="close-btn"
@@ -31,7 +31,7 @@
       </p>
       <div class="filters-container">
         <div class="filter-box">
-          <label for="nurse-tasks-quick-patient" i18n="@@nurseTasksQuickModal.patientFilterLabel">👤 Paciente</label>
+          <label for="nurse-tasks-quick-patient" i18n="@@nurseTasksQuickModal.patientFilterLabel"><app-hero-icon name="user-circle" /> Paciente</label>
           <select
             id="nurse-tasks-quick-patient"
             class="neuro-select neuro-select-inline"
@@ -45,7 +45,7 @@
           </select>
         </div>
         <div class="filter-box">
-          <label for="nurse-tasks-quick-hour" i18n="@@nurseTasksQuickModal.hourFilterLabel">⏰ Horario</label>
+          <label for="nurse-tasks-quick-hour" i18n="@@nurseTasksQuickModal.hourFilterLabel"><app-hero-icon name="clock" /> Horario</label>
           <select
             id="nurse-tasks-quick-hour"
             class="neuro-select neuro-select-inline"
@@ -64,7 +64,7 @@
         <div class="filter-box filter-box-actions" *ngIf="patientFilter || hourFilter !== 'current'">
           <label class="filter-box-spacer" aria-hidden="true">&nbsp;</label>
           <button type="button" class="neuro-btn neuro-btn-sm" (click)="clearFiltersRequested.emit()" i18n="@@nurseTasksQuickModal.clearFilters">
-            🔄 Limpiar filtros
+            <app-hero-icon name="arrow-path" /> Limpiar filtros
           </button>
         </div>
       </div>
@@ -98,18 +98,18 @@
                 </td>
                 <td>
                   <div class="task-type-plain">
-                    <span *ngIf="task.type === 'medication'" i18n="@@nurseTasksQuickModal.typeMedication">💊 Medicamento</span>
-                    <span *ngIf="task.type === 'treatment'" i18n="@@nurseTasksQuickModal.typeTreatment">🩺 Tratamiento</span>
+                    <span *ngIf="task.type === 'medication'" i18n="@@nurseTasksQuickModal.typeMedication"><app-hero-icon name="beaker" /> Medicamento</span>
+                    <span *ngIf="task.type === 'treatment'" i18n="@@nurseTasksQuickModal.typeTreatment"><app-hero-icon name="shield-check" /> Tratamiento</span>
                     <span
                       *ngIf="task.type === 'check' || (!task.type || (task.type !== 'medication' && task.type !== 'treatment'))"
                       i18n="@@nurseTasksQuickModal.typeCheck"
-                    >🩺 Chequeo</span>
+                    ><app-hero-icon name="shield-check" /> Chequeo</span>
                   </div>
                 </td>
                 <td>
                   <div class="patient-name-compact">{{ task.patientName }}</div>
                   <div *ngIf="task.notCompletedReason" class="reason-text-compact" title="{{ task.notCompletedReason }}">
-                    ⚠️ {{ task.notCompletedReason }}
+                    <app-hero-icon name="exclamation-triangle" /> {{ task.notCompletedReason }}
                   </div>
                 </td>
                 <td>
@@ -128,17 +128,17 @@
                     *ngIf="!task.completed && !task.notCompleted"
                     class="status-indicator pending"
                     i18n="@@nurseTasksQuickModal.statusPending"
-                  >⏳ Pendiente</span>
+                  ><app-hero-icon name="clock" /> Pendiente</span>
                   <span
                     *ngIf="task.completed"
                     class="status-indicator done"
                     i18n="@@nurseTasksQuickModal.statusDone"
-                  >✓ Completada</span>
+                  ><app-hero-icon name="check-circle" /> Completada</span>
                   <span
                     *ngIf="task.notCompleted"
                     class="status-indicator not-done"
                     i18n="@@nurseTasksQuickModal.statusNotDone"
-                  >✗ No realizada</span>
+                  ><app-hero-icon name="x-circle" /> No realizada</span>
                 </td>
               </tr>
             </ng-container>
@@ -146,7 +146,7 @@
         </table>
       </div>
       <div *ngIf="hourGroups.length === 0" class="empty-state empty-state--compact">
-        <div class="empty-icon">⏰</div>
+        <div class="empty-icon"><app-hero-icon name="clock" /></div>
         <p class="empty-message empty-message--compact" i18n="@@nurseTasksQuickModal.emptyMessage">
           No hay tareas para los filtros seleccionados
         </p>
@@ -154,7 +154,7 @@
     </div>
     <div class="modal-footer nurse-reports-modal-footer">
       <button type="button" class="neuro-btn neuro-btn-sm" (click)="openFullModule.emit()" i18n="@@nurseTasksQuickModal.openFullTasks">
-        ⏰ Abrir módulo Tareas
+        <app-hero-icon name="clock" /> Abrir módulo Tareas
       </button>
       <button type="button" class="btn-primary-neuro" (click)="dismissed.emit()" i18n="@@nurseTasksQuickModal.close">Cerrar</button>
     </div>

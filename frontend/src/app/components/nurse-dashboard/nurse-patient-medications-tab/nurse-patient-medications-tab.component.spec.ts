@@ -58,6 +58,33 @@ describe('NursePatientMedicationsTabComponent', () => {
     expect(root).toContain('Hipertensión');
   });
 
+  it('cuando no hay diagnóstico muestra CTA para agregarlo', () => {
+    fixture.componentRef.setInput('diagnosis', '');
+    fixture.detectChanges();
+    const root = fixture.nativeElement.textContent;
+    expect(root).toContain('Sin diagnóstico');
+    expect(root).toContain('Agregar');
+  });
+
+  it('emite saveDiagnosis al guardar desde el editor rápido', () => {
+    fixture.componentRef.setInput('diagnosis', '');
+    fixture.detectChanges();
+    let saved = '';
+    const sub = fixture.componentInstance.saveDiagnosis.subscribe((v) => {
+      saved = v;
+    });
+    const addBtn = fixture.nativeElement.querySelector('.btn-diagnosis-summary') as HTMLButtonElement;
+    expect(addBtn).toBeTruthy();
+    addBtn.click();
+    fixture.detectChanges();
+    fixture.componentInstance.diagnosisDraft = 'DM2 bien controlada';
+    const saveBtn = fixture.nativeElement.querySelector('.btn-diagnosis-summary--primary') as HTMLButtonElement;
+    expect(saveBtn).toBeTruthy();
+    saveBtn.click();
+    expect(saved).toBe('DM2 bien controlada');
+    sub.unsubscribe();
+  });
+
   it('emite addMedication al pulsar agregar', () => {
     let n = 0;
     const sub = fixture.componentInstance.addMedication.subscribe(() => n++);

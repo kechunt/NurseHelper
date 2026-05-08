@@ -13,7 +13,7 @@
     (click)="$event.stopPropagation()"
   >
     <div class="modal-header">
-      <h3 id="nurse-pending-task-detail-dialog-title" i18n="@@nursePendingTaskDetailModal.title">📋 Detalle de tarea</h3>
+      <h3 id="nurse-pending-task-detail-dialog-title" i18n="@@nursePendingTaskDetailModal.title"><app-hero-icon name="clipboard-document" /> Detalle de tarea</h3>
       <button
         type="button"
         class="close-btn"
@@ -62,7 +62,7 @@
           (click)="completeRequested.emit(task)"
           i18n="@@nursePendingTaskDetailModal.actionComplete"
         >
-          ✓ Marcar completada
+          <app-hero-icon name="check-circle" /> Marcar completada
         </button>
         <button
           type="button"
@@ -71,7 +71,7 @@
           (click)="notCompletedRequested.emit(task)"
           i18n="@@nursePendingTaskDetailModal.actionNotCompleted"
         >
-          ✗ No realizada
+          <app-hero-icon name="x-circle" /> No realizada
         </button>
         <button
           type="button"
@@ -80,7 +80,7 @@
           (click)="postponeRequested.emit(task)"
           i18n="@@nursePendingTaskDetailModal.actionPostpone"
         >
-          ⏱️ Posponer
+          <app-hero-icon name="clock" /> Posponer
         </button>
       </div>
       <button type="button" class="neuro-btn neuro-btn-sm nurse-pending-task-detail-close-footer" (click)="dismissed.emit()" i18n="@@nursePendingTaskDetailModal.close">

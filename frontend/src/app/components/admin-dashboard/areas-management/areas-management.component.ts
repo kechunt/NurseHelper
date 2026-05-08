@@ -1,17 +1,29 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AdminService, Area, Bed } from '../../../services/admin.service';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import {
+  AdminService,
+  Area,
+  AreasShiftCoverageNurse,
+  AreasShiftCoveragePayload,
+  Bed,
+} from '../../../services/admin.service';
 import { ToastService } from '../../../services/toast.service';
+import { AdminPatientBedAssignmentService } from '../../../services/admin-patient-bed-assignment.service';
 import { ConfirmationService } from '../../../services/confirmation.service';
 import { AdminTableRowActionsModalComponent } from '../../../shared/components/admin-table-row-actions-modal/admin-table-row-actions-modal.component';
+import { AdminToggleButtonComponent } from '../../../shared/components/admin-toggle-button/admin-toggle-button.component';
+import { AdminShiftCoverageAlertNavigationService } from '../../../services/admin-shift-coverage-alert-navigation.service';
+import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
 
 @Component({
   selector: 'app-areas-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, AdminTableRowActionsModalComponent],
+  imports: [CommonModule, FormsModule, AdminTableRowActionsModalComponent, AdminToggleButtonComponent, HeroIconComponent],
   templateUrl: './areas-management.component.html',
-  styleUrl: './areas-management.component.css',
+  styleUrls: ['./areas-management.component.css', '../../../shared/styles/admin-assign-modal.shared.css'],
 })
 export class AreasManagementComponent implements OnInit {
   areas: Area[] = [];
@@ -19,6 +31,8 @@ export class AreasManagementComponent implements OnInit {
   patients: any[] = [];
   rawPatients: any[] = [];
   loading = false;
+  shiftCoverage: AreasShiftCoveragePayload | null = null;
+  shiftCoverageError = false;
   showModal = false;
   showBedsSelectionModal = false;
   showEditBedModal = false;
@@ -69,8 +83,10 @@ export class AreasManagementComponent implements OnInit {
 
   constructor(
     private adminService: AdminService,
+    private bedAssign: AdminPatientBedAssignmentService,
     private toastService: ToastService,
-    private confirmationService: ConfirmationService
+    private confirmationService: ConfirmationService,
+    private shiftCoverageNav: AdminShiftCoverageAlertNavigationService
   ) {}
 
   ngOnInit(): void {
@@ -139,9 +155,21 @@ export class AreasManagementComponent implements OnInit {
 
   loadAreas(): void {
     this.loading = true;
-    this.adminService.getAreas().subscribe({
-      next: (areas) => {
+    forkJoin({
+      areas: this.adminService.getAreas(false),
+      coverage: this.adminService.getAreasShiftCoverage().pipe(
+        catchError(() => {
+          this.shiftCoverageError = true;
+          return of(null);
+        })
+      ),
+    }).subscribe({
+      next: ({ areas, coverage }) => {
         this.areas = areas;
+        this.shiftCoverage = coverage;
+        if (coverage) {
+          this.shiftCoverageError = false;
+        }
         this.normalizePatientsData();
         this.loading = false;
       },
@@ -149,6 +177,58 @@ export class AreasManagementComponent implements OnInit {
         console.error('Error loading areas:', error);
         this.loading = false;
       },
+    });
+  }
+
+  getAreaShiftNurses(areaId?: number | null): AreasShiftCoverageNurse[] {
+    if (areaId == null || !this.shiftCoverage) {
+      return [];
+    }
+    return this.shiftCoverage.areas.find((r) => r.areaId === areaId)?.nurses ?? [];
+  }
+
+  /** Aviso cuando no hay enfermera presente en turno para esta área. */
+  getAreaShiftNotice(areaId?: number | null): string | null {
+    if (areaId == null) {
+      return null;
+    }
+    if (!this.shiftCoverage) {
+      return this.shiftCoverageError ? 'No se pudo cargar la cobertura del turno.' : null;
+    }
+    const nurses = this.getAreaShiftNurses(areaId);
+    if (nurses.length > 0) {
+      return null;
+    }
+    if (!this.shiftCoverage.hasActiveShift) {
+      return this.shiftCoverage.message ?? 'No hay turno activo en este horario.';
+    }
+    if (this.shiftCoverage.message) {
+      return this.shiftCoverage.message;
+    }
+    return 'Ninguna enfermera del área está registrada como presente en el turno actual.';
+  }
+
+  /** Línea secundaria con nombre y horario del turno vigente. */
+  shiftCoverageTurnHint(): string {
+    const c = this.shiftCoverage;
+    if (!c?.hasActiveShift || !c.shiftName) {
+      return '';
+    }
+    return c.shiftTime ? `${c.shiftName} · ${c.shiftTime}` : c.shiftName;
+  }
+
+  shiftCoverageAlertClickable(area: Area): boolean {
+    return area.id != null && !!this.getAreaShiftNotice(area.id);
+  }
+
+  onShiftCoverageAlertClick(area: Area): void {
+    if (!this.shiftCoverageAlertClickable(area) || area.id == null) {
+      return;
+    }
+    const c = this.shiftCoverage;
+    this.shiftCoverageNav.openResolveShiftCoverageForArea(area.id, {
+      hasGlobalCoverageMessage: !!c?.message,
+      hasActiveShift: !!c?.hasActiveShift,
     });
   }
 
@@ -439,7 +519,17 @@ export class AreasManagementComponent implements OnInit {
       next: () => {
         // Si cambió el paciente, actualizar la asignación
         if (this.editBedForm.patientId !== (this.selectedBed?.patientId || null)) {
-          this.adminService.assignPatientToBed(this.selectedBed!.id!, this.editBedForm.patientId).subscribe({
+          const pid = this.editBedForm.patientId;
+          const assign$ =
+            pid === null
+              ? this.adminService.assignPatientToBed(this.selectedBed!.id!, null)
+              : this.bedAssign.assignPatientToBed({
+                  bedId: this.selectedBed!.id!,
+                  patientId: pid,
+                  areaId: this.selectedBed!.areaId,
+                  patientHint: this.patientHintFromList(pid),
+                });
+          assign$.subscribe({
             next: () => {
               this.loadBeds();
               this.loadAreas();
@@ -831,18 +921,28 @@ export class AreasManagementComponent implements OnInit {
       return;
     }
 
-    // Asignar paciente a la cama seleccionada
-    this.adminService.assignPatientToBed(this.assignAreaForm.bedId, this.selectedPatientForArea.id).subscribe({
-      next: () => {
-        this.toastService.success(`Paciente ${this.selectedPatientForArea.firstName} ${this.selectedPatientForArea.lastName} asignado al área exitosamente`);
-        this.closeAssignAreaModal();
-        this.loadBeds();
-        this.loadPatients();
-      },
-      error: (error) => {
-        this.toastService.error(error.error?.message || 'Error al asignar paciente al área');
-      },
-    });
+    const hint =
+      `${this.selectedPatientForArea.firstName} ${this.selectedPatientForArea.lastName}`.trim() || 'Paciente';
+    this.bedAssign
+      .assignPatientToBed({
+        bedId: this.assignAreaForm.bedId,
+        patientId: this.selectedPatientForArea.id,
+        areaId: this.assignAreaForm.areaId,
+        patientHint: hint,
+      })
+      .subscribe({
+        next: () => {
+          this.toastService.success(
+            `Paciente ${this.selectedPatientForArea.firstName} ${this.selectedPatientForArea.lastName} asignado al área exitosamente`
+          );
+          this.closeAssignAreaModal();
+          this.loadBeds();
+          this.loadPatients();
+        },
+        error: (error) => {
+          this.toastService.error(error.error?.message || 'Error al asignar paciente al área');
+        },
+      });
   }
 
   /**
@@ -923,46 +1023,56 @@ export class AreasManagementComponent implements OnInit {
 
     const oldBedId = this.selectedPatientForArea.bedId;
     const newBedId = this.changeAreaForm.bedId;
+    const hint =
+      `${this.selectedPatientForArea.firstName} ${this.selectedPatientForArea.lastName}`.trim() || 'Paciente';
+
+    const assignNewBed = (): void => {
+      this.bedAssign
+        .assignPatientToBed({
+          bedId: newBedId,
+          patientId: this.selectedPatientForArea.id,
+          areaId: this.changeAreaForm.areaId,
+          patientHint: hint,
+        })
+        .subscribe({
+          next: () => {
+            const msg =
+              oldBedId && oldBedId !== newBedId
+                ? `Paciente ${this.selectedPatientForArea.firstName} ${this.selectedPatientForArea.lastName} movido al área exitosamente`
+                : `Paciente ${this.selectedPatientForArea.firstName} ${this.selectedPatientForArea.lastName} asignado al área exitosamente`;
+            this.toastService.success(msg);
+            this.closeChangeAreaModal();
+            this.loadBeds();
+            this.loadPatients();
+          },
+          error: (error) => {
+            this.toastService.error(error.error?.message || 'Error al asignar cama');
+          },
+        });
+    };
 
     // Si cambió la cama, primero liberar la anterior y luego asignar la nueva
     if (oldBedId && oldBedId !== newBedId) {
       // Liberar cama anterior
       this.adminService.assignPatientToBed(oldBedId, null).subscribe({
-        next: () => {
-          // Asignar nueva cama
-          this.adminService.assignPatientToBed(newBedId, this.selectedPatientForArea.id).subscribe({
-            next: () => {
-              this.toastService.success(`Paciente ${this.selectedPatientForArea.firstName} ${this.selectedPatientForArea.lastName} movido al área exitosamente`);
-              this.closeChangeAreaModal();
-              this.loadBeds();
-              this.loadPatients();
-            },
-            error: (error) => {
-              this.toastService.error(error.error?.message || 'Error al asignar nueva cama');
-            },
-          });
-        },
-        error: (error) => {
+        next: () => assignNewBed(),
+        error: () => {
           this.toastService.error('Error al liberar cama anterior');
         },
       });
     } else if (!oldBedId) {
       // Solo asignar nueva cama
-      this.adminService.assignPatientToBed(newBedId, this.selectedPatientForArea.id).subscribe({
-        next: () => {
-          this.toastService.success(`Paciente ${this.selectedPatientForArea.firstName} ${this.selectedPatientForArea.lastName} asignado al área exitosamente`);
-          this.closeChangeAreaModal();
-          this.loadBeds();
-          this.loadPatients();
-        },
-        error: (error) => {
-          this.toastService.error(error.error?.message || 'Error al asignar cama');
-        },
-      });
+      assignNewBed();
     } else {
       // Misma cama, solo cerrar modal
       this.closeChangeAreaModal();
     }
+  }
+
+  private patientHintFromList(patientId: number): string {
+    const p = this.patients.find((x: any) => x.id === patientId);
+    if (!p) return 'Paciente';
+    return `${p.firstName ?? ''} ${p.lastName ?? ''}`.trim() || 'Paciente';
   }
 }
 

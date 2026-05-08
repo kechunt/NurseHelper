@@ -2,20 +2,20 @@
   <section class="nurse-inner-well nurse-tasks-pending-well" aria-labelledby="nurse-tasks-pending-title">
     <div id="tasks-section" class="nurse-module-stack nurse-tasks-pending-stack">
     <div class="section-header">
-      <h2 id="nurse-tasks-pending-title" class="section-title">⏰ Tareas Pendientes (Próximas Horas)</h2>
+      <h2 id="nurse-tasks-pending-title" class="section-title"><app-hero-icon name="clock" /> Tareas Pendientes (Próximas Horas)</h2>
       <div class="tasks-actions header-actions">
         <button type="button" class="neuro-btn neuro-btn-sm" (click)="addTaskClick.emit()" title="Agregar nueva tarea">
-          ➕ Nueva Tarea
+          <app-hero-icon name="plus-circle" /> Nueva Tarea
         </button>
         <button type="button" class="neuro-btn neuro-btn-sm" (click)="addMedicationFromTasksClick.emit()" title="Agregar medicamento">
-          💊 Nuevo Medicamento
+          <app-hero-icon name="beaker" /> Nuevo Medicamento
         </button>
       </div>
     </div>
 
       <div class="filters-container">
       <div class="filter-box">
-        <label for="tasks-patient-filter">👤 Filtrar por Paciente</label>
+        <label for="tasks-patient-filter"><app-hero-icon name="user-circle" /> Filtrar por Paciente</label>
         <select
           id="tasks-patient-filter"
           class="neuro-select neuro-select-inline"
@@ -30,7 +30,7 @@
       </div>
 
       <div class="filter-box">
-        <label for="tasks-hour-filter">⏰ Filtrar por Horario</label>
+        <label for="tasks-hour-filter"><app-hero-icon name="clock" /> Filtrar por Horario</label>
         <select
           id="tasks-hour-filter"
           class="neuro-select neuro-select-inline"
@@ -49,7 +49,7 @@
 
       <div class="filter-box filter-box-actions" *ngIf="tasksPatientFilter || tasksHourFilter !== 'current'">
         <label class="filter-box-spacer" aria-hidden="true">&nbsp;</label>
-        <button type="button" class="neuro-btn neuro-btn-sm" (click)="clearTaskFilters.emit()">🔄 Limpiar Filtros</button>
+        <button type="button" class="neuro-btn neuro-btn-sm" (click)="clearTaskFilters.emit()"><app-hero-icon name="arrow-path" /> Limpiar Filtros</button>
       </div>
     </div>
 
@@ -82,10 +82,10 @@
               </td>
               <td>
                 <div class="task-type-plain">
-                  <span *ngIf="task.type === 'medication'">💊 Medicamento</span>
-                  <span *ngIf="task.type === 'treatment'">🩺 Tratamiento</span>
+                  <span *ngIf="task.type === 'medication'"><app-hero-icon name="beaker" /> Medicamento</span>
+                  <span *ngIf="task.type === 'treatment'"><app-hero-icon name="shield-check" /> Tratamiento</span>
                   <span *ngIf="task.type === 'check' || (!task.type || (task.type !== 'medication' && task.type !== 'treatment'))"
-                    >🩺 Chequeo</span>
+                    ><app-hero-icon name="shield-check" /> Chequeo</span>
                 </div>
               </td>
               <td>
@@ -109,10 +109,10 @@
     </div>
 
     <div *ngIf="tasksGroupedByHour.length === 0" class="empty-state">
-      <div class="empty-icon">⏰</div>
+      <div class="empty-icon"><app-hero-icon name="clock" /></div>
       <p class="empty-message">No hay tareas pendientes para los filtros seleccionados</p>
       <p class="empty-hint" *ngIf="tasksPatientFilter || tasksHourFilter !== 'current'">
-        Prueba cambiando los filtros o haciendo click en "🔄 Limpiar Filtros"
+        Prueba cambiando los filtros o haciendo click en "Limpiar Filtros"
       </p>
     </div>
     </div>
@@ -121,7 +121,7 @@
   <section class="nurse-inner-well nurse-day-history-nested" aria-labelledby="nurse-day-history-heading">
     <div class="nurse-day-history-toolbar">
       <div class="nurse-day-history-heading-block">
-        <h2 id="nurse-day-history-heading" class="section-title nurse-day-history-title">📜 Historial del día</h2>
+        <h2 id="nurse-day-history-heading" class="section-title nurse-day-history-title"><app-hero-icon name="document-text" /> Historial del día</h2>
         <p class="section-subtitle nurse-day-history-subtitle">
           Medicación, tratamientos y chequeos con resultado (completada o no realizada).
           <span *ngIf="!dayHistoryExpanded" class="nurse-day-history-collapsed-hint"> Pulsa <strong>Mostrar</strong> para ver la tabla.</span>
@@ -135,7 +135,7 @@
           (click)="exportDayHistoryCsvClick.emit()"
           title="Descargar CSV del día mostrado"
         >
-          📥 Exportar CSV
+          <app-hero-icon name="document-text" /> Exportar CSV
         </button>
         <button
           type="button"
@@ -144,7 +144,7 @@
           [attr.aria-expanded]="dayHistoryExpanded"
           aria-controls="nurse-tasks-day-history-panel"
         >
-          {{ dayHistoryExpanded ? '▼ Ocultar' : '▶ Mostrar' }}
+          {{ dayHistoryExpanded ? 'Ocultar' : 'Mostrar' }}
         </button>
       </div>
     </div>
@@ -158,7 +158,7 @@
     >
       <div class="filters-container nurse-day-history-filters">
         <div class="filter-box">
-          <label for="tasks-history-date">📅 Ver otro día</label>
+          <label for="tasks-history-date"><app-hero-icon name="calendar-days" /> Ver otro día</label>
           <input
             id="tasks-history-date"
             type="date"
@@ -194,16 +194,16 @@
               </td>
               <td>
                 <div class="task-type-plain">
-                  <span *ngIf="row.type === 'medication'">💊 Medicamento</span>
-                  <span *ngIf="row.type === 'treatment'">🩺 Tratamiento</span>
-                  <span *ngIf="row.type === 'check'">🩺 Chequeo</span>
-                  <span *ngIf="row.type !== 'medication' && row.type !== 'treatment' && row.type !== 'check'">📋 Otro</span>
+                  <span *ngIf="row.type === 'medication'"><app-hero-icon name="beaker" /> Medicamento</span>
+                  <span *ngIf="row.type === 'treatment'"><app-hero-icon name="shield-check" /> Tratamiento</span>
+                  <span *ngIf="row.type === 'check'"><app-hero-icon name="shield-check" /> Chequeo</span>
+                  <span *ngIf="row.type !== 'medication' && row.type !== 'treatment' && row.type !== 'check'"><app-hero-icon name="clipboard-document" /> Otro</span>
                 </div>
               </td>
               <td>
                 <div class="patient-name-compact">{{ row.patientName }}</div>
                 <div *ngIf="row.missed && row.notCompletedReason" class="reason-text-compact" [title]="row.notCompletedReason">
-                  ⚠️ {{ row.notCompletedReason }}
+                  <app-hero-icon name="exclamation-triangle" /> {{ row.notCompletedReason }}
                 </div>
               </td>
               <td>
@@ -218,7 +218,8 @@
               <td>
                 <div class="nurse-day-history-result-cell">
                   <span class="status-indicator" [class.done]="row.completed" [class.not-done]="row.missed">
-                    {{ row.completed ? '✓ Completada' : '✗ No realizada' }}
+                    <app-hero-icon [name]="row.completed ? 'check-circle' : 'x-circle'" />
+                    {{ row.completed ? 'Completada' : 'No realizada' }}
                   </span>
                   <span *ngIf="row.recordedAtTime" class="nurse-day-history-record-time">{{ row.recordedAtTime }}</span>
                 </div>
@@ -229,7 +230,7 @@
       </div>
 
       <div *ngIf="!tasksDayHistoryLoading && !tasksDayHistoryError && tasksDayHistoryItems.length === 0" class="empty-state empty-state--compact">
-        <div class="empty-icon">📋</div>
+        <div class="empty-icon"><app-hero-icon name="clipboard-document" /></div>
         <p class="empty-message">No hay registros con resultado para esta fecha</p>
         <p class="empty-hint">Prueba otra fecha o revisa que las tareas se hayan marcado como completadas o no realizadas.</p>
       </div>

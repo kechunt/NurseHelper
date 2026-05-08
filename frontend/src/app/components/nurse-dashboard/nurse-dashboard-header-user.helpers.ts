@@ -17,5 +17,5 @@ export function nurseDashboardHeaderUserDisplayName(
 
 export function nurseDashboardHeaderUserPhoneLine(phone: unknown): string | null {
   const s = phone != null ? String(phone).trim() : '';
-  return s.length > 0 ? `📞 ${s}` : null;
+  return s.length > 0 ? s : null;
 }

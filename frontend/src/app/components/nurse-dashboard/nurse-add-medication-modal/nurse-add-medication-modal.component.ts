@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { NurseService } from '../../../services/nurse.service';
 import { ToastService } from '../../../services/toast.service';
 import { nurseWeekdaySelectOptionsMondayFirst } from '../nurse-dashboard-ui-i18n.helpers';
+import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
 import {
   NURSE_MODAL_ADD_MED_ERR_FALLBACK,
   NURSE_MODAL_ADD_MED_WARN_COMPLETE_FIELDS,
@@ -22,7 +23,7 @@ export interface NurseAddMedicationPatientOption {
 @Component({
   selector: 'app-nurse-add-medication-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, ModalFocusTrapDirective],
+  imports: [CommonModule, FormsModule, ModalFocusTrapDirective, HeroIconComponent],
   templateUrl: './nurse-add-medication-modal.component.html',
   styleUrls: [
     '../nurse-postpone-task-modal/nurse-postpone-task-modal.component.css',

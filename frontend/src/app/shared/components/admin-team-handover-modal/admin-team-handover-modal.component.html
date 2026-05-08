@@ -1,0 +1,84 @@
+<div
+  class="modal-backdrop modal-confirmation nurse-modal-backdrop-dim"
+  role="presentation"
+  (click)="onBackdropClick()"
+  style="z-index: 2280"
+>
+  <div
+    class="modal-content modal-small nurse-aux-modal"
+    appModalFocusTrap
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="admin-team-handover-dialog-title"
+    (click)="$event.stopPropagation()"
+  >
+    <div class="modal-header">
+      <h3 id="admin-team-handover-dialog-title">
+        <app-hero-icon name="chat-bubble-left-right"></app-hero-icon>
+        Nota de coordinación
+      </h3>
+      <button type="button" class="close-btn" aria-label="Cerrar" (click)="dismissed.emit()">✕</button>
+    </div>
+    <div class="modal-body medication-day-detail-body">
+      <div class="nurse-aux-modal__inset nurse-aux-modal__inset--compact">
+        <p class="handover-modal-intro">
+          Nota de paso de turno para <strong>tu equipo de coordinación</strong>: incidencias, avisos a dirección de enfermería,
+          pendientes para quien releva, etc.
+        </p>
+        <p class="handover-modal-intro handover-modal-intro--muted">
+          Se guarda una nota por <strong>día</strong> y por <strong>turno</strong> (mañana / tarde / noche). Quien entre puede
+          leerla o actualizarla; no aparece en el panel de enfermería.
+        </p>
+        <div class="input-group">
+          <label for="admin-team-handover-date">Fecha</label>
+          <input
+            id="admin-team-handover-date"
+            type="date"
+            class="neuro-input neuro-input-block"
+            [ngModel]="handoverDate"
+            (ngModelChange)="onDateChange($event)"
+          />
+        </div>
+        <div class="input-group">
+          <label for="admin-team-handover-shift">Turno</label>
+          <select
+            id="admin-team-handover-shift"
+            class="neuro-input neuro-input-block"
+            [ngModel]="handoverShift"
+            (ngModelChange)="onShiftChange($event)"
+          >
+            <option *ngFor="let s of shiftChoices" [ngValue]="s.value">{{ s.label }}</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label for="admin-team-handover-body">Contenido</label>
+          <textarea
+            id="admin-team-handover-body"
+            class="neuro-input neuro-textarea-block"
+            rows="6"
+            [ngModel]="handoverBody"
+            (ngModelChange)="handoverBodyChange.emit($event)"
+            placeholder="Temas prioritarios para el equipo de gestión…"
+          ></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer nurse-aux-modal__footer">
+      <button type="button" class="btn-primary-neuro" (click)="dismissed.emit()" [disabled]="handoverSaving">
+        Cancelar
+      </button>
+      <button
+        type="button"
+        class="btn-secondary-neuro"
+        *ngIf="handoverCanAcknowledge"
+        (click)="acknowledgeRequested.emit()"
+        [disabled]="handoverSaving"
+      >
+        Aceptar
+      </button>
+      <button type="button" class="btn-primary-neuro" (click)="saveRequested.emit()" [disabled]="handoverSaving">
+        {{ handoverSaving ? 'Guardando…' : 'Guardar' }}
+      </button>
+    </div>
+  </div>
+</div>

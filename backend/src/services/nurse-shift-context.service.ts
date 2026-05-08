@@ -1,11 +1,13 @@
 import { AppDataSource } from '../data-source';
-import { Shift } from '../entities/Shift';
+import { Shift, ShiftType } from '../entities/Shift';
 import { ShiftAttendance, ShiftAttendanceStatus } from '../entities/ShiftAttendance';
 
 export interface NurseShiftContextPayload {
   hasActiveShiftWindow: boolean;
   shiftName: string | null;
   shiftTime: string | null;
+  /** Tipo del turno en curso (para nota de entrega por turno); null si no hay ventana activa. */
+  shiftSlot: ShiftType | null;
   attendanceStatus: ShiftAttendanceStatus | null;
   onDuty: boolean;
   summary: string;
@@ -46,6 +48,7 @@ export async function buildNurseShiftContextPayload(nurseId: number): Promise<Nu
       hasActiveShiftWindow: false,
       shiftName: null,
       shiftTime: null,
+      shiftSlot: null,
       attendanceStatus: null,
       onDuty: false,
       summary: 'No hay un turno definido en horario en este momento.',
@@ -77,6 +80,7 @@ export async function buildNurseShiftContextPayload(nurseId: number): Promise<Nu
     hasActiveShiftWindow: true,
     shiftName: current.name,
     shiftTime: `${current.startTime} – ${current.endTime}`,
+    shiftSlot: current.type,
     attendanceStatus: status,
     onDuty,
     summary: onDuty

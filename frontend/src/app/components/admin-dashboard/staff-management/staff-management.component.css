@@ -6,6 +6,18 @@
   padding: 1rem;
 }
 
+.staff-assign-area-intro {
+  margin: 0 0 1rem;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: #718096;
+}
+
+.staff-assign-area-intro strong {
+  color: #4a5568;
+  font-weight: 600;
+}
+
 .section-header {
   display: flex;
   justify-content: space-between;
@@ -44,13 +56,17 @@
 }
 
 .neuro-btn.outlined {
-  background: transparent;
-  border: 2px solid #4a5568;
-  box-shadow: none;
+  background: #e0e5ec;
+  border: none;
+  box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
 }
 
 .neuro-btn.outlined:hover {
   box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+}
+
+.neuro-btn.outlined:active {
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
 }
 
 .neuro-btn:disabled {
@@ -316,6 +332,57 @@
   margin: 0;
 }
 
+.nurse-area-assigned {
+  margin: 0.45rem 0 0 0;
+  padding: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #4a5568;
+  line-height: 1.35;
+}
+
+.nurse-area-alert {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0.45rem 0 0 0;
+  padding: 0.45rem 0.55rem;
+  border: none;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: left;
+  cursor: pointer;
+  color: #9c4221;
+  background: rgba(237, 137, 54, 0.14);
+  box-shadow: inset 2px 2px 4px rgba(0, 0, 0, 0.06);
+  transition:
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+.nurse-area-alert:hover {
+  box-shadow:
+    inset 2px 2px 5px rgba(0, 0, 0, 0.07),
+    0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+.nurse-area-alert:focus-visible {
+  outline: 2px solid rgba(43, 108, 176, 0.55);
+  outline-offset: 2px;
+}
+
+.nurse-area-alert--on-shift {
+  font-weight: 700;
+  background: rgba(237, 137, 54, 0.22);
+}
+
+.nurse-area-alert__main {
+  display: block;
+}
+
 .nurse-status {
   padding: 6px 12px;
   border-radius: 8px;
@@ -377,7 +444,7 @@
 .nurse-phone {
   color: #4a5568;
   font-size: 0.85rem;
-  margin: 0.35rem 0 0 0;
+  margin: 0.4rem 0 0 0;
   font-weight: 500;
 }
 
@@ -392,7 +459,7 @@
 .staff-card-neuro-btn {
   padding: 8px 14px;
   font-size: 0.82rem;
-  border-radius: 12px;
+  border-radius: 999px;
 }
 
 .nurse-toggle-detail-btn {
@@ -465,7 +532,7 @@
 .staff-area-change-btn {
   padding: 6px 12px;
   font-size: 0.78rem;
-  border-radius: 10px;
+  border-radius: 999px;
   white-space: nowrap;
   flex-shrink: 0;
 }

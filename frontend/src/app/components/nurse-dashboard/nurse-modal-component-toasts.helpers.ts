@@ -73,6 +73,10 @@ export const NURSE_MODAL_POSTPONE_TASK_WARN_FUTURE = $localize`:@@nurseModal.pos
 // --- Editar cama ---
 export const NURSE_MODAL_EDIT_BED_WARN_LOAD_PATIENTS = $localize`:@@nurseModal.editBed.warnLoadPatients:No se pudieron cargar los pacientes del área`;
 
+export const NURSE_MODAL_EDIT_BED_WARN_LOAD_NURSES = $localize`:@@nurseModal.editBed.warnLoadNurses:No se pudieron cargar las enfermeras del área`;
+
+export const NURSE_MODAL_EDIT_BED_WARN_SELECT_NURSE = $localize`:@@nurseModal.editBed.warnSelectNurse:Seleccione una enfermera para asignar al paciente`;
+
 export const NURSE_MODAL_EDIT_BED_ERR_INVALID_BED = $localize`:@@nurseModal.editBed.errInvalidBed:Error: Cama no válida`;
 
 export const NURSE_MODAL_EDIT_BED_WARN_NUMBER_REQUIRED = $localize`:@@nurseModal.editBed.warnNumberRequired:El número de cama es requerido`;

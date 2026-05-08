@@ -9,7 +9,7 @@
     (click)="removeNotification(notification.id)"
   >
     <div class="toast-content">
-      <span class="toast-icon">{{ getIcon(notification.type) }}</span>
+      <span class="toast-icon"><app-hero-icon [name]="getIconName(notification.type)" /></span>
       <span class="toast-message">{{ notification.message }}</span>
     </div>
     <button class="toast-close" (click)="removeNotification(notification.id); $event.stopPropagation()">

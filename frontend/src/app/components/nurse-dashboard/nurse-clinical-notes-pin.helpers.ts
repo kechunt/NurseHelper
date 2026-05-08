@@ -57,7 +57,7 @@ export function sortClinicalNotesNewestFirst(notes: PatientClinicalNoteDto[]): P
 }
 
 /**
- * Vista compacta fuera del modal «Ver todas»: solo notas elegidas con 👁 ahí.
+ * Vista compacta fuera del modal «Ver todas»: solo notas elegidas como visibles ahí.
  * - Sin selección: 0 líneas (min 0).
  * - Con selección: orden guardado, máximo `max` (3).
  */

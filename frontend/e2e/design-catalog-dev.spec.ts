@@ -8,7 +8,7 @@ test.describe('Catálogo de diseño (solo desarrollo)', () => {
   test('/design-catalog muestra el catálogo neumórfico', async ({ page }) => {
     await page.goto('/design-catalog');
     await expect(page).not.toHaveURL(/\/login$/);
-    await expect(page.getByRole('heading', { name: /Catálogo de diseño/ })).toBeVisible({
+    await expect(page.getByRole('heading', { name: /Catálogo UI NurseHelper/ })).toBeVisible({
       timeout: 15000,
     });
   });

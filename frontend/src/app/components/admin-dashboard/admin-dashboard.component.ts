@@ -11,6 +11,9 @@ import { BedsManagementComponent } from './beds-management/beds-management.compo
 import { PatientsManagementComponent } from './patients-management/patients-management.component';
 import { SchedulesManagementComponent } from './schedules-management/schedules-management.component';
 import { DashboardUserProfileModalComponent } from '../../shared/components/dashboard-user-profile-modal/dashboard-user-profile-modal.component';
+import { AdminNursePickModalHostComponent } from '../../shared/components/admin-nurse-pick-modal-host/admin-nurse-pick-modal-host.component';
+import { StaffDashboardQuickActionsComponent } from '../../shared/components/staff-dashboard-quick-actions/staff-dashboard-quick-actions.component';
+import { HeroIconComponent } from '../../shared/components/hero-icon/hero-icon.component';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -19,6 +22,9 @@ import { DashboardUserProfileModalComponent } from '../../shared/components/dash
     CommonModule,
     RouterModule,
     DashboardUserProfileModalComponent,
+    AdminNursePickModalHostComponent,
+    HeroIconComponent,
+    StaffDashboardQuickActionsComponent,
     OverviewComponent,
     UsersManagementComponent,
     StaffManagementComponent,
@@ -62,7 +68,7 @@ export class AdminDashboardComponent implements OnInit {
   get headerUserPhoneLine(): string | null {
     const p = this.authService.currentUser()?.phone;
     const s = p != null ? String(p).trim() : '';
-    return s.length > 0 ? `📞 ${s}` : null;
+    return s.length > 0 ? s : null;
   }
 
   ngOnInit(): void {
@@ -161,4 +167,3 @@ export class AdminDashboardComponent implements OnInit {
   }
 
 }
-

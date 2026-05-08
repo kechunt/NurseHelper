@@ -1,7 +1,12 @@
 import { Component, EventEmitter, HostListener, Input, Output, ViewChild } from '@angular/core';
 import type { NurseDashboardOverlaysStackVm } from './nurse-dashboard-overlays-stack.vm';
 import { CommonModule } from '@angular/common';
-import type { ClinicalObservationAppendScope, MedicationForPharmacy, TaskItem } from '../../../services/nurse.service';
+import type {
+  ClinicalObservationAppendScope,
+  HandoverShiftSlot,
+  MedicationForPharmacy,
+  TaskItem,
+} from '../../../services/nurse.service';
 import type { TreatmentRecord } from '../nurse-treatment-record.model';
 import type { MedicationTodaySlot } from '../medication-today-slot.model';
 import type { TreatmentTodayItem } from '../treatment-today-item.model';
@@ -115,12 +120,16 @@ export class NurseDashboardOverlaysStackComponent {
 
   @Output() readonly handoverDateChange = new EventEmitter<string>();
   @Output() readonly handoverDateCommitted = new EventEmitter<void>();
+  @Output() readonly handoverShiftChange = new EventEmitter<HandoverShiftSlot>();
+  @Output() readonly handoverShiftCommitted = new EventEmitter<void>();
   @Output() readonly handoverBodyChange = new EventEmitter<string>();
   @Output() readonly handoverDismissed = new EventEmitter<void>();
+  @Output() readonly handoverAcknowledgeRequested = new EventEmitter<void>();
   @Output() readonly handoverSaveRequested = new EventEmitter<void>();
 
   @Output() readonly nurseReportsDismissed = new EventEmitter<void>();
   @Output() readonly nurseReportsCsvDownload = new EventEmitter<'compliance' | 'medication'>();
+  @Output() readonly nurseReportsExcelDownload = new EventEmitter<'compliance' | 'medication'>();
 
   @Output() readonly tasksQuickPatientFilterChange = new EventEmitter<string>();
   @Output() readonly tasksQuickHourFilterChange = new EventEmitter<string>();

@@ -12,7 +12,7 @@
     (click)="$event.stopPropagation()"
   >
     <div class="modal-header">
-      <h3 id="nurse-postpone-task-dialog-title" i18n="@@nursePostponeTaskModal.title">⏱️ Posponer Tarea</h3>
+      <h3 id="nurse-postpone-task-dialog-title" i18n="@@nursePostponeTaskModal.title"><app-hero-icon name="clock" /> Posponer Tarea</h3>
       <button
         type="button"
         class="close-btn"
@@ -56,7 +56,7 @@
         Cancelar
       </button>
       <button type="button" class="btn-primary-neuro" (click)="onConfirm()" [disabled]="!canSubmit" i18n="@@nursePostponeTaskModal.confirm">
-        ⏱️ Posponer Tarea
+        <app-hero-icon name="clock" /> Posponer Tarea
       </button>
     </div>
   </div>

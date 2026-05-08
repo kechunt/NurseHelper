@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ModalFocusTrapDirective } from '../../../shared/directives/modal-focus-trap.directive';
+import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
 
 export interface ReactivateMedicationModalMed {
   name: string;
@@ -10,7 +11,7 @@ export interface ReactivateMedicationModalMed {
 @Component({
   selector: 'app-nurse-reactivate-medication-modal',
   standalone: true,
-  imports: [CommonModule, ModalFocusTrapDirective],
+  imports: [CommonModule, ModalFocusTrapDirective, HeroIconComponent],
   templateUrl: './nurse-reactivate-medication-modal.component.html',
   styleUrls: [
     '../nurse-postpone-task-modal/nurse-postpone-task-modal.component.css',

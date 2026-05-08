@@ -101,6 +101,12 @@ export class Patient {
   @Column({ type: 'int', nullable: true })
   assignedToId?: number | null;
 
+  @Column({ type: 'varchar', length: 20, default: 'pending' })
+  assignmentStatus: 'pending' | 'assigned';
+
+  @Column({ type: 'datetime', nullable: true })
+  lastAssignmentAt?: Date | null;
+
   @ManyToOne(() => User, (user) => user.assignedPatients, { nullable: true })
   @JoinColumn({ name: 'assignedToId' })
   assignedTo: User | null;

@@ -1,0 +1,38 @@
+<div
+  *ngIf="nursePick.vm.open"
+  class="admin-assign-modal-backdrop"
+  role="presentation"
+  (click)="onBackdrop()"
+>
+  <div class="admin-assign-modal-content" (click)="$event.stopPropagation()">
+    <div class="admin-assign-modal-header">
+      <h3>Seleccionar enfermera</h3>
+      <button type="button" class="admin-assign-modal-close" aria-label="Cerrar" (click)="nursePick.cancelSelection()">
+        ✕
+      </button>
+    </div>
+    <div class="admin-assign-modal-body">
+      <p class="admin-assign-patient-hint">
+        Hay varias enfermeras en el área. Indique quién atenderá al paciente en este turno.
+        <span *ngIf="nursePick.vm.patientHint"><strong>{{ nursePick.vm.patientHint }}</strong></span>
+      </p>
+      <div class="admin-assign-nurse-radio-list" role="radiogroup" aria-label="Enfermera asignada">
+        <label *ngFor="let n of nursePick.vm.nurses" class="admin-assign-nurse-radio-row">
+          <input type="radio" name="adminNursePick" [value]="n.id" [(ngModel)]="nursePick.selectedNurseId" />
+          <span>{{ n.firstName }} {{ n.lastName }}</span>
+        </label>
+      </div>
+    </div>
+    <div class="admin-assign-modal-footer">
+      <button type="button" class="admin-assign-btn-neuro outlined" (click)="nursePick.cancelSelection()">Cancelar</button>
+      <button
+        type="button"
+        class="admin-assign-btn-neuro"
+        [disabled]="nursePick.selectedNurseId == null"
+        (click)="nursePick.confirmSelection()"
+      >
+        Confirmar
+      </button>
+    </div>
+  </div>
+</div>

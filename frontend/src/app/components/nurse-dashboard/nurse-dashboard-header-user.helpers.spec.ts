@@ -29,8 +29,8 @@ describe('nurse-dashboard-header-user.helpers', () => {
     });
 
     it('formatea teléfono no vacío', () => {
-      expect(nurseDashboardHeaderUserPhoneLine('+34123456789')).toBe('📞 +34123456789');
-      expect(nurseDashboardHeaderUserPhoneLine(600111222)).toBe('📞 600111222');
+      expect(nurseDashboardHeaderUserPhoneLine('+34123456789')).toBe('+34123456789');
+      expect(nurseDashboardHeaderUserPhoneLine(600111222)).toBe('600111222');
     });
   });
 });

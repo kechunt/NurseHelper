@@ -1,7 +1,8 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { forkJoin } from 'rxjs';
+import { ActivatedRoute, Router } from '@angular/router';
+import { forkJoin, Subscription } from 'rxjs';
 import { AdminService } from '../../../services/admin.service';
 import { User } from '../../../services/auth.service';
 import { ExportService } from '../../../shared/services/export.service';
@@ -33,6 +34,8 @@ import {
   ADMIN_CONFIRM_SCHEDULE_YES_CLEAR_NURSE,
 } from '../admin-confirmation-copy.helpers';
 import { AdminTableRowActionsModalComponent } from '../../../shared/components/admin-table-row-actions-modal/admin-table-row-actions-modal.component';
+import { AdminToggleButtonComponent } from '../../../shared/components/admin-toggle-button/admin-toggle-button.component';
+import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
 
 type Shift = ShiftInterface & { id: string };
 type WeeklySchedule = WeeklyScheduleInterface;
@@ -40,7 +43,7 @@ type WeeklySchedule = WeeklyScheduleInterface;
 @Component({
   selector: 'app-schedules-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, AdminTableRowActionsModalComponent],
+  imports: [CommonModule, FormsModule, AdminTableRowActionsModalComponent, AdminToggleButtonComponent, HeroIconComponent],
   templateUrl: './schedules-management.component.html',
   styleUrl: './schedules-management.component.css',
 })
@@ -53,10 +56,10 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
   
   // Turnos predefinidos (incluyendo descanso)
   shifts: any[] = [
-    { id: 'morning', name: 'Matutino', startTime: '07:00', endTime: '15:00', type: 'morning', icon: '🌅' },
-    { id: 'afternoon', name: 'Vespertino', startTime: '15:00', endTime: '23:00', type: 'afternoon', icon: '🌆' },
-    { id: 'night', name: 'Nocturno', startTime: '23:00', endTime: '07:00', type: 'night', icon: '🌙' },
-    { id: 'off', name: 'Descanso', startTime: '--:--', endTime: '--:--', type: 'off', icon: '🏖️' }
+    { id: 'morning', name: 'Matutino', startTime: '07:00', endTime: '15:00', type: 'morning', icon: 'clock' },
+    { id: 'afternoon', name: 'Vespertino', startTime: '15:00', endTime: '23:00', type: 'afternoon', icon: 'clock' },
+    { id: 'night', name: 'Nocturno', startTime: '23:00', endTime: '07:00', type: 'night', icon: 'clock' },
+    { id: 'off', name: 'Descanso', startTime: '--:--', endTime: '--:--', type: 'off', icon: 'calendar-days' }
   ];
   
   selectedShift: any = null;
@@ -108,6 +111,10 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
   /** Listado toma de lista: fila → acciones en modal. */
   attendanceListActionsItem: ShiftAttendanceItem | null = null;
   attendanceAreaFilter: number | null = null;
+  /** Deep link desde aviso de cobertura (Camas/Áreas): filtrar toma de lista por área. */
+  private attendanceAreaRoutePending: number | null = null;
+  private attendanceAreaRouteConsumed = false;
+  private attendanceAreaRouteSub?: Subscription;
   showHistoryModal = false;
   attendanceHistory: ShiftAttendanceHistoryItem[] = [];
   loadingHistory = false;
@@ -146,7 +153,9 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
     private exportService: ExportService,
     private shiftRealtimeService: ShiftRealtimeService,
     private confirmationService: ConfirmationService,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private router: Router,
+    private route: ActivatedRoute
   ) {}
 
   /** Promise resuelta al elegir día (`monday`…`sunday`) o cancelar. */
@@ -172,6 +181,10 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.attendanceAreaRouteSub = this.route.queryParamMap.subscribe(() => {
+      this.captureAttendanceAreaRouteIntent();
+    });
+    this.captureAttendanceAreaRouteIntent();
     this.initializeWeek();
     this.initializeAttendanceDate();
     this.loadShifts(); // Cargar turnos del backend primero
@@ -181,6 +194,8 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.attendanceAreaRouteSub?.unsubscribe();
+    this.attendanceAreaRouteSub = undefined;
     if (this.clockTimer) {
       clearInterval(this.clockTimer);
       this.clockTimer = null;
@@ -191,6 +206,58 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
     }
   }
 
+  private captureAttendanceAreaRouteIntent(): void {
+    const raw = this.route.snapshot.queryParamMap.get('attendanceAreaId');
+    if (!raw) {
+      return;
+    }
+    const id = parseInt(raw, 10);
+    if (!Number.isFinite(id)) {
+      return;
+    }
+    this.attendanceAreaRoutePending = id;
+    this.attendanceAreaRouteConsumed = false;
+    this.tryApplyAttendanceAreaRouteIntent();
+  }
+
+  private stripAttendanceAreaQueryParam(): void {
+    if (!this.route.snapshot.queryParamMap.has('attendanceAreaId')) {
+      return;
+    }
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { attendanceAreaId: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  }
+
+  private tryApplyAttendanceAreaRouteIntent(): void {
+    if (this.attendanceAreaRouteConsumed || this.attendanceAreaRoutePending == null) {
+      return;
+    }
+    if (!this.areas.length) {
+      return;
+    }
+    const id = this.attendanceAreaRoutePending;
+    const exists = this.areas.some((a: any) => Number(a.id) === id);
+    if (!exists) {
+      this.attendanceAreaRoutePending = null;
+      this.stripAttendanceAreaQueryParam();
+      this.toastService.warning('El área indicada no existe.');
+      return;
+    }
+    this.attendanceAreaRouteConsumed = true;
+    this.attendanceAreaRoutePending = null;
+    this.stripAttendanceAreaQueryParam();
+    this.attendanceAreaFilter = id;
+    this.showAttendanceNurseList = true;
+    this.attendanceSummaryFilter = 'all';
+    this.toastService.success(
+      'Toma de lista filtrada por esta área. Marca «Presente» o «Tarde» a quien cubra el turno.'
+    );
+  }
+
   initializeAttendanceDate(): void {
     const today = new Date().toISOString().split('T')[0];
     this.attendanceDate = today;
@@ -199,17 +266,17 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
   }
 
   loadShifts(): void {
-    console.log('🔄 Cargando turnos del backend...');
+    console.log(' Cargando turnos del backend...');
     this.shiftsService.getAllShifts().subscribe({
       next: (backendShifts) => {
-        console.log('📥 Turnos recibidos del backend:', backendShifts);
+        console.log(' Turnos recibidos del backend:', backendShifts);
         
         // Mapear turnos del backend a formato del componente
         // Mantener el formato con iconos y agregar el ID numérico del backend
         const shiftMap: { [key: string]: any } = {
-          'morning': { icon: '🌅', name: 'Matutino' },
-          'afternoon': { icon: '🌆', name: 'Vespertino' },
-          'night': { icon: '🌙', name: 'Nocturno' }
+          'morning': { icon: 'clock', name: 'Matutino' },
+          'afternoon': { icon: 'clock', name: 'Vespertino' },
+          'night': { icon: 'clock', name: 'Nocturno' }
         };
         
         // Actualizar turnos con datos del backend
@@ -233,17 +300,19 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
           startTime: '--:--', 
           endTime: '--:--', 
           type: 'off', 
-          icon: '🏖️' 
+          icon: 'calendar-days'
         });
         
-        console.log('✅ Turnos procesados:', this.shifts);
+        console.log(' Turnos procesados:', this.shifts);
         this.ensureSelectedAttendanceShift();
+        this.tryApplyAttendanceAreaRouteIntent();
       },
       error: (error) => {
-        console.error('❌ Error cargando turnos:', error);
+        console.error(' Error cargando turnos:', error);
         // Mantener turnos por defecto si falla la carga
-        console.warn('⚠️ Usando turnos por defecto');
+        console.warn(' Usando turnos por defecto');
         this.ensureSelectedAttendanceShift();
+        this.tryApplyAttendanceAreaRouteIntent();
       }
     });
   }
@@ -319,7 +388,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
         this.patients = Array.isArray(patients) ? patients : [];
         this.beds = Array.isArray(beds) ? beds : [];
         
-        console.log('📥 Datos cargados:', {
+        console.log(' Datos cargados:', {
           areas: this.areas.length,
           nurses: this.nurses.length,
           patients: this.patients.length,
@@ -330,22 +399,23 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
         if (this.selectedShiftAttendanceId) {
           this.loadShiftAttendance();
         }
+        this.tryApplyAttendanceAreaRouteIntent();
       },
       error: (error: any) => {
-        console.error('❌ Error loading data:', error);
+        console.error(' Error loading data:', error);
         this.loading = false;
       },
     });
   }
 
   loadWeeklySchedules(): void {
-    console.log('🔄 ========== CARGANDO TURNOS DESDE BD ==========');
-    console.log('📅 Semana:', this.weekStartDate);
+    console.log(' ========== CARGANDO TURNOS DESDE BD ==========');
+    console.log(' Semana:', this.weekStartDate);
     
     this.loading = true;
     this.shiftsService.getWeeklySchedule(this.weekStartDate).subscribe({
       next: (schedules) => {
-        console.log('✅ ========== TURNOS RECIBIDOS ==========');
+        console.log(' ========== TURNOS RECIBIDOS ==========');
         console.log(`Total recibidos: ${schedules.length}`);
         
         if (schedules.length > 0) {
@@ -363,7 +433,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
         
         this.loading = false;
         
-        console.log('✅ ========== CARGA COMPLETA ==========');
+        console.log(' ========== CARGA COMPLETA ==========');
         console.log(`Schedules en memoria: ${this.weeklySchedules.length}`);
         console.log(`Schedules filtrados: ${this.filteredSchedules.length}`);
         
@@ -374,7 +444,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
         console.log(`Schedules con turnos asignados: ${schedulesWithShifts.length}`);
       },
       error: (error) => {
-        console.error('❌ ========== ERROR CARGANDO TURNOS ==========');
+        console.error(' ========== ERROR CARGANDO TURNOS ==========');
         console.error('Status:', error.status);
         console.error('Message:', error.message);
         console.error('Error:', error.error);
@@ -389,7 +459,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
   }
 
   initializeWeeklySchedules(savedSchedules: any[] = []): void {
-    console.log('🔄 ========== INICIALIZANDO SCHEDULES ==========');
+    console.log(' ========== INICIALIZANDO SCHEDULES ==========');
     console.log(`Enfermeras totales: ${this.nurses.length}`);
     console.log(`Schedules guardados recibidos: ${savedSchedules.length}`);
     
@@ -409,7 +479,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
       const nurseId = typeof nurse.id === 'number' ? nurse.id : parseInt(String(nurse.id));
       
       if (isNaN(nurseId)) {
-        console.warn(`⚠️ Enfermera con ID inválido:`, nurse);
+        console.warn(` Enfermera con ID inválido:`, nurse);
         return null;
       }
       
@@ -429,7 +499,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
       const saved = schedulesMap.get(nurseId);
       
       if (saved) {
-        console.log(`\n✅ ${nurse.firstName} ${nurse.lastName} (ID: ${nurseId}) - Tiene turnos:`);
+        console.log(`\n ${nurse.firstName} ${nurse.lastName} (ID: ${nurseId}) - Tiene turnos:`);
         this.days.forEach(day => {
           const shiftType = (saved as any)[day];
           // El backend devuelve el tipo del turno ('morning', 'afternoon', 'night')
@@ -442,13 +512,13 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
           }
         });
       } else {
-        console.log(`⚠️ ${nurse.firstName} ${nurse.lastName} (ID: ${nurseId}) - Sin turnos`);
+        console.log(` ${nurse.firstName} ${nurse.lastName} (ID: ${nurseId}) - Sin turnos`);
       }
 
       return nurseSchedule;
     }).filter(s => s !== null);
     
-    console.log(`\n✅ Schedules inicializados: ${this.weeklySchedules.length}`);
+    console.log(`\n Schedules inicializados: ${this.weeklySchedules.length}`);
     
     // Contar schedules con turnos
     const schedulesWithShifts = this.weeklySchedules.filter(s => {
@@ -457,7 +527,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
         return value && value !== '';
       });
     });
-    console.log(`📊 Schedules con turnos: ${schedulesWithShifts.length}`);
+    console.log(` Schedules con turnos: ${schedulesWithShifts.length}`);
     
     if (schedulesWithShifts.length > 0) {
       console.log('Ejemplos de schedules con turnos:');
@@ -551,7 +621,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
   saveShiftTimes(): void {
     if (!this.selectedShift) return;
     
-    console.log('💾 Guardando horario de turno:', {
+    console.log(' Guardando horario de turno:', {
       shift: this.selectedShift,
       id: this.selectedShift.id,
       startTime: this.selectedShift.startTime,
@@ -578,12 +648,12 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
       : parseInt(String(this.selectedShift.id));
     
     if (isNaN(shiftId)) {
-      console.error('❌ ID de turno inválido:', this.selectedShift.id);
+      console.error(' ID de turno inválido:', this.selectedShift.id);
       this.toastService.warning('ID de turno inválido. Recarga la página.');
       return;
     }
 
-    console.log('🔄 Llamando a updateShift con:', {
+    console.log(' Llamando a updateShift con:', {
       shiftId,
       startTime: this.selectedShift.startTime,
       endTime: this.selectedShift.endTime
@@ -595,7 +665,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
       normalizedEndTime
     ).subscribe({
       next: (response) => {
-        console.log('✅ Turno actualizado exitosamente:', response);
+        console.log(' Turno actualizado exitosamente:', response);
         
         // Actualizar el turno en el array local
         const index = this.shifts.findIndex(s => s.id === shiftId);
@@ -614,7 +684,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
         this.shiftsService.clearShiftsCache();
       },
       error: (error) => {
-        console.error('❌ Error actualizando turno:', error);
+        console.error(' Error actualizando turno:', error);
         console.error('Detalles del error:', {
           status: error.status,
           message: error.error?.message || error.message,
@@ -846,9 +916,18 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
     });
 
     this.savingAttendance = true;
-    this.shiftsService.saveShiftAttendance(this.attendanceDate, currentShiftId, payload).subscribe({
-      next: () => {
+    this.shiftsService.saveShiftAttendance(this.attendanceDate, currentShiftId, payload, { autoHandoff: true }).subscribe({
+      next: (response) => {
         this.savingAttendance = false;
+        if (response?.handoff) {
+          const assigned = response.handoff.assigned ?? 0;
+          const pending = response.handoff.pending ?? 0;
+          if (pending > 0) {
+            this.toastService.warning(
+              `Handoff ejecutado: ${assigned} pacientes asignados y ${pending} pendientes por falta de cobertura/capacidad`
+            );
+          }
+        }
         this.loadShiftAttendance({ silent: true });
       },
       error: (error) => {
@@ -936,6 +1015,27 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
     }
 
     return items;
+  }
+
+  get uncoveredAreasInCurrentShift(): string[] {
+    const activeStatuses = new Set<ShiftAttendanceStatus>(['present', 'late']);
+    const activeAreaIds = new Set<number>();
+
+    for (const item of this.attendanceItems) {
+      if (item.assignedAreaId && activeStatuses.has(item.status)) {
+        activeAreaIds.add(item.assignedAreaId);
+      }
+    }
+
+    return (this.areas || [])
+      .filter((area) => area?.isActive !== false)
+      .filter((area) => area?.id != null && !activeAreaIds.has(area.id))
+      .map((area) => area.name)
+      .sort((a, b) => String(a).localeCompare(String(b), 'es', { sensitivity: 'base' }));
+  }
+
+  get uncoveredAreasLabel(): string {
+    return this.uncoveredAreasInCurrentShift.join(', ');
   }
 
   formatDateTime(value?: string | null): string {
@@ -1088,11 +1188,11 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
         // IMPORTANTE: Las opciones usan [value]="shift.type || shift.id"
         // Como shift.type siempre existe para los turnos válidos, devolver shift.type
         const result = shift.type || String(shift.id);
-        console.log(`✅ getShiftValueForSelect: ${day} = ${shiftValue} → ${result} (shift encontrado: ${shift.name})`);
+        console.log(` getShiftValueForSelect: ${day} = ${shiftValue} → ${result} (shift encontrado: ${shift.name})`);
         return result;
       }
       // Si no se encuentra pero es un tipo válido, devolverlo directamente
-      console.log(`⚠️ getShiftValueForSelect: ${day} = ${shiftValue} pero no se encontró en shifts`);
+      console.log(` getShiftValueForSelect: ${day} = ${shiftValue} pero no se encontró en shifts`);
       return shiftValue;
     }
     
@@ -1105,12 +1205,12 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
       });
       if (shift) {
         const result = shift.type || String(shift.id);
-        console.log(`✅ getShiftValueForSelect: ${day} = ID ${shiftId} → ${result}`);
+        console.log(` getShiftValueForSelect: ${day} = ID ${shiftId} → ${result}`);
         return result;
       }
     }
     
-    console.log(`❌ getShiftValueForSelect: ${day} = ${shiftValue} (tipo: ${typeof shiftValue}) - no reconocido`);
+    console.log(` getShiftValueForSelect: ${day} = ${shiftValue} (tipo: ${typeof shiftValue}) - no reconocido`);
     return '';
   }
 
@@ -1150,7 +1250,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
    * Asigna un turno a un día específico
    */
   assignShiftToDay(schedule: any, day: string, shiftValue: any): void {
-    console.log('🔄 Asignando turno a día:', { day, shiftValue, schedule });
+    console.log(' Asignando turno a día:', { day, shiftValue, schedule });
     
     // El shiftValue puede ser un ID numérico o un tipo de turno
     // Necesitamos convertirlo al tipo de turno para que funcione correctamente
@@ -1162,7 +1262,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
         const shift = this.shifts.find(s => s.id === parseInt(String(shiftValue)));
         if (shift && shift.type) {
           shiftIdToAssign = shift.type;
-          console.log(`  🔄 Convertido ID ${shiftValue} → tipo ${shift.type}`);
+          console.log(`   Convertido ID ${shiftValue} → tipo ${shift.type}`);
         } else if (shift && shift.id === 'off') {
           shiftIdToAssign = 'off';
         }
@@ -1173,7 +1273,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
     }
     
     schedule[day] = shiftIdToAssign;
-    console.log(`  ✅ Asignado ${shiftIdToAssign} a ${day}`);
+    console.log(`   Asignado ${shiftIdToAssign} a ${day}`);
     this.generateNursesByAreaAndShift();
   }
 
@@ -1183,7 +1283,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
   async assignWeekShift(schedule: any, shiftValue: any): Promise<void> {
     if (!shiftValue) return;
     
-    console.log('🔄 Asignando turno semanal:', { shiftValue, schedule });
+    console.log(' Asignando turno semanal:', { shiftValue, schedule });
     
     // Convertir ID numérico a tipo de turno si es necesario
     let shiftId = shiftValue;
@@ -1191,7 +1291,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
       const shift = this.shifts.find(s => s.id === parseInt(String(shiftValue)));
       if (shift && shift.type) {
         shiftId = shift.type;
-        console.log(`  🔄 Convertido ID ${shiftValue} → tipo ${shift.type}`);
+        console.log(`   Convertido ID ${shiftValue} → tipo ${shift.type}`);
       } else if (shift && shift.id === 'off') {
         shiftId = 'off';
       }
@@ -1242,7 +1342,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
       }
     });
     
-    console.log('✅ Turno semanal asignado:', schedule);
+    console.log(' Turno semanal asignado:', schedule);
     this.generateNursesByAreaAndShift();
     const dayOffText = dayOffOption ? ` (con ${this.dayNames[dayOffOption]} de descanso)` : '';
     this.toastService.success(`${shiftName} asignado de lunes a domingo${dayOffText}`);
@@ -1377,7 +1477,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
 
     const weekStartDate = this.weekStartDate;
     
-    console.log(`💾 Guardando turnos de ${nurse.firstName} ${nurse.lastName} (ID: ${nurseId})`);
+    console.log(` Guardando turnos de ${nurse.firstName} ${nurse.lastName} (ID: ${nurseId})`);
     
     // Preparar datos para esta enfermera
     const nurseSchedule: any = {
@@ -1408,11 +1508,11 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
           if (shift && shift.type) {
             shiftType = shift.type;
           } else {
-            console.warn(`  ⚠️ ${day}: Turno con ID ${shiftId} no encontrado`);
+            console.warn(`   ${day}: Turno con ID ${shiftId} no encontrado`);
             return;
           }
         } else {
-          console.warn(`  ⚠️ ${day}: Valor inválido: ${shiftValue}`);
+          console.warn(`   ${day}: Valor inválido: ${shiftValue}`);
           return;
         }
         
@@ -1423,7 +1523,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
             dayOfWeek: dayNumber,
             shiftId: shiftType // SIEMPRE enviar el tipo ('morning', 'afternoon', 'night')
           });
-          console.log(`  ✅ ${day} (día ${dayNumber}): ${shiftType}`);
+          console.log(`   ${day} (día ${dayNumber}): ${shiftType}`);
         }
       }
     });
@@ -1435,12 +1535,12 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
       return;
     }
     
-    console.log(`📤 Enviando al servidor:`, nurseSchedule);
+    console.log(` Enviando al servidor:`, nurseSchedule);
     
     this.loading = true;
     this.shiftsService.saveWeeklySchedule([nurseSchedule], weekStartDate).subscribe({
       next: (response) => {
-        console.log('✅ Turnos guardados exitosamente:', response);
+        console.log(' Turnos guardados exitosamente:', response);
         this.loading = false;
         this.toastService.success(
           `Turnos guardados (${nurse.firstName} ${nurse.lastName}): ${response.shiftsCreated || nurseSchedule.shifts.length} en base de datos`
@@ -1448,13 +1548,13 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
         
         // Recargar los schedules después de guardar
         setTimeout(() => {
-          console.log('🔄 Recargando turnos desde BD...');
+          console.log(' Recargando turnos desde BD...');
           this.loadWeeklySchedules();
         }, 300);
       },
       error: (error) => {
         this.loading = false;
-        console.error('❌ Error al guardar turnos:', error);
+        console.error(' Error al guardar turnos:', error);
         const errorMsg = error.error?.message || error.message || 'Error desconocido';
         this.toastService.error(
           `Error al guardar turnos (${nurse.firstName} ${nurse.lastName}): ${errorMsg}`
@@ -1466,9 +1566,9 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
   saveAllSchedules(): void {
     const weekStartDate = this.weekStartDate;
     
-    console.log('💾 ========== GUARDANDO PROGRAMACIÓN ==========');
-    console.log('📅 Semana:', weekStartDate);
-    console.log('📋 Total schedules en memoria:', this.weeklySchedules.length);
+    console.log(' ========== GUARDANDO PROGRAMACIÓN ==========');
+    console.log(' Semana:', weekStartDate);
+    console.log(' Total schedules en memoria:', this.weeklySchedules.length);
     
     // Preparar datos para enviar al backend - SIMPLIFICADO
     const schedulesToSave: any[] = [];
@@ -1477,7 +1577,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
       const nurseId = typeof schedule.nurseId === 'number' ? schedule.nurseId : parseInt(String(schedule.nurseId));
       
       if (isNaN(nurseId)) {
-        console.warn(`⚠️ Schedule con nurseId inválido:`, schedule);
+        console.warn(` Schedule con nurseId inválido:`, schedule);
         return;
       }
       
@@ -1486,7 +1586,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
         shifts: []
       };
       
-      console.log(`\n👤 Enfermera ID ${nurseId}:`);
+      console.log(`\n Enfermera ID ${nurseId}:`);
       
       // Convertir cada día a un objeto con dayOfWeek y shiftId
       this.days.forEach(day => {
@@ -1511,11 +1611,11 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
             if (shift && shift.type) {
               shiftType = shift.type;
             } else {
-              console.warn(`  ⚠️ ${day}: Turno con ID ${shiftId} no encontrado`);
+              console.warn(`   ${day}: Turno con ID ${shiftId} no encontrado`);
               return;
             }
           } else {
-            console.warn(`  ⚠️ ${day}: Valor inválido: ${shiftValue}`);
+            console.warn(`   ${day}: Valor inválido: ${shiftValue}`);
             return;
           }
           
@@ -1526,18 +1626,18 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
               dayOfWeek: dayNumber,
               shiftId: shiftType // SIEMPRE enviar el tipo ('morning', 'afternoon', 'night')
             });
-            console.log(`  ✅ ${day} (día ${dayNumber}): ${shiftType}`);
+            console.log(`   ${day} (día ${dayNumber}): ${shiftType}`);
           }
         }
       });
       
       if (nurseSchedule.shifts.length > 0) {
         schedulesToSave.push(nurseSchedule);
-        console.log(`  📊 Total: ${nurseSchedule.shifts.length} turnos`);
+        console.log(`   Total: ${nurseSchedule.shifts.length} turnos`);
       }
     });
     
-    console.log('\n📤 ========== ENVIANDO AL SERVIDOR ==========');
+    console.log('\n ========== ENVIANDO AL SERVIDOR ==========');
     console.log(`Enfermeras con turnos: ${schedulesToSave.length}`);
     console.log('Datos completos:', JSON.stringify(schedulesToSave, null, 2));
     
@@ -1549,7 +1649,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.shiftsService.saveWeeklySchedule(schedulesToSave, weekStartDate).subscribe({
       next: (response) => {
-        console.log('✅ ========== RESPUESTA EXITOSA ==========');
+        console.log(' ========== RESPUESTA EXITOSA ==========');
         console.log('Respuesta:', response);
         console.log(`Turnos guardados en BD: ${response.shiftsCreated}`);
         
@@ -1558,13 +1658,13 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
         
         // Recargar inmediatamente
         setTimeout(() => {
-          console.log('🔄 Recargando turnos desde BD...');
+          console.log(' Recargando turnos desde BD...');
           this.loadWeeklySchedules();
         }, 300);
       },
       error: (error) => {
         this.loading = false;
-        console.error('❌ ========== ERROR AL GUARDAR ==========');
+        console.error(' ========== ERROR AL GUARDAR ==========');
         console.error('HTTP Status:', error.status);
         console.error('Error message:', error.message);
         console.error('Error details:', error.error);
@@ -1584,7 +1684,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
     const monday = this.getMondayDate(selectedDate);
     this.weekStartDate = monday.toISOString().split('T')[0];
     
-    console.log('📅 Cambiando semana a:', this.weekStartDate);
+    console.log(' Cambiando semana a:', this.weekStartDate);
     this.loadWeeklySchedules();
   }
 

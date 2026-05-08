@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DashboardUserProfileModalComponent } from '../dashboard-user-profile-modal/dashboard-user-profile-modal.component';
+import { HeroIconComponent } from '../hero-icon/hero-icon.component';
 
 /**
  * Envoltorio neumórfico compartido (cabecera + nav + contenido) alineado con
@@ -18,7 +19,7 @@ import { DashboardUserProfileModalComponent } from '../dashboard-user-profile-mo
 @Component({
   selector: 'app-dashboard-shell',
   standalone: true,
-  imports: [CommonModule, DashboardUserProfileModalComponent],
+  imports: [CommonModule, DashboardUserProfileModalComponent, HeroIconComponent],
   templateUrl: './dashboard-shell.component.html',
   styleUrl: './dashboard-shell.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -37,7 +38,7 @@ export class DashboardShellComponent {
   @Input() subtitle: string | null = null;
   @Input({ required: true }) userName!: string;
   @Input({ required: true }) roleLabel!: string;
-  /** Línea opcional bajo el rol (p. ej. teléfono `📞 …`). */
+  /** Línea opcional bajo el rol (p. ej. teléfono). */
   @Input() userPhoneLine: string | null = null;
   /** Si es true, el bloque de usuario abre el mismo modal de edición de perfil que en admin. */
   @Input() profileEditable = false;

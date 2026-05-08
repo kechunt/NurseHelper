@@ -42,7 +42,10 @@ const MOCK_AREA_PATIENTS: AdminPatient[] = [
 describe('NurseEditBedModalComponent', () => {
   let fixture: ComponentFixture<NurseEditBedModalComponent>;
   const adminMock = {
-    getPatients: jasmine.createSpy('getPatients').and.returnValue(of(MOCK_AREA_PATIENTS)),
+    getPatientsPage: jasmine.createSpy('getPatientsPage').and.returnValue(
+      of({ items: MOCK_AREA_PATIENTS, total: 2, page: 1, limit: 500, totalPages: 1 })
+    ),
+    getNursesByArea: jasmine.createSpy('getNursesByArea').and.returnValue(of([{ id: 7, firstName: 'X', lastName: 'Y' }])),
     updateBed: jasmine.createSpy('updateBed').and.returnValue(of({ ok: true })),
   };
   const confirmationMock = {
@@ -78,8 +81,12 @@ describe('NurseEditBedModalComponent', () => {
       { id: 2, bedNumber: '206', patientId: 11 },
     ]);
     fixture.detectChanges();
-    adminMock.getPatients.calls.reset();
-    adminMock.getPatients.and.returnValue(of(MOCK_AREA_PATIENTS));
+    adminMock.getPatientsPage.calls.reset();
+    adminMock.getPatientsPage.and.returnValue(
+      of({ items: MOCK_AREA_PATIENTS, total: 2, page: 1, limit: 500, totalPages: 1 })
+    );
+    adminMock.getNursesByArea.calls.reset();
+    adminMock.getNursesByArea.and.returnValue(of([{ id: 7, firstName: 'X', lastName: 'Y' }]));
     adminMock.updateBed.calls.reset();
     adminMock.updateBed.and.returnValue(of({ ok: true }));
     toastMock.warning.calls.reset();
@@ -94,9 +101,9 @@ describe('NurseEditBedModalComponent', () => {
   });
 
   it('filterPatientsForBed reduce la lista por nombre o documento', () => {
-    fixture.componentInstance.allPatientsForBed = [
-      { id: 1, firstName: 'María', lastName: 'Torres', identificationNumber: 'DOC-1' },
-      { id: 2, firstName: 'Pedro', lastName: 'Ruiz', identificationNumber: 'XYZ-2' },
+    fixture.componentInstance.allPatientsPool = [
+      { id: 1, firstName: 'María', lastName: 'Torres', identificationNumber: 'DOC-1', areaId: 3 },
+      { id: 2, firstName: 'Pedro', lastName: 'Ruiz', identificationNumber: 'XYZ-2', areaId: 3 },
     ] as AdminPatient[];
     fixture.componentInstance.patientSearchTerm = 'pedro';
     fixture.componentInstance.filterPatientsForBed();
@@ -132,6 +139,19 @@ describe('NurseEditBedModalComponent', () => {
     expect(toastMock.success).toHaveBeenCalled();
     expect(saved).toBeTrue();
     sub.unsubscribe();
+  });
+
+  it('saveBedChanges incluye assignedToId cuando hubo elección explícita de enfermera', () => {
+    fixture.componentInstance.editBedForm.bedNumber = '208';
+    fixture.componentInstance.editBedForm.patientId = 10;
+    fixture.componentInstance.pendingAssignedToId = 42;
+    fixture.componentInstance.saveBedChanges();
+    expect(adminMock.updateBed).toHaveBeenCalledWith(1, {
+      bedNumber: '208',
+      isActive: true,
+      patientId: 10,
+      assignedToId: 42,
+    });
   });
 
   it('saveBedChanges muestra error y programa reloadRequested si falla el guardado', fakeAsync(() => {

@@ -1,48 +1,6 @@
 @import './design-catalog.imports.css';
 
-/* Farmacia: botón peligro y badges de stock (mismo CSS que pharmacy-dashboard, sin importar el archivo completo). */
-.btn-danger-neuro {
-  background: #fed7d7;
-  color: #c53030;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 50px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 8px 8px 16px #bebebe, -8px -8px 16px #ffffff;
-}
-
-.btn-danger-neuro:hover:not(:disabled) {
-  background: #fc8181;
-  color: #fff;
-  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
-}
-
-.btn-danger-neuro:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.stock-info-badge {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 8px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  box-shadow: inset 2px 2px 4px rgba(0, 0, 0, 0.1), inset -2px -2px 4px rgba(255, 255, 255, 0.5);
-}
-
-.stock-info-badge.available {
-  background: #c6f6d5;
-  color: #22543d;
-}
-
-.stock-info-badge.unavailable {
-  background: #fed7d7;
-  color: #c53030;
-}
+/* Solo layout del catálogo; los patrones UI vienen de design-catalog.imports.css */
 
 .dc-category {
   margin-bottom: 3rem;
@@ -72,30 +30,47 @@
   margin-top: 0;
 }
 
-/* Vista previa de modal sin cubrir toda la ventana */
+/* Modal admin-assign / backdrop dentro de un recuadro (no pantalla completa) */
 .dc-modal-sandbox {
   position: relative;
-  min-height: 260px;
+  min-height: 220px;
   border-radius: 18px;
   overflow: hidden;
   box-shadow: inset 2px 2px 6px #c4cad4;
 }
 
-.dc-modal-sandbox .modal-backdrop {
+.dc-modal-sandbox .admin-assign-modal-backdrop {
   position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
   inset: 0 !important;
+  padding: 0.75rem !important;
   align-items: flex-start !important;
-  padding-top: 0.75rem !important;
 }
 
-.dc-modal-sandbox .modal-content {
-  max-height: 240px !important;
-  width: min(520px, 100% - 1.5rem) !important;
-  margin: 0 auto;
+.dc-modal-sandbox .admin-assign-modal-content {
+  max-height: 200px !important;
+}
+
+.dc-modal-sandbox--row-actions {
+  min-height: 280px;
+}
+
+.dc-modal-sandbox--row-actions .admin-table-row-actions-backdrop {
+  position: absolute !important;
+  inset: 0 !important;
+  align-items: center !important;
+  padding: 0.5rem !important;
+}
+
+.dc-modal-sandbox .modal-overlay {
+  position: absolute !important;
+  inset: 0 !important;
+  align-items: center !important;
+  padding: 0.5rem !important;
+}
+
+.dc-modal-sandbox .modal-overlay .modal-content {
+  max-height: min(240px, 70vh) !important;
+  overflow-y: auto !important;
 }
 
 .design-catalog-root {
@@ -103,23 +78,83 @@
   background: #e0e5ec;
   color: #4a5568;
   padding: 1.5rem 1.5rem 4rem;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family:
+    'Segoe UI',
+    system-ui,
+    sans-serif;
+}
+
+/* Vistas embebidas: el layout real usa min-height:100vh; aquí compactamos para previsualizar */
+.design-catalog-root .admin-dashboard,
+.design-catalog-root .pharmacy-dashboard,
+.design-catalog-root .nurse-dashboard {
+  min-height: 0;
+}
+
+.design-catalog-root .dc-panel-preview .dashboard-header {
+  position: relative;
+}
+
+.design-catalog-root .dc-panel-preview .dashboard-body {
+  padding: 1rem 1.25rem;
+  gap: 1rem;
+}
+
+.design-catalog-root .dc-panel-preview .dashboard-content {
+  min-height: 0;
+  padding: 1.25rem;
+}
+
+.dc-panel-preview {
+  border-radius: 14px;
+  overflow: auto;
+  max-height: min(720px, 85vh);
+  box-shadow: 0 4px 20px rgba(45, 55, 72, 0.12);
+}
+
+.dc-shell-caption {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #718096;
+  margin-bottom: 0.6rem;
+}
+
+.dc-modal-sandbox--nurse-patient {
+  min-height: 320px;
+}
+
+.dc-modal-sandbox--nurse-patient .modal-backdrop {
+  position: absolute !important;
+  inset: 0 !important;
+  align-items: flex-start !important;
+  justify-content: center !important;
+  padding: 0.5rem !important;
+}
+
+.dc-modal-sandbox--nurse-patient .modal-content.modal-large {
+  max-height: 300px !important;
+  overflow: auto !important;
 }
 
 .dc-header {
-  max-width: 1100px;
+  max-width: 1200px;
   margin: 0 auto 1.5rem;
   padding: 1.25rem 1.5rem;
   border-radius: 20px;
   background: #e0e5ec;
-  box-shadow: 8px 8px 16px #bebebe, -8px -8px 16px #ffffff;
+  box-shadow:
+    8px 8px 16px #bebebe,
+    -8px -8px 16px #ffffff;
 }
 
 .dc-header h1 {
   font-weight: 300;
   font-size: 1.75rem;
   margin: 0 0 0.5rem;
-  text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8), -1px -1px 2px rgba(174, 174, 192, 0.4);
+  text-shadow:
+    1px 1px 2px rgba(255, 255, 255, 0.8),
+    -1px -1px 2px rgba(174, 174, 192, 0.4);
 }
 
 .dc-header p {
@@ -146,7 +181,7 @@
 }
 
 .dc-nav {
-  max-width: 1100px;
+  max-width: 1200px;
   margin: 0 auto 2rem;
   display: flex;
   flex-wrap: wrap;
@@ -154,12 +189,14 @@
   padding: 1rem 1.25rem;
   border-radius: 16px;
   background: #e0e5ec;
-  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+  box-shadow:
+    inset 4px 4px 8px #bebebe,
+    inset -4px -4px 8px #ffffff;
 }
 
 .dc-nav a {
   color: #4a5568;
-  font-size: 0.88rem;
+  font-size: 0.85rem;
   text-decoration: none;
   font-weight: 500;
 }
@@ -169,7 +206,7 @@
 }
 
 .dc-main {
-  max-width: 1100px;
+  max-width: 1200px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -177,10 +214,13 @@
 }
 
 .dc-section {
+  scroll-margin-top: 1rem;
   background: #e0e5ec;
   border-radius: 22px;
   padding: 1.5rem 1.75rem;
-  box-shadow: 10px 10px 20px #bebebe, -10px -10px 20px #ffffff;
+  box-shadow:
+    10px 10px 20px #bebebe,
+    -10px -10px 20px #ffffff;
 }
 
 .dc-section h2 {
@@ -201,7 +241,9 @@
   border-radius: 16px;
   margin-bottom: 1rem;
   background: #e0e5ec;
-  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+  box-shadow:
+    inset 4px 4px 8px #bebebe,
+    inset -4px -4px 8px #ffffff;
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
@@ -220,6 +262,13 @@
   align-items: center;
 }
 
+.dc-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+  width: 100%;
+}
+
 .dc-code {
   margin: 0;
   padding: 1rem 1.1rem;
@@ -229,8 +278,16 @@
   overflow-x: auto;
   background: #d8dde6;
   color: #2d3748;
-  box-shadow: inset 3px 3px 6px #b8bcc4, inset -3px -3px 6px #f0f4fa;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  box-shadow:
+    inset 3px 3px 6px #b8bcc4,
+    inset -3px -3px 6px #f0f4fa;
+  font-family:
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    monospace;
 }
 
 .dc-code code {
@@ -251,6 +308,8 @@
   width: 100%;
 }
 
-.dc-spacer {
-  height: 0.5rem;
+.dc-source-tag {
+  font-size: 0.72rem;
+  color: #a0aec0;
+  margin-top: 0.35rem;
 }

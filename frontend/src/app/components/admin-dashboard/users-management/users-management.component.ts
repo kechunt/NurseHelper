@@ -13,11 +13,12 @@ import { ExportService } from '../../../shared/services/export.service';
 import { PaginationComponent, PaginationConfig } from '../../../shared/components/pagination/pagination.component';
 import { DebounceDirective } from '../../../shared/directives/debounce.directive';
 import { AdminTableRowActionsModalComponent } from '../../../shared/components/admin-table-row-actions-modal/admin-table-row-actions-modal.component';
+import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
 
 @Component({
   selector: 'app-users-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, PaginationComponent, DebounceDirective, AdminTableRowActionsModalComponent],
+  imports: [CommonModule, FormsModule, PaginationComponent, DebounceDirective, AdminTableRowActionsModalComponent, HeroIconComponent],
   templateUrl: './users-management.component.html',
   styleUrl: './users-management.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -437,7 +438,7 @@ export class UsersManagementComponent implements OnInit, OnDestroy {
     let message = `¿Estás seguro de que quieres eliminar permanentemente al usuario ${user.username} (${user.firstName} ${user.lastName})?`;
     
     if (isNurse) {
-      message += `\n\n⚠️ Esta enfermera tiene pacientes asignados.\nLos pacientes mantendrán su área asignada pero quedarán sin enfermera asignada para poder asignar otra.`;
+      message += `\n\n Esta enfermera tiene pacientes asignados.\nLos pacientes mantendrán su área asignada pero quedarán sin enfermera asignada para poder asignar otra.`;
     }
     
     message += `\n\nEsta acción no se puede deshacer.`;

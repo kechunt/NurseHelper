@@ -31,11 +31,11 @@
               <span class="history-detail-badge">{{ record.type }}</span>
               <span class="history-detail-badge history-detail-badge--status">{{ statusLabel(record) }}</span>
               <span class="history-detail-badge history-detail-badge--postponed" *ngIf="isPostponed(record)">Pospuesto</span>
-              <span class="history-detail-badge history-detail-badge--notes" *ngIf="hasExtraNotes(record)">📝 Notas</span>
+              <span class="history-detail-badge history-detail-badge--notes" *ngIf="hasExtraNotes(record)"><app-hero-icon name="clipboard-document" /> Notas</span>
             </div>
             <div class="history-detail-desc">{{ record.description }}</div>
             <div class="history-detail-sub" *ngIf="record.medication">
-              💊 {{ record.medication }}<span *ngIf="record.dosage"> · {{ record.dosage }}</span>
+              <app-hero-icon name="beaker" /> {{ record.medication }}<span *ngIf="record.dosage"> · {{ record.dosage }}</span>
             </div>
           </div>
         </div>

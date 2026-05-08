@@ -86,3 +86,40 @@ export const requireAdminOrSupervisorOrNurseInArea = async (req: AuthRequest, re
   }
 };
 
+/**
+ * Admin/supervisor: cualquier área. Enfermera: solo si `areaId` del path coincide con su área asignada.
+ * Usado para listar enfermeras del área sin exponer todo el directorio de usuarios.
+ */
+export const requireAdminSupervisorOrNurseOwnAreaParam = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  if (!req.user) {
+    res.status(401).json({ message: 'Usuario no autenticado' });
+    return;
+  }
+
+  if (req.user.role === UserRole.ADMIN || req.user.role === UserRole.SUPERVISOR) {
+    next();
+    return;
+  }
+
+  if (req.user.role === UserRole.NURSE) {
+    const raw = req.params.areaId;
+    const areaId = typeof raw === 'string' ? parseInt(raw, 10) : NaN;
+    if (!areaId || Number.isNaN(areaId)) {
+      res.status(400).json({ message: 'ID de área inválido' });
+      return;
+    }
+    if (!req.user.assignedAreaId || req.user.assignedAreaId !== areaId) {
+      res.status(403).json({ message: 'No tienes permisos para consultar enfermeras de esta área' });
+      return;
+    }
+    next();
+    return;
+  }
+
+  res.status(403).json({ message: 'No tienes permisos para realizar esta acción' });
+};
+

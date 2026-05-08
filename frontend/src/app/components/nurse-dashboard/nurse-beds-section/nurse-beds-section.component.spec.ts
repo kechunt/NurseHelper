@@ -39,7 +39,7 @@ describe('NurseBedsSectionComponent', () => {
   it('emite viewPatientRequest al pulsar Ver detalles sin propagar edición de cama', () => {
     spyOn(fixture.componentInstance.bedEditRequest, 'emit');
     spyOn(fixture.componentInstance.viewPatientRequest, 'emit');
-    const btn = fixture.nativeElement.querySelector('.view-patient-btn-neuro') as HTMLButtonElement;
+    const btn = fixture.nativeElement.querySelector('.nurse-details-pill-btn') as HTMLButtonElement;
     btn.click();
     expect(fixture.componentInstance.viewPatientRequest.emit).toHaveBeenCalledWith(
       jasmine.objectContaining({ id: '9', name: 'Luis' })

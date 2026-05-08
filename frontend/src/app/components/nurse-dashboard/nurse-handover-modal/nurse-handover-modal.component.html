@@ -13,7 +13,10 @@
     (click)="$event.stopPropagation()"
   >
     <div class="modal-header">
-      <h3 id="nurse-handover-dialog-title" i18n="@@nurseHandoverModal.title">📋 Nota de entrega</h3>
+      <h3 id="nurse-handover-dialog-title">
+        <app-hero-icon name="clipboard-document"></app-hero-icon>
+        <span i18n="@@nurseHandoverModal.title">Nota de entrega</span>
+      </h3>
       <button
         type="button"
         class="close-btn"
@@ -30,7 +33,7 @@
           Nota de <strong>paso de turno</strong> para tu <strong>área</strong>: pacientes a vigilar, incidencias, pendientes para quien releva, etc.
         </p>
         <p class="handover-modal-intro handover-modal-intro--muted">
-          Se guarda <strong>una nota por día y por área</strong>. Las demás enfermeras del mismo área pueden abrir aquí, elegir la fecha y leer o actualizar el texto. No aparece en otra pantalla del sistema; es un registro compartido al cambiar de turno.
+          Se guarda <strong>una nota por área, por día y por turno</strong> (mañana / tarde / noche). Las enfermeras del mismo área eligen fecha y franja para leer o actualizar. No aparece en otra pantalla; es un registro compartido al paso de turno.
         </p>
         <div class="input-group">
           <label for="handover-date" i18n="@@nurseHandoverModal.dateLabel">Fecha</label>
@@ -41,6 +44,17 @@
             [ngModel]="handoverDate"
             (ngModelChange)="onDateChange($event)"
           />
+        </div>
+        <div class="input-group">
+          <label for="handover-shift">Turno</label>
+          <select
+            id="handover-shift"
+            class="neuro-input neuro-input-block"
+            [ngModel]="handoverShift"
+            (ngModelChange)="onShiftChange($event)"
+          >
+            <option *ngFor="let s of shiftChoices" [ngValue]="s.value">{{ s.label }}</option>
+          </select>
         </div>
         <div class="input-group">
           <label for="handover-body" i18n="@@nurseHandoverModal.contentLabel">Contenido</label>
@@ -57,8 +71,17 @@
       </div>
     </div>
     <div class="modal-footer nurse-aux-modal__footer">
-      <button type="button" class="neuro-btn neuro-btn-sm" (click)="dismissed.emit()" [disabled]="handoverSaving">
+      <button type="button" class="btn-primary-neuro" (click)="dismissed.emit()" [disabled]="handoverSaving">
         <span i18n="@@nurseHandoverModal.cancel">Cancelar</span>
+      </button>
+      <button
+        type="button"
+        class="btn-secondary-neuro"
+        *ngIf="handoverCanAcknowledge"
+        (click)="acknowledgeRequested.emit()"
+        [disabled]="handoverSaving"
+      >
+        Aceptar
       </button>
       <button type="button" class="btn-primary-neuro" (click)="saveRequested.emit()" [disabled]="handoverSaving">
         {{ handoverSaving ? 'Guardando…' : 'Guardar' }}

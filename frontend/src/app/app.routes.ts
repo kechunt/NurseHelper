@@ -49,5 +49,12 @@ export const routes: Routes = [
       import('./dev/design-catalog/design-catalog.component').then((m) => m.DesignCatalogComponent),
     canActivate: [designCatalogGuard],
   },
+  /** Catálogo de iconos SVG custom (solo desarrollo). */
+  {
+    path: 'svg-icon-test',
+    loadComponent: () =>
+      import('./dev/svg-icon-test/svg-icon-test.component').then((m) => m.SvgIconTestComponent),
+    canActivate: [designCatalogGuard],
+  },
   { path: 'dashboard', redirectTo: 'nurse-dashboard', pathMatch: 'full' },
 ];

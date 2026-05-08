@@ -148,9 +148,23 @@
 }
 
 .neuro-btn.outlined {
-  background: transparent;
-  border: 2px solid #4a5568;
-  box-shadow: none;
+  background: #e0e5ec;
+  border: none;
+  box-shadow:
+    8px 8px 16px #bebebe,
+    -8px -8px 16px #ffffff;
+}
+
+.neuro-btn.outlined:hover:not(:disabled) {
+  box-shadow:
+    4px 4px 8px #bebebe,
+    -4px -4px 8px #ffffff;
+}
+
+.neuro-btn.outlined:active:not(:disabled) {
+  box-shadow:
+    inset 4px 4px 8px #bebebe,
+    inset -4px -4px 8px #ffffff;
 }
 
 .neuro-btn:disabled {

@@ -9,10 +9,15 @@ jest.mock('../../../services/report.service', () => ({
   },
 }));
 
+jest.mock('../../../controllers/reports-scope.helpers', () => ({
+  resolveReportPatientScope: jest.fn(),
+}));
+
 import type { AuthRequest } from '../../../middleware/auth.middleware';
 import { UserRole } from '../../../entities/User';
 import { reportService } from '../../../services/report.service';
 import { ReportsController } from '../../../controllers/reports.controller';
+import { resolveReportPatientScope } from '../../../controllers/reports-scope.helpers';
 
 async function flushAsync(): Promise<void> {
   await new Promise<void>((resolve) => setImmediate(resolve));
@@ -21,6 +26,7 @@ async function flushAsync(): Promise<void> {
 describe('ReportsController', () => {
   let ctrl: ReportsController;
   const mockedReport = reportService as jest.Mocked<typeof reportService>;
+  const mockedScope = resolveReportPatientScope as jest.MockedFunction<typeof resolveReportPatientScope>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -28,6 +34,7 @@ describe('ReportsController', () => {
     mockedReport.generateMedicationReport.mockResolvedValue({ rows: [] });
     mockedReport.generateComplianceStats.mockResolvedValue({ rate: 0.9 });
     mockedReport.exportReport.mockResolvedValue(Buffer.from('a,b'));
+    mockedScope.mockResolvedValue({ ok: true, restrictToPatientIds: undefined });
     ctrl = new ReportsController();
   });
 
@@ -82,6 +89,7 @@ describe('ReportsController', () => {
         jest.fn()
       );
       await flushAsync();
+      expect(mockedScope).toHaveBeenCalled();
       expect(mockedReport.getPatientIdsVisibleToNurse).not.toHaveBeenCalled();
       expect(mockedReport.generateMedicationReport).toHaveBeenCalledWith(
         new Date('2026-01-01'),
@@ -102,7 +110,14 @@ describe('ReportsController', () => {
     });
 
     it('enfermera: 403 si patientId no está entre los visibles', async () => {
-      mockedReport.getPatientIdsVisibleToNurse.mockResolvedValueOnce([1, 2]);
+      mockedScope.mockResolvedValueOnce({
+        ok: false,
+        status: 403,
+        body: {
+          message: 'No tienes acceso a datos de reporte de este paciente',
+          code: 'FORBIDDEN',
+        },
+      });
       const { status, json, res } = resChain();
       ctrl.generateMedicationReport(
         authReq({
@@ -122,7 +137,7 @@ describe('ReportsController', () => {
     });
 
     it('enfermera: pasa restrictToPatientIds al servicio', async () => {
-      mockedReport.getPatientIdsVisibleToNurse.mockResolvedValueOnce([7]);
+      mockedScope.mockResolvedValueOnce({ ok: true, restrictToPatientIds: [7] });
       const json = jest.fn();
       const res = { json } as unknown as Response;
       ctrl.generateMedicationReport(
@@ -134,7 +149,7 @@ describe('ReportsController', () => {
         jest.fn()
       );
       await flushAsync();
-      expect(mockedReport.getPatientIdsVisibleToNurse).toHaveBeenCalledWith(3);
+      expect(mockedScope).toHaveBeenCalled();
       expect(mockedReport.generateMedicationReport).toHaveBeenCalledWith(
         new Date('2026-02-01'),
         new Date('2026-02-28'),
@@ -183,6 +198,7 @@ describe('ReportsController', () => {
         jest.fn()
       );
       await flushAsync();
+      expect(mockedScope).toHaveBeenCalled();
       expect(mockedReport.getPatientIdsVisibleToNurse).not.toHaveBeenCalled();
       expect(mockedReport.generateComplianceStats).toHaveBeenCalledWith(
         new Date('2026-01-01'),

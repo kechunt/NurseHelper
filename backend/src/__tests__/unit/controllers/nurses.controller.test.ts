@@ -14,8 +14,10 @@ jest.mock('../../../utils/logger', () => ({
 }));
 
 jest.mock('../../../services/shift-handover-note.service', () => ({
-  findHandoverNoteForAreaAndDate: jest.fn(),
+  findHandoverNoteForAreaDateAndShift: jest.fn(),
   upsertHandoverNoteForArea: jest.fn(),
+  isValidHandoverShiftSlot: jest.requireActual('../../../services/shift-handover-note.service')
+    .isValidHandoverShiftSlot,
 }));
 
 jest.mock('../../../services/nurse-day-tasks-history.service', () => ({
@@ -87,7 +89,10 @@ import {
   deletePendingNursePatientSchedule,
 } from '../../../services/nurse-treatments.service';
 import { buildNurseShiftContextPayload } from '../../../services/nurse-shift-context.service';
-import { findHandoverNoteForAreaAndDate, upsertHandoverNoteForArea } from '../../../services/shift-handover-note.service';
+import {
+  findHandoverNoteForAreaDateAndShift,
+  upsertHandoverNoteForArea,
+} from '../../../services/shift-handover-note.service';
 import { UserRole } from '../../../entities/User';
 import type { AuthRequest } from '../../../middleware/auth.middleware';
 import {
@@ -151,8 +156,8 @@ describe('nurses.controller', () => {
     (patchNursePatientScheduleForNurse as jest.Mock).mockResolvedValue({ ok: true, body: { saved: true } });
     (deletePendingNursePatientSchedule as jest.Mock).mockResolvedValue({ ok: true, body: { removed: true } });
     (createNurseTreatmentSchedules as jest.Mock).mockResolvedValue({ ok: true, status: 201, body: { id: 1 } });
-    (buildNurseShiftContextPayload as jest.Mock).mockResolvedValue({ shift: 'morning' });
-    (findHandoverNoteForAreaAndDate as jest.Mock).mockResolvedValue(null);
+    (buildNurseShiftContextPayload as jest.Mock).mockResolvedValue({ shiftSlot: 'morning' });
+    (findHandoverNoteForAreaDateAndShift as jest.Mock).mockResolvedValue(null);
     (upsertHandoverNoteForArea as jest.Mock).mockResolvedValue({ id: 1, body: 'texto' });
   });
 
@@ -308,7 +313,7 @@ describe('nurses.controller', () => {
     it('200', async () => {
       const json = jest.fn();
       await getNurseShiftContext({ user: nurseUser() } as AuthRequest, { json } as unknown as Response);
-      expect(json).toHaveBeenCalledWith({ shift: 'morning' });
+      expect(json).toHaveBeenCalledWith({ shiftSlot: 'morning' });
     });
   });
 
@@ -329,7 +334,7 @@ describe('nurses.controller', () => {
         { json } as unknown as Response
       );
       expect(json).toHaveBeenCalledWith({ note: null });
-      expect(findHandoverNoteForAreaAndDate).not.toHaveBeenCalled();
+      expect(findHandoverNoteForAreaDateAndShift).not.toHaveBeenCalled();
     });
   });
 
@@ -717,7 +722,7 @@ describe('nurses.controller', () => {
     });
 
     it('getNurseHandoverNote', async () => {
-      (findHandoverNoteForAreaAndDate as jest.Mock).mockRejectedValueOnce(new Error('db'));
+      (findHandoverNoteForAreaDateAndShift as jest.Mock).mockRejectedValueOnce(new Error('db'));
       const { status, json, res } = resMocks();
       await getNurseHandoverNote(
         { user: nurseUser(), query: { date: '2030-01-01' } } as unknown as AuthRequest,

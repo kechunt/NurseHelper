@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { UsersController } from '../controllers/users.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
-import { requireAdmin, requireAdminOrSupervisor } from '../middleware/role.middleware';
+import { requireAdmin, requireAdminOrSupervisor, requireAdminSupervisorOrNurseOwnAreaParam } from '../middleware/role.middleware';
 
 const router = Router();
 const usersController = new UsersController();
@@ -59,6 +59,13 @@ const usersController = new UsersController();
  *                 totalPages:
  *                   type: integer
  */
+router.get(
+  '/area/:areaId/nurses',
+  authMiddleware,
+  requireAdminSupervisorOrNurseOwnAreaParam,
+  usersController.getNursesByArea.bind(usersController)
+);
+
 router.get('/', authMiddleware, requireAdminOrSupervisor, usersController.getAll.bind(usersController));
 
 /**

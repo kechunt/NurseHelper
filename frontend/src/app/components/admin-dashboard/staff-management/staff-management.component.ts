@@ -1,8 +1,8 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
-import { forkJoin, of } from 'rxjs';
+import { ActivatedRoute, Router } from '@angular/router';
+import { forkJoin, of, Subscription } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { AdminService, Area, Bed, Patient } from '../../../services/admin.service';
 import { User } from '../../../services/auth.service';
@@ -16,6 +16,8 @@ import {
 } from '../admin-confirmation-copy.helpers';
 import { ToastService } from '../../../services/toast.service';
 import { AdminTableRowActionsModalComponent } from '../../../shared/components/admin-table-row-actions-modal/admin-table-row-actions-modal.component';
+import { AdminToggleButtonComponent } from '../../../shared/components/admin-toggle-button/admin-toggle-button.component';
+import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
 
 interface NurseWithPatients extends User {
   assignedPatients: Patient[];
@@ -27,7 +29,7 @@ interface NurseWithPatients extends User {
 @Component({
   selector: 'app-staff-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, AdminTableRowActionsModalComponent],
+  imports: [CommonModule, FormsModule, AdminTableRowActionsModalComponent, AdminToggleButtonComponent, HeroIconComponent],
   templateUrl: './staff-management.component.html',
   styleUrl: './staff-management.component.css',
 })
@@ -56,12 +58,21 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
   changeAreaSelectedId: number | null = null;
   savingChangeArea = false;
 
+  /** Modal rápido: asignar una enfermera al área (desde aviso de cobertura en Camas/Áreas). */
+  showAssignNurseToAreaModal = false;
+  assignNurseToAreaTargetAreaId: number | null = null;
+  assignNurseToAreaSelectedNurseId: number | null = null;
+  savingAssignNurseToArea = false;
+  private assignAreaRoutePending: number | null = null;
+  private assignAreaRouteSub?: Subscription;
+
   // Formularios
   editForm: Partial<User> = {};
 
   // Filtros
   searchQuery: string = '';
-  selectedArea: number | null = null;
+  /** `null` = todas; `'unassigned'` = sin área asignada; número = id de área. */
+  selectedArea: number | null | 'unassigned' = null;
   selectedShiftPresenceFilter: 'all' | 'onShift' | 'offShift' = 'all';
   liveShiftName = 'Sin turno activo';
   private operationalStatusTimer: ReturnType<typeof setInterval> | null = null;
@@ -79,6 +90,7 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
     private adminService: AdminService,
     private shiftsService: ShiftsService,
     private router: Router,
+    private route: ActivatedRoute,
     private confirmationService: ConfirmationService,
     private toastService: ToastService
   ) {}
@@ -132,17 +144,68 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    console.log('🚀 Staff Management Component inicializado');
-    console.log('🌐 API URL:', environment.apiUrl);
+    console.log(' Staff Management Component inicializado');
+    console.log(' API URL:', environment.apiUrl);
+    this.assignAreaRouteSub = this.route.queryParamMap.subscribe(() => {
+      this.captureAssignAreaRouteIntent();
+    });
+    this.captureAssignAreaRouteIntent();
     this.loadData();
     this.startOperationalStatusPolling();
   }
 
   ngOnDestroy(): void {
+    this.assignAreaRouteSub?.unsubscribe();
+    this.assignAreaRouteSub = undefined;
     if (this.operationalStatusTimer) {
       clearInterval(this.operationalStatusTimer);
       this.operationalStatusTimer = null;
     }
+  }
+
+  private captureAssignAreaRouteIntent(): void {
+    const raw = this.route.snapshot.queryParamMap.get('assignAreaId');
+    if (!raw) {
+      return;
+    }
+    const id = parseInt(raw, 10);
+    if (!Number.isFinite(id)) {
+      return;
+    }
+    this.assignAreaRoutePending = id;
+    this.tryConsumeAssignAreaRouteIntent();
+  }
+
+  private stripAssignAreaQueryParam(): void {
+    if (!this.route.snapshot.queryParamMap.has('assignAreaId')) {
+      return;
+    }
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { assignAreaId: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  }
+
+  private tryConsumeAssignAreaRouteIntent(): void {
+    if (this.assignAreaRoutePending == null) {
+      return;
+    }
+    if (!this.areas.length) {
+      return;
+    }
+    const id = this.assignAreaRoutePending;
+    const exists = this.areas.some((a) => this.toNumber(a.id) === id);
+    if (!exists) {
+      this.assignAreaRoutePending = null;
+      this.stripAssignAreaQueryParam();
+      this.toastService.warning('El área indicada no existe o está inactiva.');
+      return;
+    }
+    this.assignAreaRoutePending = null;
+    this.stripAssignAreaQueryParam();
+    this.openAssignNurseToAreaModal(id);
   }
 
   loadData(onComplete?: () => void): void {
@@ -150,8 +213,8 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
     this.error = null;
     this.nurses = []; // Limpiar datos anteriores
 
-    console.log('🔄 Iniciando carga de datos...');
-    console.log('🌐 Endpoints que se llamarán:');
+    console.log(' Iniciando carga de datos...');
+    console.log(' Endpoints que se llamarán:');
     console.log('  - Areas:', `${environment.apiUrl}/areas`);
     console.log('  - Beds:', `${environment.apiUrl}/beds`);
     console.log('  - Patients:', `${environment.apiUrl}/patients (página admin)`);
@@ -185,14 +248,14 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
       ),
     }).subscribe({
       next: ({ areas, beds, patients, users }) => {
-        console.log('📥 Datos recibidos RAW:', {
+        console.log(' Datos recibidos RAW:', {
           areas: areas,
           beds: beds,
           patients: patients,
           users: users,
         });
         
-        console.log('📥 Datos recibidos (resumen):', {
+        console.log(' Datos recibidos (resumen):', {
           areas: Array.isArray(areas) ? areas.length : 0,
           beds: Array.isArray(beds) ? beds.length : 0,
           patients: Array.isArray(patients) ? patients.length : 0,
@@ -201,7 +264,7 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
         
         // Debug: Ver estructura de users
         if (users && users.users) {
-          console.log('👥 Usuarios recibidos:', users.users.map((u: any) => ({
+          console.log(' Usuarios recibidos:', users.users.map((u: any) => ({
             id: u.id,
             name: `${u.firstName} ${u.lastName}`,
             role: u.role,
@@ -213,7 +276,7 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
         // Las áreas vienen de la misma BD y API, solo filtrar activas
         this.areas = Array.isArray(areas) ? areas.filter((a: any) => a.isActive !== false) : [];
         
-        console.log('📍 Áreas cargadas (mismas que nurse-dashboard):', this.areas.map((a: any) => ({
+        console.log(' Áreas cargadas (mismas que nurse-dashboard):', this.areas.map((a: any) => ({
           id: a.id,
           name: a.name,
           isActive: a.isActive
@@ -243,7 +306,7 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
 
         // Filtrar solo enfermeras activas
         const allUsers = Array.isArray(users.users) ? users.users : (Array.isArray(users) ? users : []);
-        console.log('👥 Total usuarios recibidos:', allUsers.length);
+        console.log(' Total usuarios recibidos:', allUsers.length);
         
         const allNurses = allUsers.filter((u: any) => {
           const isNurse = u.role === 'nurse';
@@ -252,8 +315,8 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
           return isNurse && isActive;
         });
         
-        console.log('🔍 Enfermeras encontradas:', allNurses.length);
-        console.log('🔍 Enfermeras detalle:', allNurses.map((n: any) => ({
+        console.log(' Enfermeras encontradas:', allNurses.length);
+        console.log(' Enfermeras detalle:', allNurses.map((n: any) => ({
           id: n.id,
           name: `${n.firstName} ${n.lastName}`,
           role: n.role,
@@ -261,8 +324,8 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
           maxPatients: n.maxPatients,
           assignedAreaId: n.assignedAreaId
         })));
-        console.log('🔍 Pacientes encontrados:', this.patients.length);
-        console.log('🔍 Camas encontradas:', this.beds.length);
+        console.log(' Pacientes encontrados:', this.patients.length);
+        console.log(' Camas encontradas:', this.beds.length);
         
         // Procesar cada enfermera y obtener sus pacientes asignados
         // USAR LA MISMA LÓGICA QUE NURSE-DASHBOARD: relación por área
@@ -276,7 +339,7 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
             : null;
           
           if (isNaN(nurseId)) {
-            console.warn(`⚠️ Enfermera sin ID válido:`, nurse);
+            console.warn(` Enfermera sin ID válido:`, nurse);
             return {
               ...nurse,
               assignedPatients: [],
@@ -350,7 +413,7 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
           const assignedPatients = Array.from(merged.values());
 
           console.log(
-            `  👩‍⚕️ ${nurse.firstName} ${nurse.lastName} (ID: ${nurseId}): asignados por BD=${byNurseColumn.length}, por área=${byArea.length}, total=${assignedPatients.length}`
+            `   ${nurse.firstName} ${nurse.lastName} (ID: ${nurseId}): asignados por BD=${byNurseColumn.length}, por área=${byArea.length}, total=${assignedPatients.length}`
           );
 
           return {
@@ -362,7 +425,7 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
           } as NurseWithPatients;
         });
 
-        console.log('✅ Datos procesados exitosamente:', {
+        console.log(' Datos procesados exitosamente:', {
           enfermeras: this.nurses.length,
           areas: this.areas.length,
           camas: this.beds.length,
@@ -380,7 +443,7 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
 
         // Si no hay enfermeras, mostrar mensaje detallado
         if (this.nurses.length === 0) {
-          console.warn('⚠️ No se encontraron enfermeras. Verifica:');
+          console.warn(' No se encontraron enfermeras. Verifica:');
           console.warn('  - Total usuarios recibidos:', allUsers.length);
           console.warn('  - Usuarios por rol:', {
             admin: allUsers.filter((u: any) => u.role === 'admin').length,
@@ -410,10 +473,11 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
 
         this.loadOperationalShiftStatus();
         this.loading = false;
+        this.tryConsumeAssignAreaRouteIntent();
         onComplete?.();
       },
       error: (error) => {
-        console.error('❌ Error cargando datos:', error);
+        console.error(' Error cargando datos:', error);
         this.error = 'Error al cargar los datos. Por favor, recarga la página.';
         this.loading = false;
         onComplete?.();
@@ -423,7 +487,7 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
 
   getFilteredNurses(): NurseWithPatients[] {
     if (!Array.isArray(this.nurses)) {
-      console.warn('⚠️ nurses no es un array:', this.nurses);
+      console.warn(' nurses no es un array:', this.nurses);
       return [];
     }
 
@@ -440,7 +504,9 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
       );
     }
 
-    if (this.selectedArea !== null && this.selectedArea !== undefined) {
+    if (this.selectedArea === 'unassigned') {
+      filtered = filtered.filter((n) => !this.nurseHasAssignedArea(n));
+    } else if (this.selectedArea !== null && this.selectedArea !== undefined) {
       filtered = filtered.filter((n) => n.assignedAreaId === this.selectedArea);
     }
 
@@ -621,14 +687,14 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
     }
     const payload = { ...this.editForm, phone: phoneTrim.length > 0 ? phoneTrim : null };
 
-    console.log('💾 Guardando enfermera:', {
+    console.log(' Guardando enfermera:', {
       id: this.selectedNurse.id,
       formData: payload,
     });
 
     this.adminService.updateUser(this.selectedNurse.id, payload).subscribe({
       next: () => {
-        console.log('✅ Enfermera actualizada exitosamente');
+        console.log(' Enfermera actualizada exitosamente');
         this.toastService.success('Enfermera actualizada correctamente');
         this.closeEditModal();
         this.loadData(); // Recargar para actualizar todo (incluyendo pacientes asignados)
@@ -694,6 +760,56 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
     this.changeAreaSelectedId = this.toNumber(nurse.assignedAreaId);
     this.savingChangeArea = false;
     this.showChangeAreaModal = true;
+  }
+
+  openAssignNurseToAreaModal(areaId: number): void {
+    const parsed = this.parseAndValidateAssignedAreaId(areaId);
+    if (parsed === false) {
+      return;
+    }
+    this.assignNurseToAreaTargetAreaId = parsed;
+    this.assignNurseToAreaSelectedNurseId = null;
+    this.savingAssignNurseToArea = false;
+    this.showAssignNurseToAreaModal = true;
+  }
+
+  closeAssignNurseToAreaModal(): void {
+    this.showAssignNurseToAreaModal = false;
+    this.assignNurseToAreaTargetAreaId = null;
+    this.assignNurseToAreaSelectedNurseId = null;
+    this.savingAssignNurseToArea = false;
+  }
+
+  saveAssignNurseToAreaModal(): void {
+    const nurseId = this.toNumber(this.assignNurseToAreaSelectedNurseId);
+    if (!nurseId) {
+      this.toastService.warning('Selecciona una enfermera');
+      return;
+    }
+    const parsedArea = this.parseAndValidateAssignedAreaId(this.assignNurseToAreaTargetAreaId);
+    if (parsedArea === false) {
+      return;
+    }
+    if (parsedArea === null) {
+      this.toastService.warning('El área de destino no es válida');
+      return;
+    }
+
+    this.savingAssignNurseToArea = true;
+    this.adminService.updateUser(nurseId, { assignedAreaId: parsedArea }).subscribe({
+      next: () => {
+        this.savingAssignNurseToArea = false;
+        this.toastService.success('Enfermera asignada al área');
+        this.closeAssignNurseToAreaModal();
+        this.loadData();
+      },
+      error: (error) => {
+        this.savingAssignNurseToArea = false;
+        this.toastService.error(
+          `Error al asignar área: ${error.error?.message || error.message || 'Error desconocido'}`
+        );
+      },
+    });
   }
 
   closeChangeAreaModal(): void {
@@ -910,23 +1026,12 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.adminService.assignPatientToBed(bedId, patientId).subscribe({
+    this.adminService.assignPatientToBed(bedId, patientId, nurseId).subscribe({
       next: () => {
-        this.adminService.updatePatient(patientId, { assignedToId: nurseId }).subscribe({
-          next: () => {
-            this.toastService.success('Paciente asignado con cama correctamente.');
-            this.closeAssignBedModal();
-            this.loadData();
-            this.closePatientsModal();
-          },
-          error: (error) => {
-            const msg = error.error?.message || error.message || 'No se pudo asignar enfermera';
-            this.toastService.warning(`La cama se asignó, pero faltó asignar enfermera: ${msg}`);
-            this.closeAssignBedModal();
-            this.loadData();
-            this.closePatientsModal();
-          },
-        });
+        this.toastService.success('Paciente asignado con cama correctamente.');
+        this.closeAssignBedModal();
+        this.loadData();
+        this.closePatientsModal();
       },
       error: (error) => {
         const msg = error.error?.message || error.message || 'No se pudo asignar cama';
@@ -1034,6 +1139,20 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
   getAreaName(areaId: number | null | undefined): string {
     if (!areaId) return 'Sin área asignada';
     const area = this.areas.find((a) => a.id === areaId);
+    return area?.name || 'Área desconocida';
+  }
+
+  nurseHasAssignedArea(nurse: NurseWithPatients): boolean {
+    return this.toNumber(nurse.assignedAreaId) != null;
+  }
+
+  /** Nombre del área para la tarjeta compacta (solo si tiene id válido). */
+  getNurseCardAreaLine(nurse: NurseWithPatients): string {
+    const id = this.toNumber(nurse.assignedAreaId);
+    if (id == null) {
+      return '';
+    }
+    const area = this.areas.find((a) => this.toNumber(a.id) === id);
     return area?.name || 'Área desconocida';
   }
 

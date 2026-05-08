@@ -2,6 +2,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ModalFocusTrapDirective } from '../../../shared/directives/modal-focus-trap.directive';
 import { FormsModule } from '@angular/forms';
+import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
 
 /** Datos mínimos para mostrar el resumen (viene de tareas del día o del modal de paciente). */
 export interface NotCompletedTaskModalView {
@@ -17,7 +18,7 @@ export interface NotCompletedTaskModalView {
 @Component({
   selector: 'app-nurse-not-completed-task-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, ModalFocusTrapDirective],
+  imports: [CommonModule, FormsModule, ModalFocusTrapDirective, HeroIconComponent],
   templateUrl: './nurse-not-completed-task-modal.component.html',
   styleUrls: ['./nurse-not-completed-task-modal.component.css'],
 })

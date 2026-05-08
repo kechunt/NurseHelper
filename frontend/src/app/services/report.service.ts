@@ -41,7 +41,9 @@ export class ReportService {
   generateMedicationReport(
     startDate: Date,
     endDate: Date,
-    patientId?: number
+    patientId?: number,
+    /** Admin/supervisor: filtrar por pacientes visibles a esta enfermera; omitir = todo el centro */
+    nurseUserId?: number | null
   ): Observable<{ report: MedicationReport[]; period: any; generatedAt: Date }> {
     let params = new HttpParams()
       .set('startDate', startDate.toISOString())
@@ -49,6 +51,9 @@ export class ReportService {
 
     if (patientId) {
       params = params.set('patientId', patientId.toString());
+    }
+    if (nurseUserId != null && !Number.isNaN(Number(nurseUserId))) {
+      params = params.set('nurseUserId', String(nurseUserId));
     }
 
     return this.http.get<{ report: MedicationReport[]; period: any; generatedAt: Date }>(
@@ -63,7 +68,8 @@ export class ReportService {
   generateComplianceStats(
     startDate: Date,
     endDate: Date,
-    patientId?: number
+    patientId?: number,
+    nurseUserId?: number | null
   ): Observable<{ stats: ComplianceStats; period: any; generatedAt: Date }> {
     let params = new HttpParams()
       .set('startDate', startDate.toISOString())
@@ -71,6 +77,9 @@ export class ReportService {
 
     if (patientId) {
       params = params.set('patientId', patientId.toString());
+    }
+    if (nurseUserId != null && !Number.isNaN(Number(nurseUserId))) {
+      params = params.set('nurseUserId', String(nurseUserId));
     }
 
     return this.http.get<{ stats: ComplianceStats; period: any; generatedAt: Date }>(
@@ -87,7 +96,8 @@ export class ReportService {
     format: 'pdf' | 'excel' | 'csv',
     startDate: Date,
     endDate: Date,
-    patientId?: number
+    patientId?: number,
+    nurseUserId?: number | null
   ): Observable<Blob> {
     let params = new HttpParams()
       .set('type', type)
@@ -97,6 +107,9 @@ export class ReportService {
 
     if (patientId) {
       params = params.set('patientId', patientId.toString());
+    }
+    if (nurseUserId != null && !Number.isNaN(Number(nurseUserId))) {
+      params = params.set('nurseUserId', String(nurseUserId));
     }
 
     return this.http.get(`${this.apiUrl}/export`, {
@@ -113,9 +126,10 @@ export class ReportService {
     format: 'pdf' | 'excel' | 'csv',
     startDate: Date,
     endDate: Date,
-    patientId?: number
+    patientId?: number,
+    nurseUserId?: number | null
   ): void {
-    this.exportReport(type, format, startDate, endDate, patientId).subscribe({
+    this.exportReport(type, format, startDate, endDate, patientId, nurseUserId).subscribe({
       next: (blob) => {
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');

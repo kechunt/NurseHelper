@@ -107,6 +107,8 @@ export class PatientService {
     patient.specialNeeds = dto.specialNeeds || null;
     patient.generalObservations = dto.generalObservations || null;
     patient.isActive = true;
+    patient.assignmentStatus = 'pending';
+    patient.lastAssignmentAt = null;
 
     const savedPatient = await this.patientRepository.save(patient);
 

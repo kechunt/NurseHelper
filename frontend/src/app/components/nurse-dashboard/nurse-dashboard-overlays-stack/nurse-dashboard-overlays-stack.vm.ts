@@ -1,4 +1,8 @@
-import type { MedicationForPharmacy, TaskItem } from '../../../services/nurse.service';
+import type {
+  HandoverShiftSlot,
+  MedicationForPharmacy,
+  TaskItem,
+} from '../../../services/nurse.service';
 import type { MedicationReport, ComplianceStats } from '../../../services/report.service';
 import type { TreatmentRecord } from '../nurse-treatment-record.model';
 import type { MedicationTodaySlot } from '../medication-today-slot.model';
@@ -41,8 +45,10 @@ export interface NurseDashboardOverlaysStackVm {
   pendingTaskDetail: TaskItem | null;
   showHandoverModal: boolean;
   handoverDate: string;
+  handoverShift: HandoverShiftSlot;
   handoverBody: string;
   handoverSaving: boolean;
+  handoverCanAcknowledge: boolean;
   showNurseReportsModal: boolean;
   nurseReportsPeriodLabel: string;
   nurseReportsLoading: boolean;
@@ -103,8 +109,10 @@ export function createEmptyNurseDashboardOverlaysStackVm(): NurseDashboardOverla
     pendingTaskDetail: null,
     showHandoverModal: false,
     handoverDate: '',
+    handoverShift: 'morning',
     handoverBody: '',
     handoverSaving: false,
+    handoverCanAcknowledge: false,
     showNurseReportsModal: false,
     nurseReportsPeriodLabel: '',
     nurseReportsLoading: false,

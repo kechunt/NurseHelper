@@ -1,11 +1,12 @@
 import { Component, Input, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ToastService, Toast, ToastType } from '../../services/toast.service';
+import { HeroIconComponent } from '../../shared/components/hero-icon/hero-icon.component';
 
 @Component({
   selector: 'app-toast',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, HeroIconComponent],
   templateUrl: './toast.component.html',
   styleUrl: './toast.component.css',
 })
@@ -25,18 +26,18 @@ export class ToastComponent {
     }
   }
 
-  getIcon(type: ToastType): string {
+  getIconName(type: ToastType): string {
     switch (type) {
       case 'success':
-        return '✓';
+        return 'check-circle';
       case 'error':
-        return '✕';
+        return 'x-circle';
       case 'warning':
-        return '⚠';
+        return 'exclamation-triangle';
       case 'info':
-        return 'ℹ';
+        return 'exclamation-circle';
       default:
-        return 'ℹ';
+        return 'exclamation-circle';
     }
   }
 

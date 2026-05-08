@@ -2,6 +2,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import type { TreatmentTodayItem } from '../treatment-today-item.model';
 import { AdminTableRowActionsModalComponent } from '../../../shared/components/admin-table-row-actions-modal/admin-table-row-actions-modal.component';
+import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
 import {
   treatmentSlotPending,
   treatmentSlotStatusLabel,
@@ -11,7 +12,7 @@ import {
 @Component({
   selector: 'app-nurse-patient-treatments-day-tab',
   standalone: true,
-  imports: [CommonModule, AdminTableRowActionsModalComponent],
+  imports: [CommonModule, AdminTableRowActionsModalComponent, HeroIconComponent],
   templateUrl: './nurse-patient-treatments-day-tab.component.html',
   styleUrls: [
     '../../../shared/styles/admin-table-unified.css',

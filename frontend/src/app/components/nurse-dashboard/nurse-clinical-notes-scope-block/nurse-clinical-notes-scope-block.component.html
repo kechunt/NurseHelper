@@ -28,7 +28,7 @@
     Ver todas ({{ effectiveNotes().length }})
   </button>
 
-  <!-- Lista completa: 👁 solo aquí elige 0–3 visibles fuera -->
+  <!-- Lista completa: solo aquí elige 0–3 visibles fuera -->
   <div
     *ngIf="listModalOpen"
     class="ncnsb-list-backdrop"
@@ -49,7 +49,7 @@
         </button>
       </div>
       <p class="ncnsb-list-hint">
-        Pulse el texto para ver fecha y hora. Solo aquí: 👁 elige qué notas se muestran fuera (en este recuadro, pacientes y camas); entre 0 y 3.
+        Pulse el texto para ver fecha y hora. Solo aquí: elige qué notas se muestran fuera (en este recuadro, pacientes y camas); entre 0 y 3.
       </p>
       <ul class="ncnsb-list-ul">
         <li *ngFor="let note of listNotesSorted()" class="ncnsb-list-li">
@@ -63,7 +63,7 @@
               title="Mostrar u ocultar en vistas compactas (máx. 3)"
               aria-label="Mostrar u ocultar nota destacada"
             >
-              👁
+              <app-hero-icon name="eye" />
             </button>
             <button type="button" class="ncnsb-list-row-main" (click)="openDetail(note)">
               <span class="ncnsb-list-body">{{ displayBody(note) }}</span>

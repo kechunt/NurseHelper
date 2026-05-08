@@ -2,11 +2,12 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ModalFocusTrapDirective } from '../../../shared/directives/modal-focus-trap.directive';
 import { TaskItem } from '../../../services/nurse.service';
+import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
 
 @Component({
   selector: 'app-nurse-pending-task-detail-modal',
   standalone: true,
-  imports: [CommonModule, ModalFocusTrapDirective],
+  imports: [CommonModule, ModalFocusTrapDirective, HeroIconComponent],
   templateUrl: './nurse-pending-task-detail-modal.component.html',
   styleUrls: ['./nurse-pending-task-detail-modal.component.css'],
 })
@@ -21,25 +22,25 @@ export class NursePendingTaskDetailModalComponent {
 
   typeLabel(t: TaskItem): string {
     if (t.type === 'medication') {
-      return '💊 Medicamento';
+      return 'Medicamento';
     }
     if (t.type === 'treatment') {
-      return '🩺 Tratamiento';
+      return 'Tratamiento';
     }
     if (t.type === 'check') {
-      return '🩺 Chequeo';
+      return 'Chequeo';
     }
-    return '📋 Otro';
+    return 'Otro';
   }
 
   statusSummary(t: TaskItem): string {
     if (t.completed) {
-      return '✓ Completada';
+      return 'Completada';
     }
     if (t.notCompleted) {
-      return '✗ No realizada';
+      return 'No realizada';
     }
-    return '⏳ Pendiente';
+    return 'Pendiente';
   }
 
   actionsDisabled(t: TaskItem): boolean {

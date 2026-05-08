@@ -21,3 +21,15 @@ export function nurseDashboardNurseReportsExportCsvErrorMessage(
 ): string {
   return readHttpErrorMessage(err, NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_CSV_HTTP_FALLBACK);
 }
+
+export const NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_EMPTY_EXCEL_WARNING = $localize`:@@nurseDashboard.reports.exportEmptyExcel:El archivo Excel está vacío.`;
+export const NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_SUCCESS_EXCEL_TOAST = $localize`:@@nurseDashboard.reports.exportExcelSuccess:Excel descargado`;
+
+export const NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_EXCEL_HTTP_FALLBACK = $localize`:@@nurseDashboard.reports.exportExcelHttpFallback:Error al generar el Excel`;
+
+export function nurseDashboardNurseReportsExportExcelErrorMessage(
+  err: unknown,
+  readHttpErrorMessage: (e: unknown, fallback: string) => string
+): string {
+  return readHttpErrorMessage(err, NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_EXCEL_HTTP_FALLBACK);
+}

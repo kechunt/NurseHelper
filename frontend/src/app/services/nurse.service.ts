@@ -3,10 +3,19 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
+export type HandoverShiftSlot = 'morning' | 'afternoon' | 'night';
+
+export const HANDOVER_SHIFT_CHOICES: { value: HandoverShiftSlot; label: string }[] = [
+  { value: 'morning', label: 'Mañana' },
+  { value: 'afternoon', label: 'Tarde' },
+  { value: 'night', label: 'Noche' },
+];
+
 export interface ShiftHandoverNoteDto {
   id: number;
   areaId: number;
   noteDate: string;
+  shiftSlot: string;
   body: string;
   authorUserId: number;
   updatedAt: string;
@@ -142,6 +151,8 @@ export interface NurseShiftContext {
   hasActiveShiftWindow: boolean;
   shiftName: string | null;
   shiftTime: string | null;
+  /** Tipo de turno en curso: morning | afternoon | night; null si no aplica */
+  shiftSlot: HandoverShiftSlot | null;
   attendanceStatus: string | null;
   onDuty: boolean;
   summary: string;
@@ -180,17 +191,18 @@ export class NurseService {
   }
 
   /** Nota de entrega de turno del área para una fecha (YYYY-MM-DD). */
-  getHandoverNote(date: string): Observable<{ note: ShiftHandoverNoteDto | null }> {
-    const params = new HttpParams().set('date', date);
+  getHandoverNote(date: string, shiftSlot: HandoverShiftSlot): Observable<{ note: ShiftHandoverNoteDto | null }> {
+    let params = new HttpParams().set('date', date).set('shift', shiftSlot);
     return this.http.get<{ note: ShiftHandoverNoteDto | null }>(`${this.apiUrl}/nurse/handover-notes`, {
       params,
     });
   }
 
-  /** Crear o actualizar la nota de entrega del área para una fecha. */
-  putHandoverNote(noteDate: string, body: string): Observable<{ note: ShiftHandoverNoteDto }> {
+  /** Crear o actualizar la nota de entrega del área por fecha y turno. */
+  putHandoverNote(noteDate: string, body: string, shiftSlot: HandoverShiftSlot): Observable<{ note: ShiftHandoverNoteDto }> {
     return this.http.put<{ note: ShiftHandoverNoteDto }>(`${this.apiUrl}/nurse/handover-notes`, {
       noteDate,
+      shiftSlot,
       body,
     });
   }

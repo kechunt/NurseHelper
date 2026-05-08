@@ -1,5 +1,6 @@
 import { Component, OnInit, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HeroIconComponent } from '../../shared/components/hero-icon/hero-icon.component';
 
 interface Actor {
   id: string;
@@ -38,7 +39,7 @@ interface Relation {
 @Component({
   selector: 'app-use-case-diagram',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, HeroIconComponent],
   templateUrl: './use-case-diagram.component.html',
   styleUrl: './use-case-diagram.component.css'
 })
@@ -54,25 +55,25 @@ export class UseCaseDiagramComponent implements OnInit, AfterViewInit {
   private lastMouseY = 0;
 
   actors: Actor[] = [
-    { id: 'Admin', name: '👤 Administrador', x: 50, y: 100, color: '#ff6b6b' },
-    { id: 'Nurse', name: '👤 Enfermera', x: 50, y: 300, color: '#4ecdc4' },
-    { id: 'Supervisor', name: '👤 Supervisor', x: 50, y: 500, color: '#ffe66d' },
-    { id: 'Pharmacy', name: '👤 Farmacia', x: 50, y: 700, color: '#95e1d3' }
+    { id: 'Admin', name: 'Administrador', x: 50, y: 100, color: '#ff6b6b' },
+    { id: 'Nurse', name: 'Enfermera', x: 50, y: 300, color: '#4ecdc4' },
+    { id: 'Supervisor', name: 'Supervisor', x: 50, y: 500, color: '#ffe66d' },
+    { id: 'Pharmacy', name: 'Farmacia', x: 50, y: 700, color: '#95e1d3' }
   ];
 
   packages: Package[] = [
-    { id: 'Auth', name: '🔐 Autenticación', x: 200, y: 50, width: 300, height: 200, color: '#e8f4f8' },
-    { id: 'Users', name: '👥 Gestión de Usuarios', x: 550, y: 50, width: 300, height: 250, color: '#fff5e6' },
-    { id: 'Areas', name: '🏥 Gestión de Áreas', x: 900, y: 50, width: 300, height: 200, color: '#f0f0f0' },
-    { id: 'Beds', name: '🛏️ Gestión de Camas', x: 1250, y: 50, width: 300, height: 250, color: '#e6f3ff' },
-    { id: 'Patients', name: '👨‍⚕️ Gestión de Pacientes', x: 200, y: 300, width: 300, height: 300, color: '#ffe6f0' },
-    { id: 'Medications', name: '💊 Gestión de Medicamentos', x: 550, y: 350, width: 300, height: 250, color: '#e6ffe6' },
-    { id: 'Schedules', name: '📅 Gestión de Horarios y Tareas', x: 900, y: 350, width: 300, height: 250, color: '#fff0e6' },
-    { id: 'Shifts', name: '🔄 Gestión de Turnos', x: 1250, y: 350, width: 300, height: 200, color: '#f0e6ff' },
-    { id: 'PharmacyModule', name: '💉 Módulo de Farmacia', x: 200, y: 650, width: 300, height: 250, color: '#ffe6cc' },
-    { id: 'Reports', name: '📊 Reportes', x: 550, y: 650, width: 300, height: 200, color: '#e6f0ff' },
-    { id: 'Notifications', name: '🔔 Notificaciones', x: 900, y: 650, width: 300, height: 200, color: '#ffe6e6' },
-    { id: 'Backup', name: '💾 Backup', x: 1250, y: 650, width: 300, height: 200, color: '#e6ffe6' }
+    { id: 'Auth', name: 'Autenticación', x: 200, y: 50, width: 300, height: 200, color: '#e8f4f8' },
+    { id: 'Users', name: 'Gestión de Usuarios', x: 550, y: 50, width: 300, height: 250, color: '#fff5e6' },
+    { id: 'Areas', name: 'Gestión de Áreas', x: 900, y: 50, width: 300, height: 200, color: '#f0f0f0' },
+    { id: 'Beds', name: 'Gestión de Camas', x: 1250, y: 50, width: 300, height: 250, color: '#e6f3ff' },
+    { id: 'Patients', name: 'Gestión de Pacientes', x: 200, y: 300, width: 300, height: 300, color: '#ffe6f0' },
+    { id: 'Medications', name: 'Gestión de Medicamentos', x: 550, y: 350, width: 300, height: 250, color: '#e6ffe6' },
+    { id: 'Schedules', name: 'Gestión de Horarios y Tareas', x: 900, y: 350, width: 300, height: 250, color: '#fff0e6' },
+    { id: 'Shifts', name: 'Gestión de Turnos', x: 1250, y: 350, width: 300, height: 200, color: '#f0e6ff' },
+    { id: 'PharmacyModule', name: 'Módulo de Farmacia', x: 200, y: 650, width: 300, height: 250, color: '#ffe6cc' },
+    { id: 'Reports', name: 'Reportes', x: 550, y: 650, width: 300, height: 200, color: '#e6f0ff' },
+    { id: 'Notifications', name: 'Notificaciones', x: 900, y: 650, width: 300, height: 200, color: '#ffe6e6' },
+    { id: 'Backup', name: 'Backup', x: 1250, y: 650, width: 300, height: 200, color: '#e6ffe6' }
   ];
 
   useCases: UseCase[] = [

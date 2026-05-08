@@ -9,7 +9,7 @@
   >
     <div class="modal-header">
       <h3 id="nurse-add-medication-dialog-title">
-        <span i18n="@@nurseAddMedicationModal.titleBase">💊 Agregar Medicamento</span>
+        <span i18n="@@nurseAddMedicationModal.titleBase"><app-hero-icon name="beaker" /> Agregar Medicamento</span>
         <ng-container *ngIf="getSelectedPatientName() as pn"><span aria-hidden="true"> — </span>{{ pn }}</ng-container>
       </h3>
       <button
@@ -115,7 +115,7 @@
                 </button>
               </div>
               <button type="button" class="add-time-btn" (click)="addTime()" i18n="@@nurseAddMedicationModal.addTimeBtn">
-                ➕ Agregar hora
+                <app-hero-icon name="plus-circle" /> Agregar hora
               </button>
             </div>
           </div>
@@ -181,8 +181,8 @@
         Cancelar
       </button>
       <button class="btn-primary-neuro" type="button" (click)="confirmAdd()" [disabled]="isAdding">
-        <span *ngIf="isAdding" i18n="@@nurseAddMedicationModal.adding">⏳ Agregando...</span>
-        <span *ngIf="!isAdding" i18n="@@nurseAddMedicationModal.submitAdd">💊 Agregar Medicamento</span>
+        <span *ngIf="isAdding" i18n="@@nurseAddMedicationModal.adding"><app-hero-icon name="clock" /> Agregando...</span>
+        <span *ngIf="!isAdding" i18n="@@nurseAddMedicationModal.submitAdd"><app-hero-icon name="beaker" /> Agregar Medicamento</span>
       </button>
     </div>
   </div>

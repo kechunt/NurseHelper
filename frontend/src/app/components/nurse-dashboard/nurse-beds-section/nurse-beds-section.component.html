@@ -1,7 +1,7 @@
-<div class="section-card nurse-module">
-  <div class="nurse-module-stack">
+<div class="section-card nurse-module nurse-beds-module">
+  <div class="nurse-module-stack nurse-beds-stack">
     <div class="section-header beds-section-header">
-      <h2 class="section-title">🛏️ Mis Camas Asignadas</h2>
+      <h2 class="section-title"><app-hero-icon name="rectangle-group" /> Mis Camas Asignadas</h2>
       <span class="section-subtitle">{{ myBeds.length }} camas en {{ assignedArea }}</span>
     </div>
 
@@ -17,19 +17,26 @@
         <div class="bed-header">
           <div class="bed-number">{{ bed.bedNumber }}</div>
           <div class="bed-status-badge" [class.occupied]="bed.patient">
-            <span *ngIf="bed.patient">🛏️ Ocupada</span>
-            <span *ngIf="!bed.patient">✅ Disponible</span>
+            <span *ngIf="bed.patient"><app-hero-icon name="rectangle-group" /> Ocupada</span>
+            <span *ngIf="!bed.patient"><app-hero-icon name="check-circle" /> Disponible</span>
           </div>
         </div>
 
         <div *ngIf="bed.patient" class="bed-patient-info">
-          <div class="patient-assignment-header">
-            <span class="assignment-label">👤 Paciente Asignado:</span>
+          <div class="nurse-patient-card-title-row">
+            <span class="bed-patient-card-name">{{ bed.patient.name }}</span>
+            <button
+              type="button"
+              class="nurse-details-pill-btn"
+              (click)="onViewPatientClick(bed.patient, $event)"
+              title="Ver detalles del paciente"
+            >
+              Detalles
+            </button>
           </div>
-          <div class="patient-name">{{ bed.patient.name }}</div>
-          <div class="patient-meta">
-            <span class="meta-item">🎂 {{ bed.patient.age }} años</span>
-          </div>
+          <p class="bed-patient-card-meta">
+            <span class="bed-patient-meta-item"><app-hero-icon name="cake" /> {{ bed.patient.age }} años</span>
+          </p>
           <div class="bed-patient-clinical" *ngIf="bed.patient" (click)="$event.stopPropagation()">
             <app-nurse-clinical-notes-scope-block
               [patientId]="bed.patient.id"
@@ -50,18 +57,10 @@
               emptyLabel="Sin observaciones"
             />
           </div>
-          <button
-            type="button"
-            class="view-patient-btn-neuro"
-            (click)="onViewPatientClick(bed.patient, $event)"
-            title="Ver detalles del paciente"
-          >
-            👁️ Ver Detalles Completos
-          </button>
         </div>
 
         <div *ngIf="!bed.patient" class="bed-empty">
-          <div class="empty-icon">🏥</div>
+          <div class="empty-icon"><app-hero-icon name="building-office-2" /></div>
           <p>Cama disponible</p>
           <small class="click-hint">Click para asignar paciente</small>
         </div>

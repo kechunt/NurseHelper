@@ -8,21 +8,72 @@
     <span class="value" *ngIf="age != null">{{ age }} <span i18n="@@nursePatientMedicationsTab.ageYearsWord">años</span></span>
     <span class="value" *ngIf="age == null">—</span>
   </div>
-  <div class="summary-item">
-    <span class="label" i18n="@@nursePatientMedicationsTab.labelDiagnosis">Diagnóstico:</span>
-    <span class="value">{{ diagnosis }}</span>
+  <div class="summary-item summary-item--diagnosis">
+    <ng-container *ngIf="!showDiagnosisEditor">
+      <div class="summary-diagnosis-inline">
+        <span class="label-inline" i18n="@@nursePatientMedicationsTab.labelDiagnosis">Diagnóstico:</span>
+        <span class="value-inline" [attr.title]="diagnosisTooltipTitle">{{ diagnosisDisplayLine }}</span>
+        <button
+          *ngIf="isDiagnosisPlaceholder"
+          type="button"
+          class="btn-diagnosis-summary"
+          (click)="openDiagnosisEditor()"
+          i18n="@@nursePatientMedicationsTab.addDiagnosis"
+        >
+          Agregar
+        </button>
+        <button
+          *ngIf="!isDiagnosisPlaceholder"
+          type="button"
+          class="btn-diagnosis-summary"
+          (click)="openDiagnosisEditor()"
+          i18n="@@nursePatientMedicationsTab.editDiagnosis"
+        >
+          Editar
+        </button>
+      </div>
+    </ng-container>
+    <div class="summary-diagnosis-block">
+      <div *ngIf="showDiagnosisEditor" class="diagnosis-editor-summary">
+        <textarea
+          class="diagnosis-editor-textarea"
+          [(ngModel)]="diagnosisDraft"
+          rows="3"
+          placeholder="Escriba el diagnóstico o resumen clínico..."
+          i18n-placeholder="@@nursePatientMedicationsTab.diagnosisEditorPlaceholder"
+        ></textarea>
+        <div class="diagnosis-editor-actions">
+          <button
+            type="button"
+            class="btn-diagnosis-summary btn-diagnosis-summary--primary"
+            (click)="confirmDiagnosisEditor()"
+            i18n="@@nursePatientMedicationsTab.diagnosisSave"
+          >
+            Guardar
+          </button>
+          <button
+            type="button"
+            class="btn-diagnosis-summary"
+            (click)="cancelDiagnosisEditor()"
+            i18n="@@nursePatientMedicationsTab.diagnosisCancel"
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
 <div class="medications-header medications-header--stack">
   <div>
-    <h4 i18n="@@nursePatientMedicationsTab.sectionTitle">💊 Medicamentos del día</h4>
+    <h4 i18n="@@nursePatientMedicationsTab.sectionTitle"><app-hero-icon name="beaker" /> Medicamentos del día</h4>
     <p class="treatments-day-hint" i18n="@@nursePatientMedicationsTab.sectionHint">
       Una fila por cada hora programada para hoy. «Suspender» afecta todas las dosis con el mismo nombre de medicamento.
     </p>
   </div>
   <button type="button" class="neuro-btn add-med-btn" (click)="addMedication.emit()" i18n="@@nursePatientMedicationsTab.addMedicationBtn">
-    ➕ Agregar Medicamento
+    <app-hero-icon name="plus-circle" /> Agregar Medicamento
   </button>
 </div>
 
@@ -85,7 +136,7 @@
   (dismissed)="closeSlotActions()"
 >
   <button type="button" class="neuro-btn" *ngIf="selectedSlotForActions && slotPending(selectedSlotForActions)" (click)="executeMarkGiven()">
-    ✓ Marcar administrado
+    <app-hero-icon name="check-circle" /> Marcar administrado
   </button>
   <button
     type="button"
@@ -93,13 +144,13 @@
     *ngIf="selectedSlotForActions && slotPending(selectedSlotForActions)"
     (click)="executeMarkNotAdministered()"
   >
-    ⚠️ Marcar no administrado
+    <app-hero-icon name="exclamation-triangle" /> Marcar no administrado
   </button>
   <button type="button" class="neuro-btn" *ngIf="selectedSlotForActions && !isCancelledSlot(selectedSlotForActions)" (click)="executeSuspend()">
-    ⏸️ Suspender medicamento
+    <app-hero-icon name="pause-circle" /> Suspender medicamento
   </button>
   <button type="button" class="neuro-btn" *ngIf="selectedSlotForActions && isCancelledSlot(selectedSlotForActions)" (click)="executeReactivate()">
-    ▶️ Reactivar medicamento
+    <app-hero-icon name="play-circle" /> Reactivar medicamento
   </button>
   <button
     type="button"
@@ -107,7 +158,7 @@
     *ngIf="selectedSlotForActions && slotPending(selectedSlotForActions)"
     (click)="executeDeleteSlot()"
   >
-    🗑️ Eliminar este horario
+    <app-hero-icon name="trash" /> Eliminar este horario
   </button>
 </app-admin-table-row-actions-modal>
 

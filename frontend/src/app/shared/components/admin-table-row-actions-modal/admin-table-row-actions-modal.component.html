@@ -13,12 +13,40 @@
   >
     <div class="admin-table-row-actions-header">
       <h3 [id]="titleId">{{ title }}</h3>
-      <button type="button" class="admin-table-row-actions-close" (click)="close()" [attr.aria-label]="closeAriaLabel">
+      <button type="button" class="admin-table-row-actions-close admin-close-btn" (click)="close()" [attr.aria-label]="closeAriaLabel">
         ✕
       </button>
     </div>
     <div class="admin-table-row-actions-body">
-      <p class="admin-table-row-actions-line" *ngFor="let line of summaryLines">{{ line }}</p>
+      <ng-container *ngIf="summaryRows?.length; else legacySummaryLines">
+        <div class="admin-table-row-actions-detail">
+          <div *ngFor="let row of summaryRows" class="admin-table-row-actions-detail-row">
+            <span class="admin-table-row-actions-detail-label">{{ row.label }}</span>
+            <div class="admin-table-row-actions-detail-value-wrap">
+              <span
+                *ngIf="row.badgeVariant"
+                class="apm-status-pill"
+                [class.apm-status-pill--ok]="row.badgeVariant === 'ok'"
+                [class.apm-status-pill--busy]="row.badgeVariant === 'busy'"
+                [class.apm-status-pill--off]="row.badgeVariant === 'off'"
+              >
+                {{ row.value }}
+              </span>
+              <span
+                *ngIf="!row.badgeVariant"
+                class="admin-table-row-actions-detail-value"
+                [class.admin-table-row-actions-detail-value--muted]="row.valueMuted"
+                [class.admin-table-row-actions-detail-value--prominent]="row.valueProminent"
+              >
+                {{ row.value }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+      <ng-template #legacySummaryLines>
+        <p class="admin-table-row-actions-line" *ngFor="let line of summaryLines">{{ line }}</p>
+      </ng-template>
       <div class="admin-table-row-actions-buttons">
         <ng-content />
       </div>

@@ -12,6 +12,7 @@ import { ModalFocusTrapDirective } from '../../../shared/directives/modal-focus-
 import { AdminService, Patient as AdminPatient } from '../../../services/admin.service';
 import { ConfirmationService } from '../../../services/confirmation.service';
 import { ToastService } from '../../../services/toast.service';
+import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
 import {
   NURSE_MODAL_EDIT_BED_CONFIRM_RELEASE_MESSAGE,
   NURSE_MODAL_EDIT_BED_CONFIRM_RELEASE_OK,
@@ -19,8 +20,10 @@ import {
   NURSE_MODAL_EDIT_BED_ERR_INVALID_BED,
   NURSE_MODAL_EDIT_BED_ERR_UPDATE_FALLBACK,
   NURSE_MODAL_EDIT_BED_SUCCESS_UPDATED,
+  NURSE_MODAL_EDIT_BED_WARN_LOAD_NURSES,
   NURSE_MODAL_EDIT_BED_WARN_LOAD_PATIENTS,
   NURSE_MODAL_EDIT_BED_WARN_NUMBER_REQUIRED,
+  NURSE_MODAL_EDIT_BED_WARN_SELECT_NURSE,
 } from '../nurse-modal-component-toasts.helpers';
 
 /** Cama que se edita (compatible con `BedDisplay` del dashboard). */
@@ -39,15 +42,20 @@ export interface NurseEditBedModalBedRow {
   patientId?: number | null;
 }
 
+export type NurseEditBedPatientScope = 'this-area' | 'other-areas' | 'all';
+
+interface AreaNurseRow {
+  id: number;
+  firstName: string;
+  lastName: string;
+}
+
 @Component({
   selector: 'app-nurse-edit-bed-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, ModalFocusTrapDirective],
+  imports: [CommonModule, FormsModule, ModalFocusTrapDirective, HeroIconComponent],
   templateUrl: './nurse-edit-bed-modal.component.html',
-  styleUrls: [
-    '../nurse-postpone-task-modal/nurse-postpone-task-modal.component.css',
-    './nurse-edit-bed-modal.component.css',
-  ],
+  styleUrls: ['../nurse-neomorphic-modal.shared.css', './nurse-edit-bed-modal.component.css'],
 })
 export class NurseEditBedModalComponent implements OnChanges {
   @Input({ required: true }) bed!: NurseEditBedModalBed;
@@ -71,8 +79,20 @@ export class NurseEditBedModalComponent implements OnChanges {
   };
 
   patientSearchTerm = '';
+  patientScope: NurseEditBedPatientScope = 'this-area';
+
+  /** Pacientes activos (lista base); el alcance y la búsqueda filtran en cliente. */
+  allPatientsPool: AdminPatient[] = [];
   filteredPatientsForBed: AdminPatient[] = [];
-  allPatientsForBed: AdminPatient[] = [];
+
+  areaNurses: AreaNurseRow[] = [];
+  nursesLoadFailed = false;
+
+  /** Tras elegir enfermera explícita (varias en el área); null = auto-asignación en servidor. */
+  pendingAssignedToId: number | null = null;
+
+  nursePickPatient: AdminPatient | null = null;
+  selectedNurseIdForPick: number | null = null;
 
   constructor(
     private readonly adminService: AdminService,
@@ -89,9 +109,15 @@ export class NurseEditBedModalComponent implements OnChanges {
         areaId: this.bed.areaId ?? null,
       };
       this.patientSearchTerm = '';
+      this.patientScope = 'this-area';
+      this.allPatientsPool = [];
       this.filteredPatientsForBed = [];
-      this.allPatientsForBed = [];
-      this.loadPatientsForBedArea(this.bed.areaId);
+      this.pendingAssignedToId = null;
+      this.nursePickPatient = null;
+      this.selectedNurseIdForPick = null;
+      this.nursesLoadFailed = false;
+      this.loadPatientsPool();
+      this.loadAreaNurses();
     }
   }
 
@@ -103,45 +129,142 @@ export class NurseEditBedModalComponent implements OnChanges {
     this.dismissed.emit();
   }
 
-  loadPatientsForBedArea(areaId: number | null | undefined): void {
+  private bedAreaId(): number | null {
+    const a = this.bed?.areaId ?? this.editBedForm.areaId;
+    return a != null && !Number.isNaN(Number(a)) ? Number(a) : null;
+  }
+
+  /** Área efectiva del paciente (cama ocupa prioridad sobre `patient.areaId`). */
+  effectivePatientAreaId(p: AdminPatient): number | null {
+    const fromBed = p.bed?.areaId ?? p.bed?.area?.id;
+    if (fromBed != null && !Number.isNaN(Number(fromBed))) {
+      return Number(fromBed);
+    }
+    if (p.areaId != null && !Number.isNaN(Number(p.areaId))) {
+      return Number(p.areaId);
+    }
+    return null;
+  }
+
+  patientIsOtherArea(p: AdminPatient): boolean {
+    const aid = this.bedAreaId();
+    if (aid == null) {
+      return false;
+    }
+    const eff = this.effectivePatientAreaId(p);
+    return eff != null && eff !== aid;
+  }
+
+  loadPatientsPool(): void {
+    const areaId = this.bedAreaId();
     if (!areaId) {
-      this.filteredPatientsForBed = [];
+      this.allPatientsPool = [];
+      this.applyPatientFilters();
       return;
     }
-    this.adminService.getPatients().subscribe({
-      next: (patients) => {
-        this.allPatientsForBed = patients.filter((p: AdminPatient) => {
-          if (p.isActive === false) {
-            return false;
-          }
-          return p.areaId === areaId || !p.bedId;
-        });
-        this.filteredPatientsForBed = [...this.allPatientsForBed];
+    this.adminService
+      .getPatientsPage({ page: 1, limit: 500, isActive: true })
+      .subscribe({
+        next: (page) => {
+          this.allPatientsPool = page.items || [];
+          this.applyPatientFilters();
+        },
+        error: () => {
+          this.allPatientsPool = [];
+          this.filteredPatientsForBed = [];
+          this.toast.warning(NURSE_MODAL_EDIT_BED_WARN_LOAD_PATIENTS);
+        },
+      });
+  }
+
+  loadAreaNurses(): void {
+    const areaId = this.bedAreaId();
+    if (!areaId) {
+      this.areaNurses = [];
+      return;
+    }
+    this.adminService.getNursesByArea(areaId).subscribe({
+      next: (nurses) => {
+        this.areaNurses = nurses || [];
+        this.nursesLoadFailed = false;
       },
       error: () => {
-        this.filteredPatientsForBed = [];
-        this.toast.warning(NURSE_MODAL_EDIT_BED_WARN_LOAD_PATIENTS);
+        this.areaNurses = [];
+        this.nursesLoadFailed = true;
+        this.toast.warning(NURSE_MODAL_EDIT_BED_WARN_LOAD_NURSES);
       },
     });
   }
 
-  filterPatientsForBed(): void {
-    if (this.patientSearchTerm.trim()) {
-      const searchLower = this.patientSearchTerm.toLowerCase();
-      this.filteredPatientsForBed = this.allPatientsForBed.filter((patient: AdminPatient) => {
-        const fullName = `${patient.firstName} ${patient.lastName}`.toLowerCase();
-        const identification = (patient.identificationNumber || '').toLowerCase();
-        return fullName.includes(searchLower) || identification.includes(searchLower);
-      });
-    } else {
-      this.filteredPatientsForBed = [...this.allPatientsForBed];
-    }
+  onPatientScopeChange(): void {
+    this.applyPatientFilters();
   }
 
-  selectPatientForBed(patient: AdminPatient): void {
+  applyPatientFilters(): void {
+    const areaId = this.bedAreaId();
+    let base = this.allPatientsPool;
+    if (areaId != null) {
+      if (this.patientScope === 'this-area') {
+        base = base.filter((p) => this.effectivePatientAreaId(p) === areaId);
+      } else if (this.patientScope === 'other-areas') {
+        base = base.filter((p) => {
+          const eff = this.effectivePatientAreaId(p);
+          return eff != null && eff !== areaId;
+        });
+      }
+    }
+    if (this.patientSearchTerm.trim()) {
+      const q = this.patientSearchTerm.toLowerCase().trim();
+      base = base.filter((patient: AdminPatient) => {
+        const fullName = `${patient.firstName} ${patient.lastName}`.toLowerCase();
+        const identification = (patient.identificationNumber || '').toLowerCase();
+        return fullName.includes(q) || identification.includes(q);
+      });
+    }
+    this.filteredPatientsForBed = base;
+  }
+
+  filterPatientsForBed(): void {
+    this.applyPatientFilters();
+  }
+
+  startPatientAssignment(patient: AdminPatient): void {
+    if (this.nursesLoadFailed || !this.areaNurses.length) {
+      this.confirmPatientAssignment(patient, null);
+      return;
+    }
+    if (this.areaNurses.length > 1) {
+      this.nursePickPatient = patient;
+      this.selectedNurseIdForPick = null;
+      return;
+    }
+    this.confirmPatientAssignment(patient, null);
+  }
+
+  cancelNursePick(): void {
+    this.nursePickPatient = null;
+    this.selectedNurseIdForPick = null;
+  }
+
+  confirmNursePick(): void {
+    if (!this.nursePickPatient) {
+      return;
+    }
+    const nid = this.selectedNurseIdForPick != null ? Number(this.selectedNurseIdForPick) : NaN;
+    if (!Number.isFinite(nid)) {
+      this.toast.warning(NURSE_MODAL_EDIT_BED_WARN_SELECT_NURSE);
+      return;
+    }
+    this.confirmPatientAssignment(this.nursePickPatient, nid);
+  }
+
+  private confirmPatientAssignment(patient: AdminPatient, assignedToId: number | null): void {
     this.editBedForm.patientId = patient.id ? Number(patient.id) : null;
+    this.pendingAssignedToId = assignedToId;
+    this.nursePickPatient = null;
+    this.selectedNurseIdForPick = null;
     this.patientSearchTerm = '';
-    this.filteredPatientsForBed = [];
+    this.applyPatientFilters();
   }
 
   releaseBed(): void {
@@ -155,6 +278,7 @@ export class NurseEditBedModalComponent implements OnChanges {
       .then((confirmed) => {
         if (confirmed) {
           this.editBedForm.patientId = null;
+          this.pendingAssignedToId = null;
         }
       });
   }
@@ -163,7 +287,7 @@ export class NurseEditBedModalComponent implements OnChanges {
     if (!this.editBedForm.patientId) {
       return '';
     }
-    const patient = this.allPatientsForBed.find((p: AdminPatient) => {
+    const patient = this.allPatientsPool.find((p: AdminPatient) => {
       const pId = p.id ? Number(p.id) : null;
       return pId === this.editBedForm.patientId;
     });
@@ -191,12 +315,21 @@ export class NurseEditBedModalComponent implements OnChanges {
       return;
     }
 
-    const updateData: { bedNumber: string; isActive: boolean; patientId?: number | null } = {
+    const updateData: {
+      bedNumber: string;
+      isActive: boolean;
+      patientId?: number | null;
+      assignedToId?: number | null;
+    } = {
       bedNumber: this.editBedForm.bedNumber.trim(),
       isActive: this.editBedForm.isActive,
     };
+
     if (this.editBedForm.patientId) {
       updateData.patientId = this.editBedForm.patientId;
+      if (this.pendingAssignedToId != null) {
+        updateData.assignedToId = this.pendingAssignedToId;
+      }
     } else {
       updateData.patientId = null;
     }

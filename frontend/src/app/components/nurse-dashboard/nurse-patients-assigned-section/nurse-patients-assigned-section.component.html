@@ -1,10 +1,10 @@
 <div class="section-header">
-  <h2 class="section-title">👥 Mis Pacientes Asignados</h2>
+  <h2 class="section-title"><app-hero-icon name="users" /> Mis Pacientes Asignados</h2>
 </div>
 
 <div class="filters-container patients-filters-bar">
   <div class="filter-box">
-    <label for="nurse-patient-search">🔍 Buscar por nombre o cama</label>
+    <label for="nurse-patient-search"><app-hero-icon name="magnifying-glass" /> Buscar por nombre o cama</label>
     <input
       id="nurse-patient-search"
       type="text"
@@ -16,7 +16,7 @@
     />
   </div>
   <div class="filter-box">
-    <label for="nurse-patient-filter-type">📋 Filtrar lista</label>
+    <label for="nurse-patient-filter-type"><app-hero-icon name="clipboard-document-list" /> Filtrar lista</label>
     <select
       id="nurse-patient-filter-type"
       class="neuro-select neuro-select-inline"
@@ -32,7 +32,7 @@
   <div class="filter-box filter-box-actions" *ngIf="showClearPatientFilters">
     <label class="filter-box-spacer" aria-hidden="true">&nbsp;</label>
     <button type="button" class="neuro-btn neuro-btn-sm" (click)="onClearPatientFilters()">
-      🔄 Limpiar filtros
+      <app-hero-icon name="arrow-path" /> Limpiar filtros
     </button>
   </div>
 </div>
@@ -52,11 +52,21 @@
   >
     <div class="patient-assigned-card-header">
       <div class="patient-assigned-card-info">
-        <h3 class="patient-assigned-card-name">{{ patient.name }}</h3>
+        <div class="nurse-patient-card-title-row">
+          <h3 class="patient-assigned-card-name">{{ patient.name }}</h3>
+          <button
+            type="button"
+            class="nurse-details-pill-btn"
+            (click)="openPatientDetails.emit(patient); $event.stopPropagation()"
+            title="Ver detalles del paciente"
+          >
+            Detalles
+          </button>
+        </div>
         <p class="patient-assigned-card-meta">
-          <span class="patient-assigned-meta-item">🛏️ {{ patient.bedNumber }}</span>
+          <span class="patient-assigned-meta-item"><app-hero-icon name="rectangle-group" /> {{ patient.bedNumber }}</span>
           <span class="patient-assigned-meta-sep">·</span>
-          <span class="patient-assigned-meta-item">🎂 {{ patient.age }} años</span>
+          <span class="patient-assigned-meta-item"><app-hero-icon name="cake" /> {{ patient.age }} años</span>
         </p>
       </div>
       <div class="patient-assigned-kpis">
@@ -64,12 +74,12 @@
           class="patient-assigned-task-pill"
           [class.patient-assigned-task-pill--active]="medicationDosesToday(patient) > 0"
         >
-          💊 {{ medicationDosesToday(patient) }} medicamentos
+          <app-hero-icon name="beaker" /> {{ medicationDosesToday(patient) }} medicamentos
         </div>
         <div
           class="patient-assigned-task-pill patient-assigned-task-pill--muted"
         >
-          🩺 {{ treatmentsTodayCount(patient) }} tratamientos
+          <app-hero-icon name="shield-check" /> {{ treatmentsTodayCount(patient) }} tratamientos
         </div>
       </div>
     </div>
@@ -93,12 +103,6 @@
         blockLabel="Obs. médicas"
         emptyLabel="Sin observaciones"
       />
-    </div>
-
-    <div class="patient-assigned-card-actions" (click)="$event.stopPropagation()">
-      <button type="button" class="neuro-btn neuro-btn-sm patient-assigned-action-btn patient-assigned-action-btn--primary" (click)="openPatientDetails.emit(patient)">
-        📋 Ver ficha
-      </button>
     </div>
   </div>
 </div>

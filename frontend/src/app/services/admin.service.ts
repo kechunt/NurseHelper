@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { map, shareReplay, tap, timeout, catchError } from 'rxjs/operators';
 import { throwError } from 'rxjs';
 import { User } from './auth.service';
+import type { HandoverShiftSlot } from './nurse.service';
 import { environment } from '../../environments/environment';
 
 // Constantes para configuración
@@ -16,6 +17,37 @@ export interface Area {
   description?: string;
   isActive?: boolean;
   beds?: Bed[];
+}
+
+/** Cobertura del turno actual por área (asistencia presente + enfermeras con área asignada). */
+export interface AreasShiftCoverageNurse {
+  id: number;
+  firstName: string;
+  lastName: string;
+}
+
+export interface AreasShiftCoverageRow {
+  areaId: number;
+  nurses: AreasShiftCoverageNurse[];
+}
+
+export interface AdminHandoverNoteDto {
+  id: number;
+  noteDate: string;
+  shiftSlot: string;
+  body: string;
+  authorUserId: number;
+  updatedAt: string;
+}
+
+export interface AreasShiftCoveragePayload {
+  date: string;
+  hasActiveShift: boolean;
+  shiftId: number | null;
+  shiftName: string | null;
+  shiftTime: string | null;
+  message?: string;
+  areas: AreasShiftCoverageRow[];
 }
 
 export interface Bed {
@@ -67,6 +99,8 @@ export interface Patient {
   /** Usuario (enfermera) responsable del paciente */
   assignedToId?: number | null;
   assignedTo?: { id: number; firstName?: string; lastName?: string; role?: string } | null;
+  assignmentStatus?: 'pending' | 'assigned';
+  lastAssignmentAt?: Date | string | null;
 }
 
 export interface Schedule {
@@ -157,12 +191,12 @@ export class AdminService {
         }
         
         // Si no es ninguno de los formatos esperados
-        console.warn('⚠️ Formato inesperado de respuesta:', response);
+        console.warn(' Formato inesperado de respuesta:', response);
         return { users: [], total: 0 };
       }),
       catchError(error => {
         if (error.name === 'TimeoutError') {
-          console.error('⏱️ Timeout: El servidor no respondió en 10 segundos');
+          console.error('⏱ Timeout: El servidor no respondió en 10 segundos');
           return throwError(() => ({
             status: 0,
             message: 'El servidor no responde. Verifica que el backend esté corriendo en http://localhost:3000',
@@ -218,6 +252,11 @@ export class AdminService {
     this.areasCache$ = null;
   }
 
+  /** Enfermeras presentes en el turno vigente, por área (panel administración). */
+  getAreasShiftCoverage(): Observable<AreasShiftCoveragePayload> {
+    return this.http.get<AreasShiftCoveragePayload>(`${environment.apiUrl}/areas/shift-coverage`);
+  }
+
   getArea(id: number): Observable<Area> {
     return this.http.get<Area>(`${environment.apiUrl}/areas/${id}`);
   }
@@ -267,7 +306,19 @@ export class AdminService {
     );
   }
 
-  updateBed(id: number, bed: Partial<Bed>): Observable<any> {
+  /** Enfermeras activas del área (panel enfermería / asignación a cama). */
+  getNursesByArea(areaId: number): Observable<{ id: number; firstName: string; lastName: string; username?: string }[]> {
+    return this.http
+      .get<{ nurses: { id: number; firstName: string; lastName: string; username?: string }[] }>(
+        `${environment.apiUrl}/users/area/${areaId}/nurses`
+      )
+      .pipe(map((r) => (Array.isArray(r.nurses) ? r.nurses : [])));
+  }
+
+  updateBed(
+    id: number,
+    bed: Partial<Bed> & { patientId?: number | null; assignedToId?: number | null }
+  ): Observable<any> {
     return this.http.patch(`${environment.apiUrl}/beds/${id}`, bed).pipe(
       tap(() => {
         this.clearBedsCache();
@@ -276,8 +327,12 @@ export class AdminService {
     );
   }
 
-  assignPatientToBed(bedId: number, patientId: number | null): Observable<any> {
-    return this.http.post(`${environment.apiUrl}/beds/${bedId}/assign`, { patientId }).pipe(
+  assignPatientToBed(bedId: number, patientId: number | null, assignedToId?: number): Observable<any> {
+    const body: { patientId: number | null; assignedToId?: number } = { patientId };
+    if (assignedToId != null && Number.isFinite(assignedToId)) {
+      body.assignedToId = assignedToId;
+    }
+    return this.http.post(`${environment.apiUrl}/beds/${bedId}/assign`, body).pipe(
       tap(() => {
         this.clearBedsCache();
         this.clearPatientsCache();
@@ -301,6 +356,7 @@ export class AdminService {
     isActive?: boolean;
     areaId?: number;
     assignedToId?: number;
+    assignmentStatus?: 'pending' | 'assigned';
     hasBed?: boolean;
   }): Observable<PatientsPageResult> {
     let p = new HttpParams()
@@ -320,6 +376,9 @@ export class AdminService {
     }
     if (params.assignedToId != null && !isNaN(params.assignedToId)) {
       p = p.set('assignedToId', String(params.assignedToId));
+    }
+    if (params.assignmentStatus === 'pending' || params.assignmentStatus === 'assigned') {
+      p = p.set('assignmentStatus', params.assignmentStatus);
     }
     if (params.hasBed === true) {
       p = p.set('hasBed', 'true');
@@ -371,7 +430,7 @@ export class AdminService {
         shareReplay(CACHE_SIZE),
         catchError((error) => {
           this.patientsCache$ = null;
-          console.error('❌ Error cargando pacientes:', error);
+          console.error(' Error cargando pacientes:', error);
           return throwError(() => error);
         })
       );
@@ -424,6 +483,26 @@ export class AdminService {
 
   deleteSchedule(id: number): Observable<any> {
     return this.http.delete(`${environment.apiUrl}/schedules/${id}`);
+  }
+
+  /** Nota compartida entre administradoras / supervisoras (por fecha y turno). */
+  getAdminHandoverNote(date: string, shift: HandoverShiftSlot): Observable<{ note: AdminHandoverNoteDto | null }> {
+    const params = new HttpParams().set('date', date).set('shift', shift);
+    return this.http.get<{ note: AdminHandoverNoteDto | null }>(`${environment.apiUrl}/handover/admin-notes`, {
+      params,
+    });
+  }
+
+  putAdminHandoverNote(
+    noteDate: string,
+    body: string,
+    shift: HandoverShiftSlot
+  ): Observable<{ note: AdminHandoverNoteDto }> {
+    return this.http.put<{ note: AdminHandoverNoteDto }>(`${environment.apiUrl}/handover/admin-notes`, {
+      noteDate,
+      shiftSlot: shift,
+      body,
+    });
   }
 }
 

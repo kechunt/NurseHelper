@@ -14,7 +14,7 @@
   >
     <div class="modal-header">
       <h3 id="nurse-pharmacy-quick-dialog-title" i18n="@@nursePharmacyQuickModal.title">
-        💊 Medicamentos a solicitar a farmacia
+        <app-hero-icon name="beaker" /> Medicamentos a solicitar a farmacia
       </h3>
       <button
         type="button"
@@ -30,9 +30,9 @@
       <div class="tasks-actions header-actions nurse-quick-modal-toolbar">
         <div class="summary-inline">
           <span class="summary-badge" i18n="@@nursePharmacyQuickModal.uniqueMedicationsBadge">
-            📦 {{ uniqueMedicationsCount }} medicamentos
+            <app-hero-icon name="archive-box" /> {{ uniqueMedicationsCount }} medicamentos
           </span>
-          <span class="summary-badge" i18n="@@nursePharmacyQuickModal.totalDosesBadge">💉 {{ totalDosesToday }} dosis</span>
+          <span class="summary-badge" i18n="@@nursePharmacyQuickModal.totalDosesBadge"><app-hero-icon name="beaker" /> {{ totalDosesToday }} dosis</span>
         </div>
       </div>
       <div class="table-wrapper-neuro unified-table-container nurse-table-shell-flat">
@@ -90,9 +90,9 @@
               </td>
               <td>
                 <span *ngIf="med.requested" class="status-indicator done" i18n="@@nursePharmacyQuickModal.statusRequested"
-                  >✓ Solicitado</span>
+                  ><app-hero-icon name="check-circle" /> Solicitado</span>
                 <span *ngIf="!med.requested" class="status-indicator pending" i18n="@@nursePharmacyQuickModal.statusPending"
-                  >⏳ Pendiente</span>
+                  ><app-hero-icon name="clock" /> Pendiente</span>
               </td>
             </tr>
           </tbody>
@@ -100,7 +100,7 @@
       </div>
       <div class="pharmacy-footer pharmacy-footer--modal">
         <button type="button" class="neuro-btn btn-primary-neuro large" (click)="sendRequest.emit()" i18n="@@nursePharmacyQuickModal.sendRequest">
-          📤 Enviar solicitud ({{ requestedSelectedCount }} seleccionados)
+          <app-hero-icon name="paper-airplane" /> Enviar solicitud ({{ requestedSelectedCount }} seleccionados)
         </button>
       </div>
       <p *ngIf="medications.length === 0" class="empty-message" i18n="@@nursePharmacyQuickModal.emptyMedications">
@@ -109,7 +109,7 @@
     </div>
     <div class="modal-footer nurse-reports-modal-footer">
       <button type="button" class="neuro-btn neuro-btn-sm" (click)="openFullModule.emit()" i18n="@@nursePharmacyQuickModal.openFullModule">
-        💊 Abrir módulo Farmacia
+        <app-hero-icon name="beaker" /> Abrir módulo Farmacia
       </button>
       <button type="button" class="btn-primary-neuro" (click)="dismissed.emit()" i18n="@@nursePharmacyQuickModal.close">
         Cerrar

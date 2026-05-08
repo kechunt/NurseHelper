@@ -7,6 +7,7 @@ import { AdministrationHistory, AdministrationStatus } from '../entities/Adminis
 import { In, Like } from 'typeorm';
 import { logger } from '../utils/logger';
 import {
+  buildDiagnosisHeaderLine,
   findClinicalNotesForPatient,
   mergeDbNotesWithLegacyColumn,
 } from './patient-clinical-note.service';
@@ -550,6 +551,8 @@ export async function fetchPatientDetailsForNurse(
     general: mergeDbNotesWithLegacyColumn(clinicalNoteRows, go, 'general'),
   };
 
+  const diagnosisHeader = buildDiagnosisHeaderLine(clinicalNotes.diagnosis);
+
   const medicationsToday = todaySchedules
     .filter((s) => s.type === ScheduleType.MEDICATION)
     .map((s) => {
@@ -577,7 +580,7 @@ export async function fetchPatientDetailsForNurse(
     identificationNumber: patient.identificationNumber || '',
     bedNumber: bed ? bed.bedNumber : 'Sin cama asignada',
     age,
-    diagnosis: patient.medicalHistory || 'Sin diagnóstico',
+    diagnosis: diagnosisHeader,
     medicalHistory: patient.medicalHistory || '',
     medications,
     medicationsToday,

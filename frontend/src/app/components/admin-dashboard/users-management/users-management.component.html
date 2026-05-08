@@ -1,14 +1,14 @@
 <div class="users-management">
   <div class="section-header">
     <h2 class="section-title">Gestión de Usuarios</h2>
-    <button class="neuro-btn" (click)="loadUsers(); loadSupervisors(); loadPharmacyUsers();">🔄 Actualizar</button>
+    <button class="neuro-btn" (click)="loadUsers(); loadSupervisors(); loadPharmacyUsers();"><app-hero-icon name="arrow-path" /> Actualizar</button>
   </div>
 
   <!-- Sección de Jefas de Enfermeras -->
   <div class="role-section">
-    <h3 class="role-section-title">👩‍⚕️ Jefas de Enfermeras</h3>
+    <h3 class="role-section-title"><app-hero-icon name="user-group" /> Jefas de Enfermeras</h3>
     <div *ngIf="loadingSupervisors" class="loading-state">
-      <p>⏳ Cargando jefas de enfermeras...</p>
+      <p><app-hero-icon name="clock" /> Cargando jefas de enfermeras...</p>
     </div>
     <div *ngIf="!loadingSupervisors" class="role-cards-container">
       <div *ngIf="supervisors.length === 0" class="no-role-users">
@@ -21,7 +21,7 @@
             <p class="role-card-username">@{{ supervisor.username }}</p>
             <p class="role-card-email">{{ supervisor.email }}</p>
             <p class="role-card-phone" *ngIf="(supervisor.phone || '').toString().trim()">
-              📞 {{ supervisor.phone }}
+              <app-hero-icon name="phone" /> {{ supervisor.phone }}
             </p>
             <span class="neuro-status" [class.role-admin]="supervisor.role === 'admin'"
               [class.role-supervisor]="supervisor.role === 'supervisor'">
@@ -30,7 +30,7 @@
           </div>
           <div class="role-card-actions">
             <button class="neuro-btn-icon" (click)="openSupervisorRoleModal(supervisor)" title="Cambiar Rol">
-              🔄
+              <app-hero-icon name="arrow-path" />
             </button>
           </div>
         </div>
@@ -40,9 +40,9 @@
 
   <!-- Sección de Encargado de Farmacia -->
   <div class="role-section">
-    <h3 class="role-section-title">💊 Encargado de Farmacia</h3>
+    <h3 class="role-section-title"><app-hero-icon name="beaker" /> Encargado de Farmacia</h3>
     <div *ngIf="loadingPharmacy" class="loading-state">
-      <p>⏳ Cargando encargado de farmacia...</p>
+      <p><app-hero-icon name="clock" /> Cargando encargado de farmacia...</p>
     </div>
     <div *ngIf="!loadingPharmacy" class="role-cards-container">
       <div *ngIf="pharmacyUsers.length === 0" class="no-role-users">
@@ -55,7 +55,7 @@
             <p class="role-card-username">@{{ pharmacyUser.username }}</p>
             <p class="role-card-email">{{ pharmacyUser.email }}</p>
             <p class="role-card-phone" *ngIf="(pharmacyUser.phone || '').toString().trim()">
-              📞 {{ pharmacyUser.phone }}
+              <app-hero-icon name="phone" /> {{ pharmacyUser.phone }}
             </p>
             <span class="neuro-status role-pharmacy">
               {{ getRoleLabel(pharmacyUser.role) }}
@@ -63,7 +63,7 @@
           </div>
           <div class="role-card-actions">
             <button class="neuro-btn-icon" (click)="openPharmacyRoleModal(pharmacyUser)" title="Cambiar Rol">
-              🔄
+              <app-hero-icon name="arrow-path" />
             </button>
           </div>
         </div>
@@ -98,13 +98,13 @@
           placeholder="Buscar por nombre, usuario, email o teléfono..."
           aria-label="Buscar usuario por nombre, usuario, email o teléfono"
         />
-        <span class="search-icon">🔍</span>
+        <span class="search-icon"><app-hero-icon name="magnifying-glass" /></span>
       </div>
     </div>
 
     <div class="filter-group" *ngIf="selectedRole !== 'all' || searchQuery.trim()">
       <button class="neuro-btn clear-filters-btn" (click)="clearFilters()">
-        🗑️ Limpiar Filtros
+        <app-hero-icon name="trash" /> Limpiar Filtros
       </button>
     </div>
   </div>
@@ -118,14 +118,14 @@
   </div>
 
   <div *ngIf="loading" class="loading-state">
-    <p>⏳ Cargando usuarios...</p>
+    <p><app-hero-icon name="clock" /> Cargando usuarios...</p>
   </div>
 
 
   <div *ngIf="!loading" class="table-container">
     <div class="table-header-actions">
       <button class="neuro-btn" (click)="exportToCSV()" title="Exportar a CSV">
-        📥 Exportar CSV
+        <app-hero-icon name="document-arrow-down" /> Exportar CSV
       </button>
     </div>
     <table class="neuro-table" role="table" aria-label="Tabla de usuarios">
@@ -193,9 +193,9 @@
     [summaryLines]="userRowActionsTarget ? userRowActionsSummary(userRowActionsTarget) : []"
     (dismissed)="closeUserRowActionsSheet()"
   >
-    <button type="button" class="neuro-btn" (click)="fromUserSheetOpenEdit()">✏️ Editar datos</button>
-    <button type="button" class="neuro-btn" (click)="fromUserSheetOpenRole()">🔄 Cambiar rol</button>
-    <button type="button" class="neuro-btn outlined delete-btn" (click)="fromUserSheetDelete()">🗑️ Eliminar permanentemente</button>
+    <button type="button" class="neuro-btn" (click)="fromUserSheetOpenEdit()"><app-hero-icon name="pencil" /> Editar datos</button>
+    <button type="button" class="neuro-btn" (click)="fromUserSheetOpenRole()"><app-hero-icon name="arrow-path" /> Cambiar rol</button>
+    <button type="button" class="neuro-btn outlined delete-btn" (click)="fromUserSheetDelete()"><app-hero-icon name="trash" /> Eliminar permanentemente</button>
   </app-admin-table-row-actions-modal>
 
   <!-- Modal para editar usuario -->
@@ -203,7 +203,7 @@
     <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3>Editar Usuario</h3>
-        <button class="close-btn" (click)="closeEditModal()">✕</button>
+        <button class="close-btn admin-close-btn" (click)="closeEditModal()">✕</button>
       </div>
       <div class="modal-body">
         <div class="form-grid">
@@ -292,7 +292,7 @@
     <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3>Cambiar Rol de Usuario</h3>
-        <button class="close-btn" (click)="closeRoleModal()">✕</button>
+        <button class="close-btn admin-close-btn" (click)="closeRoleModal()">✕</button>
       </div>
       <div class="modal-body">
         <p><strong>Usuario:</strong> {{ selectedUser?.username }}</p>
@@ -308,10 +308,10 @@
           </select>
         </div>
         <p class="modal-warning" *ngIf="selectedUser?.role === 'nurse' && newRole !== 'nurse'">
-          ⚠️ Esta enfermera tiene pacientes asignados. Al cambiar el rol, los pacientes mantendrán su área asignada pero quedarán sin enfermera asignada para poder asignar otra.
+          <app-hero-icon name="exclamation-triangle" /> Esta enfermera tiene pacientes asignados. Al cambiar el rol, los pacientes mantendrán su área asignada pero quedarán sin enfermera asignada para poder asignar otra.
         </p>
         <p class="modal-warning" *ngIf="selectedUser?.role !== 'nurse' || newRole === 'nurse'">
-          ⚠️ Al cambiar el rol, el usuario perderá los permisos del rol anterior y obtendrá los del nuevo rol.
+          <app-hero-icon name="exclamation-triangle" /> Al cambiar el rol, el usuario perderá los permisos del rol anterior y obtendrá los del nuevo rol.
         </p>
       </div>
       <div class="modal-footer">

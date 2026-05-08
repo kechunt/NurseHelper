@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MedicationForPharmacy } from '../../../services/nurse.service';
 import type { MedicationRequest } from '../../../services/pharmacy.service';
+import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
 import {
   countPharmacyMedicationsRequested,
   setAllPharmacyMedicationsRequested,
@@ -11,7 +12,7 @@ import {
 @Component({
   selector: 'app-nurse-pharmacy-section',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, HeroIconComponent],
   templateUrl: './nurse-pharmacy-section.component.html',
   styleUrls: [
     '../../../shared/styles/admin-panel-responsive.css',

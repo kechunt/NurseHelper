@@ -2,15 +2,16 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { DESIGN_CATALOG_SNIPPETS } from './design-catalog.snippets';
+import { HeroIconComponent } from '../../shared/components/hero-icon/hero-icon.component';
 
 /**
- * Catálogo visual de neumorfismo para QA. No enlazar desde la UI de producción.
- * Abrir en el navegador: /design-catalog
+ * Catálogo de patrones UI: importa los mismos CSS que producción para vista previa y normalización.
+ * Solo desarrollo — ver designCatalogGuard. Ruta: /design-catalog
  */
 @Component({
   selector: 'app-design-catalog',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, HeroIconComponent],
   templateUrl: './design-catalog.component.html',
   styleUrls: ['./design-catalog.component.css'],
 })

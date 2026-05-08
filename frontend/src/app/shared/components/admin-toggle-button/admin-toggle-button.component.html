@@ -1,0 +1,4 @@
+<button type="button" class="admin-toggle-btn" (click)="onToggle($event)">
+  {{ expanded ? labelHide : labelShow }}
+  <span *ngIf="showChevron" class="toggle-chevron-neuro" [class.open]="expanded">▾</span>
+</button>

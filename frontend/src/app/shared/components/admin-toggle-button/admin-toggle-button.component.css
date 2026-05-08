@@ -1,0 +1,34 @@
+.admin-toggle-btn {
+  border: none;
+  border-radius: 999px;
+  padding: 8px 14px;
+  min-height: 36px;
+  min-width: 104px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #4a5568;
+  background: #e0e5ec;
+  box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.admin-toggle-btn:hover {
+  box-shadow: 3px 3px 6px #bebebe, -3px -3px 6px #ffffff;
+  transform: translateY(-1px);
+}
+
+.admin-toggle-btn:active {
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+  transform: translateY(0);
+}
+
+.toggle-chevron-neuro {
+  display: inline-block;
+  margin-left: 0.35rem;
+  transition: transform 0.2s ease;
+}
+
+.toggle-chevron-neuro.open {
+  transform: rotate(180deg);
+}

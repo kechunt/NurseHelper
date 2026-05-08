@@ -1,133 +1,140 @@
-<div class="section-header">
-  <h2 class="section-title">💊 Medicamentos de Hoy - Solicitud a Farmacia</h2>
-  <div class="tasks-actions header-actions">
-    <div class="summary-inline">
-      <span class="summary-badge">📦 {{ uniqueMedicationsCount }} medicamentos</span>
-      <span class="summary-badge">💉 {{ totalDosesToday }} dosis</span>
-    </div>
-  </div>
-</div>
-
-<div class="table-wrapper-neuro unified-table-container nurse-table-shell-flat">
-  <table class="unified-tasks-table neuro-table medications-modal-table nurse-tasks-table">
-    <thead>
-      <tr>
-        <th style="width: 40px">
-          <input type="checkbox" (change)="toggleAllMedications($event)" title="Seleccionar todos" />
-        </th>
-        <th>Medicamento</th>
-        <th>Dosis</th>
-        <th>Cantidad</th>
-        <th>Pacientes</th>
-        <th>Estado</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let med of medicationsForPharmacy">
-        <td>
-          <input type="checkbox" [(ngModel)]="med.requested" />
-        </td>
-        <td>
-          <div class="med-name-compact">{{ med.name }}</div>
-        </td>
-        <td>
-          <span class="pharmacy-dosage-plain">{{ med.dosage }}</span>
-        </td>
-        <td>
-          <span class="pharmacy-dose-count-plain">{{ med.totalDoses }} dosis</span>
-        </td>
-        <td class="pharmacy-patients-cell">
-          <div class="pharmacy-patients-summary">
-            <span class="pharmacy-patient-count-text">
-              {{ med.patientsCount }} {{ med.patientsCount === 1 ? 'paciente' : 'pacientes' }}
-            </span>
-            <button
-              type="button"
-              class="pharmacy-view-patients-btn"
-              (click)="viewPatients.emit(med)"
-              title="Ver quiénes requieren este medicamento hoy"
-            >
-              Ver pacientes
-            </button>
-          </div>
-        </td>
-        <td>
-          <span class="status-indicator" [class.done]="med.requested" [class.pending]="!med.requested">
-            {{ med.requested ? '✓ Solicitado' : '⏳ Pendiente' }}
-          </span>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-</div>
-
-<div class="pharmacy-footer">
-  <button type="button" class="neuro-btn btn-primary-neuro large" (click)="sendRequest.emit()">
-    📤 Enviar Solicitud a Farmacia ({{ requestedCount }} seleccionados)
-  </button>
-</div>
-
-<p *ngIf="medicationsForPharmacy.length === 0" class="empty-message">No hay medicamentos programados para hoy</p>
-
-<div class="pharmacy-history-shell">
-  <div class="pharmacy-history-toolbar">
-    <div class="pharmacy-history-heading-block">
-      <h3 class="pharmacy-history-title">📜 Historial de solicitudes a farmacia</h3>
-      <p class="pharmacy-history-subtitle">
-        Registro de pedidos enviados por fecha.
-        <span *ngIf="!historyOpen" class="pharmacy-history-collapsed-hint"> Pulsa <strong>Mostrar</strong> para ver la tabla.</span>
-      </p>
-    </div>
-    <button
-      type="button"
-      class="toggle-btn-neuro"
-      (click)="toggleHistory.emit()"
-      [attr.aria-expanded]="historyOpen"
-      aria-controls="nurse-pharmacy-history-panel"
-    >
-      {{ historyOpen ? '▼ Ocultar' : '▶ Mostrar' }}
-    </button>
-  </div>
-
-  <div *ngIf="historyOpen" id="nurse-pharmacy-history-panel" class="pharmacy-history-panel">
-    <div class="pharmacy-history-filters">
-      <label class="pharmacy-history-label">
-        <span>Fecha</span>
-        <input type="date" class="pharmacy-history-date" [value]="historyDate" (change)="onHistoryDateChange($event)" />
-      </label>
-      <span class="pharmacy-history-help">Por defecto: hoy</span>
+<div class="pharmacy-modules-stack">
+  <section class="pharmacy-module-card" aria-labelledby="nurse-pharmacy-today-title">
+    <div class="section-header">
+      <h2 id="nurse-pharmacy-today-title" class="section-title"><app-hero-icon name="beaker" /> Medicamentos de Hoy - Solicitud a Farmacia</h2>
+      <div class="tasks-actions header-actions">
+        <div class="summary-inline">
+          <span class="summary-badge"><app-hero-icon name="archive-box" /> {{ uniqueMedicationsCount }} medicamentos</span>
+          <span class="summary-badge"><app-hero-icon name="beaker" /> {{ totalDosesToday }} dosis</span>
+        </div>
+      </div>
     </div>
 
-    <p *ngIf="historyLoading" class="empty-message">Cargando historial…</p>
-    <p *ngIf="!historyLoading && historyError" class="empty-message">{{ historyError }}</p>
-
-    <div *ngIf="!historyLoading && !historyError" class="table-wrapper-neuro unified-table-container nurse-table-shell-flat">
-      <table class="unified-tasks-table neuro-table nurse-tasks-table pharmacy-history-table">
+    <div class="table-wrapper-neuro unified-table-container nurse-table-shell-flat">
+      <table class="unified-tasks-table neuro-table medications-modal-table nurse-tasks-table">
         <thead>
           <tr>
-            <th>Hora</th>
-            <th>ID</th>
+            <th style="width: 40px">
+              <input type="checkbox" (change)="toggleAllMedications($event)" title="Seleccionar todos" />
+            </th>
             <th>Medicamento</th>
             <th>Dosis</th>
             <th>Cantidad</th>
+            <th>Pacientes</th>
             <th>Estado</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let r of historyItems">
-            <td>{{ r.requestedAt | date:'HH:mm' }}</td>
-            <td><span class="pharmacy-history-id">{{ r.requestId }}</span></td>
-            <td>{{ r.medication }}</td>
-            <td>{{ r.dosage }}</td>
-            <td>{{ r.quantity }}</td>
-            <td><span class="status-indicator pending">{{ statusLabel(r.status) }}</span></td>
+          <tr *ngFor="let med of medicationsForPharmacy">
+            <td>
+              <input type="checkbox" [(ngModel)]="med.requested" />
+            </td>
+            <td>
+              <div class="med-name-compact">{{ med.name }}</div>
+            </td>
+            <td>
+              <span class="pharmacy-dosage-plain">{{ med.dosage }}</span>
+            </td>
+            <td>
+              <span class="pharmacy-dose-count-plain">{{ med.totalDoses }} dosis</span>
+            </td>
+            <td class="pharmacy-patients-cell">
+              <div class="pharmacy-patients-summary">
+                <span class="pharmacy-patient-count-text">
+                  {{ med.patientsCount }} {{ med.patientsCount === 1 ? 'paciente' : 'pacientes' }}
+                </span>
+                <button
+                  type="button"
+                  class="pharmacy-view-patients-btn"
+                  (click)="viewPatients.emit(med)"
+                  title="Ver quiénes requieren este medicamento hoy"
+                >
+                  Ver pacientes
+                </button>
+              </div>
+            </td>
+            <td>
+              <span class="status-indicator" [class.done]="med.requested" [class.pending]="!med.requested">
+                <app-hero-icon [name]="med.requested ? 'check-circle' : 'clock'" />
+                {{ med.requested ? 'Solicitado' : 'Pendiente' }}
+              </span>
+            </td>
           </tr>
         </tbody>
       </table>
     </div>
 
-    <p *ngIf="!historyLoading && !historyError && historyItems.length === 0" class="empty-message">
-      No hay solicitudes en esa fecha.
-    </p>
-  </div>
+    <div class="pharmacy-footer">
+      <button type="button" class="neuro-btn btn-primary-neuro large" (click)="sendRequest.emit()">
+        <app-hero-icon name="paper-airplane" /> Enviar Solicitud a Farmacia ({{ requestedCount }} seleccionados)
+      </button>
+    </div>
+
+    <p *ngIf="medicationsForPharmacy.length === 0" class="empty-message">No hay medicamentos programados para hoy</p>
+  </section>
+
+  <section class="pharmacy-module-card pharmacy-module-card--history" aria-labelledby="nurse-pharmacy-history-title">
+    <div class="pharmacy-history-shell">
+      <div class="pharmacy-history-toolbar">
+        <div class="pharmacy-history-heading-block">
+          <h3 id="nurse-pharmacy-history-title" class="pharmacy-history-title"><app-hero-icon name="document-text" /> Historial de solicitudes a farmacia</h3>
+          <p class="pharmacy-history-subtitle">
+            Registro de pedidos enviados por fecha.
+            <span *ngIf="!historyOpen" class="pharmacy-history-collapsed-hint"> Pulsa <strong>Mostrar</strong> para ver la tabla.</span>
+          </p>
+        </div>
+        <button
+          type="button"
+          class="toggle-btn-neuro"
+          (click)="toggleHistory.emit()"
+          [attr.aria-expanded]="historyOpen"
+          aria-controls="nurse-pharmacy-history-panel"
+        >
+          {{ historyOpen ? 'Ocultar' : 'Mostrar' }}
+        </button>
+      </div>
+
+      <div *ngIf="historyOpen" id="nurse-pharmacy-history-panel" class="pharmacy-history-panel">
+        <div class="pharmacy-history-filters">
+          <label class="pharmacy-history-label">
+            <span>Fecha</span>
+            <input type="date" class="pharmacy-history-date" [value]="historyDate" (change)="onHistoryDateChange($event)" />
+          </label>
+          <span class="pharmacy-history-help">Por defecto: hoy</span>
+        </div>
+
+        <p *ngIf="historyLoading" class="empty-message">Cargando historial…</p>
+        <p *ngIf="!historyLoading && historyError" class="empty-message">{{ historyError }}</p>
+
+        <div *ngIf="!historyLoading && !historyError" class="table-wrapper-neuro unified-table-container nurse-table-shell-flat">
+          <table class="unified-tasks-table neuro-table nurse-tasks-table pharmacy-history-table">
+            <thead>
+              <tr>
+                <th>Hora</th>
+                <th>ID</th>
+                <th>Medicamento</th>
+                <th>Dosis</th>
+                <th>Cantidad</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let r of historyItems">
+                <td>{{ r.requestedAt | date:'HH:mm' }}</td>
+                <td><span class="pharmacy-history-id">{{ r.requestId }}</span></td>
+                <td>{{ r.medication }}</td>
+                <td>{{ r.dosage }}</td>
+                <td>{{ r.quantity }}</td>
+                <td><span class="status-indicator pending">{{ statusLabel(r.status) }}</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p *ngIf="!historyLoading && !historyError && historyItems.length === 0" class="empty-message">
+          No hay solicitudes en esa fecha.
+        </p>
+      </div>
+    </div>
+  </section>
 </div>

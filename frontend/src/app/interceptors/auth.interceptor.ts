@@ -54,7 +54,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       const isConnectionError = error.status === 0 || isTimeoutError;
       
       if (isConnectionError) {
-        console.error('❌ Error de conexión:', 'No se puede conectar al servidor. Verifica que el backend esté funcionando.');
+        console.error(' Error de conexión:', 'No se puede conectar al servidor. Verifica que el backend esté funcionando.');
         // Crear un error más descriptivo
         const connectionError = new HttpErrorResponse({
           error: { message: 'No se puede establecer conexión con el servidor. Verifica que el backend esté corriendo en http://localhost:3000' },
@@ -64,15 +64,15 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         });
         return throwError(() => connectionError);
       } else if (error.status === 401) {
-        console.warn('⚠️ No autorizado:', 'Token inválido o expirado');
+        console.warn(' No autorizado:', 'Token inválido o expirado');
         // Opcional: redirigir al login si el token expiró
         if (req.url.includes('/auth/login') === false) {
           authService.logout();
         }
       } else if (error.status === 403) {
-        console.error('🚫 Acceso denegado:', error.message);
+        console.error(' Acceso denegado:', error.message);
       } else if (error.status >= 500) {
-        console.error('🔥 Error del servidor:', error.message);
+        console.error(' Error del servidor:', error.message);
       }
       
       return throwError(() => error);

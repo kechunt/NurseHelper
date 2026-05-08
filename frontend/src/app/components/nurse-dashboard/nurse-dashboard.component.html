@@ -19,6 +19,7 @@
   <ng-container appDashboardNav>
     <app-nurse-dashboard-main-nav
       [nurseMainView]="nurseMainView"
+      [handoverPendingNotice]="handoverPendingNotice"
       (viewSelect)="setNurseMainView($event)"
       (entregaClick)="openHandoverModal()"
       (reportesClick)="openNurseReportsModal()"
@@ -214,11 +215,15 @@
       (pendingTaskDetailPostponeRequested)="onPendingTaskDetailPostpone($event)"
       (handoverDateChange)="handoverDate = $event"
       (handoverDateCommitted)="onHandoverDateChange()"
+      (handoverShiftChange)="onHandoverShiftPick($event)"
+      (handoverShiftCommitted)="onHandoverShiftChange()"
       (handoverBodyChange)="handoverBody = $event"
       (handoverDismissed)="closeHandoverModal()"
+      (handoverAcknowledgeRequested)="acknowledgeHandoverRead()"
       (handoverSaveRequested)="saveHandoverNote()"
       (nurseReportsDismissed)="closeNurseReportsModal()"
       (nurseReportsCsvDownload)="downloadNurseReportCsv($event)"
+      (nurseReportsExcelDownload)="downloadNurseReportExcel($event)"
       (tasksQuickPatientFilterChange)="tasksPatientFilter = $event; applyTasksFilters()"
       (tasksQuickHourFilterChange)="tasksHourFilter = $event; applyTasksFilters()"
       (tasksQuickClearFilters)="clearTasksFilters()"

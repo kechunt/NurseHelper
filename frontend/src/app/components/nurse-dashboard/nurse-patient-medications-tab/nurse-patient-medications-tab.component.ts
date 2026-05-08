@@ -1,7 +1,9 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import type { MedicationTodaySlot } from '../medication-today-slot.model';
 import { AdminTableRowActionsModalComponent } from '../../../shared/components/admin-table-row-actions-modal/admin-table-row-actions-modal.component';
+import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
 import {
   medicationSlotPending,
   medicationSlotStatusLabel,
@@ -10,7 +12,7 @@ import {
 @Component({
   selector: 'app-nurse-patient-medications-tab',
   standalone: true,
-  imports: [CommonModule, AdminTableRowActionsModalComponent],
+  imports: [CommonModule, FormsModule, AdminTableRowActionsModalComponent, HeroIconComponent],
   templateUrl: './nurse-patient-medications-tab.component.html',
   styleUrls: [
     '../../../shared/styles/admin-table-unified.css',
@@ -19,10 +21,16 @@ import {
   ],
 })
 export class NursePatientMedicationsTabComponent {
+  private static readonly sinDiagnosticoPlaceholder = /^sin\s*diagn[oó]stico$/i;
+
   @Input() bedNumber = '';
   @Input() age: number | null = null;
   @Input() diagnosis = '';
   @Input({ required: true }) slots!: MedicationTodaySlot[];
+
+  /** Edición rápida del diagnóstico (historial clínico) desde el resumen superior. */
+  showDiagnosisEditor = false;
+  diagnosisDraft = '';
 
   @Output() readonly addMedication = new EventEmitter<void>();
   @Output() readonly openDayDetail = new EventEmitter<MedicationTodaySlot>();
@@ -31,7 +39,49 @@ export class NursePatientMedicationsTabComponent {
   @Output() readonly suspend = new EventEmitter<MedicationTodaySlot>();
   @Output() readonly reactivate = new EventEmitter<MedicationTodaySlot>();
   @Output() readonly deleteSlot = new EventEmitter<MedicationTodaySlot>();
+  @Output() readonly saveDiagnosis = new EventEmitter<string>();
   selectedSlotForActions: MedicationTodaySlot | null = null;
+
+  /** Texto mostrado cuando no hay valor clínico útil. */
+  get diagnosisDisplayLine(): string {
+    return this.isDiagnosisPlaceholder ? 'Sin diagnóstico' : this.diagnosisNormalized;
+  }
+
+  /** Tooltip con texto completo cuando la línea está truncada con puntos suspensivos. */
+  get diagnosisTooltipTitle(): string {
+    if (this.isDiagnosisPlaceholder) {
+      return '';
+    }
+    return this.diagnosisNormalized;
+  }
+
+  get isDiagnosisPlaceholder(): boolean {
+    const t = this.diagnosisNormalized;
+    if (!t || t === '—') {
+      return true;
+    }
+    return NursePatientMedicationsTabComponent.sinDiagnosticoPlaceholder.test(t);
+  }
+
+  private get diagnosisNormalized(): string {
+    return (this.diagnosis ?? '').trim();
+  }
+
+  openDiagnosisEditor(): void {
+    this.diagnosisDraft = this.isDiagnosisPlaceholder ? '' : this.diagnosisNormalized;
+    this.showDiagnosisEditor = true;
+  }
+
+  cancelDiagnosisEditor(): void {
+    this.showDiagnosisEditor = false;
+    this.diagnosisDraft = '';
+  }
+
+  confirmDiagnosisEditor(): void {
+    const text = (this.diagnosisDraft ?? '').trim();
+    this.saveDiagnosis.emit(text);
+    this.cancelDiagnosisEditor();
+  }
 
   slotPending(slot: MedicationTodaySlot): boolean {
     return medicationSlotPending(slot);

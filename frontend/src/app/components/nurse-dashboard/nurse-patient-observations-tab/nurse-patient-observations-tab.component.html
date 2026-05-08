@@ -1,19 +1,9 @@
-<h4 class="patient-modal-tab-h4" i18n="@@nursePatientObservationsTab.pageTitle">📝 Observaciones Médicas</h4>
+<h4 class="patient-modal-tab-h4" i18n="@@nursePatientObservationsTab.pageTitle"><app-hero-icon name="clipboard-document" /> Observaciones Médicas</h4>
 
 <div class="observations-grid">
   <div class="observation-card">
     <div class="observation-header">
-      <h5 i18n="@@nursePatientObservationsTab.cardDiagnosisTitle">📋 Diagnóstico / historial clínico</h5>
-      <button
-        type="button"
-        class="edit-observation-btn"
-        (click)="startEditingDiagnosis()"
-        *ngIf="!editingDiagnosis"
-        title="Editar"
-        i18n-title="@@nursePatientObservationsTab.editTitle"
-      >
-        ✏️
-      </button>
+      <h5 i18n="@@nursePatientObservationsTab.cardDiagnosisTitle"><app-hero-icon name="clipboard-document-list" /> Diagnóstico / historial clínico</h5>
     </div>
     <div *ngIf="!editingDiagnosis" class="observations-list observations-list--dense">
       <app-nurse-clinical-notes-scope-block
@@ -34,16 +24,16 @@
       ></textarea>
       <div class="edit-actions">
         <button type="button" class="save-observation-btn-neuro small" (click)="emitSaveDiagnosis()" i18n="@@nursePatientObservationsTab.saveDiag">
-          💾 Guardar
+          <app-hero-icon name="clipboard-document" /> Guardar
         </button>
         <button type="button" class="cancel-edit-btn" (click)="cancelEditingDiagnosis()" i18n="@@nursePatientObservationsTab.cancelDiag">
-          ❌ Cancelar
+          <app-hero-icon name="x-circle" /> Cancelar
         </button>
       </div>
     </div>
 
     <div *ngIf="!editingDiagnosis" class="append-note-inset">
-      <p class="append-note-lead" i18n="@@nursePatientObservationsTab.diagnosisAppendLead">➕ Añadir nota con fecha</p>
+      <p class="append-note-lead" i18n="@@nursePatientObservationsTab.diagnosisAppendLead"><app-hero-icon name="plus-circle" /> Añadir nota con fecha</p>
       <p class="append-note-hint" i18n="@@nursePatientObservationsTab.diagnosisAppendHint">
         Se concatena al diagnóstico / historial clínico en la base de datos.
       </p>
@@ -61,25 +51,15 @@
         (click)="emitClinicalAppend('diagnosis')"
         [disabled]="isSavingObservation"
       >
-        <span *ngIf="isSavingObservation" i18n="@@nursePatientObservationsTab.savingAppend">⏳ Guardando...</span>
-        <span *ngIf="!isSavingObservation" i18n="@@nursePatientObservationsTab.saveDiagnosisAppend">💾 Guardar nota</span>
+        <span *ngIf="isSavingObservation" i18n="@@nursePatientObservationsTab.savingAppend"><app-hero-icon name="clock" /> Guardando...</span>
+        <span *ngIf="!isSavingObservation" i18n="@@nursePatientObservationsTab.saveDiagnosisAppend"><app-hero-icon name="clipboard-document" /> Guardar nota</span>
       </button>
     </div>
   </div>
 
   <div class="observation-card">
     <div class="observation-header">
-      <h5 i18n="@@nursePatientObservationsTab.cardMedicalTitle">🩺 Observaciones médicas / evolución</h5>
-      <button
-        type="button"
-        class="edit-observation-btn"
-        (click)="startEditingMedicalObservations()"
-        *ngIf="!editingMedicalObservations"
-        title="Editar"
-        i18n-title="@@nursePatientObservationsTab.editMedicalTitle"
-      >
-        ✏️
-      </button>
+      <h5 i18n="@@nursePatientObservationsTab.cardMedicalTitle"><app-hero-icon name="shield-check" /> Observaciones médicas / evolución</h5>
     </div>
     <div *ngIf="!editingMedicalObservations" class="observations-list observations-list--dense">
       <app-nurse-clinical-notes-scope-block
@@ -100,17 +80,17 @@
       ></textarea>
       <div class="edit-actions">
         <button type="button" class="save-observation-btn-neuro small" (click)="emitSaveMedicalObservations()" i18n="@@nursePatientObservationsTab.saveMedical">
-          💾 Guardar
+          <app-hero-icon name="clipboard-document" /> Guardar
         </button>
         <button type="button" class="cancel-edit-btn" (click)="cancelEditingMedicalObservations()" i18n="@@nursePatientObservationsTab.cancelMedical">
-          ❌ Cancelar
+          <app-hero-icon name="x-circle" /> Cancelar
         </button>
       </div>
     </div>
 
     <div *ngIf="!editingMedicalObservations" class="append-note-inset">
       <p class="append-note-lead" i18n="@@nursePatientObservationsTab.medicalAppendLead">
-        ➕ Añadir nota con fecha (se guarda en la base de datos)
+        <app-hero-icon name="plus-circle" /> Añadir nota con fecha (se guarda en la base de datos)
       </p>
       <p class="append-note-hint" i18n="@@nursePatientObservationsTab.medicalAppendHint">
         Cada guardado agrega una línea con marca de tiempo al historial médico del paciente.
@@ -129,25 +109,15 @@
         (click)="emitClinicalAppend('medical')"
         [disabled]="isSavingObservation"
       >
-        <span *ngIf="isSavingObservation" i18n="@@nursePatientObservationsTab.savingAppend">⏳ Guardando...</span>
-        <span *ngIf="!isSavingObservation" i18n="@@nursePatientObservationsTab.saveMedicalAppend">💾 Guardar nota médica</span>
+        <span *ngIf="isSavingObservation" i18n="@@nursePatientObservationsTab.savingAppend"><app-hero-icon name="clock" /> Guardando...</span>
+        <span *ngIf="!isSavingObservation" i18n="@@nursePatientObservationsTab.saveMedicalAppend"><app-hero-icon name="clipboard-document" /> Guardar nota médica</span>
       </button>
     </div>
   </div>
 
   <div class="observation-card">
     <div class="observation-header">
-      <h5 i18n="@@nursePatientObservationsTab.cardAllergiesTitle">⚠️ Alergias</h5>
-      <button
-        type="button"
-        class="edit-observation-btn"
-        (click)="startEditingAllergies()"
-        *ngIf="!editingAllergies"
-        title="Editar"
-        i18n-title="@@nursePatientObservationsTab.editAllergiesTitle"
-      >
-        ✏️
-      </button>
+      <h5 i18n="@@nursePatientObservationsTab.cardAllergiesTitle"><app-hero-icon name="exclamation-triangle" /> Alergias</h5>
     </div>
     <div *ngIf="!editingAllergies" class="observations-list observations-list--dense">
       <app-nurse-clinical-notes-scope-block
@@ -168,16 +138,16 @@
       ></textarea>
       <div class="edit-actions">
         <button type="button" class="save-observation-btn-neuro small" (click)="emitSaveAllergies()" i18n="@@nursePatientObservationsTab.saveAllergies">
-          💾 Guardar
+          <app-hero-icon name="clipboard-document" /> Guardar
         </button>
         <button type="button" class="cancel-edit-btn" (click)="cancelEditingAllergies()" i18n="@@nursePatientObservationsTab.cancelAllergies">
-          ❌ Cancelar
+          <app-hero-icon name="x-circle" /> Cancelar
         </button>
       </div>
     </div>
 
     <div *ngIf="!editingAllergies" class="append-note-inset">
-      <p class="append-note-lead" i18n="@@nursePatientObservationsTab.allergiesAppendLead">➕ Añadir nota con fecha</p>
+      <p class="append-note-lead" i18n="@@nursePatientObservationsTab.allergiesAppendLead"><app-hero-icon name="plus-circle" /> Añadir nota con fecha</p>
       <p class="append-note-hint" i18n="@@nursePatientObservationsTab.allergiesAppendHint">Se guarda en el campo de alergias del paciente.</p>
       <textarea
         class="observation-input"
@@ -193,25 +163,15 @@
         (click)="emitClinicalAppend('allergies')"
         [disabled]="isSavingObservation"
       >
-        <span *ngIf="isSavingObservation" i18n="@@nursePatientObservationsTab.savingAppend">⏳ Guardando...</span>
-        <span *ngIf="!isSavingObservation" i18n="@@nursePatientObservationsTab.saveAllergiesAppend">💾 Guardar nota</span>
+        <span *ngIf="isSavingObservation" i18n="@@nursePatientObservationsTab.savingAppend"><app-hero-icon name="clock" /> Guardando...</span>
+        <span *ngIf="!isSavingObservation" i18n="@@nursePatientObservationsTab.saveAllergiesAppend"><app-hero-icon name="clipboard-document" /> Guardar nota</span>
       </button>
     </div>
   </div>
 
   <div class="observation-card">
     <div class="observation-header">
-      <h5 i18n="@@nursePatientObservationsTab.cardSpecialTitle">♿ Necesidades Especiales</h5>
-      <button
-        type="button"
-        class="edit-observation-btn"
-        (click)="startEditingSpecialNeeds()"
-        *ngIf="!editingSpecialNeeds"
-        title="Editar"
-        i18n-title="@@nursePatientObservationsTab.editSpecialTitle"
-      >
-        ✏️
-      </button>
+      <h5 i18n="@@nursePatientObservationsTab.cardSpecialTitle"><app-hero-icon name="user-circle" /> Necesidades Especiales</h5>
     </div>
     <div *ngIf="!editingSpecialNeeds" class="observations-list observations-list--dense">
       <app-nurse-clinical-notes-scope-block
@@ -232,16 +192,16 @@
       ></textarea>
       <div class="edit-actions">
         <button type="button" class="save-observation-btn-neuro small" (click)="emitSaveSpecialNeeds()" i18n="@@nursePatientObservationsTab.saveSpecial">
-          💾 Guardar
+          <app-hero-icon name="clipboard-document" /> Guardar
         </button>
         <button type="button" class="cancel-edit-btn" (click)="cancelEditingSpecialNeeds()" i18n="@@nursePatientObservationsTab.cancelSpecial">
-          ❌ Cancelar
+          <app-hero-icon name="x-circle" /> Cancelar
         </button>
       </div>
     </div>
 
     <div *ngIf="!editingSpecialNeeds" class="append-note-inset">
-      <p class="append-note-lead" i18n="@@nursePatientObservationsTab.specialAppendLead">➕ Añadir nota con fecha</p>
+      <p class="append-note-lead" i18n="@@nursePatientObservationsTab.specialAppendLead"><app-hero-icon name="plus-circle" /> Añadir nota con fecha</p>
       <p class="append-note-hint" i18n="@@nursePatientObservationsTab.specialAppendHint">Se guarda en necesidades especiales del paciente.</p>
       <textarea
         class="observation-input"
@@ -257,25 +217,15 @@
         (click)="emitClinicalAppend('specialNeeds')"
         [disabled]="isSavingObservation"
       >
-        <span *ngIf="isSavingObservation" i18n="@@nursePatientObservationsTab.savingAppend">⏳ Guardando...</span>
-        <span *ngIf="!isSavingObservation" i18n="@@nursePatientObservationsTab.saveSpecialAppend">💾 Guardar nota</span>
+        <span *ngIf="isSavingObservation" i18n="@@nursePatientObservationsTab.savingAppend"><app-hero-icon name="clock" /> Guardando...</span>
+        <span *ngIf="!isSavingObservation" i18n="@@nursePatientObservationsTab.saveSpecialAppend"><app-hero-icon name="clipboard-document" /> Guardar nota</span>
       </button>
     </div>
   </div>
 
   <div class="observation-card full-width">
     <div class="observation-header">
-      <h5 i18n="@@nursePatientObservationsTab.cardGeneralTitle">📋 Observaciones Generales</h5>
-      <button
-        type="button"
-        class="edit-observation-btn"
-        (click)="startEditingGeneralObservationsFull()"
-        *ngIf="!editingGeneralObsFull"
-        title="Editar texto completo"
-        i18n-title="@@nursePatientObservationsTab.editGeneralTitle"
-      >
-        ✏️
-      </button>
+      <h5 i18n="@@nursePatientObservationsTab.cardGeneralTitle"><app-hero-icon name="clipboard-document-list" /> Observaciones Generales</h5>
     </div>
     <div *ngIf="!editingGeneralObsFull" class="observations-list observations-list--dense">
       <app-nurse-clinical-notes-scope-block
@@ -301,16 +251,16 @@
           (click)="emitSaveGeneralObservationsFull()"
           i18n="@@nursePatientObservationsTab.saveGeneralDb"
         >
-          💾 Guardar en base de datos
+          <app-hero-icon name="clipboard-document" /> Guardar en base de datos
         </button>
         <button type="button" class="cancel-edit-btn" (click)="cancelEditingGeneralObservationsFull()" i18n="@@nursePatientObservationsTab.cancelGeneralFull">
-          ❌ Cancelar
+          <app-hero-icon name="x-circle" /> Cancelar
         </button>
       </div>
     </div>
 
     <div *ngIf="!editingGeneralObsFull" class="append-note-inset">
-      <p class="append-note-lead" i18n="@@nursePatientObservationsTab.generalAppendLead">➕ Añadir nota con fecha</p>
+      <p class="append-note-lead" i18n="@@nursePatientObservationsTab.generalAppendLead"><app-hero-icon name="plus-circle" /> Añadir nota con fecha</p>
       <p class="append-note-hint" i18n="@@nursePatientObservationsTab.generalAppendHint">
         Se concatena a observaciones generales en la base de datos (una línea por guardado).
       </p>
@@ -328,8 +278,8 @@
         (click)="emitClinicalAppend('general')"
         [disabled]="isSavingObservation"
       >
-        <span *ngIf="isSavingObservation" i18n="@@nursePatientObservationsTab.savingAppend">⏳ Guardando...</span>
-        <span *ngIf="!isSavingObservation" i18n="@@nursePatientObservationsTab.saveGeneralAppend">💾 Guardar nota</span>
+        <span *ngIf="isSavingObservation" i18n="@@nursePatientObservationsTab.savingAppend"><app-hero-icon name="clock" /> Guardando...</span>
+        <span *ngIf="!isSavingObservation" i18n="@@nursePatientObservationsTab.saveGeneralAppend"><app-hero-icon name="clipboard-document" /> Guardar nota</span>
       </button>
     </div>
   </div>

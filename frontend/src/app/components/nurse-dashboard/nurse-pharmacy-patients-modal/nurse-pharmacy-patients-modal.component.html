@@ -13,7 +13,7 @@
   >
     <div class="modal-header">
       <h3 id="nurse-pharmacy-patients-dialog-title" i18n="@@nursePharmacyPatientsModal.title">
-        👥 Pacientes — {{ med.name }}
+        <app-hero-icon name="users" /> Pacientes — {{ med.name }}
       </h3>
       <button
         type="button"
@@ -39,7 +39,7 @@
         <li *ngFor="let p of med.patients" class="pharmacy-patients-list-item">
           <div class="pharmacy-patient-line-name">{{ p.patientName }}</div>
           <div class="pharmacy-patient-line-meta">
-            <span *ngIf="p.bedNumber" i18n="@@nursePharmacyPatientsModal.bed">🛏️ Cama {{ p.bedNumber }}</span>
+            <span *ngIf="p.bedNumber" i18n="@@nursePharmacyPatientsModal.bed"><app-hero-icon name="rectangle-group" /> Cama {{ p.bedNumber }}</span>
             <span *ngIf="p.areaName" class="pharmacy-patient-area" i18n="@@nursePharmacyPatientsModal.areaSuffix">
               · {{ p.areaName }}
             </span>

@@ -3,14 +3,16 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import type { Patient } from '../nurse-dashboard.types';
 import { NurseClinicalNotesScopeBlockComponent } from '../nurse-clinical-notes-scope-block/nurse-clinical-notes-scope-block.component';
+import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
 
 @Component({
   selector: 'app-nurse-patients-assigned-section',
   standalone: true,
-  imports: [CommonModule, FormsModule, NurseClinicalNotesScopeBlockComponent],
+  imports: [CommonModule, FormsModule, NurseClinicalNotesScopeBlockComponent, HeroIconComponent],
   templateUrl: './nurse-patients-assigned-section.component.html',
   styleUrls: [
     '../../../shared/styles/admin-panel-responsive.css',
+    '../shared/nurse-patient-card-inline-actions.shared.css',
     './nurse-patients-assigned-section.component.css',
   ],
 })

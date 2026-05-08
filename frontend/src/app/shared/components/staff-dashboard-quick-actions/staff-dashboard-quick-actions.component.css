@@ -1,0 +1,23 @@
+.staff-dashboard-quick-actions {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin-top: 0.45rem;
+}
+
+.staff-dashboard-quick-link.nav-link {
+  width: 100%;
+  justify-content: flex-start;
+}
+
+.staff-dashboard-quick-actions .quick-pending-chip {
+  margin-left: 0.4rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #9c4221;
+  background: #fef5e7;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
+}

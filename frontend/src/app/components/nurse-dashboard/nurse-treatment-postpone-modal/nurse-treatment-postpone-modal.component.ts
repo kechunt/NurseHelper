@@ -11,6 +11,7 @@ import { ModalFocusTrapDirective } from '../../../shared/directives/modal-focus-
 import { FormsModule } from '@angular/forms';
 import { ToastService } from '../../../services/toast.service';
 import { NURSE_MODAL_TREATMENT_POSTPONE_WARN_DATETIME } from '../nurse-modal-component-toasts.helpers';
+import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
 
 export interface TreatmentPostponeModalItem {
   scheduleId: number;
@@ -22,7 +23,7 @@ export interface TreatmentPostponeModalItem {
 @Component({
   selector: 'app-nurse-treatment-postpone-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, ModalFocusTrapDirective],
+  imports: [CommonModule, FormsModule, ModalFocusTrapDirective, HeroIconComponent],
   templateUrl: './nurse-treatment-postpone-modal.component.html',
   styleUrls: [
     '../nurse-postpone-task-modal/nurse-postpone-task-modal.component.css',

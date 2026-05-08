@@ -7,6 +7,7 @@ import { ToastService } from '../../../services/toast.service';
 import type { NurseAddMedicationPatientOption } from '../nurse-add-medication-modal/nurse-add-medication-modal.component';
 import { nurseWeekdaySelectOptionsMondayFirst } from '../nurse-dashboard-ui-i18n.helpers';
 import { NURSE_DASHBOARD_HTTP_FALLBACK_UNKNOWN } from '../nurse-dashboard-http-fallback-messages.helpers';
+import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
 import {
   NURSE_MODAL_ADD_TRT_ERR_CREATE_FALLBACK,
   NURSE_MODAL_ADD_TRT_ERR_INVALID_DAYS,
@@ -24,7 +25,7 @@ export type NurseAddTreatmentModalMode = 'global' | 'fromPatient';
 @Component({
   selector: 'app-nurse-add-treatment-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, ModalFocusTrapDirective],
+  imports: [CommonModule, FormsModule, ModalFocusTrapDirective, HeroIconComponent],
   templateUrl: './nurse-add-treatment-modal.component.html',
   styleUrls: [
     '../nurse-postpone-task-modal/nurse-postpone-task-modal.component.css',

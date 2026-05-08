@@ -14,6 +14,7 @@ import { DeliveryHistory } from './entities/DeliveryHistory';
 import { AdministrationHistory } from './entities/AdministrationHistory';
 import { MedicationInventoryMovement } from './entities/MedicationInventoryMovement';
 import { ShiftHandoverNote } from './entities/ShiftHandoverNote';
+import { AdminHandoverNote } from './entities/AdminHandoverNote';
 import { PatientClinicalNote } from './entities/PatientClinicalNote';
 import { loadEnv } from './utils/env';
 import { logger } from './utils/logger';
@@ -55,6 +56,7 @@ export const AppDataSource = new DataSource({
     AdministrationHistory,
     MedicationInventoryMovement,
     ShiftHandoverNote,
+    AdminHandoverNote,
     PatientClinicalNote,
   ],
   /** Desde `src/` (ts-node) o `dist/` (node): misma carpeta `migrations` relativa a este archivo. */

@@ -17,6 +17,17 @@
   font-size: 0.88rem;
 }
 
+:host-context(.nurse-dashboard) .quick-pending-chip {
+  margin-left: 0.4rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #9c4221;
+  background: #fef5e7;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
 @media (max-width: 1024px) {
   :host-context(.nurse-dashboard) .nurse-nav-quick-group {
     flex-direction: row;

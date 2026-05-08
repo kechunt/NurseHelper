@@ -2,11 +2,12 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NotificationService, Notification } from '../../../services/notification.service';
 import { Subscription } from 'rxjs';
+import { HeroIconComponent } from '../hero-icon/hero-icon.component';
 
 @Component({
   selector: 'app-toast',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, HeroIconComponent],
   templateUrl: './toast.component.html',
   styleUrl: './toast.component.css'
 })
@@ -32,18 +33,18 @@ export class ToastComponent implements OnInit, OnDestroy {
     this.notificationService.removeNotification(id);
   }
 
-  getIcon(type: string): string {
+  getIconName(type: string): string {
     switch (type) {
       case 'success':
-        return '✅';
+        return 'check-circle';
       case 'error':
-        return '❌';
+        return 'x-circle';
       case 'warning':
-        return '⚠️';
+        return 'exclamation-triangle';
       case 'info':
-        return 'ℹ️';
+        return 'exclamation-circle';
       default:
-        return '📢';
+        return 'clipboard-document';
     }
   }
 }

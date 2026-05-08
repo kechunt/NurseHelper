@@ -1,5 +1,5 @@
 <div class="history-header-section history-header-section--table">
-  <h4 i18n="@@nursePatientHistoryTab.sectionTitle">📜 Historial de administraciones y tratamientos</h4>
+  <h4 i18n="@@nursePatientHistoryTab.sectionTitle"><app-hero-icon name="document-text" /> Historial de administraciones y tratamientos</h4>
   <div class="history-filters-card">
     <div class="history-toolbar">
       <div class="history-filter-row">
@@ -146,7 +146,7 @@
   (dismissed)="closeRowActions()"
 >
   <button type="button" class="neuro-btn" *ngIf="selectedRecordForActions" (click)="execViewDetail()">
-    👁️ Ver detalle
+    <app-hero-icon name="eye" /> Ver detalle
   </button>
   <button
     type="button"
@@ -154,7 +154,7 @@
     *ngIf="canEditOrDelete(selectedRecordForActions)"
     (click)="execEdit()"
   >
-    ✏️ Editar
+    <app-hero-icon name="pencil" /> Editar
   </button>
   <button
     type="button"
@@ -162,7 +162,7 @@
     *ngIf="canEditOrDelete(selectedRecordForActions)"
     (click)="execDelete()"
   >
-    🗑️ Eliminar
+    <app-hero-icon name="trash" /> Eliminar
   </button>
 </app-admin-table-row-actions-modal>
 

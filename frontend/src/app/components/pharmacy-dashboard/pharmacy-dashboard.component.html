@@ -26,7 +26,8 @@
       (click)="changeSection('requests')"
       (keydown)="onPharmacyTabKeydown($event, 'requests')"
     >
-      📝 Solicitudes
+      <app-hero-icon name="clipboard-document-list"></app-hero-icon>
+      Solicitudes
     </button>
     <button
       type="button"
@@ -39,7 +40,8 @@
       (click)="changeSection('history')"
       (keydown)="onPharmacyTabKeydown($event, 'history')"
     >
-      📜 Historial
+      <app-hero-icon name="archive-box"></app-hero-icon>
+      Historial
     </button>
     <button
       type="button"
@@ -52,7 +54,8 @@
       (click)="changeSection('inventory')"
       (keydown)="onPharmacyTabKeydown($event, 'inventory')"
     >
-      📊 Inventario
+      <app-hero-icon name="table-cells"></app-hero-icon>
+      Inventario
     </button>
   </ng-container>
 
@@ -67,13 +70,16 @@
       >
         <div class="section-card pharmacy-module">
           <div class="section-header pharmacy-module-header">
-            <h2 class="section-title">📝 Solicitudes de Medicamentos</h2>
+            <h2 class="section-title">
+              <app-hero-icon name="clipboard-document-list"></app-hero-icon>
+              Solicitudes de Medicamentos
+            </h2>
             <div class="section-actions">
               <input
                 type="text"
                 class="search-input"
                 [(ngModel)]="searchTerm"
-                placeholder="🔍 Buscar medicamento o enfermera..."
+                placeholder="Buscar medicamento o enfermera..."
                 (ngModelChange)="onRequestSearchChange($event)"
               />
               <select class="filter-select" [(ngModel)]="requestFilter" (change)="onRequestFilterChange()">
@@ -195,13 +201,16 @@
       >
         <div class="section-card pharmacy-module pharmacy-module--history">
     <div class="section-header">
-      <h2 class="section-title">📜 Historial de Entregas y Rechazos</h2>
+      <h2 class="section-title">
+        <app-hero-icon name="archive-box"></app-hero-icon>
+        Historial de Entregas y Rechazos
+      </h2>
       <div class="section-actions">
         <input 
           type="text" 
           class="search-input" 
           [(ngModel)]="historySearchTerm" 
-          placeholder="🔍 Buscar en historial..."
+          placeholder="Buscar en historial..."
           (ngModelChange)="onHistorySearchChange($event)"
         />
       </div>
@@ -211,16 +220,27 @@
     <div *ngIf="!loadingHistory && historyError" class="module-feedback error">{{ historyError }}</div>
 
     <div class="export-panel export-panel--history" aria-label="Exportar historial">
-      <div class="export-panel__icon" aria-hidden="true">📑</div>
+      <div class="export-panel__icon" aria-hidden="true">
+        <app-hero-icon name="clipboard-document-list"></app-hero-icon>
+      </div>
       <div class="export-panel__body">
         <div class="export-panel__title">Exportar historial</div>
         <p class="export-panel__hint">
           Se exportan los registros <strong>visibles</strong> con el buscador actual. El nombre del archivo incluye la fecha y hora en que se genera.
         </p>
         <div class="export-panel__actions">
-          <button type="button" class="export-btn export-btn--print" (click)="printHistory()">Imprimir</button>
-          <button type="button" class="export-btn export-btn--csv" (click)="exportHistoryCsv()">Guardar CSV</button>
-          <button type="button" class="export-btn export-btn--excel" (click)="exportHistoryExcel()">Guardar Excel</button>
+          <button type="button" class="export-btn export-btn--print" (click)="printHistory()">
+            <app-hero-icon name="printer"></app-hero-icon>
+            Imprimir
+          </button>
+          <button type="button" class="export-btn export-btn--csv" (click)="exportHistoryCsv()">
+            <app-hero-icon name="document-text"></app-hero-icon>
+            Guardar CSV
+          </button>
+          <button type="button" class="export-btn export-btn--excel" (click)="exportHistoryExcel()">
+            <app-hero-icon name="table-cells"></app-hero-icon>
+            Guardar Excel
+          </button>
         </div>
       </div>
     </div>
@@ -315,17 +335,21 @@
     </div>
 
     <div class="section-header">
-      <h2 class="section-title">📊 Gestión de Inventario</h2>
+      <h2 class="section-title">
+        <app-hero-icon name="table-cells"></app-hero-icon>
+        Gestión de Inventario
+      </h2>
       <div class="section-actions">
         <input 
           type="text" 
           class="search-input" 
           [(ngModel)]="inventorySearchTerm" 
-          placeholder="🔍 Medicamento, ubicación o fecha de caducidad (AAAA-MM-DD)…"
+          placeholder="Medicamento, ubicación o fecha de caducidad (AAAA-MM-DD)…"
           (ngModelChange)="onInventorySearchChange($event)"
         />
         <button class="neuro-btn" (click)="openAddMedicationModal()">
-          ➕ Agregar Medicamento
+          <app-hero-icon name="plus-circle"></app-hero-icon>
+          Agregar Medicamento
         </button>
       </div>
     </div>
@@ -340,16 +364,27 @@
     </div>
 
     <div class="export-panel export-panel--bodega" aria-label="Exportar inventario de bodega">
-      <div class="export-panel__icon" aria-hidden="true">📦</div>
+      <div class="export-panel__icon" aria-hidden="true">
+        <app-hero-icon name="archive-box"></app-hero-icon>
+      </div>
       <div class="export-panel__body">
         <div class="export-panel__title">Exportar bodega / stock</div>
         <p class="export-panel__hint">
           Incluye medicamento, dosis, stock, mínimos, ubicación, caducidad y estado. Respeta <strong>filtros y búsqueda</strong> actuales. El archivo lleva fecha y hora de generación en el nombre.
         </p>
         <div class="export-panel__actions">
-          <button type="button" class="export-btn export-btn--print" (click)="printInventory()">Imprimir</button>
-          <button type="button" class="export-btn export-btn--csv" (click)="exportInventoryCsv()">Guardar CSV</button>
-          <button type="button" class="export-btn export-btn--excel" (click)="exportInventoryExcel()">Guardar Excel</button>
+          <button type="button" class="export-btn export-btn--print" (click)="printInventory()">
+            <app-hero-icon name="printer"></app-hero-icon>
+            Imprimir
+          </button>
+          <button type="button" class="export-btn export-btn--csv" (click)="exportInventoryCsv()">
+            <app-hero-icon name="document-text"></app-hero-icon>
+            Guardar CSV
+          </button>
+          <button type="button" class="export-btn export-btn--excel" (click)="exportInventoryExcel()">
+            <app-hero-icon name="table-cells"></app-hero-icon>
+            Guardar Excel
+          </button>
         </div>
       </div>
     </div>
@@ -445,7 +480,8 @@
         *ngIf="selectedRequestForActions as r"
         (click)="openRequestDetailModal(r)"
       >
-        👁️ Ver detalle
+        <app-hero-icon name="eye"></app-hero-icon>
+        Ver detalle
       </button>
       <button
         type="button"
@@ -454,7 +490,8 @@
         [disabled]="!canAcceptRequest(r)"
         (click)="closeRequestActions(); changeRequestStatus(r, 'in_preparation')"
       >
-        ✅ Aceptar (en preparación)
+        <app-hero-icon name="check-circle"></app-hero-icon>
+        Aceptar (en preparación)
       </button>
       <button
         type="button"
@@ -463,7 +500,8 @@
         [disabled]="!canMarkReady(r)"
         (click)="closeRequestActions(); changeRequestStatus(r, 'ready')"
       >
-        📦 Marcar como lista
+        <app-hero-icon name="archive-box"></app-hero-icon>
+        Marcar como lista
       </button>
       <button
         type="button"
@@ -472,7 +510,8 @@
         [disabled]="!canDeliver(r)"
         (click)="closeRequestActions(); openDeliveryModal(r)"
       >
-        🚚 Entregar
+        <app-hero-icon name="truck"></app-hero-icon>
+        Entregar
       </button>
       <button
         type="button"
@@ -481,14 +520,18 @@
         [disabled]="!canReject(r)"
         (click)="closeRequestActions(); openRejectModal(r)"
       >
-        ❌ Rechazar
+        <app-hero-icon name="x-circle"></app-hero-icon>
+        Rechazar
       </button>
     </app-admin-table-row-actions-modal>
 
     <div *ngIf="showRequestDetailModal && selectedRequestDetail as rd" class="modal-backdrop" (click)="closeRequestDetailModal()">
       <div class="modal-content modal-delivery" (click)="$event.stopPropagation()">
         <div class="modal-header">
-          <h3>📋 Detalle de solicitud {{ rd.requestId }}</h3>
+          <h3>
+            <app-hero-icon name="clipboard-document"></app-hero-icon>
+            Detalle de solicitud {{ rd.requestId }}
+          </h3>
           <button class="close-btn" (click)="closeRequestDetailModal()">✕</button>
         </div>
         <div class="modal-body">
@@ -531,7 +574,8 @@
         *ngIf="selectedInventoryForActions as i"
         (click)="closeInventoryActions(); openStockMovementModal(i, 'entry')"
       >
-        ➕ Entrada
+        <app-hero-icon name="plus-circle"></app-hero-icon>
+        Entrada
       </button>
       <button
         type="button"
@@ -539,7 +583,8 @@
         *ngIf="selectedInventoryForActions as i"
         (click)="closeInventoryActions(); openStockMovementModal(i, 'exit')"
       >
-        ➖ Salida
+        <app-hero-icon name="minus-circle"></app-hero-icon>
+        Salida
       </button>
       <button
         type="button"
@@ -547,7 +592,8 @@
         *ngIf="selectedInventoryForActions as i"
         (click)="closeInventoryActions(); openStockMovementModal(i, 'adjustment')"
       >
-        ⚙️ Ajuste
+        <app-hero-icon name="cog-6-tooth"></app-hero-icon>
+        Ajuste
       </button>
       <button
         type="button"
@@ -555,7 +601,8 @@
         *ngIf="selectedInventoryForActions as i"
         (click)="closeInventoryActions(); openKardexModal(i)"
       >
-        📋 Kardex
+        <app-hero-icon name="clipboard-document-list"></app-hero-icon>
+        Kardex
       </button>
       <button
         type="button"
@@ -563,7 +610,8 @@
         *ngIf="selectedInventoryForActions as i"
         (click)="closeInventoryActions(); openDeleteMedicationModal(i)"
       >
-        🗑️ Eliminar
+        <app-hero-icon name="trash"></app-hero-icon>
+        Eliminar
       </button>
     </app-admin-table-row-actions-modal>
 
@@ -586,7 +634,10 @@
   <div *ngIf="showDeliveryModal" class="modal-backdrop" (click)="closeDeliveryModal()">
     <div class="modal-content modal-delivery" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h3>📦 Confirmar Entrega</h3>
+        <h3>
+          <app-hero-icon name="archive-box"></app-hero-icon>
+          Confirmar Entrega
+        </h3>
         <button class="close-btn" (click)="closeDeliveryModal()">✕</button>
       </div>
 
@@ -637,7 +688,8 @@
       <div class="modal-footer">
         <button class="btn-secondary-neuro" (click)="closeDeliveryModal()">Cancelar</button>
         <button class="btn-primary-neuro" (click)="confirmDelivery()">
-          ✅ Confirmar Entrega
+          <app-hero-icon name="check-circle"></app-hero-icon>
+          Confirmar Entrega
         </button>
       </div>
     </div>
@@ -647,7 +699,10 @@
   <div *ngIf="showRejectModal" class="modal-backdrop" (click)="closeRejectModal()">
     <div class="modal-content modal-delivery" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h3>❌ Rechazar Solicitud</h3>
+        <h3>
+          <app-hero-icon name="x-circle"></app-hero-icon>
+          Rechazar Solicitud
+        </h3>
         <button class="close-btn" (click)="closeRejectModal()">✕</button>
       </div>
 
@@ -686,7 +741,8 @@
       <div class="modal-footer">
         <button class="btn-secondary-neuro" (click)="closeRejectModal()">Cancelar</button>
         <button class="btn-danger-neuro" (click)="confirmRejection()" [disabled]="!rejectionReason.trim()">
-          ❌ Confirmar Rechazo
+          <app-hero-icon name="x-circle"></app-hero-icon>
+          Confirmar Rechazo
         </button>
       </div>
     </div>
@@ -696,7 +752,10 @@
   <div *ngIf="showAddMedicationModal" class="modal-backdrop" (click)="closeAddMedicationModal()">
     <div class="modal-content modal-delivery" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h3>➕ Agregar Medicamento al Inventario</h3>
+        <h3>
+          <app-hero-icon name="plus-circle"></app-hero-icon>
+          Agregar Medicamento al Inventario
+        </h3>
         <button class="close-btn" (click)="closeAddMedicationModal()">✕</button>
       </div>
 
@@ -780,7 +839,8 @@
       <div class="modal-footer">
         <button class="btn-secondary-neuro" (click)="closeAddMedicationModal()">Cancelar</button>
         <button class="btn-primary-neuro" (click)="createMedication()" [disabled]="!newMedicationForm.name || !newMedicationForm.dosage">
-          ➕ Agregar al Inventario
+          <app-hero-icon name="plus-circle"></app-hero-icon>
+          Agregar al Inventario
         </button>
       </div>
     </div>
@@ -790,7 +850,10 @@
   <div *ngIf="showDeleteMedicationModal" class="modal-backdrop" (click)="closeDeleteMedicationModal()">
     <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h3>🗑️ Eliminar Medicamento del Inventario</h3>
+        <h3>
+          <app-hero-icon name="trash"></app-hero-icon>
+          Eliminar Medicamento del Inventario
+        </h3>
         <button class="close-btn" (click)="closeDeleteMedicationModal()">✕</button>
       </div>
 
@@ -811,7 +874,7 @@
         </div>
 
         <p class="warning-message">
-          ⚠️ Esta acción marcará el medicamento como inactivo en el inventario. 
+          Esta acción marcará el medicamento como inactivo en el inventario. 
           No se eliminará físicamente de la base de datos, pero dejará de aparecer en las listas activas.
         </p>
       </div>
@@ -819,7 +882,8 @@
       <div class="modal-footer">
         <button class="btn-secondary-neuro" (click)="closeDeleteMedicationModal()">Cancelar</button>
         <button class="btn-danger-neuro" (click)="confirmDeleteMedication()">
-          🗑️ Confirmar Eliminación
+          <app-hero-icon name="trash"></app-hero-icon>
+          Confirmar Eliminación
         </button>
       </div>
     </div>
@@ -829,7 +893,10 @@
   <div *ngIf="showStockMovementModal" class="modal-backdrop" (click)="closeStockMovementModal()">
     <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h3>📦 Movimiento de Inventario</h3>
+        <h3>
+          <app-hero-icon name="archive-box"></app-hero-icon>
+          Movimiento de Inventario
+        </h3>
         <button class="close-btn" (click)="closeStockMovementModal()">✕</button>
       </div>
 
@@ -882,7 +949,10 @@
   <div *ngIf="showKardexModal" class="modal-backdrop" (click)="closeKardexModal()">
     <div class="modal-content modal-delivery modal-kardex" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h3>📋 Kardex — {{ kardexItem?.medication }} {{ kardexItem?.dosage }}</h3>
+        <h3>
+          <app-hero-icon name="clipboard-document-list"></app-hero-icon>
+          Kardex — {{ kardexItem?.medication }} {{ kardexItem?.dosage }}
+        </h3>
         <button type="button" class="close-btn" (click)="closeKardexModal()">✕</button>
       </div>
       <div class="modal-body kardex-modal-body">
@@ -932,4 +1002,3 @@
   </div>
   </div>
 </app-dashboard-shell>
-

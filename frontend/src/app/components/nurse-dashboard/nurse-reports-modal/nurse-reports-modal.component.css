@@ -24,6 +24,37 @@
   box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
 }
 
+.nurse-reports-staff-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+
+.nurse-reports-staff-filter__label {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #4a5568;
+  margin: 0;
+}
+
+.nurse-reports-staff-filter__select {
+  flex: 1 1 200px;
+  min-width: 200px;
+  max-width: 100%;
+  padding: 10px 14px;
+  background: #e0e5ec;
+  border: none;
+  border-radius: 12px;
+  color: #4a5568;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow:
+    inset 3px 3px 6px #bebebe,
+    inset -3px -3px 6px #ffffff;
+}
+
 .nurse-reports-layout {
   display: flex;
   flex-direction: column;

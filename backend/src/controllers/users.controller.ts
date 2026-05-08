@@ -9,6 +9,35 @@ import { sendPaginatedResponse, sendErrorResponse, handleControllerError, parseI
 
 export class UsersController {
   /**
+   * Enfermeras activas asignadas a un área (para asignación de pacientes en el área de la cama).
+   */
+  async getNursesByArea(req: Request, res: Response): Promise<void> {
+    try {
+      const areaId = parseId(req.params.areaId);
+      if (!areaId) {
+        sendErrorResponse(res, 400, 'ID de área inválido', 'INVALID_ID');
+        return;
+      }
+
+      const userRepository = AppDataSource.getRepository(User);
+      const nurses = await userRepository.find({
+        where: {
+          role: UserRole.NURSE,
+          assignedAreaId: areaId,
+          isActive: true,
+          emailVerified: true,
+        },
+        select: ['id', 'firstName', 'lastName', 'username'],
+        order: { lastName: 'ASC', firstName: 'ASC' },
+      });
+
+      res.json({ nurses });
+    } catch (error) {
+      handleControllerError(error, req, res, 'Error al obtener enfermeras del área');
+    }
+  }
+
+  /**
    * Obtiene todos los usuarios con paginación opcional
    * Query params: page, limit, search, role
    */

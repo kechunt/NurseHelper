@@ -9,7 +9,7 @@
       (click)="$event.stopPropagation()"
     >
       <div class="modal-header">
-        <h3 id="nurse-patient-modal-title" i18n="@@nursePatientModalShell.title">📋 {{ patient.name }}</h3>
+        <h3 id="nurse-patient-modal-title" i18n="@@nursePatientModalShell.title"><app-hero-icon name="clipboard-document" /> {{ patient.name }}</h3>
         <button
           type="button"
           class="close-btn"
@@ -38,7 +38,7 @@
           (click)="activeTabChange.emit('medications')"
           (keydown)="onPatientTabKeydown($event, 'medications')"
         >
-          <span i18n="@@nursePatientModalShell.tabMedications">💊 Medicamentos</span>
+          <span i18n="@@nursePatientModalShell.tabMedications"><app-hero-icon name="beaker" /> Medicamentos</span>
         </button>
         <button
           type="button"
@@ -51,7 +51,7 @@
           (click)="activeTabChange.emit('schedule')"
           (keydown)="onPatientTabKeydown($event, 'schedule')"
         >
-          <span i18n="@@nursePatientModalShell.tabTreatments">🩺 Tratamientos del día</span>
+          <span i18n="@@nursePatientModalShell.tabTreatments"><app-hero-icon name="shield-check" /> Tratamientos del día</span>
         </button>
         <button
           type="button"
@@ -64,7 +64,7 @@
           (click)="activeTabChange.emit('observations')"
           (keydown)="onPatientTabKeydown($event, 'observations')"
         >
-          <span i18n="@@nursePatientModalShell.tabObservations">📝 Observaciones</span>
+          <span i18n="@@nursePatientModalShell.tabObservations"><app-hero-icon name="clipboard-document" /> Observaciones</span>
         </button>
         <button
           type="button"
@@ -77,7 +77,7 @@
           (click)="activeTabChange.emit('history')"
           (keydown)="onPatientTabKeydown($event, 'history')"
         >
-          <span i18n="@@nursePatientModalShell.tabHistory">📜 Historial</span>
+          <span i18n="@@nursePatientModalShell.tabHistory"><app-hero-icon name="document-text" /> Historial</span>
         </button>
       </div>
 
@@ -94,6 +94,7 @@
             [age]="patient.age"
             [diagnosis]="patient.diagnosis"
             [slots]="medicationsSlots"
+            (saveDiagnosis)="saveDiagnosis.emit($event)"
             (addMedication)="addMedication.emit()"
             (openDayDetail)="openMedicationDayDetail.emit($event)"
             (markGiven)="markMedicationGiven.emit($event)"
@@ -203,13 +204,13 @@
           Cerrar
         </button>
         <button type="button" class="btn-secondary-neuro" (click)="exportTabCsv()">
-          📄 CSV
+          <app-hero-icon name="document-text" /> CSV
         </button>
         <button type="button" class="btn-secondary-neuro" (click)="exportTabExcel()">
-          📊 Excel
+          <app-hero-icon name="table-cells" /> Excel
         </button>
         <button type="button" class="btn-primary-neuro" (click)="printRequested.emit()" i18n="@@nursePatientModalShell.footerPrint">
-          🖨️ Imprimir
+          <app-hero-icon name="printer" /> Imprimir
         </button>
       </div>
     </div>

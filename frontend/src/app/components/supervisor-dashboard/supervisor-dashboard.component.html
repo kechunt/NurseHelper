@@ -27,11 +27,13 @@
           <span class="user-phone-line" *ngIf="headerUserPhoneLine as hp">{{ hp }}</span>
         </button>
         <button type="button" class="neuro-btn-icon logout-btn" (click)="logout()" title="Cerrar Sesión" aria-label="Cerrar sesión">
-          🚪
+          <app-hero-icon name="arrow-right-on-rectangle" />
         </button>
       </div>
     </div>
   </div>
+
+  <app-staff-dashboard-quick-actions />
 
   <div class="dashboard-body">
     <nav class="dashboard-nav" role="tablist" aria-label="Secciones del panel de supervisión">
@@ -46,7 +48,7 @@
         (click)="setActiveTab('overview')"
         (keydown)="onSupervisorTabKeydown($event, 'overview')"
       >
-        📊 Resumen
+        <app-hero-icon name="chart-bar" /> Resumen
       </button>
       <button
         type="button"
@@ -59,7 +61,7 @@
         (click)="setActiveTab('users')"
         (keydown)="onSupervisorTabKeydown($event, 'users')"
       >
-        👥 Usuarios
+        <app-hero-icon name="users" /> Usuarios
       </button>
       <button
         type="button"
@@ -72,7 +74,7 @@
         (click)="setActiveTab('staff')"
         (keydown)="onSupervisorTabKeydown($event, 'staff')"
       >
-        👩‍⚕️ Gestión de Enfermeras
+        <app-hero-icon name="user-group" /> Gestión de Enfermeras
       </button>
       <button
         type="button"
@@ -85,7 +87,7 @@
         (click)="setActiveTab('areas')"
         (keydown)="onSupervisorTabKeydown($event, 'areas')"
       >
-        🏥 Áreas
+        <app-hero-icon name="building-office-2" /> Áreas
       </button>
       <button
         type="button"
@@ -98,7 +100,7 @@
         (click)="setActiveTab('beds')"
         (keydown)="onSupervisorTabKeydown($event, 'beds')"
       >
-        🛏️ Camas
+        <app-hero-icon name="rectangle-group" /> Camas
       </button>
       <button
         type="button"
@@ -111,7 +113,7 @@
         (click)="setActiveTab('patients')"
         (keydown)="onSupervisorTabKeydown($event, 'patients')"
       >
-        👤 Pacientes
+        <app-hero-icon name="user-circle" /> Pacientes
       </button>
       <button
         type="button"
@@ -124,7 +126,7 @@
         (click)="setActiveTab('schedules')"
         (keydown)="onSupervisorTabKeydown($event, 'schedules')"
       >
-        📅 Horarios
+        <app-hero-icon name="calendar-days" /> Horarios
       </button>
     </nav>
 

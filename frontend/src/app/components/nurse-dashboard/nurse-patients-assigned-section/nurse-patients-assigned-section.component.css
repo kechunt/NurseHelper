@@ -220,8 +220,8 @@
 .patient-assigned-card-name {
   color: #4a5568;
   font-size: 1.2rem;
-  font-weight: 500;
-  margin: 0 0 0.35rem 0;
+  font-weight: 600;
+  margin: 0;
   line-height: 1.25;
   word-break: break-word;
 }
@@ -229,7 +229,8 @@
 .patient-assigned-card-meta {
   margin: 0;
   font-size: 0.85rem;
-  color: #718096;
+  font-weight: 600;
+  color: #4a5568;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -278,20 +279,8 @@
   box-shadow: inset 5px 5px 10px #cbccd1, inset -4px -4px 10px #fafbff;
 }
 
-.patient-assigned-card-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.65rem 0.85rem;
-  padding-top: 0.15rem;
-}
-
-.patient-assigned-action-btn {
-  flex: 0 1 auto;
-}
-
-.patient-assigned-action-btn--primary {
-  margin-left: auto;
+.nurse-patient-card-title-row + .patient-assigned-card-meta {
+  margin-top: 0.35rem;
 }
 
 .empty-message {

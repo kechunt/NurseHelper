@@ -53,6 +53,21 @@ export interface ShiftAttendanceHistoryItem {
   recordedAt?: string | null;
 }
 
+export interface ShiftHandoffSummary {
+  date: string;
+  shiftId: number | null;
+  processed: number;
+  assigned: number;
+  pending: number;
+  details: Array<{
+    patientId: number;
+    areaId: number | null;
+    assignedToId: number | null;
+    status: 'assigned' | 'pending';
+    reason?: string;
+  }>;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -97,9 +112,9 @@ export class ShiftsService {
   }
 
   saveWeeklySchedule(schedules: any[], weekStartDate: string): Observable<any> {
-    console.log('🚀 Enviando al backend:', { schedules, weekStartDate });
+    console.log(' Enviando al backend:', { schedules, weekStartDate });
     return this.http.post(`${this.apiUrl}/weekly`, { schedules, weekStartDate }).pipe(
-      tap(response => console.log('✅ Respuesta del backend:', response))
+      tap(response => console.log(' Respuesta del backend:', response))
     );
   }
 
@@ -115,12 +130,14 @@ export class ShiftsService {
   saveShiftAttendance(
     date: string,
     shiftId: number,
-    attendance: ShiftAttendanceItem[]
-  ): Observable<{ message: string; saved: number }> {
-    return this.http.post<{ message: string; saved: number }>(`${this.apiUrl}/attendance`, {
+    attendance: ShiftAttendanceItem[],
+    options?: { autoHandoff?: boolean }
+  ): Observable<{ message: string; saved: number; handoff?: ShiftHandoffSummary }> {
+    return this.http.post<{ message: string; saved: number; handoff?: ShiftHandoffSummary }>(`${this.apiUrl}/attendance`, {
       date,
       shiftId,
       attendance,
+      autoHandoff: options?.autoHandoff === true,
     });
   }
 
@@ -146,6 +163,13 @@ export class ShiftsService {
     if (params.limit) query.limit = String(params.limit);
     return this.http.get<ShiftAttendanceHistoryItem[]>(`${this.apiUrl}/attendance/history`, {
       params: query,
+    });
+  }
+
+  runShiftHandoff(payload?: { date?: string; shiftId?: number | null }): Observable<{ message: string } & ShiftHandoffSummary> {
+    return this.http.post<{ message: string } & ShiftHandoffSummary>(`${this.apiUrl}/handoff`, {
+      date: payload?.date,
+      shiftId: payload?.shiftId,
     });
   }
 }

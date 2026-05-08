@@ -33,7 +33,7 @@ export class App implements OnInit {
       this.router.events
         .pipe(filter(event => event instanceof NavigationEnd))
         .subscribe((event: any) => {
-          console.log('📍 Navegación a:', event.url);
+          console.log(' Navegación a:', event.url);
         });
     }
   }
@@ -55,18 +55,13 @@ export class App implements OnInit {
         return;
       }
 
-      if (text.includes('❌') || /^error/i.test(normalized)) {
-        this.toastService.error(normalized.replace(/^❌\s*/, ''));
+      if (/^error/i.test(normalized)) {
+        this.toastService.error(normalized);
         return;
       }
 
-      if (text.includes('⚠️') || /^advertencia/i.test(normalized) || /^warning/i.test(normalized)) {
-        this.toastService.warning(normalized.replace(/^⚠️\s*/, ''));
-        return;
-      }
-
-      if (text.includes('✅')) {
-        this.toastService.success(normalized.replace(/^✅\s*/, ''));
+      if (/^advertencia/i.test(normalized) || /^warning/i.test(normalized)) {
+        this.toastService.warning(normalized);
         return;
       }
 
