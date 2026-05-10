@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, ViewChild, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -13,7 +13,6 @@ import { SchedulesManagementComponent } from './schedules-management/schedules-m
 import { DashboardUserProfileModalComponent } from '../../shared/components/dashboard-user-profile-modal/dashboard-user-profile-modal.component';
 import { AdminNursePickModalHostComponent } from '../../shared/components/admin-nurse-pick-modal-host/admin-nurse-pick-modal-host.component';
 import { StaffDashboardQuickActionsComponent } from '../../shared/components/staff-dashboard-quick-actions/staff-dashboard-quick-actions.component';
-import { HeroIconComponent } from '../../shared/components/hero-icon/hero-icon.component';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -23,7 +22,6 @@ import { HeroIconComponent } from '../../shared/components/hero-icon/hero-icon.c
     RouterModule,
     DashboardUserProfileModalComponent,
     AdminNursePickModalHostComponent,
-    HeroIconComponent,
     StaffDashboardQuickActionsComponent,
     OverviewComponent,
     UsersManagementComponent,
@@ -38,6 +36,10 @@ import { HeroIconComponent } from '../../shared/components/hero-icon/hero-icon.c
 })
 export class AdminDashboardComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
+
+  @ViewChild(StaffDashboardQuickActionsComponent)
+  private quickActions?: StaffDashboardQuickActionsComponent;
+
   activeTab: string = 'overview';
   private readonly storageKey = 'admin-dashboard-active-tab-v1';
   private readonly allowedTabs = new Set(['overview', 'users', 'staff', 'areas', 'beds', 'patients', 'schedules']);
@@ -102,6 +104,16 @@ export class AdminDashboardComponent implements OnInit {
     return this.visitedTabs.has(tab);
   }
 
+  navOpen = false;
+
+  toggleNav(): void {
+    this.navOpen = !this.navOpen;
+  }
+
+  closeNav(): void {
+    this.navOpen = false;
+  }
+
   setActiveTab(tab: string): void {
     if (!this.allowedTabs.has(tab)) {
       return;
@@ -109,6 +121,7 @@ export class AdminDashboardComponent implements OnInit {
     this.activeTab = tab;
     this.visitedTabs.add(tab);
     this.persistActiveTab();
+    this.closeNav(); // cierra el menú al seleccionar en mobile
   }
 
   /**
@@ -146,6 +159,14 @@ export class AdminDashboardComponent implements OnInit {
 
   goToOverviewFromLogo(): void {
     this.setActiveTab('overview');
+  }
+
+  openCoordination(): void {
+    this.quickActions?.openTeamHandover();
+  }
+
+  openReports(): void {
+    this.quickActions?.openReports();
   }
 
   logout(): void {

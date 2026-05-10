@@ -1,12 +1,12 @@
 <div class="section-header nurse-module-header">
-  <h2 class="section-title"><app-hero-icon name="chart-bar" /> Resumen general</h2>
+  <h2 class="section-title">📊 Resumen general</h2>
 </div>
 <div class="overview-container dashboard-overview">
   <div class="stats-grid">
     <div class="stat-card clickable" (click)="areaSummaryClick.emit()">
       <div class="stat-icon">🏥</div>
       <div class="stat-content">
-        <h3 class="stat-value">{{ assignedArea }}</h3>
+        <h3 class="stat-value stat-value--text">{{ assignedArea }}</h3>
         <p class="stat-label">Área asignada</p>
       </div>
       <div class="click-hint">Ver detalle</div>
@@ -14,7 +14,7 @@
     <div class="stat-card clickable" (click)="openPatientsModuleClick.emit()">
       <div class="stat-icon">👥</div>
       <div class="stat-content">
-        <h3 class="stat-value">{{ assignedPatientsCount }} / {{ maxPatients }}</h3>
+        <h3 class="stat-value stat-value--text">{{ assignedPatientsCount }} / {{ maxPatients }}</h3>
         <p class="stat-label">Pacientes asignados</p>
       </div>
       <div class="click-hint">Ir a pacientes</div>
@@ -62,7 +62,7 @@
     >
       <div class="stat-icon">📋</div>
       <div class="stat-content">
-        <h3 class="stat-value">Entrega</h3>
+        <h3 class="stat-value stat-value--text">Entrega</h3>
         <p class="stat-label">Nota de turno por día y área</p>
       </div>
       <div class="click-hint">Abrir nota</div>
@@ -70,7 +70,7 @@
     <button type="button" class="stat-card clickable nurse-attention-tile" (click)="openReportsClick.emit()">
       <div class="stat-icon">📈</div>
       <div class="stat-content">
-        <h3 class="stat-value">7 días</h3>
+        <h3 class="stat-value stat-value--text">7 días</h3>
         <p class="stat-label">Reportes cumplimiento y medicación</p>
       </div>
       <div class="click-hint">Ver reportes</div>

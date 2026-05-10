@@ -27,7 +27,7 @@
           <span class="user-phone-line" *ngIf="headerUserPhoneLine as hp">{{ hp }}</span>
         </button>
         <button type="button" class="neuro-btn-icon logout-btn" (click)="logout()" title="Cerrar Sesión" aria-label="Cerrar sesión">
-          <app-hero-icon name="arrow-right-on-rectangle" />
+          🚪
         </button>
       </div>
     </div>
@@ -48,7 +48,7 @@
         (click)="setActiveTab('overview')"
         (keydown)="onSupervisorTabKeydown($event, 'overview')"
       >
-        <app-hero-icon name="chart-bar" /> Resumen
+        📊 Resumen
       </button>
       <button
         type="button"
@@ -61,7 +61,7 @@
         (click)="setActiveTab('users')"
         (keydown)="onSupervisorTabKeydown($event, 'users')"
       >
-        <app-hero-icon name="users" /> Usuarios
+        👤 Usuarios
       </button>
       <button
         type="button"
@@ -74,7 +74,7 @@
         (click)="setActiveTab('staff')"
         (keydown)="onSupervisorTabKeydown($event, 'staff')"
       >
-        <app-hero-icon name="user-group" /> Gestión de Enfermeras
+        👩‍⚕️ Gestión de Enfermeras
       </button>
       <button
         type="button"
@@ -87,7 +87,7 @@
         (click)="setActiveTab('areas')"
         (keydown)="onSupervisorTabKeydown($event, 'areas')"
       >
-        <app-hero-icon name="building-office-2" /> Áreas
+        🏥 Áreas
       </button>
       <button
         type="button"
@@ -100,7 +100,7 @@
         (click)="setActiveTab('beds')"
         (keydown)="onSupervisorTabKeydown($event, 'beds')"
       >
-        <app-hero-icon name="rectangle-group" /> Camas
+        🛏️ Camas
       </button>
       <button
         type="button"
@@ -113,7 +113,7 @@
         (click)="setActiveTab('patients')"
         (keydown)="onSupervisorTabKeydown($event, 'patients')"
       >
-        <app-hero-icon name="user-circle" /> Pacientes
+        🧑‍🤝‍🧑 Pacientes
       </button>
       <button
         type="button"
@@ -126,7 +126,7 @@
         (click)="setActiveTab('schedules')"
         (keydown)="onSupervisorTabKeydown($event, 'schedules')"
       >
-        <app-hero-icon name="calendar-days" /> Horarios
+        📅 Horarios
       </button>
     </nav>
 

@@ -1,10 +1,10 @@
 <div class="staff-dashboard-quick-actions" role="group" aria-label="Accesos de coordinación y reportes">
   <button type="button" class="nav-link staff-dashboard-quick-link" (click)="openTeamHandover()">
-    <app-hero-icon name="chat-bubble-left-right" /> Coordinación
+    📋 Coordinación
     <span *ngIf="teamHandoverPendingNotice" class="quick-pending-chip">Pendiente</span>
   </button>
   <button type="button" class="nav-link staff-dashboard-quick-link" (click)="openReports()">
-    <app-hero-icon name="chart-bar" /> Reportes
+    📈 Reportes
   </button>
 
   <app-admin-team-handover-modal

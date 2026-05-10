@@ -1,14 +1,15 @@
 import {
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   EventEmitter,
   HostBinding,
   Input,
   Output,
+  inject,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DashboardUserProfileModalComponent } from '../dashboard-user-profile-modal/dashboard-user-profile-modal.component';
-import { HeroIconComponent } from '../hero-icon/hero-icon.component';
 
 /**
  * Envoltorio neumórfico compartido (cabecera + nav + contenido) alineado con
@@ -19,12 +20,13 @@ import { HeroIconComponent } from '../hero-icon/hero-icon.component';
 @Component({
   selector: 'app-dashboard-shell',
   standalone: true,
-  imports: [CommonModule, DashboardUserProfileModalComponent, HeroIconComponent],
+  imports: [CommonModule, DashboardUserProfileModalComponent],
   templateUrl: './dashboard-shell.component.html',
   styleUrl: './dashboard-shell.component.css',
-  changeDetection: ChangeDetectionStrategy.OnPush,
+  changeDetection: ChangeDetectionStrategy.Default,
 })
 export class DashboardShellComponent {
+  private readonly cdr = inject(ChangeDetectorRef);
   /** Clase raíz del panel: `nurse-dashboard` | `pharmacy-dashboard` (tokens en dashboard-layout.css). */
   @Input({ required: true }) panelSkin!: string;
 
@@ -60,6 +62,25 @@ export class DashboardShellComponent {
   @HostBinding('attr.id')
   get hostId(): string | null {
     return this.topAnchorId?.trim() || null;
+  }
+
+  /** Estado del menú hamburguesa en mobile */
+  navOpen = false;
+
+  toggleNav(): void {
+    this.navOpen = !this.navOpen;
+  }
+
+  closeNav(): void {
+    this.navOpen = false;
+  }
+
+  /** Cierra el nav en mobile cuando se hace click en un nav-link */
+  onNavClick(event: Event): void {
+    const target = event.target as HTMLElement;
+    if (target.closest('.nav-link')) {
+      this.closeNav();
+    }
   }
 
   onLogout(): void {

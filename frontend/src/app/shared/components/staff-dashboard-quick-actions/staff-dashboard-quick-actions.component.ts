@@ -8,12 +8,11 @@ import { ToastService } from '../../../services/toast.service';
 import { HandoverShiftSlot } from '../../../services/nurse.service';
 import { AdminTeamHandoverModalComponent } from '../admin-team-handover-modal/admin-team-handover-modal.component';
 import { NurseReportsModalComponent } from '../../../components/nurse-dashboard/nurse-reports-modal/nurse-reports-modal.component';
-import { HeroIconComponent } from '../hero-icon/hero-icon.component';
 
 @Component({
   selector: 'app-staff-dashboard-quick-actions',
   standalone: true,
-  imports: [CommonModule, AdminTeamHandoverModalComponent, NurseReportsModalComponent, HeroIconComponent],
+  imports: [CommonModule, AdminTeamHandoverModalComponent, NurseReportsModalComponent],
   templateUrl: './staff-dashboard-quick-actions.component.html',
   styleUrl: './staff-dashboard-quick-actions.component.css',
 })

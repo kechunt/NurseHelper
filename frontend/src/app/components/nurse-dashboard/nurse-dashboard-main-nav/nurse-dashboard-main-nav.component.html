@@ -15,7 +15,7 @@
     (click)="select('summary')"
     (keydown)="onMainViewTabKeydown($event, 'summary')"
   >
-    <app-hero-icon name="chart-bar" /> <span i18n="@@nurseDashboardMainNav.tab.summary">Resumen</span>
+    📊 <span i18n="@@nurseDashboardMainNav.tab.summary">Resumen</span>
   </button>
   <button
     type="button"
@@ -28,7 +28,7 @@
     (click)="select('tasks')"
     (keydown)="onMainViewTabKeydown($event, 'tasks')"
   >
-    <app-hero-icon name="clock" /> <span i18n="@@nurseDashboardMainNav.tab.tasks">Tareas</span>
+    ⏰ <span i18n="@@nurseDashboardMainNav.tab.tasks">Tareas</span>
   </button>
   <button
     type="button"
@@ -41,7 +41,7 @@
     (click)="select('pharmacy')"
     (keydown)="onMainViewTabKeydown($event, 'pharmacy')"
   >
-    <app-hero-icon name="beaker" /> <span i18n="@@nurseDashboardMainNav.tab.pharmacy">Farmacia</span>
+    💊 <span i18n="@@nurseDashboardMainNav.tab.pharmacy">Farmacia</span>
   </button>
   <button
     type="button"
@@ -54,7 +54,7 @@
     (click)="select('beds')"
     (keydown)="onMainViewTabKeydown($event, 'beds')"
   >
-    <app-hero-icon name="rectangle-group" /> <span i18n="@@nurseDashboardMainNav.tab.beds">Camas</span>
+    🛏️ <span i18n="@@nurseDashboardMainNav.tab.beds">Camas</span>
   </button>
   <button
     type="button"
@@ -67,38 +67,34 @@
     (click)="select('patients')"
     (keydown)="onMainViewTabKeydown($event, 'patients')"
   >
-    <app-hero-icon name="users" /> <span i18n="@@nurseDashboardMainNav.tab.patients">Pacientes</span>
+    👥 <span i18n="@@nurseDashboardMainNav.tab.patients">Pacientes</span>
   </button>
-</div>
-<div
-  class="nurse-nav-quick-group"
-  role="group"
-  aria-label="Accesos rápidos"
-  i18n-aria-label="@@nurseDashboardMainNav.quickAriaLabel"
->
+
+  <hr class="nurse-nav-divider" aria-hidden="true" />
+
   <button
     type="button"
-    class="nav-link nurse-nav-quick"
+    class="nav-link"
     (click)="entregaClick.emit()"
     title="Nota de paso de turno: el texto guardado solo se consulta en esta ventana, eligiendo fecha, para enfermeras del mismo área."
     aria-label="Nota de paso de turno"
     i18n-title="@@nurseDashboardMainNav.quick.handoverTitle"
     i18n-aria-label="@@nurseDashboardMainNav.quick.handoverAriaLabel"
   >
-    <app-hero-icon name="clipboard-document" />
-    <span i18n="@@nurseDashboardMainNav.quick.handover">Entrega</span>
-    <span *ngIf="handoverPendingNotice" class="quick-pending-chip">Pendiente</span>
+    📋 <span i18n="@@nurseDashboardMainNav.quick.handover">Entrega</span>
+    @if (handoverPendingNotice) {
+      <span class="quick-pending-chip">Pendiente</span>
+    }
   </button>
   <button
     type="button"
-    class="nav-link nurse-nav-quick"
+    class="nav-link"
     (click)="reportesClick.emit()"
     title="Reportes últimos 7 días"
     aria-label="Reportes últimos 7 días"
     i18n-title="@@nurseDashboardMainNav.quick.reportsTitle"
     i18n-aria-label="@@nurseDashboardMainNav.quick.reportsAriaLabel"
   >
-    <app-hero-icon name="chart-bar" />
-    <span i18n="@@nurseDashboardMainNav.quick.reports">Reportes</span>
+    📈 <span i18n="@@nurseDashboardMainNav.quick.reports">Reportes</span>
   </button>
 </div>

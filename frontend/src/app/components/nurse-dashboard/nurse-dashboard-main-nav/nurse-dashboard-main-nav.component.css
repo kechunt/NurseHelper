@@ -1,20 +1,24 @@
+/*
+ * El host usa display:contents para que el div interno sea el único
+ * contenedor de layout y los botones hereden directamente el flex del
+ * .dashboard-nav (columna en desktop, fila en responsive ≤1024px).
+ */
 :host {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  display: contents;
+}
+
+/* El tablist ocupa todo el espacio del nav y hereda su dirección flex */
+:host-context(.nurse-dashboard) .nurse-nav-tablist {
+  display: contents;
+}
+
+/* Divisor visual entre tabs principales y accesos rápidos */
+:host-context(.nurse-dashboard) .nurse-nav-divider {
+  border: none;
+  border-top: 1px solid rgba(174, 174, 192, 0.35);
+  margin: 0.25rem 0;
   width: 100%;
-}
-
-:host-context(.nurse-dashboard) .nurse-nav-tablist,
-:host-context(.nurse-dashboard) .nurse-nav-quick-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-/* Ajustes de atajos: el estilo base de `.nav-link` viene de `dashboard-layout.css` bajo `.nurse-dashboard`. */
-:host-context(.nurse-dashboard) .nav-link.nurse-nav-quick {
-  font-size: 0.88rem;
+  flex-shrink: 0;
 }
 
 :host-context(.nurse-dashboard) .quick-pending-chip {
@@ -28,10 +32,14 @@
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
 }
 
+/* En responsive horizontal el divisor se convierte en separador vertical */
 @media (max-width: 1024px) {
-  :host-context(.nurse-dashboard) .nurse-nav-quick-group {
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
+  :host-context(.nurse-dashboard) .nurse-nav-divider {
+    border-top: none;
+    border-left: 1px solid rgba(174, 174, 192, 0.35);
+    width: 0;
+    height: auto;
+    margin: 0 0.25rem;
+    align-self: stretch;
   }
 }

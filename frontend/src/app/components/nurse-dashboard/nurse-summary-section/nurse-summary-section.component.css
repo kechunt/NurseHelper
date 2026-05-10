@@ -45,3 +45,86 @@
   color: inherit;
   text-align: left;
 }
+
+@media (max-width: 768px) {
+  :host .dashboard-overview .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.6rem;
+  }
+  :host .dashboard-overview .stat-card {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0.85rem 0.6rem;
+    gap: 0.35rem;
+    min-height: 120px;
+    aspect-ratio: unset;
+  }
+  /* Forzar centrado también en las attention tiles */
+  :host .dashboard-overview .nurse-attention-tile.stat-card {
+    text-align: center;
+    align-items: center;
+  }
+  :host .dashboard-overview .stat-card .stat-content {
+    text-align: center;
+    width: 100%;
+  }
+  /* Cuadrado redondeado igual que en desktop */
+  :host .dashboard-overview .stat-icon {
+    width: 52px;
+    height: 52px;
+    font-size: 2rem;
+    border-radius: 14px;
+  }
+  :host .dashboard-overview .stat-value {
+    font-size: 1.8rem;
+    font-weight: 300;
+    margin: 0;
+    line-height: 1.1;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    color: #718096;
+  }
+  /* Valores de texto largo (área asignada): tamaño reducido */
+  :host .dashboard-overview .stat-value.stat-value--text {
+    font-size: 1rem;
+    line-height: 1.25;
+    hyphens: auto;
+  }
+  :host .dashboard-overview .stat-label {
+    font-size: 0.68rem;
+    text-align: center;
+    line-height: 1.25;
+    letter-spacing: 0.3px;
+  }
+  :host .dashboard-overview .click-hint {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  :host .dashboard-overview .stats-grid {
+    gap: 0.5rem;
+  }
+  :host .dashboard-overview .stat-card {
+    padding: 0.75rem 0.5rem;
+    min-height: 108px;
+    gap: 0.3rem;
+  }
+  :host .dashboard-overview .stat-icon {
+    width: 46px;
+    height: 46px;
+    font-size: 1.8rem;
+    border-radius: 12px;
+  }
+  :host .dashboard-overview .stat-value {
+    font-size: 1.65rem;
+  }
+  :host .dashboard-overview .stat-value.stat-value--text {
+    font-size: 0.9rem;
+  }
+  :host .dashboard-overview .stat-label {
+    font-size: 0.64rem;
+  }
+}

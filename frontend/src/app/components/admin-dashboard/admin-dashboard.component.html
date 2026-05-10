@@ -30,14 +30,35 @@
           <span class="user-phone-line" *ngIf="headerUserPhoneLine as hp">{{ hp }}</span>
         </button>
         <button type="button" class="neuro-btn-icon logout-btn" (click)="logout()" title="Cerrar Sesión" aria-label="Cerrar sesión">
-          <app-hero-icon name="arrow-right-on-rectangle" ariaLabel="Cerrar sesión" />
+          🚪
         </button>
       </div>
     </div>
   </div>
 
   <div class="dashboard-body">
-    <nav class="dashboard-nav" role="tablist" aria-label="Secciones del panel de administración">
+    <!-- Overlay para cerrar el nav en mobile al tocar fuera -->
+    <div
+      class="nav-mobile-overlay"
+      [class.visible]="navOpen"
+      (click)="closeNav()"
+      aria-hidden="true"
+    ></div>
+
+    <nav
+      class="dashboard-nav"
+      [class.nav-open]="navOpen"
+      role="tablist"
+      aria-label="Secciones del panel de administración"
+    >
+      <!-- Botón cerrar dentro del menú (mobile) -->
+      <button
+        type="button"
+        class="nav-mobile-close"
+        (click)="closeNav()"
+        aria-label="Cerrar menú"
+      >✕</button>
+
       <button
         type="button"
         role="tab"
@@ -49,7 +70,7 @@
         (click)="setActiveTab('overview')"
         (keydown)="onAdminTabKeydown($event, 'overview')"
       >
-        <app-hero-icon name="chart-bar" /> Resumen
+        📊 Resumen
       </button>
       <button
         type="button"
@@ -62,7 +83,7 @@
         (click)="setActiveTab('users')"
         (keydown)="onAdminTabKeydown($event, 'users')"
       >
-        <app-hero-icon name="users" /> Usuarios
+        👤 Usuarios
       </button>
       <button
         type="button"
@@ -75,7 +96,7 @@
         (click)="setActiveTab('staff')"
         (keydown)="onAdminTabKeydown($event, 'staff')"
       >
-        <app-hero-icon name="user-group" /> Gestión de Enfermeras
+        👩‍⚕️ Gestión de Enfermeras
       </button>
       <button
         type="button"
@@ -88,7 +109,7 @@
         (click)="setActiveTab('areas')"
         (keydown)="onAdminTabKeydown($event, 'areas')"
       >
-        <app-hero-icon name="building-office-2" /> Áreas
+        🏥 Áreas
       </button>
       <button
         type="button"
@@ -101,7 +122,7 @@
         (click)="setActiveTab('beds')"
         (keydown)="onAdminTabKeydown($event, 'beds')"
       >
-        <app-hero-icon name="rectangle-group" /> Camas
+        🛏️ Camas
       </button>
       <button
         type="button"
@@ -114,7 +135,7 @@
         (click)="setActiveTab('patients')"
         (keydown)="onAdminTabKeydown($event, 'patients')"
       >
-        <app-hero-icon name="user-circle" /> Pacientes
+        🧑‍🤝‍🧑 Pacientes
       </button>
       <button
         type="button"
@@ -127,12 +148,23 @@
         (click)="setActiveTab('schedules')"
         (keydown)="onAdminTabKeydown($event, 'schedules')"
       >
-        <app-hero-icon name="calendar-days" /> Horarios
+        📅 Horarios
       </button>
       <app-staff-dashboard-quick-actions />
     </nav>
 
     <main class="dashboard-content" id="admin-dashboard-main" aria-labelledby="admin-dashboard-heading">
+      <!-- Botón hamburguesa (solo visible en mobile) -->
+      <button
+        type="button"
+        class="nav-hamburger"
+        (click)="toggleNav()"
+        [attr.aria-expanded]="navOpen"
+        aria-label="Abrir menú de navegación"
+      >
+        <span class="hamburger-label">{{ activeTab === 'overview' ? '📊 Resumen' : activeTab === 'users' ? '👤 Usuarios' : activeTab === 'staff' ? '👩‍⚕️ Enfermeras' : activeTab === 'areas' ? '🏥 Áreas' : activeTab === 'beds' ? '🛏️ Camas' : activeTab === 'patients' ? '🧑‍🤝‍🧑 Pacientes' : '📅 Horarios' }}</span>
+        <span class="hamburger-icon">☰</span>
+      </button>
       <!-- Resumen: *ngIf solo la primera vez; [hidden] evita destruir el componente al cambiar de pestaña -->
       <div
         *ngIf="hasVisitedTab('overview')"
@@ -142,7 +174,11 @@
         id="admin-panel-overview"
         aria-labelledby="admin-tab-overview"
       >
-        <app-overview [onNavigate]="setActiveTab.bind(this)"></app-overview>
+        <app-overview
+          [onNavigate]="setActiveTab.bind(this)"
+          [onOpenCoordination]="openCoordination.bind(this)"
+          [onOpenReports]="openReports.bind(this)"
+        ></app-overview>
       </div>
 
       <div

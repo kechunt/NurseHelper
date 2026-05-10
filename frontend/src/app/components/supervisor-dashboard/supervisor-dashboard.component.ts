@@ -12,7 +12,6 @@ import { PatientsManagementComponent } from '../admin-dashboard/patients-managem
 import { SchedulesManagementComponent } from '../admin-dashboard/schedules-management/schedules-management.component';
 import { DashboardUserProfileModalComponent } from '../../shared/components/dashboard-user-profile-modal/dashboard-user-profile-modal.component';
 import { StaffDashboardQuickActionsComponent } from '../../shared/components/staff-dashboard-quick-actions/staff-dashboard-quick-actions.component';
-import { HeroIconComponent } from '../../shared/components/hero-icon/hero-icon.component';
 
 @Component({
   selector: 'app-supervisor-dashboard',
@@ -29,7 +28,6 @@ import { HeroIconComponent } from '../../shared/components/hero-icon/hero-icon.c
     BedsManagementComponent,
     PatientsManagementComponent,
     SchedulesManagementComponent,
-    HeroIconComponent,
   ],
   templateUrl: './supervisor-dashboard.component.html',
   styleUrl: './supervisor-dashboard.component.css',

@@ -15,6 +15,8 @@ import { forkJoin } from 'rxjs';
 })
 export class OverviewComponent implements OnInit, OnDestroy {
   @Input() onNavigate?: (tab: string) => void;
+  @Input() onOpenCoordination?: () => void;
+  @Input() onOpenReports?: () => void;
 
   stats = {
     users: 0,

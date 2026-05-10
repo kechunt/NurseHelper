@@ -5,12 +5,13 @@
     <p>Cargando estadísticas...</p>
   </div>
 
-  <div class="stat-card realtime-shift-card">
-    <div class="stat-icon">🕒</div>
-    <div class="stat-content">
-      <h3 class="stat-value realtime-value">{{ liveDateTimeLabel }}</h3>
-      <p class="stat-label">Fecha y hora actual</p>
-      <p class="realtime-shift-label">Turno en curso: {{ liveCurrentShiftLabel }}</p>
+  <!-- Tarjeta del reloj — diseño igual al de Horarios -->
+  <div class="overview-realtime-card">
+    <div class="overview-realtime-icon">🕒</div>
+    <div class="overview-realtime-content">
+      <h3 class="overview-realtime-value">{{ liveDateTimeLabel }}</h3>
+      <p class="overview-realtime-title">Fecha y hora actual</p>
+      <p class="overview-realtime-shift">Turno en curso: {{ liveCurrentShiftLabel }}</p>
     </div>
   </div>
 
@@ -66,7 +67,24 @@
     <div class="stat-card" (click)="navigate('schedules')">
       <div class="stat-icon">📅</div>
       <div class="stat-content">
+        <h3 class="stat-value overview-action-value">Horarios</h3>
         <p class="stat-label">Turnos Semanales</p>
+      </div>
+    </div>
+
+    <div class="stat-card" (click)="onOpenCoordination && onOpenCoordination()">
+      <div class="stat-icon">📋</div>
+      <div class="stat-content">
+        <h3 class="stat-value overview-action-value">Coordinación</h3>
+        <p class="stat-label">Nota de turno</p>
+      </div>
+    </div>
+
+    <div class="stat-card" (click)="onOpenReports && onOpenReports()">
+      <div class="stat-icon">📈</div>
+      <div class="stat-content">
+        <h3 class="stat-value overview-action-value">Reportes</h3>
+        <p class="stat-label">Últimos 7 días</p>
       </div>
     </div>
   </div>
