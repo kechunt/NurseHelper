@@ -77,10 +77,6 @@ export class BedsManagementComponent implements OnInit {
   filteredPatients: any[] = [];
   patientsFromCurrentArea: any[] = [];
   showCreateBedModal = false;
-  showAssignPatientModal = false;
-  assignPatientSearchTerm: string = '';
-  assignablePatients: any[] = [];
-  selectedPatientToAssign: number | null = null;
 
   /** Modal: pacientes de otras áreas o sin cama. */
   showCrossAreaPatientModal = false;
@@ -358,8 +354,15 @@ export class BedsManagementComponent implements OnInit {
       { label: 'Estado', value: statusLabel, badgeVariant },
     ];
 
+    const patientInteractive = bedClass !== 'unavailable';
+
     if (statusLabel === 'Ocupada') {
-      rows.push({ label: 'Paciente', value: this.getPatientNameForBed(b) });
+      rows.push({
+        label: 'Paciente',
+        value: this.getPatientNameForBed(b),
+        interactive: patientInteractive,
+        actionKey: 'patient',
+      });
     } else {
       let patientNote: string;
       if (bedClass === 'available') {
@@ -369,10 +372,28 @@ export class BedsManagementComponent implements OnInit {
       } else {
         patientNote = 'Sin paciente asignado';
       }
-      rows.push({ label: 'Paciente', value: patientNote, valueMuted: true });
+      rows.push({
+        label: 'Paciente',
+        value: patientNote,
+        valueMuted: true,
+        interactive: patientInteractive,
+        actionKey: 'patient',
+      });
     }
 
     return rows;
+  }
+
+  onBedCardSummaryRowAction(actionKey: string): void {
+    if (actionKey !== 'patient') {
+      return;
+    }
+    const b = this.bedCardActionsTarget;
+    if (!b || this.getBedClass(b) === 'unavailable') {
+      return;
+    }
+    this.closeBedCardActionsSheet();
+    this.openEditBedModal(b);
   }
 
   fromBedSheetViewPatient(): void {
@@ -427,7 +448,6 @@ export class BedsManagementComponent implements OnInit {
   }
 
   closeEditBedModal(): void {
-    this.closeAssignPatientModal();
     this.closeCrossAreaPatientModal();
     this.showEditBedModal = false;
     this.selectedBed = null;
@@ -559,26 +579,21 @@ export class BedsManagementComponent implements OnInit {
 
   selectPatient(patient: any): void {
     this.editBedForm.patientId = patient.id;
-    this.patientSearchTerm = '';
-    this.filteredPatients = [];
   }
 
-  openAssignPatientModal(): void {
-    if (!this.editBedAllowsPatientPicker()) {
-      if (!this.editBedForm.isActive) {
-        this.toastService.warning('Activa la cama para poder asignar un paciente');
-      } else if (this.editBedForm.patientId) {
-        this.toastService.warning('Libera la cama actual antes de asignar otro paciente');
-      } else {
-        this.toastService.warning('No se pudo identificar el área o la cama');
-      }
-      return;
-    }
+  /** Texto de columna «Cama actual» en tablas de asignación. */
+  patientAssignBedSummary(patient: any): string {
+    const bed = this.getPatientBed(patient?.id);
+    return bed?.bedNumber ? String(bed.bedNumber) : 'Sin cama';
+  }
 
-    this.assignPatientSearchTerm = '';
-    this.selectedPatientToAssign = null;
-    this.assignablePatients = [...this.patientsFromCurrentArea];
-    this.showAssignPatientModal = true;
+  isCrossAreaPatientSelected(patient: any): boolean {
+    return this.toId(patient?.id) === this.toId(this.selectedCrossAreaPatientId);
+  }
+
+  selectCrossAreaPatient(patient: any): void {
+    const id = this.toId(patient?.id);
+    this.selectedCrossAreaPatientId = id;
   }
 
   /** Cama activa y sin paciente seleccionado en el formulario: se puede elegir paciente. */
@@ -689,12 +704,8 @@ export class BedsManagementComponent implements OnInit {
 
     this.assignPatientToSelectedBed(pid, hint).subscribe({
       next: () => {
-        this.editBedForm.patientId = pid;
         this.toastService.success(`Paciente ${hint} asignado a la cama`);
-        this.closeCrossAreaPatientModal();
-        if (this.editBedForm.areaId) {
-          this.loadPatientsForBedArea(this.editBedForm.areaId);
-        }
+        this.closeEditBedModal();
         this.loadData();
       },
       error: (error) => {
@@ -722,49 +733,6 @@ export class BedsManagementComponent implements OnInit {
       return this.adminService.assignPatientToBed(oldId, null).pipe(concatMap(() => runAssign()));
     }
     return runAssign();
-  }
-
-  closeAssignPatientModal(): void {
-    this.showAssignPatientModal = false;
-    this.assignPatientSearchTerm = '';
-    this.selectedPatientToAssign = null;
-    this.assignablePatients = [];
-  }
-
-  filterAssignablePatients(): void {
-    const search = this.assignPatientSearchTerm.trim().toLowerCase();
-    if (!search) {
-      this.assignablePatients = [...this.patientsFromCurrentArea];
-      return;
-    }
-    this.assignablePatients = this.patientsFromCurrentArea.filter((patient) => {
-      const fullName = `${patient.firstName} ${patient.lastName}`.toLowerCase();
-      const identification = (patient.identificationNumber || '').toLowerCase();
-      return fullName.includes(search) || identification.includes(search);
-    });
-  }
-
-  assignPatientToCurrentBed(): void {
-    const pid = this.toId(this.selectedPatientToAssign);
-    if (!this.selectedBed?.id || pid === null) {
-      this.toastService.warning('Selecciona un paciente para asignar');
-      return;
-    }
-
-    const patient = this.patientsFromCurrentArea.find((p) => this.toId(p.id) === pid);
-    const hint =
-      `${patient?.firstName ?? ''} ${patient?.lastName ?? ''}`.trim() || 'Paciente';
-    this.assignPatientToSelectedBed(pid, hint).subscribe({
-      next: () => {
-        this.editBedForm.patientId = pid;
-        this.toastService.success(`Paciente ${patient?.firstName || ''} ${patient?.lastName || ''} asignado a la cama`);
-        this.closeAssignPatientModal();
-        this.loadData();
-      },
-      error: (error) => {
-        this.toastService.error(error.error?.message || 'Error al asignar el paciente a la cama');
-      },
-    });
   }
 
   async releaseBed(): Promise<void> {

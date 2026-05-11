@@ -262,6 +262,7 @@ export class UsersManagementComponent implements OnInit, OnDestroy {
       phone: user.phone ?? '',
       role: user.role,
       isActive: user.isActive,
+      pharmacyRosterOrder: user.role === 'pharmacy' ? user.pharmacyRosterOrder ?? null : undefined,
     };
     this.showEditModal = true;
   }
@@ -396,10 +397,26 @@ export class UsersManagementComponent implements OnInit, OnDestroy {
     if (!this.selectedUser) return;
 
     const phoneTrim = ((this.editForm.phone as string) || '').trim();
-    const payload = {
+    const payload: Partial<User> = {
       ...this.editForm,
       phone: phoneTrim.length > 0 ? phoneTrim : null,
     };
+
+    if (this.editForm.role === 'pharmacy') {
+      const rawRo = this.editForm.pharmacyRosterOrder;
+      if (rawRo === undefined || rawRo === null) {
+        payload.pharmacyRosterOrder = null;
+      } else {
+        const n = parseInt(String(rawRo), 10);
+        if (Number.isNaN(n) || n < 0 || n > 999) {
+          this.toastService.warning('El orden de roster farmacia debe ser un número entre 0 y 999 (o vacío)');
+          return;
+        }
+        payload.pharmacyRosterOrder = n;
+      }
+    } else {
+      delete payload.pharmacyRosterOrder;
+    }
 
     this.adminService.updateUser(this.selectedUser.id!, payload).subscribe({
       next: (response) => {

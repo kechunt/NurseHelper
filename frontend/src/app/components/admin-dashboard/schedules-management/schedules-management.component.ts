@@ -919,14 +919,26 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
     this.shiftsService.saveShiftAttendance(this.attendanceDate, currentShiftId, payload, { autoHandoff: true }).subscribe({
       next: (response) => {
         this.savingAttendance = false;
-        if (response?.handoff) {
-          const assigned = response.handoff.assigned ?? 0;
-          const pending = response.handoff.pending ?? 0;
+        const saveMsg = response?.message || 'Asistencia guardada';
+        const handoff = response?.handoff;
+        if (handoff) {
+          const processed = handoff.processed ?? 0;
+          const assigned = handoff.assigned ?? 0;
+          const pending = handoff.pending ?? 0;
+          const reasonSamples = (handoff.details || [])
+            .filter((d) => d.status === 'pending' && d.reason)
+            .slice(0, 4)
+            .map((d) => `#${d.patientId}: ${d.reason}`)
+            .join(' · ');
+          const reparto = `Reparto tras lista: ${processed} revisados, ${assigned} asignados, ${pending} pendientes.`;
+          const detailSuffix = reasonSamples ? ` Ejemplos: ${reasonSamples}` : '';
           if (pending > 0) {
-            this.toastService.warning(
-              `Handoff ejecutado: ${assigned} pacientes asignados y ${pending} pendientes por falta de cobertura/capacidad`
-            );
+            this.toastService.warning(`${saveMsg} ${reparto}${detailSuffix}`);
+          } else {
+            this.toastService.success(`${saveMsg} ${reparto}`);
           }
+        } else {
+          this.toastService.success(saveMsg);
         }
         this.loadShiftAttendance({ silent: true });
       },

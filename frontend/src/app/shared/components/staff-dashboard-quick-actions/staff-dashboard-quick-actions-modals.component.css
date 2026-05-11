@@ -1,0 +1,13 @@
+/* No ocupa hueco en el flex del cuerpo; los modales son position:fixed al viewport.
+   z-index alto: el host crea contexto de apilamiento; si queda en 0, el drawer móvil
+   (.dashboard-nav z-index 200) pinta encima aunque el backdrop interno lleve 2000+. */
+:host {
+  flex: 0 0 0;
+  width: 0;
+  min-width: 0;
+  height: 0;
+  overflow: visible;
+  align-self: flex-start;
+  position: relative;
+  z-index: 3100;
+}

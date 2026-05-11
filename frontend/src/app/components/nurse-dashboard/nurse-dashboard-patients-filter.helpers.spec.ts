@@ -7,12 +7,13 @@ type Row = {
   pendingTasks?: number | null;
   priority?: string;
   medications?: unknown;
+  isAssignedToMe?: boolean;
 };
 
 const PATIENTS: Row[] = [
-  { id: '1', name: 'Ana Lopez', bedNumber: 'A-1', pendingTasks: 1, priority: 'critical' },
-  { id: '2', name: 'Bruno Diaz', bedNumber: 'B-2', pendingTasks: 0, priority: 'normal' },
-  { id: '3', name: 'Carla Ruiz', bedNumber: 'C-3', pendingTasks: 2, priority: 'normal' },
+  { id: '1', name: 'Ana Lopez', bedNumber: 'A-1', pendingTasks: 1, priority: 'critical', isAssignedToMe: true },
+  { id: '2', name: 'Bruno Diaz', bedNumber: 'B-2', pendingTasks: 0, priority: 'normal', isAssignedToMe: false },
+  { id: '3', name: 'Carla Ruiz', bedNumber: 'C-3', pendingTasks: 2, priority: 'normal', isAssignedToMe: true },
 ];
 
 const medicationDosesToday = (p: Row): number => {
@@ -56,6 +57,11 @@ describe('filterNurseDashboardPatients', () => {
   it('filtro critical conserva solo prioridad critical', () => {
     const out = filterNurseDashboardPatients(PATIENTS, '', 'critical', medicationDosesToday);
     expect(out).toEqual([PATIENTS[0]]);
+  });
+
+  it('filtro mine conserva solo pacientes asignados a la usuaria', () => {
+    const out = filterNurseDashboardPatients(PATIENTS, '', 'mine', medicationDosesToday);
+    expect(out).toEqual([PATIENTS[0], PATIENTS[2]]);
   });
 
   it('combina búsqueda y filtro seleccionado', () => {

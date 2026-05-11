@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import { loadEnv } from './utils/env';
 import { logger } from './utils/logger';
 import { AppDataSource } from './data-source';
+import { hookMysqlPoolSetNamesUtf8Mb4 } from './utils/mysql-utf8mb4-pool';
 import { setupSwagger } from './config/swagger';
 import { errorHandler } from './utils/error-handler';
 import { sanitizeMiddleware } from './utils/sanitizer';
@@ -27,6 +28,7 @@ import notificationsRoutes from './routes/notifications.routes';
 import backupRoutes from './routes/backup.routes';
 import diagnosticRoutes from './routes/diagnostic.routes';
 import healthRoutes from './routes/health.routes';
+import { startInAppNotificationJobs } from './services/notification-jobs.service';
 
 // Cargar variables de entorno al inicio
 loadEnv();
@@ -54,11 +56,12 @@ const corsOptions: cors.CorsOptions = {
     const defaultOrigins: string[] = ['http://localhost:4200'];
     const allAllowedOrigins: string[] = [...defaultOrigins, ...allowedOriginsEnv];
 
-    const vercelPattern = /^https:\/\/.*\.vercel\.app$/;
+    /** Previews y producción en Vercel (*.vercel.app) */
+    const vercelPattern = /^https:\/\/([a-z0-9-]+\.)*vercel\.app$/i;
 
     const isAllowed =
       allAllowedOrigins.includes(origin) ||
-      (process.env.NODE_ENV === 'production' && vercelPattern.test(origin));
+      vercelPattern.test(origin);
 
     if (isAllowed) {
       callback(null, true);
@@ -75,6 +78,19 @@ const corsOptions: cors.CorsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+/** JSON siempre declarado como UTF-8 (evita interpretaciones erróneas en proxies o clientes antiguos) */
+app.use((_req, res, next) => {
+  const origJson = res.json.bind(res);
+  res.json = (body?: unknown) => {
+    const ct = res.getHeader('Content-Type');
+    if (!ct || String(ct).startsWith('application/json')) {
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    }
+    return origJson(body);
+  };
+  next();
+});
 
 // Sanitización de inputs (debe ir después de body parsers)
 app.use(sanitizeMiddleware);
@@ -190,11 +206,24 @@ app.use(errorHandler);
 // Inicializar base de datos y servidor
 logger.info('🔄 Iniciando conexión a la base de datos...');
 AppDataSource.initialize()
-  .then(() => {
+  .then(async () => {
+    hookMysqlPoolSetNamesUtf8Mb4(AppDataSource);
+    try {
+      await AppDataSource.query('SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci');
+    } catch {
+      // noop
+    }
     logger.info('✅ Base de datos conectada exitosamente');
     logger.info(`📊 Base de datos: ${process.env.DB_DATABASE || 'nursehelper'}`);
     logger.info(`🖥️  Host: ${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || '3306'}`);
-    
+
+    const notifJobMs = parseInt(process.env.IN_APP_NOTIFICATION_JOB_MS || '120000', 10);
+    if (!Number.isFinite(notifJobMs) || notifJobMs < 30_000) {
+      startInAppNotificationJobs(120_000);
+    } else {
+      startInAppNotificationJobs(notifJobMs);
+    }
+
     logger.info('🔄 Iniciando servidor HTTP...');
     // Escuchar en todas las interfaces (0.0.0.0) para permitir conexiones locales y remotas
     const server = app.listen(PORT, '0.0.0.0', () => {

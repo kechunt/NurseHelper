@@ -20,6 +20,9 @@ export interface User {
   isActive?: boolean;
   maxPatients?: number | null;
   assignedAreaId?: number | null;
+  phone?: string | null;
+  /** Orden de contacto principal entre farmacéuticos presentes (0–999). */
+  pharmacyRosterOrder?: number | null;
   createdAt?: Date | string;
   updatedAt?: Date | string;
 }

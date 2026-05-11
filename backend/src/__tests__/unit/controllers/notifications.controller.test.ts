@@ -1,7 +1,17 @@
 import type { Response } from 'express';
 
-jest.mock('../../../services/notification.service', () => ({
-  notificationService: {},
+const listActiveNotificationsForUser = jest.fn();
+const markNotificationRead = jest.fn();
+const markNotificationAcknowledged = jest.fn();
+const markAllNotificationsRead = jest.fn();
+const deleteNotificationForUser = jest.fn();
+
+jest.mock('../../../services/user-notifications-persistence.service', () => ({
+  listActiveNotificationsForUser: (...a: unknown[]) => listActiveNotificationsForUser(...a),
+  markNotificationRead: (...a: unknown[]) => markNotificationRead(...a),
+  markNotificationAcknowledged: (...a: unknown[]) => markNotificationAcknowledged(...a),
+  markAllNotificationsRead: (...a: unknown[]) => markAllNotificationsRead(...a),
+  deleteNotificationForUser: (...a: unknown[]) => deleteNotificationForUser(...a),
 }));
 
 import type { AuthRequest } from '../../../middleware/auth.middleware';
@@ -11,6 +21,7 @@ describe('NotificationsController', () => {
   let ctrl: NotificationsController;
 
   beforeEach(() => {
+    jest.clearAllMocks();
     ctrl = new NotificationsController();
   });
 
@@ -18,31 +29,50 @@ describe('NotificationsController', () => {
     return { user: { id: 7, email: 'n@test', role: 'nurse' as const }, ...overrides } as AuthRequest;
   }
 
-  it('getNotifications responde array vacío', async () => {
+  it('getNotifications devuelve lista de persistencia', async () => {
+    listActiveNotificationsForUser.mockResolvedValueOnce([{ id: 1, type: 'x' }]);
     const json = jest.fn();
     const res = { json } as unknown as Response;
     await ctrl.getNotifications(authReq(), res, jest.fn());
-    expect(json).toHaveBeenCalledWith([]);
+    expect(listActiveNotificationsForUser).toHaveBeenCalledWith(7);
+    expect(json).toHaveBeenCalledWith([{ id: 1, type: 'x' }]);
   });
 
-  it('markAsRead responde mensaje', async () => {
+  it('markAsRead llama persistencia', async () => {
+    markNotificationRead.mockResolvedValueOnce(true);
     const json = jest.fn();
     const res = { json } as unknown as Response;
-    await ctrl.markAsRead({ ...authReq(), params: { id: '12' } } as AuthRequest, res, jest.fn());
+    await ctrl.markAsRead({ ...authReq(), params: { id: '12' } } as unknown as AuthRequest, res, jest.fn());
+    expect(markNotificationRead).toHaveBeenCalledWith(7, 12);
     expect(json).toHaveBeenCalledWith({ message: 'Notificación marcada como leída' });
   });
 
-  it('markAllAsRead responde mensaje', async () => {
+  it('acknowledge llama persistencia', async () => {
+    markNotificationAcknowledged.mockResolvedValueOnce(true);
+    const json = jest.fn();
+    const res = { json } as unknown as Response;
+    await ctrl.acknowledge({ ...authReq(), params: { id: '3' } } as unknown as AuthRequest, res, jest.fn());
+    expect(markNotificationAcknowledged).toHaveBeenCalledWith(7, 3);
+    expect(json).toHaveBeenCalledWith({ message: 'Notificación reconocida' });
+  });
+
+  it('markAllAsRead devuelve affected', async () => {
+    markAllNotificationsRead.mockResolvedValueOnce(4);
     const json = jest.fn();
     const res = { json } as unknown as Response;
     await ctrl.markAllAsRead(authReq(), res, jest.fn());
-    expect(json).toHaveBeenCalledWith({ message: 'Todas las notificaciones marcadas como leídas' });
+    expect(json).toHaveBeenCalledWith({
+      message: 'Todas las notificaciones marcadas como leídas',
+      affected: 4,
+    });
   });
 
-  it('delete responde mensaje', async () => {
+  it('delete llama persistencia', async () => {
+    deleteNotificationForUser.mockResolvedValueOnce(true);
     const json = jest.fn();
     const res = { json } as unknown as Response;
-    await ctrl.delete({ ...authReq(), params: { id: '99' } } as AuthRequest, res, jest.fn());
+    await ctrl.delete({ ...authReq(), params: { id: '99' } } as unknown as AuthRequest, res, jest.fn());
+    expect(deleteNotificationForUser).toHaveBeenCalledWith(7, 99);
     expect(json).toHaveBeenCalledWith({ message: 'Notificación eliminada' });
   });
 });

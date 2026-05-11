@@ -15,6 +15,14 @@
   box-sizing: border-box;
 }
 
+/**
+ * Por encima de `.apm-backdrop` (3100) y `.apm-backdrop--nested` (3200) para que
+ * la elección de enfermera no quede detrás de modales de gestión de camas.
+ */
+.admin-assign-modal-backdrop--stack-top {
+  z-index: 3500;
+}
+
 .admin-assign-modal-content {
   background: #e0e5ec;
   border-radius: 28px;

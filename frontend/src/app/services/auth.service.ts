@@ -16,6 +16,8 @@ export interface User {
   assignedAreaId?: number | null;
   /** Si el backend lo expone en el futuro; si no, la UI muestra “No registrado”. */
   phone?: string | null;
+  /** Solo rol farmacia: prioridad de contacto si varios están de turno. */
+  pharmacyRosterOrder?: number | null;
 }
 
 export interface LoginResponse {

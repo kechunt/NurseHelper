@@ -524,6 +524,7 @@ describe('Full System Integration Tests', () => {
       expect(entityNames).toContain('Area');
       expect(entityNames).toContain('Bed');
       expect(entityNames).toContain('Schedule');
+      expect(entityNames).toContain('UserNotification');
       logger.info('✅ Entidades registradas:', entityNames.length);
     });
   });

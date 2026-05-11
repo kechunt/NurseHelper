@@ -83,7 +83,60 @@
   border-radius: 15px;
   background: #e0e5ec;
   border: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
+  transition: all 0.2s ease;
+}
+
+.nurse-reports-kpi:hover:not(:disabled) {
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+  transform: translateY(-2px) scale(1.02);
+  color: #4a5568;
+}
+
+.nurse-reports-kpi:active:not(:disabled) {
   box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+  transform: translateY(0) scale(0.97);
+  transition-duration: 0.08s;
+}
+
+.nurse-reports-kpi:focus {
+  outline: none;
+}
+
+.nurse-reports-kpi:focus-visible {
+  box-shadow:
+    6px 6px 12px #bebebe,
+    -6px -6px 12px #ffffff,
+    0 0 0 2px #e0e5ec,
+    0 0 0 4px rgba(66, 153, 225, 0.45);
+}
+
+.nurse-reports-kpi--selected {
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+  transform: translateY(0) scale(1);
+  color: #4a5568;
+}
+
+.nurse-reports-kpi--selected:hover:not(:disabled) {
+  box-shadow: inset 5px 5px 10px #bebebe, inset -5px -5px 10px #ffffff;
+  transform: translateY(-1px) scale(1.01);
+}
+
+.nurse-reports-kpi--selected:active:not(:disabled) {
+  box-shadow: inset 6px 6px 12px #b0b0b0, inset -6px -6px 12px #ffffff;
+  transform: scale(0.98);
+  transition-duration: 0.08s;
+}
+
+.nurse-reports-kpi--selected:focus-visible {
+  box-shadow:
+    inset 4px 4px 8px #bebebe,
+    inset -4px -4px 8px #ffffff,
+    0 0 0 2px #e0e5ec,
+    0 0 0 4px rgba(66, 153, 225, 0.45);
 }
 
 .nurse-reports-kpi--ok .nurse-reports-kpi__val {
@@ -147,4 +200,17 @@
 
 .nurse-reports-error {
   color: #c53030;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nurse-reports-kpi {
+    transition: none;
+  }
+
+  .nurse-reports-kpi:hover:not(:disabled),
+  .nurse-reports-kpi:active:not(:disabled),
+  .nurse-reports-kpi--selected:hover:not(:disabled),
+  .nurse-reports-kpi--selected:active:not(:disabled) {
+    transform: none;
+  }
 }

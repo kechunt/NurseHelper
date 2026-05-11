@@ -78,6 +78,13 @@ export class User {
   @Column({ type: 'int', nullable: true })
   maxPatients: number;
 
+  /**
+   * Orden de contacto en farmacia (menor = primero) cuando varios están presentes en el mismo turno.
+   * Solo aplica a usuarios con `role === pharmacy`.
+   */
+  @Column({ type: 'int', nullable: true })
+  pharmacyRosterOrder: number | null;
+
   @Column({ nullable: true })
   assignedAreaId: number | null;
 

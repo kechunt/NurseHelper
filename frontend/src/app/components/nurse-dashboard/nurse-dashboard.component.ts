@@ -1,7 +1,7 @@
-import { Component, DoCheck, OnInit, ViewChild } from '@angular/core';
+import { Component, DestroyRef, DoCheck, inject, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin, Subject, of } from 'rxjs';
 import { switchMap, catchError } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -10,6 +10,7 @@ import {
   PatientDetail,
   BedWithPatient,
   MedicationForPharmacy,
+  PharmacyShiftContactNurseDto,
   NurseStats,
   NurseDayHistoryItem,
   NurseShiftContext,
@@ -22,6 +23,7 @@ import { PharmacyService, type MedicationRequest } from '../../services/pharmacy
 import { ToastService } from '../../services/toast.service';
 import { ConfirmationService } from '../../services/confirmation.service';
 import { DashboardShellComponent } from '../../shared/components/dashboard-shell/dashboard-shell.component';
+import { InAppNotificationsBellComponent } from '../../shared/components/in-app-notifications-bell/in-app-notifications-bell.component';
 import type { SuspendMedicationConfirmedPayload } from './nurse-suspend-medication-modal/nurse-suspend-medication-modal.component';
 import { type NurseAddTreatmentModalMode } from './nurse-add-treatment-modal/nurse-add-treatment-modal.component';
 import { NurseDashboardOverlaysStackComponent } from './nurse-dashboard-overlays-stack/nurse-dashboard-overlays-stack.component';
@@ -45,6 +47,7 @@ import {
   type NurseDashboardMainView,
   type Patient,
   type ScheduleItem,
+  isNurseDashboardMainView,
 } from './nurse-dashboard.types';
 import {
   mapBedsWithPatientForNurseDashboard,
@@ -162,10 +165,7 @@ import {
   NURSE_DASHBOARD_HTTP_FALLBACK_TREATMENT_POSTPONE,
   NURSE_DASHBOARD_HTTP_FALLBACK_UNKNOWN,
 } from './nurse-dashboard-http-fallback-messages.helpers';
-import {
-  nurseDashboardHeaderUserDisplayName,
-  nurseDashboardHeaderUserPhoneLine,
-} from './nurse-dashboard-header-user.helpers';
+import { nurseDashboardHeaderUserDisplayName } from './nurse-dashboard-header-user.helpers';
 import {
   NURSE_DASHBOARD_MAIN_VIEW_STORAGE_KEY,
   nurseDashboardMainViewFromStoredValue,
@@ -296,6 +296,7 @@ import { NurseBedsSectionComponent } from './nurse-beds-section/nurse-beds-secti
     FormsModule,
     DashboardShellComponent,
     NurseDashboardHeaderSearchComponent,
+    InAppNotificationsBellComponent,
     NurseDashboardMainNavComponent,
     NurseDashboardOverlaysStackComponent,
     NursePatientsAssignedSectionComponent,
@@ -312,6 +313,8 @@ import { NurseBedsSectionComponent } from './nurse-beds-section/nurse-beds-secti
   ],
 })
 export class NurseDashboardComponent implements OnInit, DoCheck {
+  private readonly destroyRef = inject(DestroyRef);
+
   @ViewChild(NurseDashboardOverlaysStackComponent)
   private nurseOverlaysStack?: NurseDashboardOverlaysStackComponent;
 
@@ -322,10 +325,6 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
   /** Cabecera del shell: reacciona al usuario en sesión (p. ej. tras editar perfil). */
   get headerUserName(): string {
     return nurseDashboardHeaderUserDisplayName(this.authService.currentUser(), this.nurseName);
-  }
-
-  get headerUserPhoneLine(): string | null {
-    return nurseDashboardHeaderUserPhoneLine(this.authService.currentUser()?.phone);
   }
 
   get attentionPharmacyNotRequestedCount(): number {
@@ -357,7 +356,7 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
   editBedModalBed: (BedDisplay & { id: number }) | null = null;
 
   searchTerm: string = '';
-  selectedFilter: string = 'all';
+  selectedFilter: string = 'mine';
 
   showPatientModal: boolean = false;
   selectedPatient: Patient | null = null;
@@ -467,6 +466,8 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
   }
 
   medicationsForPharmacy: any[] = [];
+  /** Contacto farmacia por turno (API medicamentos farmacia). */
+  pharmacyContactsByShift: PharmacyShiftContactNurseDto[] = [];
   uniqueMedicationsCount: number = 0;
   totalDosesToday: number = 0;
   pharmacyRequestsHistoryOpen = false;
@@ -509,11 +510,15 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
   /** Evita solapar varias cargas completas si el usuario dispara refrescos muy seguido. */
   private readonly reloadDashboard$ = new Subject<void>();
 
+  /** Deep link desde notificaciones: `?highlightSchedule=` */
+  private highlightScheduleAfterLoad: number | null = null;
+
   constructor(
     private nurseService: NurseService,
     private authService: AuthService,
     private pharmacyService: PharmacyService,
     private router: Router,
+    private route: ActivatedRoute,
     private toastService: ToastService,
     private confirmationService: ConfirmationService,
     private exportService: ExportService,
@@ -565,6 +570,21 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
 
   ngOnInit(): void {
     this.restoreNurseMainView();
+    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((pm) => {
+      const view = pm.get('view');
+      if (view && isNurseDashboardMainView(view)) {
+        this.nurseMainView = view;
+        this.visitedNurseViews.add(view);
+      }
+      const hs = pm.get('highlightSchedule');
+      if (hs != null && hs !== '') {
+        const n = parseInt(hs, 10);
+        if (Number.isFinite(n)) {
+          this.highlightScheduleAfterLoad = n;
+          this.tryOpenHighlightedScheduleIfReady();
+        }
+      }
+    });
     this.visitedNurseViews.add(this.nurseMainView);
     this.loadNurseData();
     if (nurseDashboardShouldLoadTasksDayHistory(this.nurseMainView)) {
@@ -669,6 +689,34 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
     );
   }
 
+  private tryOpenHighlightedScheduleIfReady(): void {
+    const id = this.highlightScheduleAfterLoad;
+    if (id == null || !Number.isFinite(id)) {
+      return;
+    }
+    if (!Array.isArray(this.allTasksGroupedByHour) || this.allTasksGroupedByHour.length === 0) {
+      return;
+    }
+    let found: TaskItem | null = null;
+    for (const g of this.allTasksGroupedByHour) {
+      const tasks = Array.isArray(g?.tasks) ? g.tasks : [];
+      for (const t of tasks) {
+        const sid = t.scheduleId ?? t.id;
+        if (sid === id) {
+          found = t;
+          break;
+        }
+      }
+      if (found) break;
+    }
+    if (!found) {
+      return;
+    }
+    this.highlightScheduleAfterLoad = null;
+    this.setNurseMainView('tasks');
+    queueMicrotask(() => this.openPendingTaskDetail(found));
+  }
+
   private applyPrimaryDashboardData(
     stats: NurseStats | null,
     beds: BedWithPatient[] | null,
@@ -680,9 +728,8 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
     this.myBeds = mapBedsWithPatientForNurseDashboard(beds);
 
     this.patients = mapPatientDetailsToPatients(patients || [], beds || []);
-    this.filteredPatients = this.patients;
-
-    this.assignedPatientsCount = this.patients.length;
+    this.assignedPatientsCount = this.patients.filter((p) => p.isAssignedToMe === true).length;
+    this.filterPatients();
     this.pendingTasksCount = sumPendingTasksAcrossPatients(this.patients);
     this.medicationsToday = sumMedicationListDosesAcrossPatients(this.patients);
   }
@@ -703,14 +750,17 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
         this.applyTasksFilters();
 
         // Procesar medicamentos
+        this.pharmacyContactsByShift = medications?.pharmacyContactsByShift ?? [];
+        const medList = medications?.medications ?? [];
         const requestedToday = this.getRequestedMedicationSignaturesForToday();
-        const pendingMedications = (medications || []).filter(
+        const pendingMedications = medList.filter(
           (m) => !m.requested && !requestedToday.has(this.pharmacyMedicationSignature(m))
         );
         this.medicationsForPharmacy = pendingMedications;
         this.uniqueMedicationsCount = pendingMedications.length;
         this.totalDosesToday = sumTotalDosesFromPharmacyMedications(pendingMedications);
         this.medicationsToday = this.totalDosesToday;
+        this.tryOpenHighlightedScheduleIfReady();
       },
       error: (error) => {
         this.toastService.warning(
@@ -722,6 +772,7 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
         this.allTasksGroupedByHour = [];
         this.tasksGroupedByHour = [];
         this.medicationsForPharmacy = [];
+        this.pharmacyContactsByShift = [];
         this.uniqueMedicationsCount = 0;
         this.totalDosesToday = 0;
       },
@@ -993,7 +1044,7 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
 
   clearPatientsSectionFilters(): void {
     this.searchTerm = '';
-    this.selectedFilter = 'all';
+    this.selectedFilter = 'mine';
     this.filterPatients();
   }
 

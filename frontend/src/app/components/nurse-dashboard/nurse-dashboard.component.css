@@ -3,6 +3,12 @@
  * Paneles y tablas: admin-panel-responsive + admin-table-unified.
  */
 
+.nurse-header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .nurse-dashboard .tab-content {
   width: 100%;
   max-width: 100%;

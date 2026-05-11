@@ -4,7 +4,6 @@
   [panelTitle]="'Panel de Farmacia'"
   [userName]="headerUserName"
   [roleLabel]="'Farmacia'"
-  [userPhoneLine]="headerUserPhoneLine"
   [profileEditable]="true"
   [navAriaLabel]="'Módulos de farmacia'"
   [navRoleTablist]="true"
@@ -54,6 +53,16 @@
     >
       🗃️ Inventario
     </button>
+    <button
+      type="button"
+      role="tab"
+      id="pharmacy-tab-asistencia"
+      class="nav-link"
+      title="Abrir asistencia de farmacia"
+      (click)="goToAttendance()"
+    >
+      ✅ Asistencia
+    </button>
   </ng-container>
 
   <main class="dashboard-content" id="pharmacy-dashboard-main" aria-labelledby="pharmacy-dashboard-heading">
@@ -92,30 +101,30 @@
 
           <div class="summary-unified-neuro pharmacy-requests-kpis" aria-label="Resumen del flujo de solicitudes">
             <p class="pharmacy-kpis-title">Estado del día</p>
-            <div class="quick-stats pharmacy-quick-stats">
+            <div class="quick-stats pharmacy-quick-stats pharmacy-requests-kpi-grid">
               <div class="stat-card" [class.has-pending]="pendingRequestsCount > 0" (click)="selectRequestKpi('pending')">
-                <div class="stat-icon">⏳</div>
+                <div class="stat-icon"><app-hero-icon name="clock" [size]="28" /></div>
                 <div class="stat-content">
                   <div class="stat-label">Pendientes</div>
                   <div class="stat-value">{{ pendingRequestsCount }}</div>
                 </div>
               </div>
               <div class="stat-card" (click)="selectRequestKpi('in_preparation')">
-                <div class="stat-icon">🔄</div>
+                <div class="stat-icon"><app-hero-icon name="arrow-path" [size]="28" /></div>
                 <div class="stat-content">
                   <div class="stat-label">En preparación</div>
                   <div class="stat-value">{{ inPreparationCount }}</div>
                 </div>
               </div>
               <div class="stat-card" [class.ready]="readyForDeliveryCount > 0" (click)="selectRequestKpi('ready')">
-                <div class="stat-icon">✅</div>
+                <div class="stat-icon"><app-hero-icon name="check-circle" [size]="28" /></div>
                 <div class="stat-content">
                   <div class="stat-label">Listas para entregar</div>
                   <div class="stat-value">{{ readyForDeliveryCount }}</div>
                 </div>
               </div>
               <div class="stat-card" (click)="goToDeliveredTodayDetail()" title="Ver historial de entregas">
-                <div class="stat-icon">📦</div>
+                <div class="stat-icon"><app-hero-icon name="archive-box" [size]="28" /></div>
                 <div class="stat-content">
                   <div class="stat-label">Entregadas hoy</div>
                   <div class="stat-value">{{ deliveredTodayCount }}</div>
@@ -123,6 +132,8 @@
               </div>
             </div>
           </div>
+
+          <app-pharmacy-shift-attendance-section />
 
     <div *ngIf="loadingRequests" class="module-feedback loading">Cargando solicitudes...</div>
     <div *ngIf="!loadingRequests && requestsError" class="module-feedback error">{{ requestsError }}</div>

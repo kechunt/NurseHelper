@@ -1,0 +1,173 @@
+:host {
+  display: block;
+  margin-bottom: 1rem;
+}
+
+/**
+ * Misma línea visual que horarios/asistencia:
+ * `module-section-neuro` + `table-wrapper-neuro` + tarjetas elevadas tipo lista de enfermeras.
+ */
+.pharmacy-coverage-readonly {
+  border-radius: 16px;
+  margin: 0;
+  padding: 0.75rem;
+  background: #dde4ee;
+  border: 1px solid rgba(174, 174, 192, 0.24);
+  box-shadow: 8px 8px 16px #c2c8d0, -8px -8px 16px #f6f9ff;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.pharmacy-coverage-readonly::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  pointer-events: none;
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.75), inset -1px -1px 0 rgba(174, 174, 192, 0.12);
+}
+
+.pharmacy-coverage-readonly-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.5rem 0.85rem;
+  margin-bottom: 0.35rem;
+  position: relative;
+  z-index: 1;
+  box-shadow: inset 0 -1px 0 rgba(174, 174, 192, 0.22);
+}
+
+.pharmacy-coverage-readonly-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #4a5568;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.pharmacy-coverage-readonly-date {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #718096;
+}
+
+/* Mismo criterio que `.input-neuro` en schedules-management */
+.pharmacy-coverage-readonly-date input {
+  padding: 10px 14px;
+  background: #e0e5ec;
+  border: none;
+  border-radius: 10px;
+  color: #4a5568;
+  font-weight: 600;
+  font-size: 0.95rem;
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+  transition: box-shadow 0.2s ease;
+}
+
+.pharmacy-coverage-readonly-date input:focus {
+  outline: none;
+  box-shadow: inset 6px 6px 12px #bebebe, inset -6px -6px 12px #ffffff;
+}
+
+.pharmacy-coverage-readonly-msg {
+  margin: 0.35rem 0.5rem;
+  font-size: 0.82rem;
+  color: #718096;
+  position: relative;
+  z-index: 1;
+}
+
+.pharmacy-coverage-readonly-msg.error {
+  color: #c53030;
+  font-weight: 600;
+}
+
+/* Contenedor hundido: análogo a `table-wrapper-neuro` */
+.pharmacy-coverage-readonly-grid-wrap {
+  margin-top: 0.35rem;
+  padding: 1rem;
+  background: #e0e5ec;
+  border-radius: 16px;
+  box-shadow: inset 4px 4px 8px #c2c8d0, inset -4px -4px 8px #f6f9ff;
+  overflow: auto;
+  border: 1px solid rgba(174, 174, 192, 0.22);
+  position: relative;
+  z-index: 1;
+}
+
+.pharmacy-coverage-readonly-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+  gap: 0.85rem;
+}
+
+/* Tarjeta por turno: relieve saliente sobre el fondo hundido */
+.pharmacy-coverage-readonly-cell {
+  padding: 0.75rem 0.9rem;
+  border-radius: 14px;
+  background: #e0e5ec;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
+  transition: box-shadow 0.2s ease;
+}
+
+.pharmacy-coverage-readonly-cell:hover {
+  box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #ffffff;
+}
+
+.pharmacy-coverage-readonly-shift {
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: #2d3748;
+}
+
+.pharmacy-coverage-readonly-time {
+  font-size: 0.78rem;
+  color: #718096;
+  font-weight: 600;
+  margin-bottom: 0.45rem;
+}
+
+.pharmacy-coverage-readonly-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.pharmacy-coverage-readonly-tel {
+  display: inline-block;
+  margin-top: 0.15rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #2b6cb0;
+  text-decoration: none;
+}
+
+.pharmacy-coverage-readonly-tel:hover {
+  text-decoration: underline;
+}
+
+.pharmacy-coverage-readonly-muted {
+  font-size: 0.8rem;
+  color: #a0aec0;
+  font-style: italic;
+}
+
+@media (max-width: 480px) {
+  .pharmacy-coverage-readonly-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pharmacy-coverage-readonly-date input {
+    width: 100%;
+  }
+}

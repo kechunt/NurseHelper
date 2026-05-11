@@ -8,6 +8,7 @@ export interface NurseDashboardPatientFilterRow {
   medications?: unknown;
   pendingTasks?: number | null;
   priority?: string;
+  isAssignedToMe?: boolean;
 }
 
 /**
@@ -23,7 +24,9 @@ export function filterNurseDashboardPatients<T extends NurseDashboardPatientFilt
     const matchesSearch = patientMatchesDashboardSearchTerm(patient, searchTerm);
 
     let matchesFilter = true;
-    if (selectedFilter === 'medications') {
+    if (selectedFilter === 'mine') {
+      matchesFilter = patient.isAssignedToMe === true;
+    } else if (selectedFilter === 'medications') {
       matchesFilter = medicationDosesToday(patient) > 0;
     } else if (selectedFilter === 'tasks') {
       matchesFilter = (patient.pendingTasks || 0) > 0;

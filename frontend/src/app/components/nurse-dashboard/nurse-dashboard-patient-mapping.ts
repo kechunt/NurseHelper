@@ -109,5 +109,9 @@ export function mapPatientDetailsToPatients(
       specialNeeds: [],
       general: [],
     },
+    assignedToId: p.assignedToId ?? null,
+    assignedToName: p.assignedToName ?? null,
+    assignmentStatus: p.assignmentStatus ?? 'pending',
+    isAssignedToMe: p.isAssignedToMe === true,
   }));
 }

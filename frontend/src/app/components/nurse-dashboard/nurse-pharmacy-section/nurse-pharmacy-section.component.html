@@ -10,6 +10,35 @@
       </div>
     </div>
 
+    <div
+      *ngIf="pharmacyContactsByShift.length > 0"
+      class="pharmacy-shift-contacts"
+      role="region"
+      aria-label="Contacto farmacia por turno"
+    >
+      <p class="pharmacy-shift-contacts-intro">Encargado de farmacia por turno (hoy)</p>
+      <div class="pharmacy-shift-contacts-grid-wrap">
+      <ul class="pharmacy-shift-contacts-list">
+        <li *ngFor="let c of pharmacyContactsByShift" class="pharmacy-shift-contact-row">
+          <span class="pharmacy-shift-slot">
+            {{ c.shiftName }}
+            <span class="pharmacy-shift-time">({{ c.startTime }}–{{ c.endTime }})</span>
+          </span>
+          <span class="pharmacy-shift-contact-detail">
+            <ng-container *ngIf="c.hasOnDutyContact; else noPharmacyDuty">
+              <span class="pharmacy-shift-contact-name">{{ c.contactName || 'Farmacia' }}</span>
+              <a *ngIf="c.phone" [href]="'tel:' + c.phone" class="pharmacy-shift-contact-tel">{{ c.phone }}</a>
+              <span *ngIf="!c.phone" class="pharmacy-shift-no-phone">Sin teléfono registrado</span>
+            </ng-container>
+            <ng-template #noPharmacyDuty>
+              <span class="pharmacy-shift-contact-missing">Sin encargado de farmacia en este turno</span>
+            </ng-template>
+          </span>
+        </li>
+      </ul>
+      </div>
+    </div>
+
     <div class="table-wrapper-neuro unified-table-container nurse-table-shell-flat">
       <table class="unified-tasks-table neuro-table medications-modal-table nurse-tasks-table">
         <thead>

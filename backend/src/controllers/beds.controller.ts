@@ -240,7 +240,13 @@ export class BedsController {
           await queryRunner.manager
             .createQueryBuilder()
             .update(Patient)
-            .set({ bedId: null, assignmentStatus: 'pending', assignedToId: null, lastAssignmentAt: null })
+            .set({
+              bedId: null,
+              areaId: null,
+              assignmentStatus: 'pending',
+              assignedToId: null,
+              lastAssignmentAt: null,
+            })
             .where('bedId = :bedId', { bedId: bed.id })
             .andWhere('isActive = :isActive', { isActive: true })
             .execute();
@@ -397,6 +403,8 @@ export class BedsController {
         return;
       }
 
+      const previousBedAreaId = bed.areaId;
+
       if (bedNumber) bed.bedNumber = bedNumber;
       if (notes !== undefined) bed.notes = notes;
       
@@ -417,6 +425,8 @@ export class BedsController {
           bed.areaId = newAreaId;
         }
       }
+      const bedAreaChangedFromRequest =
+        areaId !== undefined && areaId !== null && bed.areaId !== previousBedAreaId;
 
       // Manejar asignación/liberación de paciente si se proporciona patientId
       if (patientId !== undefined) {
@@ -435,6 +445,7 @@ export class BedsController {
             for (const patient of patientsInBed) {
               try {
                 patient.bedId = null;
+                patient.areaId = null;
                 await patientRepository.save(patient);
                 logger.info('✅ Paciente desasignado de cama', { patientId: patient.id, bedId });
               } catch (saveError: any) {
@@ -628,6 +639,16 @@ export class BedsController {
       }
 
       await bedRepository.save(bed);
+
+      if (bedAreaChangedFromRequest) {
+        await patientRepository
+          .createQueryBuilder()
+          .update(Patient)
+          .set({ areaId: bed.areaId })
+          .where('bedId = :bedId', { bedId: bed.id })
+          .andWhere('isActive = :active', { active: true })
+          .execute();
+      }
 
       // Recargar cama actualizada con paciente activo relacionado
       let updatedBed: Bed | null;

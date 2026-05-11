@@ -13,6 +13,10 @@ export interface AdminTableRowSummaryRow {
   valueMuted?: boolean;
   /** Valor principal (ej. número de cama). */
   valueProminent?: boolean;
+  /** Si es true, la fila emite `summaryRowAction` al pulsar el valor (sin badge). */
+  interactive?: boolean;
+  /** Clave enviada en `summaryRowAction` (por defecto `label`). */
+  actionKey?: string;
 }
 
 /**
@@ -36,6 +40,8 @@ export class AdminTableRowActionsModalComponent {
   @Input() closeAriaLabel = 'Cerrar';
 
   @Output() readonly dismissed = new EventEmitter<void>();
+  /** Se emite al activar una fila con `interactive: true`. El valor es `actionKey` o `label`. */
+  @Output() readonly summaryRowAction = new EventEmitter<string>();
 
   readonly titleId = `admin-row-actions-h-${++idSeq}`;
 
@@ -45,5 +51,12 @@ export class AdminTableRowActionsModalComponent {
 
   close(): void {
     this.dismissed.emit();
+  }
+
+  emitSummaryRowActivate(row: AdminTableRowSummaryRow): void {
+    if (!row.interactive || row.badgeVariant) {
+      return;
+    }
+    this.summaryRowAction.emit(row.actionKey ?? row.label);
   }
 }

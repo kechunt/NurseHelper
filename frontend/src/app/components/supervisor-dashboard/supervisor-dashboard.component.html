@@ -15,6 +15,7 @@
         <h1 class="dashboard-title" id="supervisor-dashboard-heading">Panel de Supervisión</h1>
       </div>
       <div class="user-section">
+        <app-in-app-notifications-bell dashboardKind="supervisor" />
         <button
           type="button"
           class="user-info profile-trigger-btn"
@@ -24,7 +25,6 @@
         >
           <span class="user-name">{{ currentUser()?.firstName || '' }} {{ currentUser()?.lastName || '' }}</span>
           <span class="user-role">Supervisor</span>
-          <span class="user-phone-line" *ngIf="headerUserPhoneLine as hp">{{ hp }}</span>
         </button>
         <button type="button" class="neuro-btn-icon logout-btn" (click)="logout()" title="Cerrar Sesión" aria-label="Cerrar sesión">
           🚪
@@ -131,6 +131,7 @@
     </nav>
 
     <main class="dashboard-content" id="supervisor-dashboard-main" aria-labelledby="supervisor-dashboard-heading">
+      <app-pharmacy-coverage-summary-card />
       <div
         *ngIf="hasVisitedTab('overview')"
         [hidden]="activeTab !== 'overview'"

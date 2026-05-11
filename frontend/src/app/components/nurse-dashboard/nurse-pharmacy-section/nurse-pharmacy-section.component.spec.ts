@@ -17,6 +17,7 @@ describe('NursePharmacySectionComponent', () => {
   ];
 
   beforeEach(async () => {
+    meds[0].requested = false;
     await TestBed.configureTestingModule({
       imports: [NursePharmacySectionComponent],
     }).compileComponents();
@@ -25,6 +26,12 @@ describe('NursePharmacySectionComponent', () => {
     fixture.componentRef.setInput('medicationsForPharmacy', meds);
     fixture.componentRef.setInput('uniqueMedicationsCount', 1);
     fixture.componentRef.setInput('totalDosesToday', 2);
+    fixture.componentRef.setInput('historyOpen', false);
+    fixture.componentRef.setInput('historyDate', '2026-01-01');
+    fixture.componentRef.setInput('historyLoading', false);
+    fixture.componentRef.setInput('historyError', null);
+    fixture.componentRef.setInput('historyItems', []);
+    fixture.componentRef.setInput('pharmacyContactsByShift', []);
     fixture.detectChanges();
   });
 

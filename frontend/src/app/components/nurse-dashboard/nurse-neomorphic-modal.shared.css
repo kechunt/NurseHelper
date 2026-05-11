@@ -312,24 +312,37 @@
 
 @media (max-width: 768px) {
   .modal-backdrop {
-    padding: 0.65rem;
-    align-items: flex-start;
-    padding-top: 1rem;
+    padding: max(0.65rem, env(safe-area-inset-top, 0px))
+      max(0.65rem, env(safe-area-inset-right, 0px))
+      max(0.65rem, env(safe-area-inset-bottom, 0px))
+      max(0.65rem, env(safe-area-inset-left, 0px));
+    align-items: center;
+    justify-content: center;
+    min-height: 100dvh;
+    box-sizing: border-box;
   }
 
   .modal-content {
-    max-height: calc(100dvh - 2rem);
+    max-height: min(calc(100dvh - 2rem), 92dvh);
+    width: 100%;
+    max-width: 100%;
+    margin-inline: auto;
+    box-sizing: border-box;
   }
 
   .modal-content.modal-large {
     border-radius: 22px;
-    max-height: calc(100dvh - 1.25rem);
+    max-height: min(calc(100dvh - 1.25rem), 92dvh);
+    width: 100%;
+    max-width: 100%;
   }
 
   .modal-content.nurse-aux-modal {
     border-radius: 22px;
-    max-height: calc(100dvh - 2rem);
+    max-height: min(calc(100dvh - 2rem), 92dvh);
     width: 100%;
+    max-width: min(520px, 100%);
+    margin-inline: auto;
   }
 
   .modal-content.nurse-aux-modal .modal-body {
@@ -338,5 +351,20 @@
 
   .medication-day-detail-body {
     max-height: none;
+  }
+}
+
+@media (max-width: 576px) {
+  .modal-backdrop {
+    padding: max(0.5rem, env(safe-area-inset-top, 0px))
+      max(0.5rem, env(safe-area-inset-right, 0px))
+      max(0.5rem, env(safe-area-inset-bottom, 0px))
+      max(0.5rem, env(safe-area-inset-left, 0px));
+  }
+
+  .modal-content,
+  .modal-content.modal-large,
+  .modal-content.nurse-aux-modal {
+    max-height: min(calc(100dvh - 1rem), 94dvh);
   }
 }

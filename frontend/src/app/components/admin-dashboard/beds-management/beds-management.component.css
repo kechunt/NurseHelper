@@ -118,6 +118,41 @@
   margin-top: 0.85rem;
 }
 
+.beds-mgmt-assign-table-wrap {
+  max-height: min(340px, 46vh);
+  overflow: auto;
+}
+
+.beds-mgmt-assign-row {
+  cursor: pointer;
+}
+
+.beds-mgmt-assign-row--selected {
+  background: #c7d2e3 !important;
+}
+
+.beds-mgmt-assign-row:focus-visible {
+  outline: 2px solid rgba(43, 108, 176, 0.55);
+  outline-offset: -2px;
+}
+
+.beds-mgmt-table-empty {
+  margin: 0;
+  padding: 1rem;
+  text-align: center;
+}
+
+.beds-mgmt-table-empty-inner {
+  text-align: center;
+  padding: 1.25rem !important;
+  white-space: normal !important;
+}
+
+.beds-mgmt-col-radio {
+  width: 2.75rem;
+  text-align: center;
+}
+
 .beds-mgmt-empty-lead {
   margin: 0 0 0.75rem;
 }

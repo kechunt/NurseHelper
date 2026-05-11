@@ -35,19 +35,24 @@ export class AdminNursePickModalService {
 
   pickNurseOutcome(areaId: number, patientHint: string): Observable<NursePickOutcome> {
     return this.admin.getNursesByArea(areaId).pipe(
-      switchMap((nurses) => {
-        if (nurses.length <= 1) {
-          return of<NursePickOutcome>({ kind: 'ok', nurseId: nurses[0]?.id });
-        }
-        return defer(
-          () =>
-            new Observable<NursePickOutcome>((subscriber) => {
-              this.pending = { subscriber, nurses, patientHint };
-              this.selectedNurseId = null;
-              this.vm = { open: true, nurses: [...nurses], patientHint };
-            })
-        );
-      })
+      switchMap((nurses) => this.resolveNursePickOutcome(nurses, patientHint))
+    );
+  }
+
+  /**
+   * Misma lógica que `pickNurseOutcome` pero sin volver a pedir la lista (p. ej. asignación paciente–cama).
+   */
+  resolveNursePickOutcome(nurses: AdminNursePickRow[], patientHint: string): Observable<NursePickOutcome> {
+    if (nurses.length <= 1) {
+      return of<NursePickOutcome>({ kind: 'ok', nurseId: nurses[0]?.id });
+    }
+    return defer(
+      () =>
+        new Observable<NursePickOutcome>((subscriber) => {
+          this.pending = { subscriber, nurses, patientHint };
+          this.selectedNurseId = null;
+          this.vm = { open: true, nurses: [...nurses], patientHint };
+        })
     );
   }
 

@@ -286,11 +286,34 @@
   border-radius: 15px;
   font-size: 15px;
   font-weight: 500;
+  font-family: inherit;
+  line-height: 1.35;
   color: #718096;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: color 0.15s ease, box-shadow 0.15s ease;
   text-align: left;
   box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
+}
+
+/* Evitar aspecto de hipervínculo si algún ítem del nav usa <a routerLink> */
+.admin-dashboard .dashboard-nav a.nav-link,
+.pharmacy-dashboard .dashboard-nav a.nav-link,
+.nurse-dashboard .dashboard-nav a.nav-link {
+  text-decoration: none;
+  display: block;
+  box-sizing: border-box;
+}
+
+.admin-dashboard .dashboard-nav a.nav-link:visited,
+.pharmacy-dashboard .dashboard-nav a.nav-link:visited,
+.nurse-dashboard .dashboard-nav a.nav-link:visited {
+  color: #718096;
+}
+
+.admin-dashboard .dashboard-nav a.nav-link.active:visited,
+.pharmacy-dashboard .dashboard-nav a.nav-link.active:visited,
+.nurse-dashboard .dashboard-nav a.nav-link.active:visited {
+  color: #4a5568;
 }
 
 .admin-dashboard .dashboard-nav .nav-link:hover,
@@ -498,6 +521,8 @@
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.35);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     z-index: 199;
     opacity: 0;
     pointer-events: none;

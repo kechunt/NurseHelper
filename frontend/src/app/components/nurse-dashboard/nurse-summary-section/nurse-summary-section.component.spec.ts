@@ -31,7 +31,7 @@ describe('NurseSummarySectionComponent', () => {
 
   it('emite openHandoverClick desde la fila de acciones', () => {
     spyOn(fixture.componentInstance.openHandoverClick, 'emit');
-    const actions = fixture.nativeElement.querySelectorAll('.nurse-summary-actions-grid button');
+    const actions = fixture.nativeElement.querySelectorAll('.nurse-summary-unified-stats-grid .nurse-attention-tile');
     expect(actions.length).toBe(4);
     (actions[2] as HTMLButtonElement).click();
     expect(fixture.componentInstance.openHandoverClick.emit).toHaveBeenCalled();

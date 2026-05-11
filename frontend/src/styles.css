@@ -2,6 +2,7 @@
 @import './app/shared/styles/table-actions-normalized.css';
 /** Layout cabecera + nav + cuerpo (admin, farmacia, shell enfermera). Debe ser global: si se importa solo en un componente encapsulado, no aplica bien al host del shell. */
 @import './app/shared/styles/dashboard-layout.css';
+@import './app/shared/styles/neuro-feedback.css';
 
 * {
   margin: 0;

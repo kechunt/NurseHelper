@@ -75,6 +75,11 @@ export interface Patient {
   allergies?: string;
   specialNeeds?: string;
   generalObservations?: string;
+  /** Enfermera responsable según handoff/admin; el área lista a todos los pacientes en camas del área. */
+  assignedToId?: number | null;
+  assignedToName?: string | null;
+  assignmentStatus?: 'pending' | 'assigned';
+  isAssignedToMe?: boolean;
   clinicalNotes?: {
     diagnosis: PatientClinicalNoteDto[];
     medical: PatientClinicalNoteDto[];

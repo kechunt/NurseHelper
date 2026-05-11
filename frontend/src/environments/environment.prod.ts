@@ -1,10 +1,11 @@
-// En Angular, las variables de entorno se inyectan en tiempo de build
-// Para usar variables de entorno en Vercel, necesitas usar el prefijo NG_APP_
-// Ejemplo: NG_APP_API_URL=https://tu-backend.railway.app/api
+import { GENERATED_API_URL } from './api-url.generated';
 
-// Opción 1: Usar valor por defecto (reemplaza con tu URL de Railway)
+/**
+ * `apiUrl` se define en build: ejecuta `node scripts/write-api-url.mjs` (lo hace `npm run build`).
+ * En Vercel, configura **NG_APP_API_URL** (p. ej. `https://api.tudominio.com` o tu URL Railway/ngrok sin `/api` final; el script añade `/api`).
+ */
 export const environment = {
   production: true,
-  apiUrl: 'https://nursehelper-production.up.railway.app/api'
+  apiUrl: GENERATED_API_URL,
 };
 

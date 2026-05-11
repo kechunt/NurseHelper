@@ -12,7 +12,6 @@ import { ModalFocusTrapDirective } from '../../../shared/directives/modal-focus-
 import { AdminService, Patient as AdminPatient } from '../../../services/admin.service';
 import { ConfirmationService } from '../../../services/confirmation.service';
 import { ToastService } from '../../../services/toast.service';
-import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
 import {
   NURSE_MODAL_EDIT_BED_CONFIRM_RELEASE_MESSAGE,
   NURSE_MODAL_EDIT_BED_CONFIRM_RELEASE_OK,
@@ -53,9 +52,14 @@ interface AreaNurseRow {
 @Component({
   selector: 'app-nurse-edit-bed-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, ModalFocusTrapDirective, HeroIconComponent],
+  imports: [CommonModule, FormsModule, ModalFocusTrapDirective],
   templateUrl: './nurse-edit-bed-modal.component.html',
-  styleUrls: ['../nurse-neomorphic-modal.shared.css', './nurse-edit-bed-modal.component.css'],
+  styleUrls: [
+    '../../../shared/styles/admin-panel-neomorphic.shared.css',
+    '../../../shared/styles/admin-assign-modal.shared.css',
+    '../../../shared/styles/admin-table-unified.css',
+    './nurse-edit-bed-modal.component.css',
+  ],
 })
 export class NurseEditBedModalComponent implements OnChanges {
   @Input({ required: true }) bed!: NurseEditBedModalBed;

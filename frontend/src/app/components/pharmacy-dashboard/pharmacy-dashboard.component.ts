@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import {
@@ -14,6 +14,7 @@ import { ConfirmationService } from '../../services/confirmation.service';
 import { DashboardShellComponent } from '../../shared/components/dashboard-shell/dashboard-shell.component';
 import { AdminTableRowActionsModalComponent } from '../../shared/components/admin-table-row-actions-modal/admin-table-row-actions-modal.component';
 import { HeroIconComponent } from '../../shared/components/hero-icon/hero-icon.component';
+import { PharmacyShiftAttendanceSectionComponent } from '../pharmacy-shift-attendance-section/pharmacy-shift-attendance-section.component';
 
 interface MedicationRequest {
   id: number;
@@ -95,7 +96,14 @@ interface InventoryItem {
 @Component({
   selector: 'app-pharmacy-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, DashboardShellComponent, AdminTableRowActionsModalComponent, HeroIconComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    DashboardShellComponent,
+    AdminTableRowActionsModalComponent,
+    HeroIconComponent,
+    PharmacyShiftAttendanceSectionComponent,
+  ],
   templateUrl: './pharmacy-dashboard.component.html',
   styleUrls: [
     '../../shared/styles/admin-table-unified.css',
@@ -111,12 +119,6 @@ export class PharmacyDashboardComponent implements OnInit {
       return `${u.firstName || ''} ${u.lastName || ''}`.trim();
     }
     return this.pharmacyUserName;
-  }
-
-  get headerUserPhoneLine(): string | null {
-    const p = this.authService.currentUser()?.phone;
-    const s = p != null ? String(p).trim() : '';
-    return s.length > 0 ? `Tel. ${s}` : null;
   }
 
   pendingRequestsCount: number = 0;
@@ -230,7 +232,8 @@ export class PharmacyDashboardComponent implements OnInit {
     private pharmacyService: PharmacyService,
     private toastService: ToastService,
     private confirmationService: ConfirmationService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
@@ -239,6 +242,12 @@ export class PharmacyDashboardComponent implements OnInit {
       this.pharmacyUserName = `${currentUser.firstName} ${currentUser.lastName}`;
     }
     this.restoreUiState();
+    this.route.queryParams.subscribe((params) => {
+      const tab = params['tab'];
+      if (typeof tab === 'string' && this.allowedSections.has(tab)) {
+        this.activeSection = tab;
+      }
+    });
     this.loadData();
   }
 
@@ -558,6 +567,7 @@ export class PharmacyDashboardComponent implements OnInit {
     }
     this.activeSection = section;
     this.persistUiState();
+    this.router.navigate(['/pharmacy'], { queryParams: { tab: section }, replaceUrl: true });
   }
 
   onPharmacyTabKeydown(event: KeyboardEvent, currentSection: string): void {
@@ -591,6 +601,10 @@ export class PharmacyDashboardComponent implements OnInit {
 
   goToRequestsFromLogo(): void {
     this.changeSection('requests');
+  }
+
+  goToAttendance(): void {
+    this.router.navigate(['/asistencia']);
   }
 
   /** KPI de solicitudes: mismo módulo, filtro y recarga desde servidor */

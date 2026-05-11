@@ -1,47 +1,67 @@
 /**
- * Controlador de notificaciones
+ * Controlador de notificaciones in-app (persistidas en `user_notifications`).
  */
 
 import { Response } from 'express';
 import { asyncHandler } from '../utils/error-handler';
 import { AuthRequest } from '../middleware/auth.middleware';
-import { notificationService } from '../services/notification.service';
+import { AppError, ErrorCode } from '../utils/errors';
+import {
+  deleteNotificationForUser,
+  listActiveNotificationsForUser,
+  markAllNotificationsRead,
+  markNotificationAcknowledged,
+  markNotificationRead,
+} from '../services/user-notifications-persistence.service';
+
+function parseNotificationId(raw: string | undefined): number {
+  const id = parseInt(String(raw), 10);
+  if (!Number.isFinite(id) || id <= 0) {
+    throw new AppError('ID de notificación inválido', 400, ErrorCode.INVALID_ID, true);
+  }
+  return id;
+}
 
 export class NotificationsController {
-  /**
-   * Obtener notificaciones del usuario
-   */
   getNotifications = asyncHandler(async (req: AuthRequest, res: Response) => {
     const userId = req.user!.id;
-    // En producción, obtener de BD
-    // Por ahora, retornar array vacío
-    res.json([]);
+    const list = await listActiveNotificationsForUser(userId);
+    res.json(list);
   });
 
-  /**
-   * Marcar notificación como leída
-   */
   markAsRead = asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { id } = req.params;
-    // En producción, actualizar en BD
+    const userId = req.user!.id;
+    const id = parseNotificationId(req.params.id);
+    const ok = await markNotificationRead(userId, id);
+    if (!ok) {
+      throw new AppError('Notificación no encontrada', 404, ErrorCode.NOT_FOUND, true);
+    }
     res.json({ message: 'Notificación marcada como leída' });
   });
 
-  /**
-   * Marcar todas como leídas
-   */
-  markAllAsRead = asyncHandler(async (req: AuthRequest, res: Response) => {
+  acknowledge = asyncHandler(async (req: AuthRequest, res: Response) => {
     const userId = req.user!.id;
-    // En producción, actualizar en BD
-    res.json({ message: 'Todas las notificaciones marcadas como leídas' });
+    const id = parseNotificationId(req.params.id);
+    const ok = await markNotificationAcknowledged(userId, id);
+    if (!ok) {
+      throw new AppError('Notificación no encontrada', 404, ErrorCode.NOT_FOUND, true);
+    }
+    res.json({ message: 'Notificación reconocida' });
   });
 
-  /**
-   * Eliminar notificación
-   */
+  markAllAsRead = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const userId = req.user!.id;
+    const affected = await markAllNotificationsRead(userId);
+    res.json({ message: 'Todas las notificaciones marcadas como leídas', affected });
+  });
+
   delete = asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { id } = req.params;
-    // En producción, eliminar de BD
+    const userId = req.user!.id;
+    const id = parseNotificationId(req.params.id);
+    const ok = await deleteNotificationForUser(userId, id);
+    if (!ok) {
+      throw new AppError('Notificación no encontrada', 404, ErrorCode.NOT_FOUND, true);
+    }
     res.json({ message: 'Notificación eliminada' });
   });
 }

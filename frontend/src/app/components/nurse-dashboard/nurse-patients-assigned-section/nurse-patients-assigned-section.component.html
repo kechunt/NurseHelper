@@ -1,5 +1,5 @@
 <div class="section-header">
-  <h2 class="section-title"><app-hero-icon name="users" /> Mis Pacientes Asignados</h2>
+  <h2 class="section-title"><app-hero-icon name="users" /> Pacientes del área</h2>
 </div>
 
 <div class="filters-container patients-filters-bar">
@@ -23,7 +23,8 @@
       [ngModel]="selectedFilter"
       (ngModelChange)="onSelectedFilterChange($event)"
     >
-      <option value="all">Todos los pacientes</option>
+      <option value="mine">Mis pacientes (asignados a mí)</option>
+      <option value="all">Todos en el área</option>
       <option value="medications">Con medicamentos hoy</option>
       <option value="tasks">Con tareas pendientes</option>
       <option value="critical">Casos críticos</option>
@@ -54,6 +55,24 @@
       <div class="patient-assigned-card-info">
         <div class="nurse-patient-card-title-row">
           <h3 class="patient-assigned-card-name">{{ patient.name }}</h3>
+          <span
+            *ngIf="patient.isAssignedToMe"
+            class="patient-assignment-badge patient-assignment-badge--mine"
+            title="Asignado a ti"
+            >Mi paciente</span
+          >
+          <span
+            *ngIf="!patient.isAssignedToMe && patient.assignedToName"
+            class="patient-assignment-badge patient-assignment-badge--other"
+            title="Responsable según reparto de turno"
+            >{{ patient.assignedToName }}</span
+          >
+          <span
+            *ngIf="!patient.isAssignedToMe && !patient.assignedToName"
+            class="patient-assignment-badge patient-assignment-badge--pending"
+            title="Sin enfermera asignada (pendiente de reparto)"
+            >Sin asignar</span
+          >
           <button
             type="button"
             class="nurse-details-pill-btn"

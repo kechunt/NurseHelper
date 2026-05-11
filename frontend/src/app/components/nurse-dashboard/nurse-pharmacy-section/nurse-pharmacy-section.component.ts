@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MedicationForPharmacy } from '../../../services/nurse.service';
+import { MedicationForPharmacy, PharmacyShiftContactNurseDto } from '../../../services/nurse.service';
 import type { MedicationRequest } from '../../../services/pharmacy.service';
 import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
 import {
@@ -38,6 +38,9 @@ export class NursePharmacySectionComponent {
     requestedAt: string;
     requestedBy: string;
   }>;
+
+  /** Contacto farmacia por turno (misma fecha que la lista de medicamentos). */
+  @Input() pharmacyContactsByShift: PharmacyShiftContactNurseDto[] = [];
 
   @Output() readonly sendRequest = new EventEmitter<void>();
   @Output() readonly viewPatients = new EventEmitter<MedicationForPharmacy>();

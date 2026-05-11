@@ -2,7 +2,7 @@
   <h2 class="section-title">📊 Resumen general</h2>
 </div>
 <div class="overview-container dashboard-overview">
-  <div class="stats-grid">
+  <div class="stats-grid nurse-summary-unified-stats-grid">
     <div class="stat-card clickable" (click)="areaSummaryClick.emit()">
       <div class="stat-icon">🏥</div>
       <div class="stat-content">
@@ -35,9 +35,6 @@
       </div>
       <div class="click-hint">Solicitar a farmacia</div>
     </div>
-  </div>
-
-  <div class="stats-grid nurse-summary-actions-grid">
     <button type="button" class="stat-card clickable nurse-attention-tile" (click)="openAttentionPharmacyClick.emit()">
       <div class="stat-icon">📤</div>
       <div class="stat-content">

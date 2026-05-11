@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
+import type { Shift, ShiftAttendanceStatus } from './shifts.service';
 
 export interface PaginationMeta {
   page: number;
@@ -86,6 +87,34 @@ export type InventoryMovementTypeApi =
   | 'exit'
   | 'adjustment'
   | 'delivery';
+
+/** Fila de asistencia farmacia (GET `/pharmacy/shift-attendance`). */
+export interface PharmacyShiftAttendanceRow {
+  pharmacyUserId: number;
+  pharmacyUserName: string;
+  status: ShiftAttendanceStatus;
+  checkInAt?: string | null;
+  checkOutAt?: string | null;
+  notes?: string | null;
+}
+
+/** Respuesta GET `/pharmacy/shift-attendance/summary`. */
+export interface PharmacyShiftCoverageSummaryShift {
+  shiftId: number;
+  shiftType: string;
+  shiftName: string;
+  startTime: string;
+  endTime: string;
+  contactName: string | null;
+  phone: string | null;
+  hasOnDutyContact: boolean;
+  attendance: PharmacyShiftAttendanceRow[];
+}
+
+export interface PharmacyShiftCoverageSummaryResponse {
+  date: string;
+  shifts: PharmacyShiftCoverageSummaryShift[];
+}
 
 export interface InventoryMovementRow {
   id: number;
@@ -220,6 +249,40 @@ export class PharmacyService {
 
   deleteMedication(id: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/inventory/${id}`);
+  }
+
+  getWorkShifts(): Observable<Shift[]> {
+    return this.http.get<Shift[]>(`${this.apiUrl}/work-shifts`);
+  }
+
+  getPharmacyShiftAttendanceSummary(date: string): Observable<PharmacyShiftCoverageSummaryResponse> {
+    return this.http.get<PharmacyShiftCoverageSummaryResponse>(`${this.apiUrl}/shift-attendance/summary`, {
+      params: { date },
+    });
+  }
+
+  getPharmacyShiftAttendance(date: string, shiftId: number): Observable<PharmacyShiftAttendanceRow[]> {
+    return this.http.get<PharmacyShiftAttendanceRow[]>(`${this.apiUrl}/shift-attendance`, {
+      params: { date, shiftId: String(shiftId) },
+    });
+  }
+
+  savePharmacyShiftAttendance(
+    date: string,
+    shiftId: number,
+    attendance: Array<{
+      pharmacyUserId: number;
+      status: ShiftAttendanceStatus;
+      checkInAt?: string | null;
+      checkOutAt?: string | null;
+      notes?: string | null;
+    }>
+  ): Observable<{ message: string; saved: number }> {
+    return this.http.post<{ message: string; saved: number }>(`${this.apiUrl}/shift-attendance`, {
+      date,
+      shiftId,
+      attendance,
+    });
   }
 
   createMedicationRequest(data: {

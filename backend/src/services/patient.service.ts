@@ -200,7 +200,7 @@ export class PatientService {
   async deletePatient(id: number): Promise<void> {
     const patient = await this.getPatientById(id, false);
 
-    await this.patientRepository.update({ id }, { bedId: null });
+    await this.patientRepository.update({ id }, { bedId: null, areaId: null });
 
     // Eliminar schedules
     await this.scheduleRepository.delete({ patientId: id });

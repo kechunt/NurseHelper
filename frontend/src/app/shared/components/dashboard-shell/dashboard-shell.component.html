@@ -33,12 +33,10 @@
       >
         <span class="user-name">{{ userName }}</span>
         <span class="user-role">{{ roleLabel }}</span>
-        <span class="user-phone-line" *ngIf="userPhoneLine">📞 {{ userPhoneLine }}</span>
       </button>
       <div *ngIf="!profileEditable" class="user-info">
         <span class="user-name">{{ userName }}</span>
         <span class="user-role">{{ roleLabel }}</span>
-        <span class="user-phone-line" *ngIf="userPhoneLine">📞 {{ userPhoneLine }}</span>
       </div>
       <button
         type="button"

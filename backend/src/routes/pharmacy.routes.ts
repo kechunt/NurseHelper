@@ -1,5 +1,12 @@
 import { Router } from 'express';
 import { authMiddleware } from '../middleware/auth.middleware';
+import { requireAdminOrSupervisorOrPharmacy } from '../middleware/role.middleware';
+import {
+  getPharmacyWorkShifts,
+  getPharmacyShiftAttendanceSummary,
+  getPharmacyShiftAttendance,
+  postPharmacyShiftAttendance,
+} from '../controllers/pharmacy-shift-attendance.controller';
 import { 
   getMedicationRequests, 
   updateRequestStatus, 
@@ -17,6 +24,11 @@ import {
 const router = Router();
 
 router.use(authMiddleware);
+
+router.get('/work-shifts', requireAdminOrSupervisorOrPharmacy, getPharmacyWorkShifts);
+router.get('/shift-attendance/summary', requireAdminOrSupervisorOrPharmacy, getPharmacyShiftAttendanceSummary);
+router.get('/shift-attendance', requireAdminOrSupervisorOrPharmacy, getPharmacyShiftAttendance);
+router.post('/shift-attendance', requireAdminOrSupervisorOrPharmacy, postPharmacyShiftAttendance);
 
 /**
  * @swagger

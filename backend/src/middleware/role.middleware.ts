@@ -27,6 +27,13 @@ export const roleMiddleware = requireRole;
 export const requireAdmin = requireRole([UserRole.ADMIN]);
 export const requireAdminOrSupervisor = requireRole([UserRole.ADMIN, UserRole.SUPERVISOR]);
 
+/** Admin, supervisor o usuario de farmacia (asistencia / turnos de trabajo). */
+export const requireAdminOrSupervisorOrPharmacy = requireRole([
+  UserRole.ADMIN,
+  UserRole.SUPERVISOR,
+  UserRole.PHARMACY,
+]);
+
 /**
  * Permite a admin/supervisor hacer cualquier cosa, o a enfermeras solo si la cama está en su área asignada
  */

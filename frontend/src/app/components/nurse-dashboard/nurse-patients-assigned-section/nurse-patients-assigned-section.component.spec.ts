@@ -46,7 +46,7 @@ describe('NursePatientsAssignedSectionComponent', () => {
     fixture.componentRef.setInput('medicationDosesToday', dosesFn);
     fixture.componentRef.setInput('treatmentsTodayCount', treatmentsFn);
     fixture.componentRef.setInput('searchTerm', '');
-    fixture.componentRef.setInput('selectedFilter', 'all');
+    fixture.componentRef.setInput('selectedFilter', 'mine');
     fixture.detectChanges();
   });
 
@@ -68,15 +68,22 @@ describe('NursePatientsAssignedSectionComponent', () => {
     expect(fixture.componentInstance.selectedFilterChange.emit).toHaveBeenCalledWith('critical');
   });
 
-  it('muestra limpiar filtros cuando hay búsqueda o filtro distinto de todos', () => {
+  it('muestra limpiar filtros cuando hay búsqueda', () => {
     fixture.componentRef.setInput('searchTerm', '  ana ');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.filter-box-actions button')).toBeTruthy();
+  });
+
+  it('muestra limpiar si el filtro no es el predeterminado (mine)', () => {
+    fixture.componentRef.setInput('searchTerm', '');
+    fixture.componentRef.setInput('selectedFilter', 'all');
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.filter-box-actions button')).toBeTruthy();
   });
 
   it('no muestra limpiar filtros con valores por defecto', () => {
     fixture.componentRef.setInput('searchTerm', '');
-    fixture.componentRef.setInput('selectedFilter', 'all');
+    fixture.componentRef.setInput('selectedFilter', 'mine');
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.filter-box-actions')).toBeFalsy();
   });

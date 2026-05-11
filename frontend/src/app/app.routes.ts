@@ -37,6 +37,14 @@ export const routes: Routes = [
     canActivate: [pharmacyGuard],
   },
   {
+    path: 'asistencia',
+    loadComponent: () =>
+      import('./components/pharmacy-attendance-page/pharmacy-attendance-page.component').then(
+        (m) => m.PharmacyAttendancePageComponent
+      ),
+    canActivate: [pharmacyGuard],
+  },
+  {
     path: 'use-case-diagram',
     loadComponent: () =>
       import('./components/use-case-diagram/use-case-diagram.component').then((m) => m.UseCaseDiagramComponent),

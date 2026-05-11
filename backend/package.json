@@ -24,6 +24,7 @@
     "test:full": "jest --testPathPattern=__tests__/integration/full-system",
     "test:endpoints": "jest --testPathPattern=__tests__/integration/endpoints-complete",
     "test:database": "jest --testPathPattern=__tests__/integration/database-connection",
+    "test:notifications": "jest --runInBand src/__tests__/integration/user-notifications.integration.test.ts src/__tests__/unit/controllers/notifications.controller.test.ts",
     "test:all": "jest --testPathPattern=__tests__/integration"
   },
   "dependencies": {

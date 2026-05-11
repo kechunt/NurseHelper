@@ -258,6 +258,21 @@
               maxlength="30"
             />
           </div>
+          <div class="input-group" *ngIf="editForm.role === 'pharmacy'">
+            <label for="edit-pharmacy-roster">Orden de roster (contacto)</label>
+            <input
+              type="number"
+              id="edit-pharmacy-roster"
+              class="neuro-input"
+              [(ngModel)]="editForm.pharmacyRosterOrder"
+              min="0"
+              max="999"
+              placeholder="Opcional (0–999)"
+            />
+            <p class="pharmacy-roster-hint">
+              Prioridad al elegir encargado de farmacia por turno: número más bajo primero (mismo turno, varios presentes).
+            </p>
+          </div>
           <div class="input-group">
             <label for="edit-role">Rol *</label>
             <select id="edit-role" class="neuro-select" [(ngModel)]="editForm.role">

@@ -1,0 +1,72 @@
+<app-dashboard-shell
+  panelSkin="pharmacy-dashboard"
+  topAnchorId="pharmacy-attendance-top"
+  [panelTitle]="'Panel de Farmacia'"
+  [userName]="headerUserName"
+  [roleLabel]="'Farmacia'"
+  [profileEditable]="true"
+  [navAriaLabel]="'Módulos de farmacia'"
+  [navRoleTablist]="true"
+  panelHeadingId="pharmacy-attendance-heading"
+  [headerLogoAlt]="''"
+  [logoSectionAriaLabel]="'Ir al módulo de solicitudes'"
+  (logoClick)="goToRequestsFromLogo()"
+  (logoutClick)="logout()"
+>
+  <ng-container appDashboardNav>
+    <button
+      type="button"
+      role="tab"
+      id="pharmacy-attendance-tab-requests"
+      class="nav-link"
+      [attr.aria-selected]="false"
+      (click)="goToPharmacyTab('requests')"
+    >
+      📋 Solicitudes
+    </button>
+    <button
+      type="button"
+      role="tab"
+      id="pharmacy-attendance-tab-history"
+      class="nav-link"
+      [attr.aria-selected]="false"
+      (click)="goToPharmacyTab('history')"
+    >
+      📦 Historial
+    </button>
+    <button
+      type="button"
+      role="tab"
+      id="pharmacy-attendance-tab-inventory"
+      class="nav-link"
+      [attr.aria-selected]="false"
+      (click)="goToPharmacyTab('inventory')"
+    >
+      🗃️ Inventario
+    </button>
+    <button
+      type="button"
+      role="tab"
+      id="pharmacy-attendance-tab-asistencia"
+      class="nav-link active"
+      aria-current="page"
+      [attr.aria-selected]="true"
+    >
+      ✅ Asistencia
+    </button>
+  </ng-container>
+
+  <main class="dashboard-content" id="pharmacy-attendance-main" aria-labelledby="pharmacy-attendance-heading">
+    <div class="tab-content">
+      <div class="section-card pharmacy-module pharmacy-attendance-page-module">
+        <div class="section-header pharmacy-module-header">
+          <h2 class="section-title">
+            <app-hero-icon name="user-group"></app-hero-icon>
+            Asistencia de farmacia
+          </h2>
+        </div>
+        <app-pharmacy-shift-attendance-section />
+      </div>
+    </div>
+  </main>
+</app-dashboard-shell>

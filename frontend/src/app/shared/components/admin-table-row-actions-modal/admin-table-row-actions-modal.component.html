@@ -32,8 +32,22 @@
               >
                 {{ row.value }}
               </span>
+              <button
+                *ngIf="!row.badgeVariant && row.interactive"
+                type="button"
+                class="admin-table-row-actions-detail-interactive"
+                (click)="emitSummaryRowActivate(row)"
+              >
+                <span
+                  class="admin-table-row-actions-detail-value"
+                  [class.admin-table-row-actions-detail-value--muted]="row.valueMuted"
+                  [class.admin-table-row-actions-detail-value--prominent]="row.valueProminent"
+                >
+                  {{ row.value }}
+                </span>
+              </button>
               <span
-                *ngIf="!row.badgeVariant"
+                *ngIf="!row.badgeVariant && !row.interactive"
                 class="admin-table-row-actions-detail-value"
                 [class.admin-table-row-actions-detail-value--muted]="row.valueMuted"
                 [class.admin-table-row-actions-detail-value--prominent]="row.valueProminent"

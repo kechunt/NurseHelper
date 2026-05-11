@@ -14,8 +14,10 @@ import { DeliveryHistory } from './entities/DeliveryHistory';
 import { AdministrationHistory } from './entities/AdministrationHistory';
 import { MedicationInventoryMovement } from './entities/MedicationInventoryMovement';
 import { ShiftHandoverNote } from './entities/ShiftHandoverNote';
+import { PharmacyShiftAttendance } from './entities/PharmacyShiftAttendance';
 import { AdminHandoverNote } from './entities/AdminHandoverNote';
 import { PatientClinicalNote } from './entities/PatientClinicalNote';
+import { UserNotification } from './entities/UserNotification';
 import { loadEnv } from './utils/env';
 import { logger } from './utils/logger';
 import path from 'path';
@@ -38,6 +40,8 @@ export const AppDataSource = new DataSource({
   username: process.env.DB_USERNAME || 'root',
   password: password || '',
   database: databaseName,
+  /** Evita "?" en vocales y eñes si el servidor usa latin1 por defecto */
+  charset: 'utf8mb4',
   synchronize: false,
   logging: false,
   entities: [
@@ -50,6 +54,7 @@ export const AppDataSource = new DataSource({
     Shift,
     NurseShift,
     ShiftAttendance,
+    PharmacyShiftAttendance,
     Medication,
     MedicationRequest,
     DeliveryHistory,
@@ -58,6 +63,7 @@ export const AppDataSource = new DataSource({
     ShiftHandoverNote,
     AdminHandoverNote,
     PatientClinicalNote,
+    UserNotification,
   ],
   /** Desde `src/` (ts-node) o `dist/` (node): misma carpeta `migrations` relativa a este archivo. */
   migrations: [path.join(__dirname, 'migrations', '*.{ts,js}')],
@@ -68,6 +74,8 @@ export const AppDataSource = new DataSource({
     queueLimit: 0,
     idleTimeout: 60000,
     connectTimeout: parseInt(process.env.DB_CONNECT_TIMEOUT || '30000'), // 30 segundos por defecto
+    /** mysql2: charset de conexión (además del hook SET NAMES en app.ts) */
+    charset: 'utf8mb4',
   },
   poolSize: parseInt(process.env.DB_POOL_SIZE || '10'),
   maxQueryExecutionTime: 1000,

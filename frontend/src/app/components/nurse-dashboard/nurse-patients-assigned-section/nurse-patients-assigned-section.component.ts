@@ -19,7 +19,7 @@ import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-ico
 export class NursePatientsAssignedSectionComponent {
   @Input({ required: true }) patients!: Patient[];
   @Input() searchTerm = '';
-  @Input() selectedFilter = 'all';
+  @Input() selectedFilter = 'mine';
 
   @Output() readonly searchTermChange = new EventEmitter<string>();
   @Output() readonly selectedFilterChange = new EventEmitter<string>();
@@ -31,7 +31,7 @@ export class NursePatientsAssignedSectionComponent {
   @Input({ required: true }) treatmentsTodayCount!: (patient: Patient) => number;
 
   get showClearPatientFilters(): boolean {
-    return Boolean(this.searchTerm?.trim()) || this.selectedFilter !== 'all';
+    return Boolean(this.searchTerm?.trim()) || this.selectedFilter !== 'mine';
   }
 
   onSearchTermChange(value: string): void {

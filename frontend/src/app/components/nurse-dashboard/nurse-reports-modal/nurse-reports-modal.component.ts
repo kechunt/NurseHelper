@@ -4,6 +4,8 @@ import { ModalFocusTrapDirective } from '../../../shared/directives/modal-focus-
 import { ComplianceStats, MedicationReport } from '../../../services/report.service';
 import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
 
+type ComplianceFilter = 'scheduled' | 'completed' | 'missed' | 'cancelled' | 'rate' | null;
+
 @Component({
   selector: 'app-nurse-reports-modal',
   standalone: true,
@@ -19,6 +21,7 @@ export class NurseReportsModalComponent {
   /** Lista de filas de medicación; vacío se muestra plantilla vacía dentro de la sección. */
   @Input() medication: MedicationReport[] | null = null;
   @Input() exporting = false;
+  selectedComplianceFilter: ComplianceFilter = null;
 
   /** Si true, muestra selector de enfermera (admin/supervisor). */
   @Input() showStaffNurseFilter = false;
@@ -45,7 +48,45 @@ export class NurseReportsModalComponent {
     }
     this.staffNurseFilterChange.emit(id);
   }
+  toggleComplianceFilter(filter: ComplianceFilter): void {
+    this.selectedComplianceFilter = this.selectedComplianceFilter === filter ? null : filter;
+  }
 
+  get filteredComplianceRows(): Array<{ patientId: number; patientName: string; complianceRate: number }> {
+    if (!this.compliance?.byPatient?.length || !this.selectedComplianceFilter || this.selectedComplianceFilter === 'scheduled' || this.selectedComplianceFilter === 'rate') {
+      return this.compliance?.byPatient || [];
+    }
+
+    if (this.selectedComplianceFilter === 'completed') {
+      return this.compliance.byPatient.filter((row) => row.complianceRate >= 100);
+    }
+
+    if (this.selectedComplianceFilter === 'missed') {
+      return this.compliance.byPatient.filter((row) => row.complianceRate < 100);
+    }
+
+    return [];
+  }
+
+  get filteredMedicationRows(): MedicationReport[] {
+    if (!this.medication?.length || !this.selectedComplianceFilter || this.selectedComplianceFilter === 'scheduled' || this.selectedComplianceFilter === 'rate') {
+      return this.medication || [];
+    }
+
+    if (this.selectedComplianceFilter === 'completed') {
+      return this.medication.filter((row) => row.administered > 0);
+    }
+
+    if (this.selectedComplianceFilter === 'missed') {
+      return this.medication.filter((row) => row.missed > 0);
+    }
+
+    return [];
+  }
+
+  get hasFilteredCanceledRows(): boolean {
+    return this.selectedComplianceFilter === 'cancelled' && (!this.filteredComplianceRows.length || !this.filteredMedicationRows.length);
+  }
   resolveScopeLine(): string {
     return this.staffScopeSuffix?.trim()
       ? this.staffScopeSuffix!.trim()

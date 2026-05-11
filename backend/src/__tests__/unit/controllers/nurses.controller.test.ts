@@ -36,6 +36,10 @@ jest.mock('../../../services/nurse-pharmacy-medications.service', () => ({
   fetchMedicationsForPharmacyGrouped: jest.fn(),
 }));
 
+jest.mock('../../../services/pharmacy-contact-by-shift.service', () => ({
+  fetchPharmacyContactsByShiftForDate: jest.fn(),
+}));
+
 jest.mock('../../../services/nurse-my-beds.service', () => ({
   fetchMyBedsForNurse: jest.fn(),
 }));
@@ -75,6 +79,7 @@ import { fetchNurseTodayTasksGrouped } from '../../../services/nurse-today-tasks
 import { fetchNurseDayTasksHistory } from '../../../services/nurse-day-tasks-history.service';
 import { fetchPatientDetailsForNurse } from '../../../services/nurse-patient-details.service';
 import { fetchMedicationsForPharmacyGrouped } from '../../../services/nurse-pharmacy-medications.service';
+import { fetchPharmacyContactsByShiftForDate } from '../../../services/pharmacy-contact-by-shift.service';
 import {
   recordNurseAdministration,
   fetchNursePatientAdministrationHistoryFormatted,
@@ -275,11 +280,13 @@ describe('nurses.controller', () => {
     });
 
     it('getMedicationsForPharmacy 200', async () => {
+      (fetchMedicationsForPharmacyGrouped as jest.Mock).mockResolvedValueOnce([]);
+      (fetchPharmacyContactsByShiftForDate as jest.Mock).mockResolvedValueOnce([]);
       const json = jest.fn();
       await getMedicationsForPharmacy({ user: nurseUser() } as AuthRequest, {
         json,
       } as unknown as Response);
-      expect(json).toHaveBeenCalledWith({ groups: [] });
+      expect(json).toHaveBeenCalledWith({ medications: [], pharmacyContactsByShift: [] });
     });
   });
 

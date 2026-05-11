@@ -54,6 +54,12 @@ export interface NurseMyPatientListItem {
   allergies: string;
   specialNeeds: string;
   generalObservations: string;
+  /** Paciente del área de la enfermera; reparto explícito vía handoff / admin. */
+  assignedToId: number | null;
+  assignedToName: string | null;
+  assignmentStatus: 'pending' | 'assigned';
+  /** True si este paciente está asignado a la enfermera que consulta la lista. */
+  isAssignedToMe: boolean;
 }
 
 export type FetchMyPatientsResult =
@@ -71,7 +77,10 @@ interface MedicationDetailAcc {
 }
 
 /**
- * Lista de pacientes de la enfermera (área / asignación directa) con medicación y agenda del día.
+ * Lista de pacientes: siempre los ocupantes de camas del área de la enfermera (`assignedAreaId`),
+ * con metadatos de asignación (`assignedToId`, `isAssignedToMe`). Varias enfermeras en el mismo área
+ * ven la misma lista; el cliente puede filtrar por “solo los míos”.
+ *
  * @param qRaw texto de búsqueda opcional (nombre, cama, id, documento); máx. 100 caracteres.
  */
 export async function fetchMyPatientsForNurse(
@@ -127,7 +136,7 @@ export async function fetchMyPatientsForNurse(
   try {
     patientsInBeds = await patientRepo.find({
       where: { bedId: In(bedIds), isActive: true },
-      relations: ['bed'],
+      relations: ['bed', 'assignedTo'],
     });
   } catch (patientError: unknown) {
     const pe = patientError as { code?: string; message?: string; sqlMessage?: string };
@@ -156,47 +165,21 @@ export async function fetchMyPatientsForNurse(
     }
   }
 
-  logger.info(`👥 Pacientes encontrados en camas: ${patientsInBeds.length}`);
+  logger.info(`👥 Pacientes encontrados en camas del área: ${patientsInBeds.length}`);
 
-  let patientsAssignedToNurse: Patient[] = [];
-  try {
-    patientsAssignedToNurse = await patientRepo.find({
-      where: { assignedToId: userId, isActive: true },
-      relations: ['bed'],
-    });
-    logger.info(`✅ Pacientes asignados directamente a enfermera ${userId}: ${patientsAssignedToNurse.length}`);
-  } catch (assignedError: unknown) {
-    const ae = assignedError as { code?: string; message?: string; sqlMessage?: string };
-    const errorMessage = ae?.message || ae?.sqlMessage || '';
-    if (ae?.code === 'ER_BAD_FIELD_ERROR' && errorMessage.includes('assignedToId')) {
-      logger.warn('⚠️ Columna assignedToId no existe aún, usando filtro por área');
-      patientsAssignedToNurse = [];
-    } else {
-      logger.error('❌ Error obteniendo pacientes asignados:', assignedError);
-      patientsAssignedToNurse = [];
-    }
-  }
-
-  const patientIds =
-    patientsAssignedToNurse.length > 0
-      ? patientsAssignedToNurse.map((p) => p.id).filter((id) => id !== null && id !== undefined)
-      : patientsInBeds.map((p) => p.id).filter((id) => id !== null && id !== undefined);
+  const patientIds = patientsInBeds.map((p) => p.id).filter((id) => id !== null && id !== undefined);
 
   if (patientIds.length === 0) {
-    logger.info('⚠️ No hay pacientes activos asignados');
+    logger.info('⚠️ No hay pacientes activos en camas del área');
     return { ok: true, patients: [] };
   }
 
   let allPatients: Patient[] = [];
   try {
-    if (patientsAssignedToNurse.length > 0) {
-      allPatients = patientsAssignedToNurse;
-    } else {
-      allPatients = await patientRepo.find({
-        where: { id: In(patientIds), isActive: true },
-        relations: ['bed'],
-      });
-    }
+    allPatients = await patientRepo.find({
+      where: { id: In(patientIds), isActive: true },
+      relations: ['bed', 'assignedTo'],
+    });
   } catch (allPatientsError: unknown) {
     const ape = allPatientsError as { code?: string; message?: string; sqlMessage?: string };
     const errorMessage = ape?.message || ape?.sqlMessage || '';
@@ -232,6 +215,9 @@ export async function fetchMyPatientsForNurse(
             'pendingTasks',
             'isActive',
             'bedId',
+            'areaId',
+            'assignedToId',
+            'assignmentStatus',
             'createdAt',
             'updatedAt',
           ],
@@ -332,9 +318,7 @@ export async function fetchMyPatientsForNurse(
   });
 
   logger.info(`🗺️ Mapa de camas creado: ${bedsMap.size} entradas`);
-  logger.info(`👥 Pacientes asignados directamente: ${patientsAssignedToNurse.length}`);
   logger.info(`👥 Total pacientes a procesar: ${allPatients.length}`);
-  logger.info(`📋 IDs de pacientes asignados:`, patientsAssignedToNurse.map((p) => p.id));
 
   const patients: (NurseMyPatientListItem | null)[] = allPatients.map((patient) => {
     const resolvedBedId = patient.bed?.id ?? patient.bedId ?? null;
@@ -431,6 +415,15 @@ export async function fetchMyPatientsForNurse(
         ? 'critical'
         : 'normal';
 
+    const assignedToId = patient.assignedToId ?? null;
+    const assignmentStatus: 'pending' | 'assigned' =
+      patient.assignmentStatus === 'assigned' ? 'assigned' : 'pending';
+    const at = patient.assignedTo;
+    const assignedToName =
+      at && (at.firstName || at.lastName)
+        ? `${at.firstName || ''} ${at.lastName || ''}`.trim() || null
+        : null;
+
     return {
       id: patient.id,
       firstName: patient.firstName,
@@ -449,6 +442,10 @@ export async function fetchMyPatientsForNurse(
       allergies: patient.allergies || 'Ninguna conocida',
       specialNeeds: patient.specialNeeds || 'Ninguna',
       generalObservations: patient.generalObservations || 'Sin observaciones adicionales',
+      assignedToId,
+      assignedToName,
+      assignmentStatus,
+      isAssignedToMe: assignedToId != null && assignedToId === userId,
     };
   });
 

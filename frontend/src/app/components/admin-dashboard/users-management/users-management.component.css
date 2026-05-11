@@ -805,3 +805,10 @@
   }
 }
 
+.pharmacy-roster-hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  color: #718096;
+  line-height: 1.35;
+}
+

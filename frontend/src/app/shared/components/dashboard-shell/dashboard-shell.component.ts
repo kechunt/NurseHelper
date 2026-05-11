@@ -40,8 +40,6 @@ export class DashboardShellComponent {
   @Input() subtitle: string | null = null;
   @Input({ required: true }) userName!: string;
   @Input({ required: true }) roleLabel!: string;
-  /** Línea opcional bajo el rol (p. ej. teléfono). */
-  @Input() userPhoneLine: string | null = null;
   /** Si es true, el bloque de usuario abre el mismo modal de edición de perfil que en admin. */
   @Input() profileEditable = false;
   @Input() navAriaLabel = 'Navegación del panel';

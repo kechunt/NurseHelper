@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, ViewChild, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -12,17 +12,23 @@ import { PatientsManagementComponent } from './patients-management/patients-mana
 import { SchedulesManagementComponent } from './schedules-management/schedules-management.component';
 import { DashboardUserProfileModalComponent } from '../../shared/components/dashboard-user-profile-modal/dashboard-user-profile-modal.component';
 import { AdminNursePickModalHostComponent } from '../../shared/components/admin-nurse-pick-modal-host/admin-nurse-pick-modal-host.component';
-import { StaffDashboardQuickActionsComponent } from '../../shared/components/staff-dashboard-quick-actions/staff-dashboard-quick-actions.component';
+import { StaffDashboardQuickActionsToolbarComponent } from '../../shared/components/staff-dashboard-quick-actions/staff-dashboard-quick-actions-toolbar.component';
+import { StaffDashboardQuickActionsModalsComponent } from '../../shared/components/staff-dashboard-quick-actions/staff-dashboard-quick-actions-modals.component';
+import { StaffQuickActionsService } from '../../shared/components/staff-dashboard-quick-actions/staff-quick-actions.service';
+import { PharmacyCoverageSummaryCardComponent } from '../../shared/components/pharmacy-coverage-summary-card/pharmacy-coverage-summary-card.component';
+import { InAppNotificationsBellComponent } from '../../shared/components/in-app-notifications-bell/in-app-notifications-bell.component';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
+  providers: [StaffQuickActionsService],
   imports: [
     CommonModule,
     RouterModule,
     DashboardUserProfileModalComponent,
     AdminNursePickModalHostComponent,
-    StaffDashboardQuickActionsComponent,
+    StaffDashboardQuickActionsToolbarComponent,
+    StaffDashboardQuickActionsModalsComponent,
     OverviewComponent,
     UsersManagementComponent,
     StaffManagementComponent,
@@ -30,15 +36,15 @@ import { StaffDashboardQuickActionsComponent } from '../../shared/components/sta
     BedsManagementComponent,
     PatientsManagementComponent,
     SchedulesManagementComponent,
+    PharmacyCoverageSummaryCardComponent,
+    InAppNotificationsBellComponent,
   ],
   templateUrl: './admin-dashboard.component.html',
   styleUrl: './admin-dashboard.component.css',
 })
 export class AdminDashboardComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
-
-  @ViewChild(StaffDashboardQuickActionsComponent)
-  private quickActions?: StaffDashboardQuickActionsComponent;
+  private readonly staffQuick = inject(StaffQuickActionsService);
 
   activeTab: string = 'overview';
   private readonly storageKey = 'admin-dashboard-active-tab-v1';
@@ -65,12 +71,6 @@ export class AdminDashboardComponent implements OnInit {
   
   get currentUser() {
     return this.authService.currentUser;
-  }
-
-  get headerUserPhoneLine(): string | null {
-    const p = this.authService.currentUser()?.phone;
-    const s = p != null ? String(p).trim() : '';
-    return s.length > 0 ? s : null;
   }
 
   ngOnInit(): void {
@@ -162,11 +162,11 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   openCoordination(): void {
-    this.quickActions?.openTeamHandover();
+    this.staffQuick.openTeamHandover();
   }
 
   openReports(): void {
-    this.quickActions?.openReports();
+    this.staffQuick.openReports();
   }
 
   logout(): void {

@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
 export type HandoverShiftSlot = 'morning' | 'afternoon' | 'night';
@@ -86,6 +87,11 @@ export interface PatientDetail {
   allergies: string;
   specialNeeds: string;
   generalObservations: string;
+  /** Reparto en área (lista unificada por cama); ver `isAssignedToMe` / filtros en panel. */
+  assignedToId?: number | null;
+  assignedToName?: string | null;
+  assignmentStatus?: 'pending' | 'assigned';
+  isAssignedToMe?: boolean;
   /** Historial de notas por campo (lista: solo `body`; detalle al pulsar). */
   clinicalNotes?: {
     diagnosis: PatientClinicalNoteDto[];
@@ -172,6 +178,23 @@ export interface MedicationForPharmacy {
   requested: boolean;
 }
 
+/** Encargado de farmacia sugerido por turno (API medicamentos enfermería). */
+export interface PharmacyShiftContactNurseDto {
+  shiftId: number;
+  shiftType: string;
+  shiftName: string;
+  startTime: string;
+  endTime: string;
+  contactName: string | null;
+  phone: string | null;
+  hasOnDutyContact: boolean;
+}
+
+export interface MedicationsForPharmacyPayload {
+  medications: MedicationForPharmacy[];
+  pharmacyContactsByShift: PharmacyShiftContactNurseDto[];
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -251,9 +274,21 @@ export class NurseService {
     return this.http.put(`${this.apiUrl}/schedules/${taskId}/postpone`, { newTime });
   }
 
-  // Obtener medicamentos para farmacia
-  getMedicationsForPharmacy(): Observable<MedicationForPharmacy[]> {
-    return this.http.get<MedicationForPharmacy[]>(`${this.apiUrl}/nurse/medications/pharmacy`);
+  /** Medicamentos agrupados + contacto farmacia por turno (fecha servidor). */
+  getMedicationsForPharmacy(): Observable<MedicationsForPharmacyPayload> {
+    return this.http
+      .get<MedicationForPharmacy[] | MedicationsForPharmacyPayload>(`${this.apiUrl}/nurse/medications/pharmacy`)
+      .pipe(
+        map((raw) => {
+          if (Array.isArray(raw)) {
+            return { medications: raw, pharmacyContactsByShift: [] };
+          }
+          return {
+            medications: raw.medications ?? [],
+            pharmacyContactsByShift: raw.pharmacyContactsByShift ?? [],
+          };
+        })
+      );
   }
 
   // Obtener detalles de un paciente

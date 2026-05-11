@@ -51,28 +51,58 @@
         <section class="nurse-reports-section" *ngIf="compliance">
           <h4 class="nurse-reports-section-title">Cumplimiento (tareas y horarios)</h4>
           <div class="nurse-reports-kpi-row">
-            <div class="nurse-reports-kpi">
+            <button
+              type="button"
+              class="nurse-reports-kpi"
+              [class.nurse-reports-kpi--selected]="selectedComplianceFilter === 'scheduled'"
+              [attr.aria-pressed]="selectedComplianceFilter === 'scheduled'"
+              (click)="toggleComplianceFilter('scheduled')"
+            >
               <span class="nurse-reports-kpi__val">{{ compliance.totalSchedules }}</span>
               <span class="nurse-reports-kpi__lbl" i18n="@@nurseReportsModal.kpi.scheduled">Programados</span>
-            </div>
-            <div class="nurse-reports-kpi nurse-reports-kpi--ok">
+            </button>
+            <button
+              type="button"
+              class="nurse-reports-kpi nurse-reports-kpi--ok"
+              [class.nurse-reports-kpi--selected]="selectedComplianceFilter === 'completed'"
+              [attr.aria-pressed]="selectedComplianceFilter === 'completed'"
+              (click)="toggleComplianceFilter('completed')"
+            >
               <span class="nurse-reports-kpi__val">{{ compliance.administered }}</span>
               <span class="nurse-reports-kpi__lbl" i18n="@@nurseReportsModal.kpi.completed">Completados</span>
-            </div>
-            <div class="nurse-reports-kpi nurse-reports-kpi--warn">
+            </button>
+            <button
+              type="button"
+              class="nurse-reports-kpi nurse-reports-kpi--warn"
+              [class.nurse-reports-kpi--selected]="selectedComplianceFilter === 'missed'"
+              [attr.aria-pressed]="selectedComplianceFilter === 'missed'"
+              (click)="toggleComplianceFilter('missed')"
+            >
               <span class="nurse-reports-kpi__val">{{ compliance.missed }}</span>
               <span class="nurse-reports-kpi__lbl" i18n="@@nurseReportsModal.kpi.missed">No realizados</span>
-            </div>
-            <div class="nurse-reports-kpi">
+            </button>
+            <button
+              type="button"
+              class="nurse-reports-kpi"
+              [class.nurse-reports-kpi--selected]="selectedComplianceFilter === 'cancelled'"
+              [attr.aria-pressed]="selectedComplianceFilter === 'cancelled'"
+              (click)="toggleComplianceFilter('cancelled')"
+            >
               <span class="nurse-reports-kpi__val">{{ compliance.cancelled }}</span>
               <span class="nurse-reports-kpi__lbl" i18n="@@nurseReportsModal.kpi.cancelled">Cancelados</span>
-            </div>
-            <div class="nurse-reports-kpi nurse-reports-kpi--accent">
+            </button>
+            <button
+              type="button"
+              class="nurse-reports-kpi nurse-reports-kpi--accent"
+              [class.nurse-reports-kpi--selected]="selectedComplianceFilter === 'rate'"
+              [attr.aria-pressed]="selectedComplianceFilter === 'rate'"
+              (click)="toggleComplianceFilter('rate')"
+            >
               <span class="nurse-reports-kpi__val">{{ compliance.complianceRate | number : '1.0-1' }}%</span>
               <span class="nurse-reports-kpi__lbl" i18n="@@nurseReportsModal.kpi.rate">Tasa global</span>
-            </div>
+            </button>
           </div>
-          <div class="table-wrapper-neuro unified-table-container nurse-reports-table-wrap" *ngIf="compliance.byPatient.length">
+          <div class="table-wrapper-neuro unified-table-container nurse-reports-table-wrap" *ngIf="filteredComplianceRows.length">
             <table class="unified-tasks-table neuro-table">
               <thead>
                 <tr>
@@ -81,19 +111,21 @@
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let row of compliance.byPatient">
+                <tr *ngFor="let row of filteredComplianceRows">
                   <td>{{ row.patientName }}</td>
                   <td>{{ row.complianceRate | number : '1.0-1' }}%</td>
                 </tr>
               </tbody>
             </table>
           </div>
-          <p class="empty-message" *ngIf="!compliance.byPatient.length">Sin desglose por paciente en este periodo.</p>
+          <p class="empty-message" *ngIf="!filteredComplianceRows.length">
+            {{ selectedComplianceFilter === 'cancelled' ? 'No hay desglose desglosado de cancelados en este periodo.' : 'Sin filas de cumplimiento para el filtro seleccionado.' }}
+          </p>
         </section>
 
         <section class="nurse-reports-section" *ngIf="medication">
           <h4 class="nurse-reports-section-title">Medicación en el periodo</h4>
-          <div class="table-wrapper-neuro unified-table-container nurse-reports-table-wrap" *ngIf="medication.length > 0; else nurseRepMedEmpty">
+          <div class="table-wrapper-neuro unified-table-container nurse-reports-table-wrap" *ngIf="filteredMedicationRows.length; else nurseRepMedEmpty">
             <table class="unified-tasks-table neuro-table">
               <thead>
                 <tr>
@@ -106,7 +138,7 @@
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let r of medication">
+                <tr *ngFor="let r of filteredMedicationRows">
                   <td>{{ r.patientName }}</td>
                   <td>{{ r.medication }}<span *ngIf="r.dosage"> ({{ r.dosage }})</span></td>
                   <td>{{ r.scheduled }}</td>
@@ -118,7 +150,9 @@
             </table>
           </div>
           <ng-template #nurseRepMedEmpty>
-            <p class="empty-message">Sin filas de medicación en este periodo.</p>
+            <p class="empty-message">
+              {{ selectedComplianceFilter === 'cancelled' ? 'No hay filas de medicación canceladas en este periodo.' : 'Sin filas de medicación en este periodo.' }}
+            </p>
           </ng-template>
         </section>
       </div>

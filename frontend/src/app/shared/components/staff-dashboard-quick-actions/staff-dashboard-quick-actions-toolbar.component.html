@@ -1,0 +1,9 @@
+<div class="staff-dashboard-quick-actions" role="group" aria-label="Accesos de coordinación y reportes">
+  <button type="button" class="nav-link staff-dashboard-quick-link" (click)="qa.openTeamHandover()">
+    📋 Coordinación
+    @if (qa.teamHandoverPendingNotice()) {
+      <span class="quick-pending-chip">Pendiente</span>
+    }
+  </button>
+  <button type="button" class="nav-link staff-dashboard-quick-link" (click)="qa.openReports()">📈 Reportes</button>
+</div>

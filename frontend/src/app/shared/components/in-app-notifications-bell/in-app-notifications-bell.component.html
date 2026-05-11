@@ -1,0 +1,48 @@
+<div class="in-app-notif-wrap" (document:click)="closePanel()">
+  <button
+    type="button"
+    class="notif-bell-trigger"
+    (click)="$event.stopPropagation(); togglePanel()"
+    [attr.aria-expanded]="panelOpen"
+    aria-label="Notificaciones"
+    title="Notificaciones"
+  >
+    🔔
+    <span *ngIf="unreadCount() > 0" class="notif-badge">{{ unreadCount() > 99 ? '99+' : unreadCount() }}</span>
+    <span *ngIf="pendingAckCount() > 0" class="notif-ack-dot" aria-hidden="true"></span>
+  </button>
+
+  <div *ngIf="panelOpen" class="notif-panel nh-neuro-surface-raised" (click)="$event.stopPropagation()" role="dialog" aria-label="Lista de notificaciones">
+    <div class="notif-panel-head">
+      <span>Notificaciones</span>
+      <div class="notif-head-actions">
+        <button type="button" class="nh-neuro-link" (click)="markAllRead($event)">Marcar todas leídas</button>
+        <button type="button" class="nh-neuro-link" (click)="refresh(); $event.stopPropagation()">Actualizar</button>
+      </div>
+    </div>
+    <div *ngIf="loading" class="notif-muted">Cargando…</div>
+    <ul *ngIf="!loading" class="notif-list">
+      <li *ngIf="items.length === 0" class="notif-muted">No hay notificaciones activas.</li>
+      <li
+        *ngFor="let n of items"
+        class="notif-row"
+        [class.sev-info]="n.severity === 'info'"
+        [class.sev-warning]="n.severity === 'warning'"
+        [class.sev-critical]="n.severity === 'critical'"
+        [class.unread]="!n.readAt"
+      >
+        <button type="button" class="notif-row-main" (click)="onRowClick(n)">
+          <span class="notif-title">{{ n.title }}</span>
+          <span class="notif-body">{{ n.body }}</span>
+        </button>
+        <div class="notif-row-actions">
+          <button *ngIf="!n.readAt" type="button" class="nh-neuro-btn-sm" (click)="markRead(n, $event)">Leída</button>
+          <button *ngIf="n.requiresAck && !n.acknowledgedAt" type="button" class="nh-neuro-btn-sm nh-neuro-btn-sm--primary" (click)="acknowledge(n, $event)">
+            Aceptar
+          </button>
+          <button type="button" class="nh-neuro-btn-sm nh-neuro-btn-sm--danger" (click)="remove(n, $event)">Quitar</button>
+        </div>
+      </li>
+    </ul>
+  </div>
+</div>

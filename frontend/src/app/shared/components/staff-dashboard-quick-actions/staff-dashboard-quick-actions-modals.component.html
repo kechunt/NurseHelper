@@ -1,0 +1,38 @@
+@if (qa.showTeamHandover()) {
+  <app-admin-team-handover-modal
+    [handoverDate]="qa.handoverDate()"
+    [handoverShift]="qa.handoverShift()"
+    [handoverBody]="qa.handoverBody()"
+    [handoverSaving]="qa.handoverSaving()"
+    [handoverCanAcknowledge]="qa.handoverCanAcknowledge()"
+    (handoverDateChange)="qa.setHandoverDate($event)"
+    (handoverDateCommitted)="qa.onHandoverDateCommitted()"
+    (handoverShiftChange)="qa.setHandoverShift($event)"
+    (handoverShiftCommitted)="qa.onHandoverShiftCommitted()"
+    (handoverBodyChange)="qa.setHandoverBody($event)"
+    (dismissed)="qa.closeTeamHandover()"
+    (acknowledgeRequested)="qa.acknowledgeTeamHandoverRead()"
+    (saveRequested)="qa.saveTeamHandover()"
+  />
+}
+
+@if (qa.showReports()) {
+  <app-nurse-reports-modal
+    [periodLabel]="qa.reportsPeriodLabel()"
+    [loading]="qa.reportsLoading()"
+    [error]="qa.reportsError()"
+    [compliance]="qa.reportsCompliance()"
+    [medication]="qa.reportsMedication()"
+    [exporting]="qa.reportsExporting()"
+    [showStaffNurseFilter]="true"
+    [staffNurses]="qa.nursesForReports()"
+    [staffNurseUserId]="qa.reportNurseUserId()"
+    [staffScopeSuffix]="
+      'Todos los pacientes del centro si no eliges enfermera; al elegir una enfermera, solo su ámbito de pacientes.'
+    "
+    (dismissed)="qa.closeReports()"
+    (csvDownload)="qa.downloadCsv($event)"
+    (excelDownload)="qa.downloadExcel($event)"
+    (staffNurseFilterChange)="qa.onReportNurseFilterChange($event)"
+  />
+}

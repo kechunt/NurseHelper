@@ -1,7 +1,4 @@
-import {
-  nurseDashboardHeaderUserDisplayName,
-  nurseDashboardHeaderUserPhoneLine,
-} from './nurse-dashboard-header-user.helpers';
+import { nurseDashboardHeaderUserDisplayName } from './nurse-dashboard-header-user.helpers';
 
 describe('nurse-dashboard-header-user.helpers', () => {
   describe('nurseDashboardHeaderUserDisplayName', () => {
@@ -18,19 +15,6 @@ describe('nurse-dashboard-header-user.helpers', () => {
     it('usa fallback si no hay usuario', () => {
       expect(nurseDashboardHeaderUserDisplayName(null, ' María ')).toBe(' María ');
       expect(nurseDashboardHeaderUserDisplayName(undefined, 'Nombre viejo')).toBe('Nombre viejo');
-    });
-  });
-
-  describe('nurseDashboardHeaderUserPhoneLine', () => {
-    it('devuelve null si teléfono ausente o vacío', () => {
-      expect(nurseDashboardHeaderUserPhoneLine(null)).toBeNull();
-      expect(nurseDashboardHeaderUserPhoneLine(undefined)).toBeNull();
-      expect(nurseDashboardHeaderUserPhoneLine('   ')).toBeNull();
-    });
-
-    it('formatea teléfono no vacío', () => {
-      expect(nurseDashboardHeaderUserPhoneLine('+34123456789')).toBe('+34123456789');
-      expect(nurseDashboardHeaderUserPhoneLine(600111222)).toBe('600111222');
     });
   });
 });

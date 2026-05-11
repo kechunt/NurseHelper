@@ -5,7 +5,6 @@
   [subtitle]="assignedArea || null"
   [userName]="headerUserName"
   [roleLabel]="'Enfermera'"
-  [userPhoneLine]="headerUserPhoneLine"
   [profileEditable]="true"
   [navAriaLabel]="'Módulos de enfermería'"
   panelHeadingId="nurse-dashboard-heading"
@@ -14,7 +13,10 @@
   (logoClick)="goToSummaryFromLogo()"
   (logoutClick)="logout()"
 >
-  <app-nurse-dashboard-header-search appDashboardHeaderActions (debounced)="onHeaderPatientSearch($event)" />
+  <div appDashboardHeaderActions class="nurse-header-actions">
+    <app-in-app-notifications-bell dashboardKind="nurse" />
+    <app-nurse-dashboard-header-search (debounced)="onHeaderPatientSearch($event)" />
+  </div>
 
   <ng-container appDashboardNav>
     <app-nurse-dashboard-main-nav
@@ -101,6 +103,7 @@
       <div id="pharmacy-section" class="nurse-module-stack">
         <app-nurse-pharmacy-section
           [medicationsForPharmacy]="medicationsForPharmacy"
+          [pharmacyContactsByShift]="pharmacyContactsByShift"
           [uniqueMedicationsCount]="uniqueMedicationsCount"
           [totalDosesToday]="totalDosesToday"
           [historyOpen]="pharmacyRequestsHistoryOpen"

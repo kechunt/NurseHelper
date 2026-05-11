@@ -1,0 +1,29 @@
+<section class="pharmacy-coverage-readonly" aria-labelledby="pharmacy-coverage-readonly-title">
+  <div class="pharmacy-coverage-readonly-head">
+    <h3 id="pharmacy-coverage-readonly-title" class="pharmacy-coverage-readonly-title">
+      <app-hero-icon name="building-office-2" /> Farmacia por turno (contacto)
+    </h3>
+    <label class="pharmacy-coverage-readonly-date">
+      <span>Fecha</span>
+      <input type="date" [(ngModel)]="coverageDate" (change)="onDateChange()" />
+    </label>
+  </div>
+  <p *ngIf="error" class="pharmacy-coverage-readonly-msg error">{{ error }}</p>
+  <p *ngIf="loading" class="pharmacy-coverage-readonly-msg">Cargando…</p>
+  <div *ngIf="!loading && shifts.length" class="pharmacy-coverage-readonly-grid-wrap">
+    <div class="pharmacy-coverage-readonly-grid">
+    <div class="pharmacy-coverage-readonly-cell" *ngFor="let sh of shifts">
+      <div class="pharmacy-coverage-readonly-shift">{{ sh.shiftName }}</div>
+      <div class="pharmacy-coverage-readonly-time">{{ sh.startTime }}–{{ sh.endTime }}</div>
+      <ng-container *ngIf="sh.hasOnDutyContact && sh.contactName; else noContact">
+        <div class="pharmacy-coverage-readonly-name">{{ sh.contactName }}</div>
+        <a *ngIf="sh.phone" class="pharmacy-coverage-readonly-tel" [href]="'tel:' + sh.phone">{{ sh.phone }}</a>
+        <span *ngIf="!sh.phone" class="pharmacy-coverage-readonly-muted">Sin teléfono</span>
+      </ng-container>
+      <ng-template #noContact>
+        <span class="pharmacy-coverage-readonly-muted">Sin encargado en turno</span>
+      </ng-template>
+    </div>
+    </div>
+  </div>
+</section>

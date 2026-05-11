@@ -2,7 +2,6 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
-import { AdminService } from '../../services/admin.service';
 import { OverviewComponent } from '../admin-dashboard/overview/overview.component';
 import { UsersManagementComponent } from '../admin-dashboard/users-management/users-management.component';
 import { StaffManagementComponent } from '../admin-dashboard/staff-management/staff-management.component';
@@ -12,6 +11,8 @@ import { PatientsManagementComponent } from '../admin-dashboard/patients-managem
 import { SchedulesManagementComponent } from '../admin-dashboard/schedules-management/schedules-management.component';
 import { DashboardUserProfileModalComponent } from '../../shared/components/dashboard-user-profile-modal/dashboard-user-profile-modal.component';
 import { StaffDashboardQuickActionsComponent } from '../../shared/components/staff-dashboard-quick-actions/staff-dashboard-quick-actions.component';
+import { PharmacyCoverageSummaryCardComponent } from '../../shared/components/pharmacy-coverage-summary-card/pharmacy-coverage-summary-card.component';
+import { InAppNotificationsBellComponent } from '../../shared/components/in-app-notifications-bell/in-app-notifications-bell.component';
 
 @Component({
   selector: 'app-supervisor-dashboard',
@@ -28,6 +29,8 @@ import { StaffDashboardQuickActionsComponent } from '../../shared/components/sta
     BedsManagementComponent,
     PatientsManagementComponent,
     SchedulesManagementComponent,
+    PharmacyCoverageSummaryCardComponent,
+    InAppNotificationsBellComponent,
   ],
   templateUrl: './supervisor-dashboard.component.html',
   styleUrl: './supervisor-dashboard.component.css',
@@ -50,18 +53,11 @@ export class SupervisorDashboardComponent implements OnInit {
 
   constructor(
     private authService: AuthService,
-    private adminService: AdminService,
     private router: Router
   ) {}
   
   get currentUser() {
     return this.authService.currentUser;
-  }
-
-  get headerUserPhoneLine(): string | null {
-    const p = this.authService.currentUser()?.phone;
-    const s = p != null ? String(p).trim() : '';
-    return s.length > 0 ? s : null;
   }
 
   ngOnInit(): void {

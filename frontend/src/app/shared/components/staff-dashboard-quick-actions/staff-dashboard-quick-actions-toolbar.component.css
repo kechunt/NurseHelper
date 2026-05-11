@@ -1,0 +1,26 @@
+/*
+ * display: contents para que los botones participen en el flex del nav (admin)
+ * o del host agrupador (supervisor).
+ */
+:host {
+  display: contents;
+}
+
+.staff-dashboard-quick-actions {
+  display: contents;
+}
+
+.staff-dashboard-quick-link.nav-link {
+  white-space: nowrap;
+}
+
+.staff-dashboard-quick-actions .quick-pending-chip {
+  margin-left: 0.4rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #9c4221;
+  background: #fef5e7;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
+}

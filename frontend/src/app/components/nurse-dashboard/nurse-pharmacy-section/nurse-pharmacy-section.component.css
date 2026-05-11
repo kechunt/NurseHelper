@@ -27,6 +27,96 @@
     inset -5px -5px 12px rgba(255, 255, 255, 0.84);
 }
 
+.pharmacy-shift-contacts {
+  margin: 0 0 1rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.pharmacy-shift-contacts-intro {
+  margin: 0 0 0.65rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #4a5568;
+  padding-bottom: 0.5rem;
+  box-shadow: inset 0 -1px 0 rgba(174, 174, 192, 0.22);
+}
+
+.pharmacy-shift-contacts-grid-wrap {
+  padding: 1rem;
+  background: #e0e5ec;
+  border-radius: 16px;
+  box-shadow: inset 4px 4px 8px #c2c8d0, inset -4px -4px 8px #f6f9ff;
+  border: 1px solid rgba(174, 174, 192, 0.22);
+}
+
+.pharmacy-shift-contacts-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.85rem;
+}
+
+.pharmacy-shift-contact-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 14px;
+  background: #e0e5ec;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
+  font-size: 0.88rem;
+  color: #4a5568;
+  transition: box-shadow 0.2s ease;
+}
+
+.pharmacy-shift-contact-row:hover {
+  box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #ffffff;
+}
+
+.pharmacy-shift-slot {
+  font-weight: 700;
+  min-width: min(100%, 200px);
+}
+
+.pharmacy-shift-time {
+  font-weight: 600;
+  color: #718096;
+}
+
+.pharmacy-shift-contact-detail {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.65rem;
+  align-items: center;
+}
+
+.pharmacy-shift-contact-name {
+  font-weight: 600;
+}
+
+.pharmacy-shift-contact-tel {
+  color: #2b6cb0;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.pharmacy-shift-contact-tel:hover {
+  text-decoration: underline;
+}
+
+.pharmacy-shift-no-phone,
+.pharmacy-shift-contact-missing {
+  color: #a0aec0;
+  font-style: italic;
+}
+
 .section-header {
   display: flex;
   justify-content: space-between;

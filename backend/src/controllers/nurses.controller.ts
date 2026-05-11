@@ -13,6 +13,7 @@ import { fetchNurseDayTasksHistory } from '../services/nurse-day-tasks-history.s
 import { computeNurseStats } from '../services/nurse-stats.service';
 import { fetchNurseTodayTasksGrouped } from '../services/nurse-today-tasks.service';
 import { fetchMedicationsForPharmacyGrouped } from '../services/nurse-pharmacy-medications.service';
+import { fetchPharmacyContactsByShiftForDate } from '../services/pharmacy-contact-by-shift.service';
 import { fetchMyBedsForNurse } from '../services/nurse-my-beds.service';
 import { fetchMyPatientsForNurse } from '../services/nurse-my-patients.service';
 import { buildNurseShiftContextPayload } from '../services/nurse-shift-context.service';
@@ -254,8 +255,11 @@ export const addTreatment = async (req: AuthRequest, res: Response) => {
 export const getMedicationsForPharmacy = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.id;
-    const result = await fetchMedicationsForPharmacyGrouped(userId);
-    res.json(result);
+    const medications = await fetchMedicationsForPharmacyGrouped(userId);
+    const d = new Date();
+    const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const pharmacyContactsByShift = await fetchPharmacyContactsByShiftForDate(dateStr);
+    res.json({ medications, pharmacyContactsByShift });
   } catch (error) {
     logger.error('❌ Error en getMedicationsForPharmacy:', error);
     res.status(500).json({ message: 'Error al obtener medicamentos' });

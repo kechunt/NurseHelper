@@ -1,0 +1,132 @@
+/**
+ * Tokens y utilidades neuromórficas para feedback global:
+ * panel de notificaciones in-app, toasts, modales de confirmación.
+ * Alineado con dashboard-layout.css (superficie #e0e5ec, sombras #bebebe / #ffffff).
+ */
+
+:root {
+  --nh-neuro-bg: #e0e5ec;
+  --nh-neuro-text: #4a5568;
+  --nh-neuro-text-muted: #718096;
+  --nh-neuro-shadow-dark: #bebebe;
+  --nh-neuro-shadow-light: #ffffff;
+
+  --nh-neuro-raised:
+    8px 8px 16px var(--nh-neuro-shadow-dark), -8px -8px 16px var(--nh-neuro-shadow-light);
+  --nh-neuro-raised-sm:
+    5px 5px 10px var(--nh-neuro-shadow-dark), -5px -5px 10px var(--nh-neuro-shadow-light);
+  --nh-neuro-raised-hover:
+    4px 4px 8px var(--nh-neuro-shadow-dark), -4px -4px 8px var(--nh-neuro-shadow-light);
+  --nh-neuro-inset:
+    inset 4px 4px 8px var(--nh-neuro-shadow-dark), inset -4px -4px 8px var(--nh-neuro-shadow-light);
+  --nh-neuro-inset-sm:
+    inset 2px 2px 4px var(--nh-neuro-shadow-dark), inset -2px -2px 4px var(--nh-neuro-shadow-light);
+  --nh-neuro-pressed:
+    inset 4px 4px 8px var(--nh-neuro-shadow-dark), inset -4px -4px 8px var(--nh-neuro-shadow-light);
+
+  --nh-sev-success: #10b981;
+  --nh-sev-error: #ef4444;
+  --nh-sev-warning: #f59e0b;
+  --nh-sev-info: #3b82f6;
+}
+
+/* Superficie flotante: panel, toast, modal */
+.nh-neuro-surface-raised {
+  background: var(--nh-neuro-bg);
+  border-radius: 14px;
+  box-shadow: var(--nh-neuro-raised);
+  border: none;
+  color: var(--nh-neuro-text);
+}
+
+.nh-neuro-surface-inset {
+  background: var(--nh-neuro-bg);
+  border-radius: 10px;
+  box-shadow: var(--nh-neuro-inset-sm);
+}
+
+/* Botón pequeño neuromórfico (acciones en listas / secundario) */
+.nh-neuro-btn-sm {
+  background: var(--nh-neuro-bg);
+  color: var(--nh-neuro-text);
+  border: none;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
+  box-shadow: var(--nh-neuro-raised-sm);
+}
+
+.nh-neuro-btn-sm:hover {
+  box-shadow: var(--nh-neuro-raised-hover);
+}
+
+.nh-neuro-btn-sm:active {
+  box-shadow: var(--nh-neuro-pressed);
+}
+
+.nh-neuro-btn-sm:focus-visible {
+  outline: 2px solid var(--nh-sev-info);
+  outline-offset: 2px;
+}
+
+.nh-neuro-btn-sm--primary {
+  color: #2d3748;
+  font-weight: 600;
+}
+
+.nh-neuro-btn-sm--danger {
+  color: #c53030;
+}
+
+/* Botón solo icono / compacto (cerrar toast, etc.) */
+.nh-neuro-btn-icon-sm {
+  background: var(--nh-neuro-bg);
+  color: var(--nh-neuro-text-muted);
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: box-shadow 0.2s ease, color 0.2s ease;
+  box-shadow: var(--nh-neuro-raised-sm);
+}
+
+.nh-neuro-btn-icon-sm:hover {
+  color: var(--nh-neuro-text);
+  box-shadow: var(--nh-neuro-raised-hover);
+}
+
+.nh-neuro-btn-icon-sm:active {
+  box-shadow: var(--nh-neuro-pressed);
+}
+
+/* Enlace de texto en cabeceras */
+.nh-neuro-link {
+  background: none;
+  border: none;
+  padding: 4px 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--nh-neuro-text);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.nh-neuro-link:hover {
+  box-shadow: var(--nh-neuro-inset-sm);
+}
+
+.nh-neuro-link:focus-visible {
+  outline: 2px solid var(--nh-sev-info);
+  outline-offset: 2px;
+}

@@ -223,7 +223,7 @@ describe('PatientService', () => {
 
       await patientService.deletePatient(1);
 
-      expect(mockPatientRepository.update).toHaveBeenCalledWith({ id: 1 }, { bedId: null });
+      expect(mockPatientRepository.update).toHaveBeenCalledWith({ id: 1 }, { bedId: null, areaId: null });
       expect(mockScheduleRepository.delete).toHaveBeenCalledWith({ patientId: 1 });
       expect(mockPatientRepository.remove).toHaveBeenCalledWith(patient);
     });

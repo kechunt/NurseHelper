@@ -56,6 +56,17 @@ router.patch('/:id/read', notificationsController.markAsRead);
 
 /**
  * @swagger
+ * /api/notifications/{id}/ack:
+ *   patch:
+ *     summary: Reconocer notificación (requeridas con `requiresAck`)
+ *     tags: [Notifications]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.patch('/:id/ack', notificationsController.acknowledge);
+
+/**
+ * @swagger
  * /api/notifications/{id}:
  *   delete:
  *     summary: Eliminar notificación

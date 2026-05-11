@@ -1,11 +1,10 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
 
 @Component({
   selector: 'app-nurse-summary-section',
   standalone: true,
-  imports: [CommonModule, HeroIconComponent],
+  imports: [CommonModule],
   templateUrl: './nurse-summary-section.component.html',
   styleUrls: [
     '../../../shared/styles/admin-panel-responsive.css',

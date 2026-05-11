@@ -138,6 +138,7 @@
     [title]="bedCardActionsTarget && bedCardActionsTarget.bedNumber ? 'Cama ' + bedCardActionsTarget.bedNumber : 'Cama'"
     [summaryRows]="bedCardActionsTarget ? bedCardActionsSummaryRows(bedCardActionsTarget) : null"
     (dismissed)="closeBedCardActionsSheet()"
+    (summaryRowAction)="onBedCardSummaryRowAction($event)"
   >
     <button
       type="button"
@@ -197,7 +198,7 @@
 
           <ng-container *ngIf="editBedAllowsPatientPicker()">
             <p class="apm-desc">
-              Pacientes en el área <strong>{{ getAreaName(editBedForm.areaId || undefined) }}</strong>. También puedes abrir la lista ampliada o buscar en otras áreas o sin cama. Si hay varias enfermeras en el área, se pedirá cuál atiende al paciente.
+              Pacientes en el área <strong>{{ getAreaName(editBedForm.areaId || undefined) }}</strong>. Pulsa una fila para elegir paciente; también puedes buscar en otras áreas o sin cama. Si hay varias enfermeras en el área, se pedirá cuál atiende al paciente.
             </p>
             <input
               type="text"
@@ -208,43 +209,48 @@
               [attr.aria-label]="'Buscar pacientes del área ' + getAreaName(editBedForm.areaId || undefined)"
             />
 
-            <div class="apm-inset beds-mgmt-patient-inset">
-              <button
-                type="button"
-                *ngFor="let patient of filteredPatients"
-                class="apm-inset-row"
-                (click)="selectPatient(patient)"
-              >
-                <span class="apm-stack">
-                  <strong>{{ patient.firstName }} {{ patient.lastName }}</strong>
-                  <span *ngIf="getPatientBed(patient.id)" class="apm-hint apm-hint--muted">
-                    Cama actual: {{ getPatientBed(patient.id)?.bedNumber }}. Al guardar o con «Asignar ahora» pasará a esta cama.
-                  </span>
-                  <span *ngIf="!getPatientBed(patient.id)" class="apm-hint apm-hint--ok">Sin cama — listo para asignar</span>
-                </span>
-              </button>
+            <div class="table-wrapper-neuro beds-mgmt-assign-table-wrap beds-mgmt-patient-inset">
+              <table class="neuro-table" role="table" aria-label="Pacientes del área para asignar a la cama">
+                <thead>
+                  <tr>
+                    <th scope="col">Paciente</th>
+                    <th scope="col">Documento</th>
+                    <th scope="col">Cama actual</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    *ngFor="let patient of filteredPatients"
+                    class="beds-mgmt-assign-row"
+                    [class.beds-mgmt-assign-row--selected]="editBedForm.patientId === patient.id"
+                    tabindex="0"
+                    role="button"
+                    [attr.aria-pressed]="editBedForm.patientId === patient.id"
+                    [attr.aria-label]="'Seleccionar paciente ' + patient.firstName + ' ' + patient.lastName"
+                    (click)="selectPatient(patient)"
+                    (keydown.enter)="selectPatient(patient)"
+                    (keydown.space)="$event.preventDefault(); selectPatient(patient)"
+                  >
+                    <td>{{ patient.firstName }} {{ patient.lastName }}</td>
+                    <td>{{ patient.identificationNumber || '—' }}</td>
+                    <td>
+                      <span *ngIf="getPatientBed(patient.id) as pb">{{ pb.bedNumber }}</span>
+                      <span *ngIf="!getPatientBed(patient.id)" class="apm-hint apm-hint--ok">Sin cama</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
 
-              <div *ngIf="filteredPatients.length === 0 && patientSearchTerm" class="apm-empty">
+              <div *ngIf="filteredPatients.length === 0 && patientSearchTerm" class="apm-empty beds-mgmt-table-empty">
                 No hay coincidencias en esta área con ese criterio.
               </div>
 
-              <div *ngIf="filteredPatients.length === 0 && !patientSearchTerm" class="apm-empty">
+              <div *ngIf="filteredPatients.length === 0 && !patientSearchTerm" class="apm-empty beds-mgmt-table-empty">
                 <p class="beds-mgmt-empty-lead">No hay pacientes en esta lista.</p>
-                <div class="apm-toolbar">
-                  <button type="button" class="apm-btn apm-btn--outline" (click)="openAssignPatientModal()">
-                    Lista completa del área
-                  </button>
-                  <button type="button" class="apm-btn" (click)="openCrossAreaPatientModal()">
-                    Otras áreas o sin cama
-                  </button>
-                </div>
               </div>
             </div>
 
-            <div *ngIf="filteredPatients.length > 0" class="apm-toolbar">
-              <button type="button" class="apm-btn apm-btn--outline" (click)="openAssignPatientModal()">
-                Lista ampliada
-              </button>
+            <div class="apm-toolbar">
               <button type="button" class="apm-btn" (click)="openCrossAreaPatientModal()">Otras áreas o sin cama</button>
             </div>
           </ng-container>
@@ -332,46 +338,6 @@
     (saveDiagnosis)="unifiedSaveDiagnosis($event)"
   />
 
-  <!-- Modal lista ampliada del área -->
-  <div *ngIf="showAssignPatientModal" class="apm-backdrop apm-backdrop--nested" (click)="closeAssignPatientModal()">
-    <div class="apm-shell apm-shell--large" (click)="$event.stopPropagation()">
-      <div class="apm-header">
-        <h3>Asignar paciente — cama {{ selectedBed?.bedNumber }}</h3>
-        <button type="button" class="apm-close" (click)="closeAssignPatientModal()" aria-label="Cerrar">✕</button>
-      </div>
-      <div class="apm-body">
-        <p class="apm-desc">
-          Área <strong>{{ getAreaName(editBedForm.areaId || undefined) }}</strong>. Con varias enfermeras en el área podrás elegir cuál atiende al paciente.
-        </p>
-        <div class="apm-section">
-          <label class="apm-field-label" for="assign-patient-search">Buscar</label>
-          <input
-            id="assign-patient-search"
-            type="text"
-            class="apm-input"
-            [(ngModel)]="assignPatientSearchTerm"
-            (input)="filterAssignablePatients()"
-            placeholder="Nombre o cédula…"
-          />
-        </div>
-
-        <div class="apm-inset">
-          <div *ngIf="assignablePatients.length === 0" class="apm-empty">No hay pacientes disponibles en esta área.</div>
-          <label *ngFor="let patient of assignablePatients" class="apm-radio-row">
-            <input type="radio" name="selectedPatientToAssign" [value]="patient.id" [(ngModel)]="selectedPatientToAssign" />
-            <span>{{ patient.firstName }} {{ patient.lastName }} — {{ patient.identificationNumber || 'Sin cédula' }}</span>
-          </label>
-        </div>
-      </div>
-      <div class="apm-footer">
-        <button type="button" class="apm-btn apm-btn--outline" (click)="closeAssignPatientModal()">Cancelar</button>
-        <button type="button" class="apm-btn" (click)="assignPatientToCurrentBed()" [disabled]="!selectedPatientToAssign">
-          Asignar ahora
-        </button>
-      </div>
-    </div>
-  </div>
-
   <!-- Modal otras áreas / sin cama -->
   <div *ngIf="showCrossAreaPatientModal" class="apm-backdrop apm-backdrop--nested" (click)="closeCrossAreaPatientModal()">
     <div class="apm-shell apm-shell--large" (click)="$event.stopPropagation()">
@@ -407,12 +373,45 @@
             placeholder="Filtrar la lista…"
           />
         </div>
-        <div class="apm-inset" *ngIf="crossAreaFilter">
-          <div *ngIf="crossAreaPatients.length === 0" class="apm-empty">No hay pacientes para este filtro.</div>
-          <label *ngFor="let patient of crossAreaPatients" class="apm-radio-row">
-            <input type="radio" name="crossAreaPatientPick" [value]="patient.id" [(ngModel)]="selectedCrossAreaPatientId" />
-            <span>{{ patient.firstName }} {{ patient.lastName }} — {{ patient.identificationNumber || 'Sin cédula' }}</span>
-          </label>
+        <div class="table-wrapper-neuro beds-mgmt-assign-table-wrap" *ngIf="crossAreaFilter">
+          <table class="neuro-table" role="table" aria-label="Pacientes para asignar desde otras áreas o sin cama">
+            <thead>
+              <tr>
+                <th scope="col" class="beds-mgmt-col-radio"></th>
+                <th scope="col">Paciente</th>
+                <th scope="col">Documento</th>
+                <th scope="col">Cama actual</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngIf="crossAreaPatients.length === 0">
+                <td colspan="4" class="apm-empty beds-mgmt-table-empty-inner">No hay pacientes para este filtro.</td>
+              </tr>
+              <tr
+                *ngFor="let patient of crossAreaPatients"
+                class="beds-mgmt-cross-row beds-mgmt-assign-row"
+                [class.beds-mgmt-assign-row--selected]="isCrossAreaPatientSelected(patient)"
+                tabindex="0"
+                role="button"
+                [attr.aria-label]="'Seleccionar paciente ' + patient.firstName + ' ' + patient.lastName"
+                (click)="selectCrossAreaPatient(patient)"
+                (keydown.enter)="selectCrossAreaPatient(patient)"
+                (keydown.space)="$event.preventDefault(); selectCrossAreaPatient(patient)"
+              >
+                <td class="beds-mgmt-col-radio">
+                  <input
+                    type="radio"
+                    name="crossAreaPatientPick"
+                    [checked]="isCrossAreaPatientSelected(patient)"
+                    (change)="selectCrossAreaPatient(patient)"
+                  />
+                </td>
+                <td>{{ patient.firstName }} {{ patient.lastName }}</td>
+                <td>{{ patient.identificationNumber || '—' }}</td>
+                <td>{{ patientAssignBedSummary(patient) }}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
       <div class="apm-footer">

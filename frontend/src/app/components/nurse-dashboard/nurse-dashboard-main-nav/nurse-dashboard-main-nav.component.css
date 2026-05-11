@@ -12,15 +12,6 @@
   display: contents;
 }
 
-/* Divisor visual entre tabs principales y accesos rápidos */
-:host-context(.nurse-dashboard) .nurse-nav-divider {
-  border: none;
-  border-top: 1px solid rgba(174, 174, 192, 0.35);
-  margin: 0.25rem 0;
-  width: 100%;
-  flex-shrink: 0;
-}
-
 :host-context(.nurse-dashboard) .quick-pending-chip {
   margin-left: 0.4rem;
   padding: 2px 8px;
@@ -30,16 +21,4 @@
   color: #9c4221;
   background: #fef5e7;
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
-}
-
-/* En responsive horizontal el divisor se convierte en separador vertical */
-@media (max-width: 1024px) {
-  :host-context(.nurse-dashboard) .nurse-nav-divider {
-    border-top: none;
-    border-left: 1px solid rgba(174, 174, 192, 0.35);
-    width: 0;
-    height: auto;
-    margin: 0 0.25rem;
-    align-self: stretch;
-  }
 }

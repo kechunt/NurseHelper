@@ -3,6 +3,38 @@
   width: 100%;
 }
 
+.patient-assignment-badge {
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.2rem 0.45rem;
+  border-radius: 8px;
+  max-width: 11rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.patient-assignment-badge--mine {
+  background: #c6f6d5;
+  color: #22543d;
+  border: 1px solid #9ae6b4;
+}
+
+.patient-assignment-badge--other {
+  background: #e2e8f0;
+  color: #4a5568;
+  border: 1px solid #cbd5e0;
+}
+
+.patient-assignment-badge--pending {
+  background: #fefcbf;
+  color: #744210;
+  border: 1px solid #faf089;
+}
+
 /* Controles neumórficos: el shell del dashboard no estila inputs/selects dentro de este hijo encapsulado. */
 .filter-box-actions .filter-box-spacer {
   visibility: hidden;

@@ -61,7 +61,8 @@ export class UsersController {
           'user.role', 
           'user.isActive', 
           'user.maxPatients', 
-          'user.assignedAreaId', 
+          'user.assignedAreaId',
+          'user.pharmacyRosterOrder',
           'user.createdAt'
         ]);
 
@@ -114,7 +115,18 @@ export class UsersController {
         sendErrorResponse(res, 400, 'ID de usuario inválido', 'INVALID_ID');
         return;
       }
-      const { username, email, firstName, lastName, phone, role, isActive, maxPatients, assignedAreaId } = req.body;
+      const {
+        username,
+        email,
+        firstName,
+        lastName,
+        phone,
+        role,
+        isActive,
+        maxPatients,
+        assignedAreaId,
+        pharmacyRosterOrder,
+      } = req.body;
 
       const userRepository = AppDataSource.getRepository(User);
       const user = await userRepository.findOne({ where: { id: userId } });
@@ -181,6 +193,19 @@ export class UsersController {
       // Actualizar campos de enfermera
       if (maxPatients !== undefined) user.maxPatients = maxPatients;
       if (assignedAreaId !== undefined) user.assignedAreaId = assignedAreaId;
+
+      if (pharmacyRosterOrder !== undefined && user.role === UserRole.PHARMACY) {
+        if (pharmacyRosterOrder === null || pharmacyRosterOrder === '') {
+          user.pharmacyRosterOrder = null;
+        } else {
+          const n = parseInt(String(pharmacyRosterOrder), 10);
+          if (Number.isNaN(n) || n < 0 || n > 999) {
+            sendErrorResponse(res, 400, 'El orden de roster farmacia debe ser un entero entre 0 y 999', 'VALIDATION_ERROR');
+            return;
+          }
+          user.pharmacyRosterOrder = n;
+        }
+      }
 
       const authReq = req as AuthRequest;
       // Solo permitir cambiar rol si no es el propio usuario

@@ -114,5 +114,26 @@ describe('nurse-dashboard-patient-mapping', () => {
       expect(rows[0].allergies).toBe('');
       expect(rows[0].clinicalNotes?.diagnosis).toEqual([]);
     });
+
+    it('propaga metadatos de asignación del área', () => {
+      const rows = mapPatientDetailsToPatients(
+        [
+          patientDetail({
+            id: 5,
+            firstName: 'Luis',
+            lastName: 'Pérez',
+            isAssignedToMe: true,
+            assignedToId: 10,
+            assignedToName: 'Enf. Test',
+            assignmentStatus: 'assigned',
+          }),
+        ],
+        []
+      );
+      expect(rows[0].isAssignedToMe).toBe(true);
+      expect(rows[0].assignedToId).toBe(10);
+      expect(rows[0].assignedToName).toBe('Enf. Test');
+      expect(rows[0].assignmentStatus).toBe('assigned');
+    });
   });
 });
