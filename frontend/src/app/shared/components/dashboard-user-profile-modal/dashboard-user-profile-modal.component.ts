@@ -3,12 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../services/auth.service';
 import { ToastService } from '../../../services/toast.service';
-import { HeroIconComponent } from '../hero-icon/hero-icon.component';
+import { BootstrapIconComponent } from '../bootstrap-icon/bootstrap-icon.component';
 
 @Component({
   selector: 'app-dashboard-user-profile-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, HeroIconComponent],
+  imports: [CommonModule, FormsModule, BootstrapIconComponent],
   templateUrl: './dashboard-user-profile-modal.component.html',
   styleUrls: [
     './dashboard-user-profile-modal.component.css',

@@ -47,8 +47,9 @@ export class ShiftRealtimeService {
 
   formatShiftLabel(shift: RealtimeShiftLike | null): string {
     if (!shift) {
-      return 'Sin turno activo';
+      return $localize`:@@shiftRealtime.noActiveShift:Sin turno activo`;
     }
-    return `${shift.name || 'Turno'} (${shift.startTime || '--:--'} - ${shift.endTime || '--:--'})`;
+    const name = shift.name || $localize`:@@shiftRealtime.shiftDefaultName:Turno`;
+    return $localize`:@@shiftRealtime.shiftLabel:${name}:name: (${shift.startTime || '--:--'}:start: - ${shift.endTime || '--:--'}:end:)`;
   }
 }

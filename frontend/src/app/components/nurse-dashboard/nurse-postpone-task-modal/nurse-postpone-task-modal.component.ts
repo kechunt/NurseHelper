@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ModalFocusTrapDirective } from '../../../shared/directives/modal-focus-trap.directive';
 import { FormsModule } from '@angular/forms';
 import { ToastService } from '../../../services/toast.service';
-import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
+import { BootstrapIconComponent } from '../../../shared/components/bootstrap-icon/bootstrap-icon.component';
 import {
   NURSE_MODAL_POSTPONE_TASK_WARN_FUTURE,
   NURSE_MODAL_POSTPONE_TASK_WARN_VALID_DATETIME,
@@ -19,7 +19,7 @@ export interface PostponeTaskModalView {
 @Component({
   selector: 'app-nurse-postpone-task-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, ModalFocusTrapDirective, HeroIconComponent],
+  imports: [CommonModule, FormsModule, ModalFocusTrapDirective, BootstrapIconComponent],
   templateUrl: './nurse-postpone-task-modal.component.html',
   styleUrls: ['./nurse-postpone-task-modal.component.css'],
 })

@@ -12,8 +12,9 @@
     (click)="$event.stopPropagation()"
   >
     <div class="modal-header">
-      <h3 id="nurse-delete-medication-dialog-title" i18n="@@nurseDeleteMedicationModal.title"><app-hero-icon name="trash" /> Eliminar Medicamento</h3>
+      <h3 id="nurse-delete-medication-dialog-title" i18n="@@nurseDeleteMedicationModal.title"><app-bootstrap-icon name="trash" /> Eliminar Medicamento</h3>
       <button
+        id="nurse-delete-medication-header-close-btn"
         type="button"
         class="close-btn"
         aria-label="Cerrar"
@@ -27,7 +28,7 @@
     <div class="modal-body">
       <div class="warning-box">
         <p i18n="@@nurseDeleteMedicationModal.warning">
-          <app-hero-icon name="exclamation-triangle" /> Esta acción eliminará PERMANENTEMENTE todas las dosis futuras programadas.
+          <app-bootstrap-icon name="exclamation-triangle" /> Esta acción eliminará PERMANENTEMENTE todas las dosis futuras programadas.
         </p>
       </div>
 
@@ -48,14 +49,30 @@
           rows="3"
           required
         ></textarea>
+        <small class="hint-text" i18n="@@nurseDeleteMedicationModal.reasonHint">
+          El motivo debe tener al menos 10 caracteres (sin contar espacios al inicio o al final).
+        </small>
       </div>
     </div>
 
     <div class="modal-footer">
-      <button type="button" class="btn-secondary-neuro" (click)="onCancel()" i18n="@@nurseDeleteMedicationModal.cancel">
+      <button
+        id="nurse-delete-medication-cancel-btn"
+        type="button"
+        class="btn-secondary-neuro"
+        (click)="onCancel()"
+        i18n="@@nurseDeleteMedicationModal.cancel"
+      >
         Cancelar
       </button>
-      <button type="button" class="btn-primary-neuro" (click)="onConfirm()" [disabled]="!canSubmit" i18n="@@nurseDeleteMedicationModal.confirm">
+      <button
+        type="button"
+        id="nurse-delete-medication-confirm-btn"
+        class="btn-primary-neuro"
+        (click)="onConfirm()"
+        [disabled]="!canSubmit"
+        i18n="@@nurseDeleteMedicationModal.confirm"
+      >
         Eliminar Permanentemente
       </button>
     </div>

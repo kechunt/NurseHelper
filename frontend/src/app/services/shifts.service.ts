@@ -112,10 +112,7 @@ export class ShiftsService {
   }
 
   saveWeeklySchedule(schedules: any[], weekStartDate: string): Observable<any> {
-    console.log(' Enviando al backend:', { schedules, weekStartDate });
-    return this.http.post(`${this.apiUrl}/weekly`, { schedules, weekStartDate }).pipe(
-      tap(response => console.log(' Respuesta del backend:', response))
-    );
+    return this.http.post(`${this.apiUrl}/weekly`, { schedules, weekStartDate });
   }
 
   getShiftAttendance(date: string, shiftId: number): Observable<ShiftAttendanceItem[]> {

@@ -14,6 +14,7 @@
     <div class="modal-header">
       <h3 id="nurse-suspend-medication-dialog-title" i18n="@@nurseSuspendMedicationModal.title">⏸️ Suspender Medicamento</h3>
       <button
+        id="nurse-suspend-medication-header-close-btn"
         type="button"
         class="close-btn"
         aria-label="Cerrar"
@@ -45,6 +46,9 @@
       <div class="form-group" *ngIf="durationType === 'custom'">
         <label for="suspend-until" i18n="@@nurseSuspendMedicationModal.untilLabel">Suspender hasta:</label>
         <input id="suspend-until" type="date" class="neuro-input" [(ngModel)]="untilDate" />
+        <small class="hint-text" i18n="@@nurseSuspendMedicationModal.untilHint">
+          La suspensión se aplicará hasta el final del día indicado (fecha local).
+        </small>
       </div>
 
       <div class="form-group">
@@ -62,10 +66,23 @@
     </div>
 
     <div class="modal-footer">
-      <button type="button" class="btn-secondary-neuro" (click)="onCancel()" i18n="@@nurseSuspendMedicationModal.cancel">
+      <button
+        id="nurse-suspend-medication-cancel-btn"
+        type="button"
+        class="btn-secondary-neuro"
+        (click)="onCancel()"
+        i18n="@@nurseSuspendMedicationModal.cancel"
+      >
         Cancelar
       </button>
-      <button type="button" class="btn-primary-neuro" (click)="onConfirm()" [disabled]="!canSubmit" i18n="@@nurseSuspendMedicationModal.confirm">
+      <button
+        type="button"
+        id="nurse-suspend-medication-confirm-btn"
+        class="btn-primary-neuro"
+        (click)="onConfirm()"
+        [disabled]="!canSubmit"
+        i18n="@@nurseSuspendMedicationModal.confirm"
+      >
         Suspender
       </button>
     </div>

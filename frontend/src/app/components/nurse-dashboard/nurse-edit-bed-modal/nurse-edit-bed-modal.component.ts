@@ -159,6 +159,10 @@ export class NurseEditBedModalComponent implements OnChanges {
     return eff != null && eff !== aid;
   }
 
+  patientRowSelectAriaLabel(patient: AdminPatient): string {
+    return $localize`:@@nurseEditBedModal.rowSelectPatient:Seleccionar paciente ${patient.firstName}:fn: ${patient.lastName}:ln:`;
+  }
+
   loadPatientsPool(): void {
     const areaId = this.bedAreaId();
     if (!areaId) {

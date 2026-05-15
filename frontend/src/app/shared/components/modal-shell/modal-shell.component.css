@@ -1,0 +1,135 @@
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 2rem;
+  backdrop-filter: blur(4px);
+}
+
+.modal-content {
+  background: #e0e5ec;
+  border-radius: 30px;
+  max-width: 500px;
+  width: 100%;
+  max-height: min(90vh, 44rem);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow:
+    30px 30px 60px rgba(0, 0, 0, 0.3),
+    -30px -30px 60px rgba(255, 255, 255, 0.1);
+}
+
+.modal-content.modal-large {
+  max-width: 720px;
+}
+
+.modal-header {
+  padding: 2rem 2rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(174, 174, 192, 0.3);
+  flex-shrink: 0;
+}
+
+/* Contenido proyectado (modal-body / modal-footer en el host del consumidor) */
+:host ::ng-deep .modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+:host ::ng-deep .modal-footer {
+  flex-shrink: 0;
+}
+
+.modal-header h3 {
+  color: #4a5568;
+  font-size: 1.5rem;
+  font-weight: 300;
+  margin: 0;
+}
+
+.modal-shell-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.modal-shell-title-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.close-btn {
+  background: #e0e5ec;
+  border: none;
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  font-size: 20px;
+  color: #4a5568;
+  cursor: pointer;
+  box-shadow:
+    6px 6px 12px #bebebe,
+    -6px -6px 12px #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-btn:hover {
+  box-shadow:
+    4px 4px 8px #bebebe,
+    -4px -4px 8px #ffffff;
+}
+
+@media (max-width: 768px) {
+  .modal-backdrop {
+    padding: 0.75rem;
+    align-items: center;
+  }
+
+  .modal-content {
+    border-radius: 20px;
+    max-height: min(92dvh, 44rem);
+    width: 100%;
+  }
+
+  .modal-header {
+    padding: 1.25rem 1.25rem 0.75rem;
+  }
+
+  .modal-header h3 {
+    font-size: 1.2rem;
+  }
+
+  :host ::ng-deep .modal-footer {
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem max(1.25rem, env(safe-area-inset-bottom, 0px));
+  }
+
+  :host ::ng-deep .modal-footer .neuro-btn,
+  :host ::ng-deep .modal-footer .btn-primary-neuro,
+  :host ::ng-deep .modal-footer .btn-secondary-neuro {
+    width: 100%;
+    justify-content: center;
+  }
+
+  :host ::ng-deep .modal-body {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+  }
+}

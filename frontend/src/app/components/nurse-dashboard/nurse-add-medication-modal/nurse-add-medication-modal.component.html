@@ -9,10 +9,11 @@
   >
     <div class="modal-header">
       <h3 id="nurse-add-medication-dialog-title">
-        <span i18n="@@nurseAddMedicationModal.titleBase"><app-hero-icon name="beaker" /> Agregar Medicamento</span>
+        <span i18n="@@nurseAddMedicationModal.titleBase"><app-bootstrap-icon name="beaker" /> Agregar Medicamento</span>
         <ng-container *ngIf="getSelectedPatientName() as pn"><span aria-hidden="true"> — </span>{{ pn }}</ng-container>
       </h3>
       <button
+        id="nurse-add-medication-header-close-btn"
         type="button"
         class="close-btn"
         aria-label="Cerrar"
@@ -115,7 +116,7 @@
                 </button>
               </div>
               <button type="button" class="add-time-btn" (click)="addTime()" i18n="@@nurseAddMedicationModal.addTimeBtn">
-                <app-hero-icon name="plus-circle" /> Agregar hora
+                <app-bootstrap-icon name="plus-circle" /> Agregar hora
               </button>
             </div>
           </div>
@@ -177,12 +178,25 @@
     </div>
 
     <div class="modal-footer">
-      <button class="btn-secondary-neuro" type="button" (click)="onCancel()" [disabled]="isAdding" i18n="@@nurseAddMedicationModal.cancel">
+      <button
+        id="nurse-add-medication-cancel-btn"
+        class="btn-secondary-neuro"
+        type="button"
+        (click)="onCancel()"
+        [disabled]="isAdding"
+        i18n="@@nurseAddMedicationModal.cancel"
+      >
         Cancelar
       </button>
-      <button class="btn-primary-neuro" type="button" (click)="confirmAdd()" [disabled]="isAdding">
-        <span *ngIf="isAdding" i18n="@@nurseAddMedicationModal.adding"><app-hero-icon name="clock" /> Agregando...</span>
-        <span *ngIf="!isAdding" i18n="@@nurseAddMedicationModal.submitAdd"><app-hero-icon name="beaker" /> Agregar Medicamento</span>
+      <button
+        id="nurse-add-medication-submit-btn"
+        class="btn-primary-neuro"
+        type="button"
+        (click)="confirmAdd()"
+        [disabled]="isAdding"
+      >
+        <span *ngIf="isAdding" i18n="@@nurseAddMedicationModal.adding"><app-bootstrap-icon name="clock" /> Agregando...</span>
+        <span *ngIf="!isAdding" i18n="@@nurseAddMedicationModal.submitAdd"><app-bootstrap-icon name="beaker" /> Agregar Medicamento</span>
       </button>
     </div>
   </div>

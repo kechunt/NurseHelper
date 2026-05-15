@@ -1,9 +1,19 @@
-<div class="staff-dashboard-quick-actions" role="group" aria-label="Accesos de coordinación y reportes">
-  <button type="button" class="nav-link staff-dashboard-quick-link" (click)="qa.openTeamHandover()">
-    📋 Coordinación
-    @if (qa.teamHandoverPendingNotice()) {
-      <span class="quick-pending-chip">Pendiente</span>
-    }
-  </button>
-  <button type="button" class="nav-link staff-dashboard-quick-link" (click)="qa.openReports()">📈 Reportes</button>
-</div>
+<button
+  type="button"
+  class="nav-link staff-dashboard-quick-link"
+  (click)="qa.openTeamHandover()"
+  title="Coordinación de turno y nota de paso"
+>
+  <span i18n="@@staffQuickActionsHtml.handoverButton">📋 Coordinación</span>
+  @if (qa.teamHandoverPendingNotice()) {
+    <span class="quick-pending-chip" i18n="@@staffQuickActionsHtml.pendingChip">Pendiente</span>
+  }
+</button>
+<button
+  type="button"
+  class="nav-link staff-dashboard-quick-link"
+  (click)="qa.openReports()"
+  title="Reportes"
+>
+  <span i18n="@@staffQuickActionsHtml.reportsButton">📈 Reportes</span>
+</button>

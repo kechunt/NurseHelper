@@ -2,12 +2,12 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ModalFocusTrapDirective } from '../../../shared/directives/modal-focus-trap.directive';
 import { MedicationForPharmacy } from '../../../services/nurse.service';
-import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
+import { BootstrapIconComponent } from '../../../shared/components/bootstrap-icon/bootstrap-icon.component';
 
 @Component({
   selector: 'app-nurse-pharmacy-patients-modal',
   standalone: true,
-  imports: [CommonModule, ModalFocusTrapDirective, HeroIconComponent],
+  imports: [CommonModule, ModalFocusTrapDirective, BootstrapIconComponent],
   templateUrl: './nurse-pharmacy-patients-modal.component.html',
   styleUrls: ['./nurse-pharmacy-patients-modal.component.css'],
 })

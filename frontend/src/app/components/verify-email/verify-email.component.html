@@ -21,7 +21,7 @@
 
     <p class="auth-email-highlight">{{ email }}</p>
 
-    <form (ngSubmit)="onSubmit()" class="auth-form">
+    <form id="verify-email-form" (ngSubmit)="onSubmit()" class="auth-form">
       <div class="auth-input-group">
         <label for="code">Código de verificación</label>
         <input
@@ -44,6 +44,7 @@
       <div *ngIf="error" class="auth-error">{{ error }}</div>
 
       <button
+        id="verify-email-submit-btn"
         type="submit"
         class="neuro-btn"
         [disabled]="loading || code.length !== 6"
@@ -55,6 +56,7 @@
     <div class="verify-resend-block">
       <p class="verify-resend-label">¿No recibiste el código?</p>
       <button
+        id="verify-email-resend-btn"
         type="button"
         class="neuro-btn neuro-btn-secondary"
         (click)="resendCode()"
@@ -67,7 +69,7 @@
     <div class="auth-footer">
       <p>
         ¿Ya verificaste?
-        <a routerLink="/login" class="auth-link">Volver al inicio de sesión</a>
+        <a id="verify-email-login-link" routerLink="/login" class="auth-link">Volver al inicio de sesión</a>
       </p>
     </div>
   </div>

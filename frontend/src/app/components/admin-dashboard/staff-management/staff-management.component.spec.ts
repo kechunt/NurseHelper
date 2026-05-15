@@ -1,11 +1,23 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute, convertToParamMap } from '@angular/router';
 import { of } from 'rxjs';
 import { StaffManagementComponent } from './staff-management.component';
 import { AdminService } from '../../../services/admin.service';
 import { ShiftsService } from '../../../services/shifts.service';
 import { ConfirmationService } from '../../../services/confirmation.service';
 import { ToastService } from '../../../services/toast.service';
+
+function ensureLocalizeShim(): void {
+  const g = globalThis as any;
+  if (typeof g.$localize === 'function') {
+    return;
+  }
+  g.$localize = (strings: TemplateStringsArray, ...expr: unknown[]) =>
+    strings.reduce((acc, rawPart, idx) => {
+      const part = idx === 0 ? rawPart.replace(/^:.*?:/, '') : rawPart;
+      return acc + part + (idx < expr.length ? String(expr[idx]) : '');
+    }, '');
+}
 
 describe('StaffManagementComponent', () => {
   let fixture: ComponentFixture<StaffManagementComponent>;
@@ -52,12 +64,20 @@ describe('StaffManagementComponent', () => {
   };
 
   beforeEach(async () => {
+    ensureLocalizeShim();
     await TestBed.configureTestingModule({
       imports: [StaffManagementComponent],
       providers: [
         { provide: AdminService, useValue: adminServiceMock },
         { provide: ShiftsService, useValue: shiftsServiceMock },
         { provide: Router, useValue: routerMock },
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: { queryParamMap: convertToParamMap({}) },
+            queryParamMap: of(convertToParamMap({})),
+          },
+        },
         { provide: ConfirmationService, useValue: confirmationServiceMock },
         { provide: ToastService, useValue: toastServiceMock },
       ],
@@ -67,7 +87,7 @@ describe('StaffManagementComponent', () => {
   });
 
   afterEach(() => {
-    fixture.destroy();
+    fixture?.destroy();
   });
 
   it('crea el componente', () => {
@@ -133,5 +153,47 @@ describe('StaffManagementComponent', () => {
     const c = fixture.componentInstance;
     expect(c.getNursePhoneDisplay({ phone: ' 555 ' } as any)).toBe('555');
     expect(c.getNursePhoneDisplay({} as any)).toBe('No registrado');
+  });
+
+  it('modal editar enfermera usa app-modal-shell', () => {
+    fixture.detectChanges();
+    const c = fixture.componentInstance;
+    c.openEditModal(c.nurses[0]);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Editar Usuario');
+    expect(fixture.nativeElement.querySelector('app-modal-shell .modal-backdrop')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('app-modal-shell .modal-body')).toBeTruthy();
+    expect(fixture.nativeElement.textContent).toContain('Capacidad Máxima');
+  });
+
+  it('modal gestionar pacientes usa app-modal-shell con modal-large', () => {
+    fixture.detectChanges();
+    const c = fixture.componentInstance;
+    c.openPatientsModal(c.nurses[0]);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Gestionar Pacientes');
+    expect(fixture.nativeElement.querySelector('app-modal-shell .modal-content.modal-large')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('app-modal-shell .modal-body')).toBeTruthy();
+    expect(fixture.nativeElement.textContent).toContain('Pacientes Asignados');
+  });
+
+  it('expone cadenas de flujo enfermeras/pacientes localizables', () => {
+    fixture.detectChanges();
+    const c = fixture.componentInstance;
+    expect(c.staffToastNurseUpdated).toContain('actualizada');
+    expect(c.staffMgmtOpPresent).toContain('turno');
+    expect(c.staffConfirmCancel).toContain('Cancelar');
+  });
+
+  it('helpers HTML: ARIA asignar área, alerta sin área, título editar y opción cama', () => {
+    const c = fixture.componentInstance;
+    const nurseOn = { firstName: 'Ana', lastName: 'Ruiz', onCurrentShift: true } as any;
+    expect(c.getAriaLabelAssignAreaToNurse(nurseOn)).toContain('Ana');
+    expect(c.getNurseAreaAlertMainText(nurseOn)).toContain('turno');
+    const nurseOff = { firstName: 'Bo', lastName: 'Díaz', onCurrentShift: false } as any;
+    expect(c.getNurseAreaAlertMainText(nurseOff)).not.toContain('en turno');
+    c.selectedNurse = { firstName: 'Luis', lastName: 'Gómez' } as any;
+    expect(c.getEditUserModalTitle()).toContain('Luis');
+    expect(c.formatBedOptionLabel({ id: 1, bedNumber: '5', patientId: 9 } as any)).toContain('5');
   });
 });

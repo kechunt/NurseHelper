@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, Input, OnInit, inject } from '@angular/core';
+import { CommonModule, DOCUMENT } from '@angular/common';
+import { Component, DestroyRef, HostListener, Input, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { catchError, finalize, interval, of } from 'rxjs';
@@ -18,9 +18,50 @@ export class InAppNotificationsBellComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly document = inject(DOCUMENT);
 
   /** `admin` | `supervisor` | `nurse` — solo afecta navegación opcional desde el payload. */
   @Input() dashboardKind: 'admin' | 'supervisor' | 'nurse' = 'admin';
+
+  get notificationBellToggleId(): string {
+    return `in-app-notifications-bell-${this.dashboardKind}-toggle`;
+  }
+
+  get notificationBellPanelId(): string {
+    return `in-app-notifications-bell-${this.dashboardKind}-panel`;
+  }
+
+  get notificationBellMarkAllReadId(): string {
+    return `in-app-notifications-bell-${this.dashboardKind}-mark-all-read-btn`;
+  }
+
+  get notificationBellRefreshId(): string {
+    return `in-app-notifications-bell-${this.dashboardKind}-refresh-btn`;
+  }
+
+  get notificationBellLoadingId(): string {
+    return `in-app-notifications-bell-${this.dashboardKind}-loading`;
+  }
+
+  get notificationBellEmptyId(): string {
+    return `in-app-notifications-bell-${this.dashboardKind}-empty`;
+  }
+
+  notificationBellRowOpenBtnId(n: UserNotificationDto): string {
+    return `in-app-notifications-bell-${this.dashboardKind}-row-${n.id}-open-btn`;
+  }
+
+  notificationBellRowMarkReadBtnId(n: UserNotificationDto): string {
+    return `in-app-notifications-bell-${this.dashboardKind}-row-${n.id}-mark-read-btn`;
+  }
+
+  notificationBellRowAcknowledgeBtnId(n: UserNotificationDto): string {
+    return `in-app-notifications-bell-${this.dashboardKind}-row-${n.id}-acknowledge-btn`;
+  }
+
+  notificationBellRowRemoveBtnId(n: UserNotificationDto): string {
+    return `in-app-notifications-bell-${this.dashboardKind}-row-${n.id}-remove-btn`;
+  }
 
   items: UserNotificationDto[] = [];
   panelOpen = false;
@@ -31,17 +72,47 @@ export class InAppNotificationsBellComponent implements OnInit {
     interval(60_000)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.loadOnce());
+    this.destroyRef.onDestroy(() => this.clearMobilePanelTop());
+  }
+
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    if (this.panelOpen) {
+      this.syncMobilePanelTop();
+    }
   }
 
   togglePanel(): void {
     this.panelOpen = !this.panelOpen;
     if (this.panelOpen) {
       this.refresh();
+      queueMicrotask(() => this.syncMobilePanelTop());
+    } else {
+      this.clearMobilePanelTop();
     }
   }
 
   closePanel(): void {
     this.panelOpen = false;
+    this.clearMobilePanelTop();
+  }
+
+  /** En móvil, coloca el panel bajo la cabecera real (enfermería tiene dos filas). */
+  private syncMobilePanelTop(): void {
+    if (typeof window === 'undefined' || !window.matchMedia('(max-width: 768px)').matches) {
+      this.clearMobilePanelTop();
+      return;
+    }
+    const header = this.document.querySelector<HTMLElement>('.dashboard-header');
+    if (!header) {
+      return;
+    }
+    const top = Math.max(8, Math.round(header.getBoundingClientRect().bottom + 8));
+    this.document.documentElement.style.setProperty('--nh-notif-panel-top-active', `${top}px`);
+  }
+
+  private clearMobilePanelTop(): void {
+    this.document.documentElement.style.removeProperty('--nh-notif-panel-top-active');
   }
 
   refresh(): void {

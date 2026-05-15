@@ -96,9 +96,6 @@ export class AuthService {
       })
       .pipe(
         tap((response) => {
-          if (!environment.production) {
-            console.log(' Login OK', loginUrl);
-          }
           this.setToken(response.token);
           this.setUser(response.user);
         })

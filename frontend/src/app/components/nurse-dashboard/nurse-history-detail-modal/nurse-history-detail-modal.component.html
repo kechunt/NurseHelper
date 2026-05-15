@@ -14,6 +14,7 @@
     <div class="modal-header">
       <h3 id="nurse-history-detail-dialog-title" i18n="@@nurseHistoryDetailModal.title">Detalle del registro</h3>
       <button
+        id="nurse-history-detail-header-close-btn"
         type="button"
         class="close-btn"
         aria-label="Cerrar"
@@ -30,31 +31,39 @@
             <div class="history-detail-badges">
               <span class="history-detail-badge">{{ record.type }}</span>
               <span class="history-detail-badge history-detail-badge--status">{{ statusLabel(record) }}</span>
-              <span class="history-detail-badge history-detail-badge--postponed" *ngIf="isPostponed(record)">Pospuesto</span>
-              <span class="history-detail-badge history-detail-badge--notes" *ngIf="hasExtraNotes(record)"><app-hero-icon name="clipboard-document" /> Notas</span>
+              <span
+                class="history-detail-badge history-detail-badge--postponed"
+                *ngIf="isPostponed(record)"
+                i18n="@@nurseHistoryDetailModal.badgePostponed"
+                >Pospuesto</span>
+              <span
+                class="history-detail-badge history-detail-badge--notes"
+                *ngIf="hasExtraNotes(record)"
+                ><app-bootstrap-icon name="clipboard-document" />
+                <span i18n="@@nurseHistoryDetailModal.badgeNotes">Notas</span></span>
             </div>
-            <div class="history-detail-desc">{{ record.description }}</div>
+            <div class="history-detail-desc">{{ (record.description || '').trim() || emDash() }}</div>
             <div class="history-detail-sub" *ngIf="record.medication">
-              <app-hero-icon name="beaker" /> {{ record.medication }}<span *ngIf="record.dosage"> · {{ record.dosage }}</span>
+              <app-bootstrap-icon name="beaker" /> {{ record.medication }}<span *ngIf="record.dosage"> · {{ record.dosage }}</span>
             </div>
           </div>
         </div>
 
         <div class="history-detail-grid">
           <div class="history-detail-kv">
-            <div class="history-detail-k">Fecha/Hora (tabla)</div>
+            <div class="history-detail-k" i18n="@@nurseHistoryDetailModal.kvTableDateTime">Fecha/Hora (tabla)</div>
             <div class="history-detail-v">{{ record.date }} · {{ record.time }}</div>
           </div>
           <div class="history-detail-kv">
-            <div class="history-detail-k">Profesional</div>
-            <div class="history-detail-v">{{ record.nurseName || '—' }}</div>
+            <div class="history-detail-k" i18n="@@nurseHistoryDetailModal.kvProfessional">Profesional</div>
+            <div class="history-detail-v">{{ record.nurseName || emDash() }}</div>
           </div>
           <div class="history-detail-kv" *ngIf="record.administeredAt && record.status === 'administered'">
-            <div class="history-detail-k">Hora real de realización</div>
+            <div class="history-detail-k" i18n="@@nurseHistoryDetailModal.kvActualTime">Hora real de realización</div>
             <div class="history-detail-v">{{ formatMaybeDateTime(record.administeredAt) }}</div>
           </div>
           <div class="history-detail-kv" *ngIf="record.scheduledTimePlanned">
-            <div class="history-detail-k">Horario planificado</div>
+            <div class="history-detail-k" i18n="@@nurseHistoryDetailModal.kvPlannedSlot">Horario planificado</div>
             <div class="history-detail-v">{{ formatMaybeDateTime(record.scheduledTimePlanned) }}</div>
           </div>
         </div>
@@ -72,7 +81,13 @@
       </div>
     </div>
     <div class="modal-footer">
-      <button type="button" class="btn-primary-neuro" (click)="onClose()" i18n="@@nurseHistoryDetailModal.close">
+      <button
+        type="button"
+        id="nurse-history-detail-close-btn"
+        class="btn-primary-neuro"
+        (click)="onClose()"
+        i18n="@@nurseHistoryDetailModal.close"
+      >
         Cerrar
       </button>
     </div>

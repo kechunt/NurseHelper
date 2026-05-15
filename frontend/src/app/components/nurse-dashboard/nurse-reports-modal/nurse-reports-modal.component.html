@@ -14,10 +14,11 @@
   >
     <div class="modal-header nurse-reports-modal-header">
       <h3 id="nurse-reports-dialog-title" i18n="@@nurseReportsModal.title">
-        <app-hero-icon name="chart-bar"></app-hero-icon>
+        <app-bootstrap-icon name="chart-bar"></app-bootstrap-icon>
         Reportes (últimos 7 días)<span *ngIf="showStaffNurseFilter"> · gestión</span>
       </h3>
       <button
+        id="nurse-reports-header-close-btn"
         type="button"
         class="close-btn"
         aria-label="Cerrar"
@@ -29,29 +30,40 @@
     </div>
     <div class="modal-body nurse-reports-modal-body">
       <p class="nurse-reports-period-line" *ngIf="periodLabel && !loading">
-        <strong>Periodo:</strong> {{ periodLabel }} · {{ resolveScopeLine() }}
+        <strong i18n="@@nurseReportsModal.periodPrefix">Periodo:</strong> {{ periodLabel }} · {{ resolveScopeLine() }}
       </p>
       <div class="nurse-reports-period-line nurse-reports-staff-filter" *ngIf="showStaffNurseFilter && staffNurses.length">
-        <label class="nurse-reports-staff-filter__label" for="staff-reports-nurse-select">Enfermera</label>
+        <label
+          class="nurse-reports-staff-filter__label"
+          for="staff-reports-nurse-select"
+          i18n="@@nurseReportsModal.staffNurseFilterLabel"
+          >Enfermera</label>
         <select
           id="staff-reports-nurse-select"
           class="nurse-reports-staff-filter__select"
+          aria-label="Filtrar reportes por enfermera"
+          i18n-aria-label="@@nurseReportsModal.staffNurseSelectAriaLabel"
           [value]="staffNurseUserId === null ? '' : staffNurseUserId"
           (change)="onStaffNurseSelect($event)"
           [disabled]="loading"
         >
-          <option value="">Todas (todos los pacientes)</option>
+          <option value="" i18n="@@nurseReportsModal.staffNurseOptionAll">Todas (todos los pacientes)</option>
           <option *ngFor="let n of staffNurses" [value]="n.id">{{ n.name }}</option>
         </select>
       </div>
-      <p class="empty-message nurse-reports-loading" *ngIf="loading">Cargando datos…</p>
+      <p class="empty-message nurse-reports-loading" *ngIf="loading" i18n="@@nurseReportsModal.loadingMessage">
+        Cargando datos…
+      </p>
       <p class="empty-message nurse-reports-error" *ngIf="!loading && error">{{ error }}</p>
 
       <div class="nurse-reports-layout" *ngIf="!loading && !error && compliance && medication">
         <section class="nurse-reports-section" *ngIf="compliance">
-          <h4 class="nurse-reports-section-title">Cumplimiento (tareas y horarios)</h4>
+          <h4 class="nurse-reports-section-title" i18n="@@nurseReportsModal.sectionComplianceTitle">
+            Cumplimiento (tareas y horarios)
+          </h4>
           <div class="nurse-reports-kpi-row">
             <button
+              id="nurse-reports-kpi-scheduled-btn"
               type="button"
               class="nurse-reports-kpi"
               [class.nurse-reports-kpi--selected]="selectedComplianceFilter === 'scheduled'"
@@ -62,6 +74,7 @@
               <span class="nurse-reports-kpi__lbl" i18n="@@nurseReportsModal.kpi.scheduled">Programados</span>
             </button>
             <button
+              id="nurse-reports-kpi-completed-btn"
               type="button"
               class="nurse-reports-kpi nurse-reports-kpi--ok"
               [class.nurse-reports-kpi--selected]="selectedComplianceFilter === 'completed'"
@@ -72,6 +85,7 @@
               <span class="nurse-reports-kpi__lbl" i18n="@@nurseReportsModal.kpi.completed">Completados</span>
             </button>
             <button
+              id="nurse-reports-kpi-missed-btn"
               type="button"
               class="nurse-reports-kpi nurse-reports-kpi--warn"
               [class.nurse-reports-kpi--selected]="selectedComplianceFilter === 'missed'"
@@ -82,6 +96,7 @@
               <span class="nurse-reports-kpi__lbl" i18n="@@nurseReportsModal.kpi.missed">No realizados</span>
             </button>
             <button
+              id="nurse-reports-kpi-cancelled-btn"
               type="button"
               class="nurse-reports-kpi"
               [class.nurse-reports-kpi--selected]="selectedComplianceFilter === 'cancelled'"
@@ -92,6 +107,7 @@
               <span class="nurse-reports-kpi__lbl" i18n="@@nurseReportsModal.kpi.cancelled">Cancelados</span>
             </button>
             <button
+              id="nurse-reports-kpi-rate-btn"
               type="button"
               class="nurse-reports-kpi nurse-reports-kpi--accent"
               [class.nurse-reports-kpi--selected]="selectedComplianceFilter === 'rate'"
@@ -106,8 +122,8 @@
             <table class="unified-tasks-table neuro-table">
               <thead>
                 <tr>
-                  <th>Paciente</th>
-                  <th>Cumplimiento</th>
+                  <th i18n="@@nurseReportsModal.colPatient">Paciente</th>
+                  <th i18n="@@nurseReportsModal.colCompliance">Cumplimiento</th>
                 </tr>
               </thead>
               <tbody>
@@ -118,23 +134,26 @@
               </tbody>
             </table>
           </div>
-          <p class="empty-message" *ngIf="!filteredComplianceRows.length">
-            {{ selectedComplianceFilter === 'cancelled' ? 'No hay desglose desglosado de cancelados en este periodo.' : 'Sin filas de cumplimiento para el filtro seleccionado.' }}
+          <p class="empty-message" *ngIf="!filteredComplianceRows.length && selectedComplianceFilter === 'cancelled'" i18n="@@nurseReportsModal.emptyComplianceCancelled">
+            No hay desglose de cancelados en este periodo.
+          </p>
+          <p class="empty-message" *ngIf="!filteredComplianceRows.length && selectedComplianceFilter !== 'cancelled'" i18n="@@nurseReportsModal.emptyComplianceFiltered">
+            Sin filas de cumplimiento para el filtro seleccionado.
           </p>
         </section>
 
         <section class="nurse-reports-section" *ngIf="medication">
-          <h4 class="nurse-reports-section-title">Medicación en el periodo</h4>
+          <h4 class="nurse-reports-section-title" i18n="@@nurseReportsModal.sectionMedicationTitle">Medicación en el periodo</h4>
           <div class="table-wrapper-neuro unified-table-container nurse-reports-table-wrap" *ngIf="filteredMedicationRows.length; else nurseRepMedEmpty">
             <table class="unified-tasks-table neuro-table">
               <thead>
                 <tr>
-                  <th>Paciente</th>
-                  <th>Medicamento</th>
-                  <th>Prog.</th>
-                  <th>Adm.</th>
-                  <th>No adm.</th>
-                  <th>%</th>
+                  <th i18n="@@nurseReportsModal.colMedPatient">Paciente</th>
+                  <th i18n="@@nurseReportsModal.colMedMedication">Medicamento</th>
+                  <th i18n="@@nurseReportsModal.colMedScheduled">Prog.</th>
+                  <th i18n="@@nurseReportsModal.colMedAdministered">Adm.</th>
+                  <th i18n="@@nurseReportsModal.colMedMissed">No adm.</th>
+                  <th i18n="@@nurseReportsModal.colMedPercent">%</th>
                 </tr>
               </thead>
               <tbody>
@@ -150,52 +169,77 @@
             </table>
           </div>
           <ng-template #nurseRepMedEmpty>
-            <p class="empty-message">
-              {{ selectedComplianceFilter === 'cancelled' ? 'No hay filas de medicación canceladas en este periodo.' : 'Sin filas de medicación en este periodo.' }}
+            <p
+              class="empty-message"
+              *ngIf="selectedComplianceFilter === 'cancelled'"
+              i18n="@@nurseReportsModal.emptyMedicationCancelled"
+            >
+              No hay filas de medicación canceladas en este periodo.
+            </p>
+            <p
+              class="empty-message"
+              *ngIf="selectedComplianceFilter !== 'cancelled'"
+              i18n="@@nurseReportsModal.emptyMedicationFiltered"
+            >
+              Sin filas de medicación en este periodo.
             </p>
           </ng-template>
         </section>
       </div>
     </div>
     <div class="modal-footer nurse-reports-modal-footer">
-      <button type="button" class="btn-secondary-neuro" (click)="dismissed.emit()">
+      <button
+        id="nurse-reports-footer-close-btn"
+        type="button"
+        class="btn-secondary-neuro"
+        (click)="dismissed.emit()"
+        i18n="@@nurseReportsModal.closeButton"
+      >
         Cerrar
       </button>
       <button
+        id="nurse-reports-download-csv-compliance-btn"
         type="button"
         class="btn-secondary-neuro"
         (click)="csvDownload.emit('compliance')"
         [disabled]="loading || !!error || exporting"
         title="Descargar CSV de cumplimiento"
+        i18n-title="@@nurseReportsModal.downloadCsvComplianceTitle"
       >
-        <app-hero-icon name="document-text"></app-hero-icon> CSV cumplimiento
+        <app-bootstrap-icon name="document-text"></app-bootstrap-icon> CSV cumplimiento
       </button>
       <button
+        id="nurse-reports-download-csv-medication-btn"
         type="button"
         class="btn-secondary-neuro"
         (click)="csvDownload.emit('medication')"
         [disabled]="loading || !!error || exporting"
         title="Descargar CSV de medicación"
+        i18n-title="@@nurseReportsModal.downloadCsvMedicationTitle"
       >
-        <app-hero-icon name="document-text"></app-hero-icon> CSV medicación
+        <app-bootstrap-icon name="document-text"></app-bootstrap-icon> CSV medicación
       </button>
       <button
+        id="nurse-reports-download-excel-compliance-btn"
         type="button"
         class="btn-secondary-neuro"
         (click)="excelDownload.emit('compliance')"
         [disabled]="loading || !!error || exporting"
         title="Descargar Excel de cumplimiento"
+        i18n-title="@@nurseReportsModal.downloadExcelComplianceTitle"
       >
-        <app-hero-icon name="table-cells"></app-hero-icon> Excel cumplimiento
+        <app-bootstrap-icon name="table-cells"></app-bootstrap-icon> Excel cumplimiento
       </button>
       <button
+        id="nurse-reports-download-excel-medication-btn"
         type="button"
         class="btn-secondary-neuro"
         (click)="excelDownload.emit('medication')"
         [disabled]="loading || !!error || exporting"
         title="Descargar Excel de medicación"
+        i18n-title="@@nurseReportsModal.downloadExcelMedicationTitle"
       >
-        <app-hero-icon name="table-cells"></app-hero-icon> Excel medicación
+        <app-bootstrap-icon name="table-cells"></app-bootstrap-icon> Excel medicación
       </button>
     </div>
   </div>

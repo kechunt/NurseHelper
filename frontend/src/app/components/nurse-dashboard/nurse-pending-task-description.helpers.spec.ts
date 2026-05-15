@@ -1,6 +1,20 @@
 import type { TaskItem } from '../../services/nurse.service';
 import { pendingTaskDescriptionPreview } from './nurse-pending-task-description.helpers';
 
+function ensureLocalizeShim(): void {
+  const g = globalThis as any;
+  if (typeof g.$localize === 'function') {
+    return;
+  }
+  g.$localize = (strings: TemplateStringsArray, ...expr: unknown[]) =>
+    strings.reduce((acc, rawPart, idx) => {
+      const part = idx === 0 ? rawPart.replace(/^:.*?:/, '') : rawPart;
+      return acc + part + (idx < expr.length ? String(expr[idx]) : '');
+    }, '');
+}
+
+beforeAll(() => ensureLocalizeShim());
+
 describe('pendingTaskDescriptionPreview', () => {
   it('devuelve em dash sin descripción o solo espacios', () => {
     expect(pendingTaskDescriptionPreview({} as TaskItem)).toBe('—');

@@ -51,13 +51,49 @@ describe('NursePharmacyQuickModalComponent', () => {
   it('toggleAllMedications marca todas y emite requestStateChanged', () => {
     let changes = 0;
     const sub = fixture.componentInstance.requestStateChanged.subscribe(() => changes++);
-    const input = document.createElement('input');
-    input.type = 'checkbox';
+    const input = fixture.nativeElement.querySelector(
+      '#nurse-pharmacy-quick-select-all-checkbox'
+    ) as HTMLInputElement;
+    expect(input).toBeTruthy();
     input.checked = true;
-    fixture.componentInstance.toggleAllMedications({ target: input } as unknown as Event);
+    input.dispatchEvent(new Event('change'));
     expect(fixture.componentInstance.medications.every((m) => m.requested)).toBeTrue();
     expect(changes).toBe(1);
     sub.unsubscribe();
+  });
+
+  it('plantilla: ids seleccionar todos y ver pacientes por fila', () => {
+    expect(fixture.nativeElement.querySelector('#nurse-pharmacy-quick-select-all-checkbox')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('#nurse-pharmacy-quick-view-patients-0')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('#nurse-pharmacy-quick-view-patients-1')).toBeTruthy();
+  });
+
+  it('emite viewPatients al pulsar Ver pacientes en la primera fila', () => {
+    let payload: MedicationForPharmacy | undefined;
+    const sub = fixture.componentInstance.viewPatients.subscribe((m) => {
+      payload = m;
+    });
+    (fixture.nativeElement.querySelector('#nurse-pharmacy-quick-view-patients-0') as HTMLButtonElement).click();
+    expect(payload?.name).toBe('Paracetamol');
+    sub.unsubscribe();
+  });
+
+  it('plantilla: botón enviar solicitud con id y texto de seleccionados', () => {
+    const btn = fixture.nativeElement.querySelector('#nurse-pharmacy-quick-send-request-btn') as HTMLButtonElement;
+    expect(btn).toBeTruthy();
+    expect(btn.textContent).toContain('1');
+    expect(btn.textContent?.toLowerCase()).toContain('seleccionados');
+  });
+
+  it('plantilla: ids abrir módulo farmacia, cerrar pie y cerrar cabecera', () => {
+    const openBtn = fixture.nativeElement.querySelector('#nurse-pharmacy-quick-open-module-btn') as HTMLButtonElement;
+    const closeBtn = fixture.nativeElement.querySelector('#nurse-pharmacy-quick-close-btn') as HTMLButtonElement;
+    const headerClose = fixture.nativeElement.querySelector(
+      '#nurse-pharmacy-quick-header-close-btn'
+    ) as HTMLButtonElement;
+    expect(openBtn).toBeTruthy();
+    expect(closeBtn).toBeTruthy();
+    expect(headerClose).toBeTruthy();
   });
 
   it('emite dismissed al hacer clic en backdrop', () => {

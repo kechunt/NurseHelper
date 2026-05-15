@@ -1,4 +1,5 @@
 <div 
+  [attr.id]="'toast-item-' + toast.id"
   class="toast toast-{{ toast.type }}"
   role="alert"
   [attr.aria-live]="toast.type === 'error' ? 'assertive' : 'polite'"
@@ -6,13 +7,14 @@
   [attr.aria-atomic]="true"
 >
   <div class="toast-content">
-    <span class="toast-icon" aria-hidden="true"><app-hero-icon [name]="getIconName(toast.type)" /></span>
+    <span class="toast-icon" aria-hidden="true"><app-bootstrap-icon [name]="getIconName(toast.type)" /></span>
     <div class="toast-message">
       <p>{{ toast.message }}</p>
       <div *ngIf="toast.action" class="toast-action">
         <button 
           type="button"
           class="toast-action-button"
+          [attr.id]="'toast-' + toast.id + '-action-btn'"
           (click)="handleAction()"
           [attr.aria-label]="'Ejecutar acción: ' + toast.action.label"
         >
@@ -23,6 +25,7 @@
     <button 
       type="button"
       class="toast-close"
+      [attr.id]="'toast-' + toast.id + '-close-btn'"
       (click)="close()"
       aria-label="Cerrar notificación"
       tabindex="0"

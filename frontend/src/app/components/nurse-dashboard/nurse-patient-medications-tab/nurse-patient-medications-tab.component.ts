@@ -3,16 +3,17 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import type { MedicationTodaySlot } from '../medication-today-slot.model';
 import { AdminTableRowActionsModalComponent } from '../../../shared/components/admin-table-row-actions-modal/admin-table-row-actions-modal.component';
-import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
+import { BootstrapIconComponent } from '../../../shared/components/bootstrap-icon/bootstrap-icon.component';
 import {
   medicationSlotPending,
   medicationSlotStatusLabel,
 } from '../nurse-patient-medication-helpers';
+import { nurseUiEmDash } from '../nurse-dashboard-ui-i18n.helpers';
 
 @Component({
   selector: 'app-nurse-patient-medications-tab',
   standalone: true,
-  imports: [CommonModule, FormsModule, AdminTableRowActionsModalComponent, HeroIconComponent],
+  imports: [CommonModule, FormsModule, AdminTableRowActionsModalComponent, BootstrapIconComponent],
   templateUrl: './nurse-patient-medications-tab.component.html',
   styleUrls: [
     '../../../shared/styles/admin-table-unified.css',
@@ -57,7 +58,7 @@ export class NursePatientMedicationsTabComponent {
 
   get isDiagnosisPlaceholder(): boolean {
     const t = this.diagnosisNormalized;
-    if (!t || t === '—') {
+    if (!t || t === nurseUiEmDash()) {
       return true;
     }
     return NursePatientMedicationsTabComponent.sinDiagnosticoPlaceholder.test(t);
@@ -91,6 +92,19 @@ export class NursePatientMedicationsTabComponent {
     return medicationSlotStatusLabel(slot);
   }
 
+  emDash(): string {
+    return nurseUiEmDash();
+  }
+
+  slotDosageCell(slot: MedicationTodaySlot): string {
+    const d = (slot.dosage ?? '').trim();
+    return d ? d : nurseUiEmDash();
+  }
+
+  medicationRowAriaLabel(slot: MedicationTodaySlot): string {
+    return $localize`:@@nursePatientMedicationsTab.rowAriaOpenMedicationSlot:Abrir acciones del medicamento de las ${slot.time}:time:`;
+  }
+
   openSlotActions(slot: MedicationTodaySlot): void {
     this.selectedSlotForActions = slot;
   }
@@ -111,10 +125,12 @@ export class NursePatientMedicationsTabComponent {
     if (!slot) {
       return [];
     }
+    const dosageLine = (slot.dosage ?? '').trim() ? (slot.dosage ?? '').trim() : 'Sin dosis';
+    const notesLine = (slot.notes ?? '').trim() ? (slot.notes ?? '').trim() : nurseUiEmDash();
     return [
-      `${slot.name} · ${slot.dosage || 'Sin dosis'}`,
+      `${slot.name} · ${dosageLine}`,
       `Estado: ${this.slotStatusLabel(slot)}`,
-      `Notas: ${slot.notes || '—'}`,
+      `Notas: ${notesLine}`,
     ];
   }
 

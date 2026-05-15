@@ -11,7 +11,7 @@ Este documento es corto y accionable. El detalle arquitectónico sigue en [`ADMI
 1. **¿Ya existe en `shared/`?** Estilos (`admin-panel-responsive`, `admin-table-unified`, `dashboard-layout`, `table-actions-normalized`), componentes (`PaginationComponent`, `ToastService`, `ConfirmationService`), directivas (`DebounceDirective`).
 2. **¿Misma acción en otro hijo de admin?** Copiar el marcado y clases de un módulo que ya esté alineado (p. ej. `users-management`, `areas-management`) en lugar de inventar clases nuevas.
 3. **Botones:** preferir **`neuro-btn`** + **`neuro-btn outlined`** (cancelar / secundario) como en el resto del panel admin; evitar enlaces disfrazados de botón para acciones principales.
-4. **Modales:** mismo esqueleto `modal-backdrop` → `modal-content` → `modal-header` / `modal-body` / `modal-footer`; si el flujo se repite, candidato a extraer `ModalShellComponent` (ver doc admin).
+4. **Modales:** mismo esqueleto `modal-backdrop` → `modal-content` → `modal-header` / `modal-body` / `modal-footer`; si el flujo se repite, usar **`app-modal-shell`** (piloto en `users-management`) o extraer variantes adicionales según el doc admin.
 5. **Datos / API:** **`AdminService`** + invalidación de caché; no duplicar llamadas HTTP si otro componente ya expone el mismo flujo.
 6. **Lógica repetida:** extraer un método privado compartido (p. ej. validación de `assignedAreaId`) en lugar de copiar bloques `if` + `alert`.
 

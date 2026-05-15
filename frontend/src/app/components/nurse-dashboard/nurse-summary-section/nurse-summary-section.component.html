@@ -1,76 +1,111 @@
 <div class="section-header nurse-module-header">
-  <h2 class="section-title">📊 Resumen general</h2>
+  <h2 id="nurse-summary-section-title" class="section-title">
+    <span i18n="@@nurseSummarySection.sectionTitle">📊 Resumen general</span>
+  </h2>
 </div>
 <div class="overview-container dashboard-overview">
   <div class="stats-grid nurse-summary-unified-stats-grid">
-    <div class="stat-card clickable" (click)="areaSummaryClick.emit()">
+    <div
+      id="nurse-summary-section-stat-area-card"
+      class="stat-card clickable"
+      (click)="areaSummaryClick.emit()"
+    >
       <div class="stat-icon">🏥</div>
       <div class="stat-content">
         <h3 class="stat-value stat-value--text">{{ assignedArea }}</h3>
-        <p class="stat-label">Área asignada</p>
+        <p class="stat-label" i18n="@@nurseSummarySection.statAreaAssignedLabel">Área asignada</p>
       </div>
-      <div class="click-hint">Ver detalle</div>
+      <div class="click-hint" i18n="@@nurseSummarySection.statAreaHintClick">Ver detalle</div>
     </div>
-    <div class="stat-card clickable" (click)="openPatientsModuleClick.emit()">
+    <div
+      id="nurse-summary-section-stat-patients-card"
+      class="stat-card clickable"
+      (click)="openPatientsModuleClick.emit()"
+    >
       <div class="stat-icon">👥</div>
       <div class="stat-content">
         <h3 class="stat-value stat-value--text">{{ assignedPatientsCount }} / {{ maxPatients }}</h3>
-        <p class="stat-label">Pacientes asignados</p>
+        <p class="stat-label" i18n="@@nurseSummarySection.statPatientsAssignedLabel">Pacientes asignados</p>
       </div>
-      <div class="click-hint">Ir a pacientes</div>
+      <div class="click-hint" i18n="@@nurseSummarySection.statPatientsHintClick">Ir a pacientes</div>
     </div>
-    <div class="stat-card clickable" (click)="openTasksQuickClick.emit()">
+    <div
+      id="nurse-summary-section-stat-pending-tasks-card"
+      class="stat-card clickable"
+      (click)="openTasksQuickClick.emit()"
+    >
       <div class="stat-icon">⏰</div>
       <div class="stat-content">
         <h3 class="stat-value">{{ pendingTasksCount }}</h3>
-        <p class="stat-label">Tareas pendientes</p>
+        <p class="stat-label" i18n="@@nurseSummarySection.statPendingTasksLabel">Tareas pendientes</p>
       </div>
-      <div class="click-hint">Ver en modal</div>
+      <div class="click-hint" i18n="@@nurseSummarySection.statPendingTasksHintClick">Ver en modal</div>
     </div>
-    <div class="stat-card clickable" (click)="openPharmacyQuickClick.emit()">
+    <div
+      id="nurse-summary-section-stat-medications-today-card"
+      class="stat-card clickable"
+      (click)="openPharmacyQuickClick.emit()"
+    >
       <div class="stat-icon">💊</div>
       <div class="stat-content">
         <h3 class="stat-value">{{ medicationsToday }}</h3>
-        <p class="stat-label">Medicamentos hoy</p>
+        <p class="stat-label" i18n="@@nurseSummarySection.statMedicationsTodayLabel">Medicamentos hoy</p>
       </div>
-      <div class="click-hint">Solicitar a farmacia</div>
+      <div class="click-hint" i18n="@@nurseSummarySection.statMedicationsTodayHintClick">Solicitar a farmacia</div>
     </div>
-    <button type="button" class="stat-card clickable nurse-attention-tile" (click)="openAttentionPharmacyClick.emit()">
+    <button
+      type="button"
+      id="nurse-summary-section-attention-pharmacy-btn"
+      class="stat-card clickable nurse-attention-tile"
+      (click)="openAttentionPharmacyClick.emit()"
+    >
       <div class="stat-icon">📤</div>
       <div class="stat-content">
         <h3 class="stat-value">{{ attentionPharmacyNotRequestedCount }}</h3>
-        <p class="stat-label">Medicamentos sin solicitar a farmacia</p>
+        <p class="stat-label" i18n="@@nurseSummarySection.statPharmacyNotRequestedLabel">Medicamentos sin solicitar a farmacia</p>
       </div>
-      <div class="click-hint">Ir a Farmacia para enviar</div>
-    </button>
-    <button type="button" class="stat-card clickable nurse-attention-tile" (click)="openAttentionTasksNextHourClick.emit()">
-      <div class="stat-icon">⏱️</div>
-      <div class="stat-content">
-        <h3 class="stat-value">{{ attentionTasksNextHourCount }}</h3>
-        <p class="stat-label">Tareas pendientes (próx. 1 h)</p>
-      </div>
-      <div class="click-hint">Abrir lista</div>
+      <div class="click-hint" i18n="@@nurseSummarySection.statPharmacyNotRequestedHintClick">Ir a Farmacia para enviar</div>
     </button>
     <button
       type="button"
+      id="nurse-summary-section-attention-tasks-next-hour-btn"
+      class="stat-card clickable nurse-attention-tile"
+      (click)="openAttentionTasksNextHourClick.emit()"
+    >
+      <div class="stat-icon">⏱️</div>
+      <div class="stat-content">
+        <h3 class="stat-value">{{ attentionTasksNextHourCount }}</h3>
+        <p class="stat-label" i18n="@@nurseSummarySection.statTasksNextHourLabel">Tareas pendientes (próx. 1 h)</p>
+      </div>
+      <div class="click-hint" i18n="@@nurseSummarySection.statTasksNextHourHintClick">Abrir lista</div>
+    </button>
+    <button
+      type="button"
+      id="nurse-summary-section-handover-btn"
       class="stat-card clickable nurse-attention-tile"
       (click)="openHandoverClick.emit()"
       title="Lo que guardes solo se ve al abrir esta nota (misma área, por fecha). No hay otra pantalla con el texto."
+      i18n-title="@@nurseSummarySection.handoverTileTitle"
     >
       <div class="stat-icon">📋</div>
       <div class="stat-content">
-        <h3 class="stat-value stat-value--text">Entrega</h3>
-        <p class="stat-label">Nota de turno por día y área</p>
+        <h3 class="stat-value stat-value--text" i18n="@@nurseSummarySection.handoverTileValueTitle">Entrega</h3>
+        <p class="stat-label" i18n="@@nurseSummarySection.handoverTileStatLabel">Nota de turno por día y área</p>
       </div>
-      <div class="click-hint">Abrir nota</div>
+      <div class="click-hint" i18n="@@nurseSummarySection.handoverTileHintClick">Abrir nota</div>
     </button>
-    <button type="button" class="stat-card clickable nurse-attention-tile" (click)="openReportsClick.emit()">
+    <button
+      type="button"
+      id="nurse-summary-section-reports-btn"
+      class="stat-card clickable nurse-attention-tile"
+      (click)="openReportsClick.emit()"
+    >
       <div class="stat-icon">📈</div>
       <div class="stat-content">
-        <h3 class="stat-value stat-value--text">7 días</h3>
-        <p class="stat-label">Reportes cumplimiento y medicación</p>
+        <h3 class="stat-value stat-value--text" i18n="@@nurseSummarySection.reportsTileValueTitle">7 días</h3>
+        <p class="stat-label" i18n="@@nurseSummarySection.reportsTileStatLabel">Reportes cumplimiento y medicación</p>
       </div>
-      <div class="click-hint">Ver reportes</div>
+      <div class="click-hint" i18n="@@nurseSummarySection.reportsTileHintClick">Ver reportes</div>
     </button>
   </div>
 </div>

@@ -9,7 +9,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { ModalFocusTrapDirective } from '../../../shared/directives/modal-focus-trap.directive';
 import { FormsModule } from '@angular/forms';
-import { NurseService } from '../../../services/nurse.service';
+import { NurseDashboardPatientRecordPatchFacade } from '../facades/nurse-dashboard-patient-record-patch.facade';
 import { ToastService } from '../../../services/toast.service';
 import {
   NURSE_MODAL_SCHEDULE_EDIT_ERR_SAVE,
@@ -25,6 +25,7 @@ export interface NurseScheduleEditContext {
 @Component({
   selector: 'app-nurse-schedule-edit-modal',
   standalone: true,
+  providers: [NurseDashboardPatientRecordPatchFacade],
   imports: [CommonModule, FormsModule, ModalFocusTrapDirective],
   templateUrl: './nurse-schedule-edit-modal.component.html',
   styleUrls: [
@@ -44,7 +45,7 @@ export class NurseScheduleEditModalComponent implements OnChanges {
   notes = '';
 
   constructor(
-    private readonly nurseService: NurseService,
+    private readonly recordPatch: NurseDashboardPatientRecordPatchFacade,
     private readonly toast: ToastService
   ) {}
 
@@ -64,7 +65,7 @@ export class NurseScheduleEditModalComponent implements OnChanges {
   }
 
   save(): void {
-    this.nurseService
+    this.recordPatch
       .patchPatientSchedule(this.patientId, this.edit.scheduleId, {
         description: this.description,
         notes: this.notes,

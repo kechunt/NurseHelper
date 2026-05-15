@@ -23,7 +23,7 @@ import type { TreatmentRecord as NurseTreatmentRecord } from '../../nurse-dashbo
 import type { HistoryOutcomeFilter, HistoryPeriodFilter } from '../../nurse-dashboard/nurse-patient-history.helpers';
 import { buildAdminPatientModalViewModel } from '../shared/admin-patient-modal-adapter';
 import { AdminToggleButtonComponent } from '../../../shared/components/admin-toggle-button/admin-toggle-button.component';
-import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
+import { BootstrapIconComponent } from '../../../shared/components/bootstrap-icon/bootstrap-icon.component';
 
 // Interfaces para el formulario extendido
 interface Medication {
@@ -64,13 +64,65 @@ interface PendingTask {
     AdminTableRowActionsModalComponent,
     NursePatientModalShellComponent,
     AdminToggleButtonComponent,
-    HeroIconComponent,
+    BootstrapIconComponent,
   ],
   templateUrl: './patients-management.component.html',
   styleUrl: './patients-management.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PatientsManagementComponent implements OnInit, OnDestroy {
+  readonly adminPatientsErrUnknown = $localize`:@@adminPatients.errUnknown:Error desconocido`;
+  readonly adminPatientsNoArea = $localize`:@@adminPatients.noArea:Sin área`;
+  readonly adminPatientsNoBed = $localize`:@@adminPatients.noBed:Sin cama`;
+  readonly adminPatientsNurseUnassigned = $localize`:@@adminPatients.nurseUnassigned:Sin asignar`;
+  readonly adminPatientsStatusActive = $localize`:@@adminPatients.statusActive:Activo`;
+  readonly adminPatientsStatusInactive = $localize`:@@adminPatients.statusInactive:Inactivo`;
+  readonly adminPatientsEmDash = $localize`:@@adminPatients.emDash:—`;
+  readonly adminPatientsAriaStatusActive = $localize`:@@adminPatients.ariaStatusActive:Paciente activo`;
+  readonly adminPatientsAriaStatusInactive = $localize`:@@adminPatients.ariaStatusInactive:Paciente inactivo`;
+  readonly adminPatientsRowActionsModalTitle = $localize`:@@adminPatients.rowActionsModalTitle:Paciente`;
+  readonly adminPatientsFormIncomplete = $localize`:@@adminPatients.formIncomplete:Campos incompletos`;
+  readonly adminPatientsFormFieldRequired = $localize`:@@adminPatients.formFieldRequired:Revisa los campos obligatorios marcados con asterisco.`;
+  readonly adminPatientsConfirmDelete = $localize`:@@adminPatients.confirmDelete:Eliminar`;
+  readonly adminPatientsConfirmCancel = $localize`:@@adminPatients.confirmCancel:Cancelar`;
+  readonly adminPatientsPatientFallbackName = $localize`:@@adminPatients.patientFallbackName:Paciente`;
+  readonly adminPatientsTreatmentTypeDefault = $localize`:@@adminPatients.treatmentTypeDefault:Tratamiento`;
+  readonly adminPatientsNewTaskTitle = $localize`:@@adminPatients.newTaskTitle:Nueva Tarea`;
+  readonly adminPatientsExportColId = $localize`:@@adminPatients.exportColId:ID`;
+  readonly adminPatientsExportColFirstName = $localize`:@@adminPatients.exportColFirstName:Nombre`;
+  readonly adminPatientsExportColLastName = $localize`:@@adminPatients.exportColLastName:Apellido`;
+  readonly adminPatientsExportColIdNumber = $localize`:@@adminPatients.exportColIdNumber:Cédula`;
+  readonly adminPatientsExportColDob = $localize`:@@adminPatients.exportColDob:Fecha de Nacimiento`;
+  readonly adminPatientsExportColGender = $localize`:@@adminPatients.exportColGender:Género`;
+  readonly adminPatientsExportColPhone = $localize`:@@adminPatients.exportColPhone:Teléfono`;
+  readonly adminPatientsExportColArea = $localize`:@@adminPatients.exportColArea:Área`;
+  readonly adminPatientsExportColBed = $localize`:@@adminPatients.exportColBed:Cama`;
+  readonly adminPatientsExportColStatus = $localize`:@@adminPatients.exportColStatus:Estado`;
+  readonly adminPatientsSubmitSaving = $localize`:@@adminPatients.submitSaving:Guardando...`;
+  readonly adminPatientsSubmitAdmission = $localize`:@@adminPatients.submitAdmission:Ingresar Paciente`;
+  readonly adminPatientsSaveSuccess = $localize`:@@adminPatients.saveSuccess:Cambios guardados exitosamente`;
+  readonly adminPatientsDiagnosisSaved = $localize`:@@adminPatients.diagnosisSaved:Diagnóstico guardado.`;
+  readonly adminPatientsErrLoadPatientDetail = $localize`:@@adminPatients.errLoadPatientDetail:No se pudo cargar el paciente`;
+  readonly adminPatientsErrDiagnosisSave = $localize`:@@adminPatients.errDiagnosisSave:No se pudo guardar el diagnóstico`;
+  readonly adminPatientsErrAssignBedAfterSave = $localize`:@@adminPatients.errAssignBedAfterSave:Datos guardados, pero hubo error al asignar cama`;
+  readonly adminPatientsErrReleasePrevBed = $localize`:@@adminPatients.errReleasePrevBed:No se pudo liberar la cama anterior`;
+  readonly adminPatientsWarnAreaNoBeds = $localize`:@@adminPatients.warnAreaNoBeds:Área guardada, pero no hay camas disponibles para asignar`;
+  readonly adminPatientsErrSaveChanges = $localize`:@@adminPatients.errSaveChanges:Error al guardar los cambios`;
+  readonly adminPatientsRemoveTreatmentTitle = $localize`:@@adminPatients.removeTreatmentTitle:Eliminar registro`;
+  readonly adminPatientsRemoveTreatmentMessage = $localize`:@@adminPatients.removeTreatmentMessage:¿Está seguro de eliminar este registro de tratamiento?`;
+  readonly adminPatientsTreatmentRemoved = $localize`:@@adminPatients.treatmentRemoved:Registro eliminado`;
+  readonly adminPatientsRemoveTaskTitle = $localize`:@@adminPatients.removeTaskTitle:Eliminar tarea`;
+  readonly adminPatientsRemoveTaskMessage = $localize`:@@adminPatients.removeTaskMessage:¿Está seguro de eliminar esta tarea?`;
+  readonly adminPatientsTaskRemoved = $localize`:@@adminPatients.taskRemoved:Tarea eliminada`;
+  readonly adminPatientsActivate = $localize`:@@adminPatients.activate:Activar`;
+  readonly adminPatientsDeactivate = $localize`:@@adminPatients.deactivate:Desactivar`;
+  readonly adminPatientsDeletePermanent = $localize`:@@adminPatients.deletePermanent:Eliminar permanentemente`;
+  readonly adminPatientsDeletePatientTitle = $localize`:@@adminPatients.deletePatientTitle:Eliminar paciente permanentemente`;
+  readonly adminPatientsDeletePatientInvalidId = $localize`:@@adminPatients.deletePatientInvalidId:No se puede eliminar el paciente (ID no válido)`;
+  readonly adminPatientsErrDeletePatient = $localize`:@@adminPatients.errDeletePatient:Error al eliminar el paciente`;
+  readonly adminPatientsToggleActivePendingInfo = $localize`:@@adminPatients.toggleActivePendingInfo:Funcionalidad de cambio de estado pendiente de implementar`;
+  readonly adminPatientsBedAvailableSuffix = $localize`:@@adminPatients.bedAvailable:Disponible`;
+
   // Listado de pacientes (página actual desde el servidor)
   patients: Patient[] = [];
   paginatedPatients: Patient[] = [];
@@ -223,8 +275,10 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
         this.loadPatientList(false);
       },
       error: (error) => {
-        const errorMessage = error.error?.message || error.message || 'Error desconocido';
-        this.toastService.error(`No se pudieron cargar datos iniciales: ${errorMessage}`);
+        const errorMessage = error.error?.message || error.message || this.adminPatientsErrUnknown;
+        this.toastService.error(
+          $localize`:@@adminPatients.errInitialLoad:No se pudieron cargar datos iniciales: ${errorMessage}:msg:`
+        );
         this.loadPatientList(false);
       },
     });
@@ -277,7 +331,7 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
         ...patient,
         areaId: bed.areaId,
         bedId: bed.id,
-        areaName: area?.name || bed.area?.name || 'Sin área',
+        areaName: area?.name || bed.area?.name || this.adminPatientsNoArea,
         bedNumber: bed.bedNumber,
       };
     }
@@ -285,8 +339,8 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
       ...patient,
       areaId: patient.areaId ?? null,
       bedId: patient.bedId ?? null,
-      areaName: patient.area?.name || this.areas.find((a) => a.id === patient.areaId)?.name || 'Sin área',
-      bedNumber: 'Sin cama',
+      areaName: patient.area?.name || this.areas.find((a) => a.id === patient.areaId)?.name || this.adminPatientsNoArea,
+      bedNumber: this.adminPatientsNoBed,
     };
   }
 
@@ -319,8 +373,10 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
           this.cdr.markForCheck();
         },
         error: (error) => {
-          const errorMessage = error.error?.message || error.message || 'Error desconocido';
-          this.toastService.error(`No se pudieron cargar los pacientes: ${errorMessage}`);
+          const errorMessage = error.error?.message || error.message || this.adminPatientsErrUnknown;
+          this.toastService.error(
+            $localize`:@@adminPatients.errLoadPatients:No se pudieron cargar los pacientes: ${errorMessage}:msg:`
+          );
           this.patients = [];
           this.paginatedPatients = [];
           this.paginationConfig = {
@@ -340,8 +396,10 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
         this.allBeds = beds;
       },
       error: (error) => {
-        const errorMessage = error.error?.message || error.message || 'Error desconocido';
-        this.toastService.warning(`No se pudieron cargar las camas: ${errorMessage}`);
+        const errorMessage = error.error?.message || error.message || this.adminPatientsErrUnknown;
+        this.toastService.warning(
+          $localize`:@@adminPatients.errLoadBeds:No se pudieron cargar las camas: ${errorMessage}:msg:`
+        );
         this.allBeds = [];
       },
     });
@@ -392,17 +450,25 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
       }
     }
 
-    return 'Sin asignar';
+    return this.adminPatientsNurseUnassigned;
   }
 
-  private isPatientUnassigned(patient: Patient): boolean {
-    return this.getAssignedNurseDisplay(patient) === 'Sin asignar';
+  private isPatientNurseUnassigned(patient: Patient): boolean {
+    const assigned = patient.assignedTo;
+    if (assigned?.firstName || assigned?.lastName) {
+      return false;
+    }
+    const assignedToId = patient.assignedToId;
+    if (assignedToId != null) {
+      return !this.nurses.some((n) => n?.id === assignedToId);
+    }
+    return true;
   }
 
   private sortPatientsByAssignment(patients: Patient[]): Patient[] {
     return [...patients].sort((a, b) => {
-      const aUnassigned = this.isPatientUnassigned(a);
-      const bUnassigned = this.isPatientUnassigned(b);
+      const aUnassigned = this.isPatientNurseUnassigned(a);
+      const bUnassigned = this.isPatientNurseUnassigned(b);
       if (aUnassigned !== bUnassigned) {
         return aUnassigned ? -1 : 1;
       }
@@ -435,18 +501,18 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
           try {
             const rows = res.items.map((p) => this.enrichPatientRow(p));
             const data = rows.map((p) => ({
-              ID: p.id,
-              Nombre: p.firstName,
-              Apellido: p.lastName,
-              Cédula: p.identificationNumber || '',
-              'Fecha de Nacimiento': p.dateOfBirth
+              [this.adminPatientsExportColId]: p.id,
+              [this.adminPatientsExportColFirstName]: p.firstName,
+              [this.adminPatientsExportColLastName]: p.lastName,
+              [this.adminPatientsExportColIdNumber]: p.identificationNumber || '',
+              [this.adminPatientsExportColDob]: p.dateOfBirth
                 ? new Date(p.dateOfBirth).toLocaleDateString('es-ES')
                 : '',
-              Género: p.gender || '',
-              Teléfono: p.phone || '',
-              Área: p.areaName || 'Sin área',
-              Cama: p.bedNumber || 'Sin cama',
-              Estado: p.isActive ? 'Activo' : 'Inactivo',
+              [this.adminPatientsExportColGender]: p.gender || '',
+              [this.adminPatientsExportColPhone]: p.phone || '',
+              [this.adminPatientsExportColArea]: p.areaName || this.adminPatientsNoArea,
+              [this.adminPatientsExportColBed]: p.bedNumber || this.adminPatientsNoBed,
+              [this.adminPatientsExportColStatus]: p.isActive ? this.adminPatientsStatusActive : this.adminPatientsStatusInactive,
             }));
 
             this.exportService.exportToCSV(data, {
@@ -455,18 +521,24 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
 
             if (res.total > data.length) {
               this.toastService.warning(
-                `Exportadas ${data.length} filas de ${res.total} (máximo 1000 por exportación).`
+                $localize`:@@adminPatients.exportTruncated:Exportadas ${data.length}:exported: filas de ${res.total}:total: (máximo 1000 por exportación).`
               );
             } else {
-              this.toastService.success(`Exportados ${data.length} pacientes a CSV`);
+              this.toastService.success(
+                $localize`:@@adminPatients.exportCsvOk:Exportados ${data.length}:n: pacientes a CSV`
+              );
             }
           } catch (error: any) {
-            this.toastService.error(`Error al exportar: ${error.message}`);
+            this.toastService.error(
+              $localize`:@@adminPatients.exportCatch:Error al exportar: ${String(error?.message ?? '')}:msg:`
+            );
           }
         },
         error: (error) => {
-          const errorMessage = error.error?.message || error.message || 'Error desconocido';
-          this.toastService.error(`No se pudo exportar: ${errorMessage}`);
+          const errorMessage = error.error?.message || error.message || this.adminPatientsErrUnknown;
+          this.toastService.error(
+            $localize`:@@adminPatients.exportFailed:No se pudo exportar: ${errorMessage}:msg:`
+          );
         },
       });
   }
@@ -483,18 +555,18 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
           try {
             const rows = res.items.map((p) => this.enrichPatientRow(p));
             const data = rows.map((p) => ({
-              ID: p.id,
-              Nombre: p.firstName,
-              Apellido: p.lastName,
-              Cédula: p.identificationNumber || '',
-              'Fecha de Nacimiento': p.dateOfBirth
+              [this.adminPatientsExportColId]: p.id,
+              [this.adminPatientsExportColFirstName]: p.firstName,
+              [this.adminPatientsExportColLastName]: p.lastName,
+              [this.adminPatientsExportColIdNumber]: p.identificationNumber || '',
+              [this.adminPatientsExportColDob]: p.dateOfBirth
                 ? new Date(p.dateOfBirth).toLocaleDateString('es-ES')
                 : '',
-              Género: p.gender || '',
-              Teléfono: p.phone || '',
-              Área: p.areaName || 'Sin área',
-              Cama: p.bedNumber || 'Sin cama',
-              Estado: p.isActive ? 'Activo' : 'Inactivo',
+              [this.adminPatientsExportColGender]: p.gender || '',
+              [this.adminPatientsExportColPhone]: p.phone || '',
+              [this.adminPatientsExportColArea]: p.areaName || this.adminPatientsNoArea,
+              [this.adminPatientsExportColBed]: p.bedNumber || this.adminPatientsNoBed,
+              [this.adminPatientsExportColStatus]: p.isActive ? this.adminPatientsStatusActive : this.adminPatientsStatusInactive,
             }));
 
             this.exportService.exportToExcel(data, {
@@ -503,18 +575,24 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
 
             if (res.total > data.length) {
               this.toastService.warning(
-                `Exportadas ${data.length} filas de ${res.total} (máximo 1000 por exportación).`
+                $localize`:@@adminPatients.exportTruncated:Exportadas ${data.length}:exported: filas de ${res.total}:total: (máximo 1000 por exportación).`
               );
             } else {
-              this.toastService.success(`Exportados ${data.length} pacientes a Excel`);
+              this.toastService.success(
+                $localize`:@@adminPatients.exportExcelOk:Exportados ${data.length}:n: pacientes a Excel`
+              );
             }
           } catch (error: any) {
-            this.toastService.error(`Error al exportar: ${error.message}`);
+            this.toastService.error(
+              $localize`:@@adminPatients.exportCatch:Error al exportar: ${String(error?.message ?? '')}:msg:`
+            );
           }
         },
         error: (error) => {
-          const errorMessage = error.error?.message || error.message || 'Error desconocido';
-          this.toastService.error(`No se pudo exportar: ${errorMessage}`);
+          const errorMessage = error.error?.message || error.message || this.adminPatientsErrUnknown;
+          this.toastService.error(
+            $localize`:@@adminPatients.exportFailed:No se pudo exportar: ${errorMessage}:msg:`
+          );
         },
       });
   }
@@ -560,8 +638,10 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
         this.availableBeds = beds.filter(bed => !bed.patientId && bed.isActive);
       },
       error: (error) => {
-        const errorMessage = error.error?.message || error.message || 'Error desconocido';
-        this.toastService.warning(`No se pudieron cargar las camas del área: ${errorMessage}`);
+        const errorMessage = error.error?.message || error.message || this.adminPatientsErrUnknown;
+        this.toastService.warning(
+          $localize`:@@adminPatients.errLoadBedsForArea:No se pudieron cargar las camas del área: ${errorMessage}:msg:`
+        );
         this.availableBeds = [];
       },
     });
@@ -572,7 +652,9 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
     if (this.wizardFormGroup.invalid) {
       this.wizardFormGroup.markAllAsTouched();
       const firstError = this.getFirstFormError();
-      this.toastService.warning(`Por favor complete todos los campos obligatorios: ${firstError}`);
+      this.toastService.warning(
+        $localize`:@@adminPatients.warnFormInvalid:Por favor complete todos los campos obligatorios: ${firstError}:detail:`
+      );
       return;
     }
 
@@ -624,7 +706,8 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
         if (bedIdToAssign && patientId) {
           const bid = parseInt(bedIdToAssign, 10);
           const bedRow = this.allBeds.find((b) => b.id === bid);
-          const hint = `${formValue.firstName} ${formValue.lastName}`.trim() || 'Paciente';
+          const hint =
+            `${formValue.firstName} ${formValue.lastName}`.trim() || this.adminPatientsPatientFallbackName;
           this.bedAssign
             .assignPatientToBed({
               bedId: bid,
@@ -634,34 +717,43 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
             })
             .subscribe({
               next: () => {
-                this.toastService.success(`Paciente ${formValue.firstName} ${formValue.lastName} ingresado exitosamente`);
+                this.toastService.success(
+                  $localize`:@@adminPatients.toastAdmissionOk:Paciente ${formValue.firstName}:fn: ${formValue.lastName}:ln: ingresado exitosamente`
+                );
                 this.resetForm();
                 this.loadPatientList(true);
                 this.loadBeds();
                 this.loading = false;
               },
               error: (error) => {
-                const errorMessage = error.error?.message || error.message || 'Error desconocido';
-                this.toastService.warning(`Paciente creado pero sin cama asignada: ${errorMessage}`);
+                const errorMessage = error.error?.message || error.message || this.adminPatientsErrUnknown;
+                this.toastService.warning(
+                  $localize`:@@adminPatients.toastCreatedNoBed:Paciente creado pero sin cama asignada: ${errorMessage}:msg:`
+                );
                 this.resetForm();
                 this.loadPatientList(true);
                 this.loading = false;
               },
             });
         } else if (formValue.selectedAreaId && this.availableBeds.length === 0) {
-          this.toastService.warning(`Paciente ${formValue.firstName} ${formValue.lastName} creado, pero no hay camas disponibles en el área seleccionada`);
+          this.toastService.warning(
+            $localize`:@@adminPatients.toastCreatedNoBedsInArea:Paciente ${formValue.firstName}:fn: ${formValue.lastName}:ln: creado, pero no hay camas disponibles en el área seleccionada`
+          );
           this.resetForm();
           this.loadPatientList(true);
           this.loading = false;
         } else {
-          this.toastService.success(`Paciente ${formValue.firstName} ${formValue.lastName} ingresado exitosamente (sin cama asignada)`);
+          this.toastService.success(
+            $localize`:@@adminPatients.toastAdmissionNoBed:Paciente ${formValue.firstName}:fn: ${formValue.lastName}:ln: ingresado exitosamente (sin cama asignada)`
+          );
           this.resetForm();
           this.loadPatientList(true);
           this.loading = false;
         }
       },
       error: (error) => {
-        const errorMessage = error.error?.message || error.message || 'Error al crear el paciente';
+        const errorMessage =
+          error.error?.message || error.message || $localize`:@@adminPatients.errCreatePatient:Error al crear el paciente`;
         this.toastService.error(errorMessage);
         this.loading = false;
       },
@@ -670,18 +762,20 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
 
   getFirstFormError(): string {
     const controls = this.wizardFormGroup.controls;
-    for (const key in controls) {
-      if (controls[key].errors) {
-        const control = controls[key];
-        if (control.errors?.['required']) {
-          return `${key} es requerido`;
-        }
-        if (control.errors?.['minlength']) {
-          return `${key} debe tener al menos ${control.errors['minlength'].requiredLength} caracteres`;
-        }
+    for (const key of Object.keys(controls)) {
+      const control = controls[key];
+      if (!control?.errors) {
+        continue;
+      }
+      if (control.errors['required']) {
+        return this.adminPatientsFormFieldRequired;
+      }
+      if (control.errors['minlength']) {
+        const n = control.errors['minlength'].requiredLength;
+        return $localize`:@@adminPatients.formMinLength:Algunos campos requieren al menos ${n}:n: caracteres.`;
       }
     }
-    return 'Campos incompletos';
+    return this.adminPatientsFormIncomplete;
   }
 
   openPatientRowActionsSheet(patient: Patient): void {
@@ -702,12 +796,29 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
   }
 
   patientRowActionsSummary(p: Patient): string[] {
-    return [
-      `${p.firstName} ${p.lastName}`,
-      `Cédula: ${p.identificationNumber || '—'}`,
-      `${p.areaName || 'Sin área'} · ${p.bedNumber ? 'Cama ' + p.bedNumber : 'Sin cama'}`,
-      `${p.isActive ? 'Activo' : 'Inactivo'}`,
-    ];
+    const idLine = $localize`:@@adminPatients.summaryIdLine:Cédula: ${p.identificationNumber || this.adminPatientsEmDash}:id:`;
+    const area = p.areaName || this.adminPatientsNoArea;
+    const bedLine = p.bedNumber
+      ? $localize`:@@adminPatients.summaryAreaBedWithNum:${area}:area: · ${this.bedNumberLabel(p.bedNumber)}:bed:`
+      : $localize`:@@adminPatients.summaryAreaBedNoNum:${area}:area: · ${this.adminPatientsNoBed}:nobed:`;
+    const status = p.isActive ? this.adminPatientsStatusActive : this.adminPatientsStatusInactive;
+    return [`${p.firstName} ${p.lastName}`, idLine, bedLine, status];
+  }
+
+  patientTableRowAriaLabel(p: Patient): string {
+    return $localize`:@@adminPatients.rowActionsAria:Acciones para paciente ${p.firstName}:fn: ${p.lastName}:ln:`;
+  }
+
+  patientStatusAriaLabel(isActive: boolean | undefined): string {
+    return isActive ? this.adminPatientsAriaStatusActive : this.adminPatientsAriaStatusInactive;
+  }
+
+  patientStatusLabel(isActive: boolean | undefined): string {
+    return isActive ? this.adminPatientsStatusActive : this.adminPatientsStatusInactive;
+  }
+
+  private bedNumberLabel(bedNumber: string): string {
+    return $localize`:@@adminPatients.bedNumberLabel:Cama ${bedNumber}:num:`;
   }
 
   fromPatientSheetOpenEdit(): void {
@@ -783,7 +894,7 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
         this.cdr.markForCheck();
       },
       error: (error) => {
-        const errorMessage = error.error?.message || error.message || 'No se pudo cargar el paciente';
+        const errorMessage = error.error?.message || error.message || this.adminPatientsErrLoadPatientDetail;
         this.toastService.error(errorMessage);
       }
     });
@@ -808,11 +919,11 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
       next: () => {
         this.unifiedPatient!.diagnosis = medicalHistory;
         this.editForm.medicalHistory = medicalHistory;
-        this.toastService.success('Diagnóstico guardado.');
+        this.toastService.success(this.adminPatientsDiagnosisSaved);
         this.cdr.markForCheck();
       },
       error: (error) => {
-        const msg = error.error?.message || error.message || 'No se pudo guardar el diagnóstico';
+        const msg = error.error?.message || error.message || this.adminPatientsErrDiagnosisSave;
         this.toastService.error(msg);
       },
     });
@@ -827,8 +938,10 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
         );
       },
       error: (error) => {
-        const errorMessage = error.error?.message || error.message || 'Error desconocido';
-        this.toastService.warning(`No se pudieron cargar las camas: ${errorMessage}`);
+        const errorMessage = error.error?.message || error.message || this.adminPatientsErrUnknown;
+        this.toastService.warning(
+          $localize`:@@adminPatients.errLoadBeds:No se pudieron cargar las camas: ${errorMessage}:msg:`
+        );
         this.availableBeds = [];
       },
     });
@@ -879,7 +992,7 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
       next: () => {
         const assignBedAndFinish = (bedIdToAssign: number | null): void => {
           if (bedIdToAssign === currentBedId) {
-            this.toastService.success('Cambios guardados exitosamente');
+            this.toastService.success(this.adminPatientsSaveSuccess);
             this.closeEditModal();
             this.loadPatientList(false);
             this.loadBeds();
@@ -888,7 +1001,7 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
 
           const releaseAndAssign = () => {
             if (!bedIdToAssign) {
-              this.toastService.success('Cambios guardados exitosamente');
+              this.toastService.success(this.adminPatientsSaveSuccess);
               this.closeEditModal();
               this.loadPatientList(false);
               this.loadBeds();
@@ -897,7 +1010,8 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
 
             const bedRow = this.allBeds.find((b) => b.id === bedIdToAssign);
             const hint =
-              `${this.selectedPatient!.firstName} ${this.selectedPatient!.lastName}`.trim() || 'Paciente';
+              `${this.selectedPatient!.firstName} ${this.selectedPatient!.lastName}`.trim() ||
+              this.adminPatientsPatientFallbackName;
             this.bedAssign
               .assignPatientToBed({
                 bedId: bedIdToAssign,
@@ -907,13 +1021,13 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
               })
               .subscribe({
                 next: () => {
-                  this.toastService.success('Cambios guardados exitosamente');
+                  this.toastService.success(this.adminPatientsSaveSuccess);
                   this.closeEditModal();
                   this.loadPatientList(false);
                   this.loadBeds();
                 },
                 error: (error) => {
-                  const errorMessage = error.error?.message || 'Datos guardados, pero hubo error al asignar cama';
+                  const errorMessage = error.error?.message || this.adminPatientsErrAssignBedAfterSave;
                   this.toastService.warning(errorMessage);
                   this.closeEditModal();
                   this.loadPatientList(false);
@@ -926,7 +1040,7 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
             this.adminService.assignPatientToBed(currentBedId, null).subscribe({
               next: () => releaseAndAssign(),
               error: (error) => {
-                const errorMessage = error.error?.message || 'No se pudo liberar la cama anterior';
+                const errorMessage = error.error?.message || this.adminPatientsErrReleasePrevBed;
                 this.toastService.warning(errorMessage);
                 releaseAndAssign();
               }
@@ -949,7 +1063,7 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
               if (firstAvailable?.id) {
                 assignBedAndFinish(firstAvailable.id);
               } else {
-                this.toastService.warning('Área guardada, pero no hay camas disponibles para asignar');
+                this.toastService.warning(this.adminPatientsWarnAreaNoBeds);
                 assignBedAndFinish(null);
               }
             },
@@ -961,7 +1075,7 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
         assignBedAndFinish(desiredBedId);
       },
       error: (error) => {
-        const errorMessage = error.error?.message || 'Error al guardar los cambios';
+        const errorMessage = error.error?.message || this.adminPatientsErrSaveChanges;
         this.toastService.error(errorMessage);
       },
     });
@@ -1005,8 +1119,8 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
       title: ADMIN_CONFIRM_REMOVE_MEDICATION_TITLE,
       message: ADMIN_CONFIRM_REMOVE_MEDICATION_MESSAGE,
       type: 'warning',
-      confirmText: 'Eliminar',
-      cancelText: 'Cancelar',
+      confirmText: this.adminPatientsConfirmDelete,
+      cancelText: this.adminPatientsConfirmCancel,
     });
     if (confirmed) {
       this.editForm.medications.splice(index, 1);
@@ -1034,7 +1148,7 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
     this.editForm.treatmentHistory.unshift({
       date: now.toISOString().split('T')[0],
       time: now.toTimeString().split(' ')[0].substring(0, 5),
-      type: 'Tratamiento',
+      type: this.adminPatientsTreatmentTypeDefault,
       nurseName: '',
       description: ''
     });
@@ -1042,16 +1156,16 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
 
   async removeTreatment(index: number): Promise<void> {
     const confirmed = await this.confirmationService.confirm({
-      title: 'Eliminar registro',
-      message: '¿Está seguro de eliminar este registro de tratamiento?',
-      confirmText: 'Eliminar',
-      cancelText: 'Cancelar',
+      title: this.adminPatientsRemoveTreatmentTitle,
+      message: this.adminPatientsRemoveTreatmentMessage,
+      confirmText: this.adminPatientsConfirmDelete,
+      cancelText: this.adminPatientsConfirmCancel,
       type: 'warning'
     });
     
     if (confirmed) {
       this.editForm.treatmentHistory.splice(index, 1);
-      this.toastService.success('Registro eliminado');
+      this.toastService.success(this.adminPatientsTreatmentRemoved);
     }
   }
 
@@ -1072,7 +1186,7 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
 
   addPendingTask(): void {
     this.editForm.pendingTasks.push({
-      title: 'Nueva Tarea',
+      title: this.adminPatientsNewTaskTitle,
       type: 'treatment',
       scheduledDate: '',
       description: '',
@@ -1084,47 +1198,72 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
 
   async removeTask(index: number): Promise<void> {
     const confirmed = await this.confirmationService.confirm({
-      title: 'Eliminar tarea',
-      message: '¿Está seguro de eliminar esta tarea?',
-      confirmText: 'Eliminar',
-      cancelText: 'Cancelar',
+      title: this.adminPatientsRemoveTaskTitle,
+      message: this.adminPatientsRemoveTaskMessage,
+      confirmText: this.adminPatientsConfirmDelete,
+      cancelText: this.adminPatientsConfirmCancel,
       type: 'warning'
     });
     
     if (confirmed) {
       this.editForm.pendingTasks.splice(index, 1);
-      this.toastService.success('Tarea eliminada');
+      this.toastService.success(this.adminPatientsTaskRemoved);
     }
+  }
+
+  toggleActiveConfirmTitle(patient: Patient): string {
+    return patient.isActive
+      ? $localize`:@@adminPatients.toggleDeactivateTitle:Desactivar paciente`
+      : $localize`:@@adminPatients.toggleActivateTitle:Activar paciente`;
+  }
+
+  toggleActiveConfirmMessage(patient: Patient): string {
+    const verb = patient.isActive
+      ? $localize`:@@adminPatients.toggleVerbDeactivate:desactivar`
+      : $localize`:@@adminPatients.toggleVerbActivate:activar`;
+    const fn = patient.firstName || '';
+    const ln = patient.lastName || '';
+    return $localize`:@@adminPatients.toggleConfirmMessage:¿Está seguro de ${verb}:verb: al paciente ${fn}:fn: ${ln}:ln:?`;
+  }
+
+  toggleActiveConfirmButton(patient: Patient): string {
+    return patient.isActive ? this.adminPatientsDeactivate : this.adminPatientsActivate;
+  }
+
+  deletePatientConfirmMessage(patient: Patient): string {
+    const fn = patient.firstName || '';
+    const ln = patient.lastName || '';
+    return $localize`:@@adminPatients.deletePatientMessage:¿Está seguro de eliminar permanentemente al paciente ${fn}:fn: ${ln}:ln?\n\nEsta acción no se puede deshacer y eliminará todos los datos relacionados.`;
   }
 
   // ========== OTRAS FUNCIONES ==========
   async toggleActive(patient: Patient): Promise<void> {
     const confirmed = await this.confirmationService.confirm({
-      title: `${patient.isActive ? 'Desactivar' : 'Activar'} paciente`,
-      message: `¿Está seguro de ${patient.isActive ? 'desactivar' : 'activar'} al paciente ${patient.firstName} ${patient.lastName}?`,
-      confirmText: patient.isActive ? 'Desactivar' : 'Activar',
-      cancelText: 'Cancelar',
+      title: this.toggleActiveConfirmTitle(patient),
+      message: this.toggleActiveConfirmMessage(patient),
+      confirmText: this.toggleActiveConfirmButton(patient),
+      cancelText: this.adminPatientsConfirmCancel,
       type: 'warning'
     });
     
     if (confirmed) {
       // Aquí iría la llamada al servicio para cambiar el estado
-      this.toastService.info('Funcionalidad de cambio de estado pendiente de implementar');
+      this.toastService.info(this.adminPatientsToggleActivePendingInfo);
       this.loadPatientList(false);
     }
   }
 
   async deletePatient(patient: Patient): Promise<void> {
     if (!patient.id) {
-      this.toastService.error('No se puede eliminar el paciente (ID no válido)');
+      this.toastService.error(this.adminPatientsDeletePatientInvalidId);
       return;
     }
 
     const confirmed = await this.confirmationService.confirm({
-      title: 'Eliminar paciente permanentemente',
-      message: `¿Está seguro de eliminar permanentemente al paciente ${patient.firstName} ${patient.lastName}?\n\nEsta acción no se puede deshacer y eliminará todos los datos relacionados.`,
-      confirmText: 'Eliminar permanentemente',
-      cancelText: 'Cancelar',
+      title: this.adminPatientsDeletePatientTitle,
+      message: this.deletePatientConfirmMessage(patient),
+      confirmText: this.adminPatientsDeletePermanent,
+      cancelText: this.adminPatientsConfirmCancel,
       type: 'danger'
     });
     
@@ -1132,12 +1271,14 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
       this.loading = true;
       this.adminService.deletePatient(patient.id).subscribe({
         next: () => {
-          this.toastService.success(`Paciente ${patient.firstName} ${patient.lastName} eliminado exitosamente`);
+          this.toastService.success(
+            $localize`:@@adminPatients.deletePatientOk:Paciente ${patient.firstName}:fn: ${patient.lastName}:ln: eliminado exitosamente`
+          );
           this.loadPatientList(false);
           this.loading = false;
         },
         error: (error) => {
-          const errorMessage = error.error?.message || error.message || 'Error al eliminar el paciente';
+          const errorMessage = error.error?.message || error.message || this.adminPatientsErrDeletePatient;
           this.toastService.error(errorMessage);
           this.loading = false;
         },

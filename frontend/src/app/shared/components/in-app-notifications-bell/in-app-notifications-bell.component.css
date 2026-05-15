@@ -15,14 +15,18 @@
   padding: 4px;
   margin: 0;
   cursor: pointer;
-  font-size: 1.35rem;
-  line-height: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: 8px;
   transition: opacity 0.15s ease, transform 0.15s ease;
-  color: inherit;
+  color: var(--nh-neuro-text, #4a5568);
+}
+
+.notif-bell-icon {
+  font-size: 1.35rem;
+  line-height: 1;
+  color: var(--nh-neuro-text, #4a5568);
 }
 
 .notif-bell-trigger:hover {
@@ -169,4 +173,12 @@
   flex-wrap: wrap;
   gap: 8px;
   padding: 0 12px 12px;
+}
+
+/* Móvil: reglas globales en dashboard-layout.css; aquí solo márgenes más estrechos en pantallas pequeñas. */
+@media (max-width: 480px) {
+  .notif-panel {
+    left: max(0.5rem, env(safe-area-inset-left, 0px));
+    right: max(0.5rem, env(safe-area-inset-right, 0px));
+  }
 }

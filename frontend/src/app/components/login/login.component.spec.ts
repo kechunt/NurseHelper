@@ -98,4 +98,12 @@ describe('LoginComponent', () => {
     const submitButton = fixture.nativeElement.querySelector('button[type="submit"]');
     expect(submitButton.disabled).toBeTruthy();
   });
+
+  it('plantilla: ids estables formulario, enviar, toggle contraseña y registro', () => {
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('#login-form')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('#login-submit-btn')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('#login-password-toggle-btn')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('#login-register-link')).toBeTruthy();
+  });
 });

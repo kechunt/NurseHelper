@@ -12,8 +12,9 @@
     (click)="$event.stopPropagation()"
   >
     <div class="modal-header">
-      <h3 id="nurse-postpone-task-dialog-title" i18n="@@nursePostponeTaskModal.title"><app-hero-icon name="clock" /> Posponer Tarea</h3>
+      <h3 id="nurse-postpone-task-dialog-title" i18n="@@nursePostponeTaskModal.title"><app-bootstrap-icon name="clock" /> Posponer Tarea</h3>
       <button
+        id="nurse-postpone-task-header-close-btn"
         type="button"
         class="close-btn"
         aria-label="Cerrar"
@@ -52,11 +53,24 @@
     </div>
 
     <div class="modal-footer">
-      <button type="button" class="btn-secondary-neuro" (click)="onCancel()" i18n="@@nursePostponeTaskModal.cancel">
+      <button
+        id="nurse-postpone-task-cancel-btn"
+        type="button"
+        class="btn-secondary-neuro"
+        (click)="onCancel()"
+        i18n="@@nursePostponeTaskModal.cancel"
+      >
         Cancelar
       </button>
-      <button type="button" class="btn-primary-neuro" (click)="onConfirm()" [disabled]="!canSubmit" i18n="@@nursePostponeTaskModal.confirm">
-        <app-hero-icon name="clock" /> Posponer Tarea
+      <button
+        id="nurse-postpone-task-save-btn"
+        type="button"
+        class="btn-primary-neuro"
+        (click)="onConfirm()"
+        [disabled]="!canSubmit"
+        i18n="@@nursePostponeTaskModal.confirm"
+      >
+        <app-bootstrap-icon name="clock" /> Posponer Tarea
       </button>
     </div>
   </div>

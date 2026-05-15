@@ -2,10 +2,9 @@
   class="modal-backdrop modal-confirmation nurse-pending-task-detail-backdrop"
   role="presentation"
   (click)="onBackdropClick()"
-  style="z-index: 2310"
 >
   <div
-    class="modal-content modal-small nurse-aux-modal nurse-pending-task-detail-sheet"
+    class="modal-content modal-small"
     appModalFocusTrap
     role="dialog"
     aria-modal="true"
@@ -13,8 +12,9 @@
     (click)="$event.stopPropagation()"
   >
     <div class="modal-header">
-      <h3 id="nurse-pending-task-detail-dialog-title" i18n="@@nursePendingTaskDetailModal.title"><app-hero-icon name="clipboard-document" /> Detalle de tarea</h3>
+      <h3 id="nurse-pending-task-detail-dialog-title" i18n="@@nursePendingTaskDetailModal.title"><app-bootstrap-icon name="clipboard-document" /> Detalle de tarea</h3>
       <button
+        id="nurse-pending-task-detail-header-close-btn"
         type="button"
         class="close-btn"
         aria-label="Cerrar"
@@ -24,66 +24,81 @@
         ✕
       </button>
     </div>
-    <div class="modal-body medication-day-detail-body nurse-pending-task-detail-body">
-      <div class="nurse-aux-modal__inset nurse-aux-modal__inset--compact">
-        <p class="med-day-detail-line" i18n="@@nursePendingTaskDetailModal.lineTime"><strong>Hora:</strong> {{ task.time }}</p>
-        <p class="med-day-detail-line" *ngIf="scheduledDetailLabel(task) as schedLabel">
+    <div class="modal-body nurse-pending-task-detail-body">
+      <div class="task-info-summary">
+        <p i18n="@@nursePendingTaskDetailModal.lineTime"><strong>Hora:</strong> {{ task.time }}</p>
+        <p *ngIf="scheduledDetailLabel(task) as schedLabel">
           <strong i18n="@@nursePendingTaskDetailModal.lineScheduled">Programado:</strong> {{ schedLabel }}
         </p>
-        <p class="med-day-detail-line" i18n="@@nursePendingTaskDetailModal.lineType"><strong>Tipo:</strong> {{ typeLabel(task) }}</p>
-        <p class="med-day-detail-line" i18n="@@nursePendingTaskDetailModal.linePatient"><strong>Paciente:</strong> {{ task.patientName }}</p>
-        <p class="med-day-detail-line" i18n="@@nursePendingTaskDetailModal.lineBed"><strong>Cama:</strong> {{ task.bedNumber }}</p>
-        <p class="med-day-detail-line nurse-pending-task-detail-status-line">
+        <p i18n="@@nursePendingTaskDetailModal.lineType"><strong>Tipo:</strong> {{ typeLabel(task) }}</p>
+        <p i18n="@@nursePendingTaskDetailModal.linePatient"><strong>Paciente:</strong> {{ task.patientName }}</p>
+        <p i18n="@@nursePendingTaskDetailModal.lineBed"><strong>Cama:</strong> {{ task.bedNumber }}</p>
+        <p class="nurse-pending-task-detail-status-line">
           <strong i18n="@@nursePendingTaskDetailModal.lineStatus">Estado:</strong>
           <span class="nurse-pending-task-detail-status-value">{{ statusSummary(task) }}</span>
         </p>
-        <div *ngIf="task.notCompletedReason" class="nurse-pending-task-detail-reason">
+      </div>
+
+      <div *ngIf="task.notCompletedReason" class="task-info-summary nurse-pending-task-detail-reason-summary">
+        <p>
           <strong i18n="@@nursePendingTaskDetailModal.reasonLabel">Motivo no realizada:</strong>
           {{ task.notCompletedReason }}
-        </div>
-        <hr class="history-detail-sep" />
-        <p class="med-day-detail-line" i18n="@@nursePendingTaskDetailModal.descriptionHeading"><strong>Descripción / tratamiento</strong></p>
-        <div class="med-day-detail-note-block">{{ (task.description || '').trim() || '—' }}</div>
+        </p>
+      </div>
+
+      <div class="task-info-summary">
+        <p i18n="@@nursePendingTaskDetailModal.descriptionHeading"><strong>Descripción / tratamiento</strong></p>
+        <p class="pending-task-desc-text">{{ (task.description || '').trim() || emDash() }}</p>
         <ng-container *ngIf="task.medication || task.dosage">
           <hr class="history-detail-sep" />
-          <p class="med-day-detail-line" i18n="@@nursePendingTaskDetailModal.medicationHeading"><strong>Medicamento</strong></p>
-          <p class="med-day-detail-line">
-            {{ task.medication || '—' }}<span *ngIf="task.dosage"> ({{ task.dosage }})</span>
+          <p i18n="@@nursePendingTaskDetailModal.medicationHeading"><strong>Medicamento</strong></p>
+          <p class="pending-task-desc-text">
+            {{ task.medication || emDash() }}<span *ngIf="task.dosage"> ({{ task.dosage }})</span>
           </p>
         </ng-container>
       </div>
     </div>
-    <div class="modal-footer nurse-aux-modal__footer nurse-pending-task-detail-footer">
-      <div class="nurse-pending-task-detail-actions">
-        <button
-          type="button"
-          class="nurse-pending-task-detail-action nurse-pending-task-detail-action--complete"
-          [disabled]="actionsDisabled(task)"
-          (click)="completeRequested.emit(task)"
-          i18n="@@nursePendingTaskDetailModal.actionComplete"
-        >
-          <app-hero-icon name="check-circle" /> Marcar completada
-        </button>
-        <button
-          type="button"
-          class="nurse-pending-task-detail-action nurse-pending-task-detail-action--missed"
-          [disabled]="actionsDisabled(task)"
-          (click)="notCompletedRequested.emit(task)"
-          i18n="@@nursePendingTaskDetailModal.actionNotCompleted"
-        >
-          <app-hero-icon name="x-circle" /> No realizada
-        </button>
-        <button
-          type="button"
-          class="nurse-pending-task-detail-action nurse-pending-task-detail-action--postpone"
-          [disabled]="actionsDisabled(task)"
-          (click)="postponeRequested.emit(task)"
-          i18n="@@nursePendingTaskDetailModal.actionPostpone"
-        >
-          <app-hero-icon name="clock" /> Posponer
-        </button>
-      </div>
-      <button type="button" class="neuro-btn neuro-btn-sm nurse-pending-task-detail-close-footer" (click)="dismissed.emit()" i18n="@@nursePendingTaskDetailModal.close">
+    <p class="nurse-pending-task-detail-footer-hint hint-text" i18n="@@nursePendingTaskDetailModal.footerHint">
+      Completa la tarea, indica que no se realizó, posponla o cierra sin cambios.
+    </p>
+    <div class="modal-footer nurse-pending-task-detail-footer">
+      <button
+        type="button"
+        id="nurse-pending-task-detail-complete-btn"
+        class="btn-primary-neuro nurse-pending-task-detail-action--complete"
+        [disabled]="actionsDisabled(task)"
+        (click)="completeRequested.emit(task)"
+        i18n="@@nursePendingTaskDetailModal.actionComplete"
+      >
+        <app-bootstrap-icon name="check-circle" /> Marcar completada
+      </button>
+      <button
+        type="button"
+        id="nurse-pending-task-detail-not-completed-btn"
+        class="btn-secondary-neuro nurse-pending-task-detail-action--missed"
+        [disabled]="actionsDisabled(task)"
+        (click)="notCompletedRequested.emit(task)"
+        i18n="@@nursePendingTaskDetailModal.actionNotCompleted"
+      >
+        <app-bootstrap-icon name="x-circle" /> No realizada
+      </button>
+      <button
+        type="button"
+        id="nurse-pending-task-detail-postpone-btn"
+        class="btn-secondary-neuro nurse-pending-task-detail-action--postpone"
+        [disabled]="actionsDisabled(task)"
+        (click)="postponeRequested.emit(task)"
+        i18n="@@nursePendingTaskDetailModal.actionPostpone"
+      >
+        <app-bootstrap-icon name="clock" /> Posponer
+      </button>
+      <button
+        type="button"
+        id="nurse-pending-task-detail-close-btn"
+        class="btn-secondary-neuro nurse-pending-task-detail-close-footer"
+        (click)="dismissed.emit()"
+        i18n="@@nursePendingTaskDetailModal.close"
+      >
         Cerrar
       </button>
     </div>

@@ -27,9 +27,7 @@
     [showStaffNurseFilter]="true"
     [staffNurses]="qa.nursesForReports()"
     [staffNurseUserId]="qa.reportNurseUserId()"
-    [staffScopeSuffix]="
-      'Todos los pacientes del centro si no eliges enfermera; al elegir una enfermera, solo su ámbito de pacientes.'
-    "
+    [staffScopeSuffix]="staffQuickActionsReportsScopeSuffix"
     (dismissed)="qa.closeReports()"
     (csvDownload)="qa.downloadCsv($event)"
     (excelDownload)="qa.downloadExcel($event)"

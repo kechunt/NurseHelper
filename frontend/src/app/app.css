@@ -1,4 +1,5 @@
-
-
-
+/* Ancla estable para rutas; no introduce una caja de layout extra. */
+.app-router-slot {
+  display: contents;
+}
 

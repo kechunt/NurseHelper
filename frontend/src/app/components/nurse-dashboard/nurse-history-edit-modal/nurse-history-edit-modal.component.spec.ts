@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import type { NurseHistoryEditRecord } from './nurse-history-edit-modal.component';
 import { NurseHistoryEditModalComponent } from './nurse-history-edit-modal.component';
+import { NurseDashboardPatientRecordPatchFacade } from '../facades/nurse-dashboard-patient-record-patch.facade';
 import { NurseService } from '../../../services/nurse.service';
 import { ToastService } from '../../../services/toast.service';
 
@@ -45,12 +46,36 @@ describe('NurseHistoryEditModalComponent', () => {
     await TestBed.configureTestingModule({
       imports: [NurseHistoryEditModalComponent],
       providers: [
+        NurseDashboardPatientRecordPatchFacade,
         { provide: NurseService, useValue: nurseMock },
         { provide: ToastService, useValue: toastMock },
       ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(NurseHistoryEditModalComponent);
+  });
+
+  it('plantilla: cabecera y placeholders de descripción y notas', () => {
+    setupRecord({ description: 'X', historyId: 1, status: 'administered' });
+    const title = fixture.nativeElement.querySelector('h3')?.textContent || '';
+    expect(title.toLowerCase()).toContain('historial');
+    const desc = fixture.nativeElement.querySelector('#history-edit-desc') as HTMLTextAreaElement;
+    const notes = fixture.nativeElement.querySelector('#history-edit-notes') as HTMLTextAreaElement;
+    expect((desc?.getAttribute('placeholder') || '').length).toBeGreaterThan(5);
+    expect((notes?.getAttribute('placeholder') || '').length).toBeGreaterThan(5);
+    const saveBtn = fixture.nativeElement.querySelector('#nurse-history-edit-save-btn') as HTMLButtonElement;
+    expect(saveBtn).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('#nurse-history-edit-header-close-btn')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('#nurse-history-edit-cancel-btn')).toBeTruthy();
+  });
+
+  it('emite dismissed al pulsar Cancelar', () => {
+    setupRecord({ description: 'd', historyId: 1, status: 'administered' });
+    let n = 0;
+    const sub = fixture.componentInstance.dismissed.subscribe(() => n++);
+    (fixture.nativeElement.querySelector('#nurse-history-edit-cancel-btn') as HTMLButtonElement).click();
+    expect(n).toBe(1);
+    sub.unsubscribe();
   });
 
   it('ngOnChanges copia campos desde record con historyId', () => {
@@ -65,6 +90,20 @@ describe('NurseHistoryEditModalComponent', () => {
     expect(fixture.componentInstance.notes).toBe('Nota A');
     expect(fixture.componentInstance.reason).toBe('Paciente ausente');
     expect(fixture.componentInstance.status).toBe('not_administered');
+  });
+
+  it('muestra placeholder en motivo cuando aplica estado no realizado', () => {
+    setupRecord({
+      description: 'x',
+      scheduleId: 5,
+      status: 'not_administered',
+      source: 'schedule',
+    });
+    fixture.componentInstance.status = 'not_administered';
+    fixture.detectChanges();
+    const reason = fixture.nativeElement.querySelector('#history-edit-reason') as HTMLTextAreaElement;
+    expect(reason).toBeTruthy();
+    expect((reason.getAttribute('placeholder') || '').length).toBeGreaterThan(5);
   });
 
   it('showsStatusSelect es false si source es postpone', () => {

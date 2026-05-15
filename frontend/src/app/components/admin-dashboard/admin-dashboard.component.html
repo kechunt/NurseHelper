@@ -1,255 +1,127 @@
-<div class="admin-dashboard">
-  <app-admin-nurse-pick-modal-host />
-  <app-dashboard-user-profile-modal #adminProfile />
-  <div class="dashboard-header">
-    <div class="header-content">
-      <div
-        class="logo-section"
-        (click)="goToOverviewFromLogo()"
-        role="button"
-        tabindex="0"
-        aria-label="Ir al resumen del panel"
-        (keydown.enter)="goToOverviewFromLogo()"
-        (keydown.space)="goToOverviewFromLogo(); $event.preventDefault()"
-      >
-        <img src="/nursehelper.png" alt="" class="header-logo" />
-        <div class="title-section">
-          <h1 class="dashboard-title" id="admin-dashboard-heading">Panel de Administración</h1>
-        </div>
-      </div>
-      <div class="user-section">
-        <app-in-app-notifications-bell dashboardKind="admin" />
-        <button
-          type="button"
-          class="user-info profile-trigger-btn"
-          (click)="adminProfile.open()"
-          title="Editar mi información"
-          aria-label="Editar mi información de usuario"
-        >
-          <span class="user-name">{{ currentUser()?.firstName || '' }} {{ currentUser()?.lastName || '' }}</span>
-          <span class="user-role">Administrador</span>
-        </button>
-        <button type="button" class="neuro-btn-icon logout-btn" (click)="logout()" title="Cerrar Sesión" aria-label="Cerrar sesión">
-          🚪
-        </button>
-      </div>
-    </div>
+<app-staff-dashboard-shell
+  #staffShell
+  idPrefix="admin"
+  [dashboardTitle]="adminShellDashboardTitle"
+  panelHeadingId="admin-dashboard-heading"
+  notificationsKind="admin"
+  [roleDisplayLabel]="adminShellRoleDisplayLabel"
+  [logoAriaLabel]="adminShellLogoAriaLabel"
+  [navAriaLabel]="adminShellNavAriaLabel"
+  [activeTab]="tabState.activeTab()"
+  [userDisplayName]="headerUserDisplayName"
+  [mobileDrawer]="true"
+  (logoClick)="goToOverviewFromLogo()"
+  (tabSelected)="setActiveTab($event)"
+  (logoutClick)="logout()"
+>
+  <div staffShellTop>
+    <app-admin-nurse-pick-modal-host />
   </div>
 
-  <div class="dashboard-body">
-    <!-- Overlay para cerrar el nav en mobile al tocar fuera -->
-    <div
-      class="nav-mobile-overlay"
-      [class.visible]="navOpen"
-      (click)="closeNav()"
-      aria-hidden="true"
-    ></div>
+  <app-staff-dashboard-quick-actions-toolbar staffShellNavEnd />
 
-    <nav
-      class="dashboard-nav"
-      [class.nav-open]="navOpen"
-      role="tablist"
-      aria-label="Secciones del panel de administración"
-    >
-      <!-- Botón cerrar dentro del menú (mobile) -->
-      <button
-        type="button"
-        class="nav-mobile-close"
-        (click)="closeNav()"
-        aria-label="Cerrar menú"
-      >✕</button>
-
-      <button
-        type="button"
-        role="tab"
-        id="admin-tab-overview"
-        class="nav-link"
-        [class.active]="activeTab === 'overview'"
-        [attr.aria-selected]="activeTab === 'overview'"
-        aria-controls="admin-panel-overview"
-        (click)="setActiveTab('overview')"
-        (keydown)="onAdminTabKeydown($event, 'overview')"
-      >
-        📊 Resumen
-      </button>
-      <button
-        type="button"
-        role="tab"
-        id="admin-tab-users"
-        class="nav-link"
-        [class.active]="activeTab === 'users'"
-        [attr.aria-selected]="activeTab === 'users'"
-        aria-controls="admin-panel-users"
-        (click)="setActiveTab('users')"
-        (keydown)="onAdminTabKeydown($event, 'users')"
-      >
-        👤 Usuarios
-      </button>
-      <button
-        type="button"
-        role="tab"
-        id="admin-tab-staff"
-        class="nav-link"
-        [class.active]="activeTab === 'staff'"
-        [attr.aria-selected]="activeTab === 'staff'"
-        aria-controls="admin-panel-staff"
-        (click)="setActiveTab('staff')"
-        (keydown)="onAdminTabKeydown($event, 'staff')"
-      >
-        👩‍⚕️ Gestión de Enfermeras
-      </button>
-      <button
-        type="button"
-        role="tab"
-        id="admin-tab-areas"
-        class="nav-link"
-        [class.active]="activeTab === 'areas'"
-        [attr.aria-selected]="activeTab === 'areas'"
-        aria-controls="admin-panel-areas"
-        (click)="setActiveTab('areas')"
-        (keydown)="onAdminTabKeydown($event, 'areas')"
-      >
-        🏥 Áreas
-      </button>
-      <button
-        type="button"
-        role="tab"
-        id="admin-tab-beds"
-        class="nav-link"
-        [class.active]="activeTab === 'beds'"
-        [attr.aria-selected]="activeTab === 'beds'"
-        aria-controls="admin-panel-beds"
-        (click)="setActiveTab('beds')"
-        (keydown)="onAdminTabKeydown($event, 'beds')"
-      >
-        🛏️ Camas
-      </button>
-      <button
-        type="button"
-        role="tab"
-        id="admin-tab-patients"
-        class="nav-link"
-        [class.active]="activeTab === 'patients'"
-        [attr.aria-selected]="activeTab === 'patients'"
-        aria-controls="admin-panel-patients"
-        (click)="setActiveTab('patients')"
-        (keydown)="onAdminTabKeydown($event, 'patients')"
-      >
-        🧑‍🤝‍🧑 Pacientes
-      </button>
-      <button
-        type="button"
-        role="tab"
-        id="admin-tab-schedules"
-        class="nav-link"
-        [class.active]="activeTab === 'schedules'"
-        [attr.aria-selected]="activeTab === 'schedules'"
-        aria-controls="admin-panel-schedules"
-        (click)="setActiveTab('schedules')"
-        (keydown)="onAdminTabKeydown($event, 'schedules')"
-      >
-        📅 Horarios
-      </button>
-      <app-staff-dashboard-quick-actions-toolbar />
-    </nav>
-
+  <div staffShellQuickModals>
     <app-staff-dashboard-quick-actions-modals />
-
-    <main class="dashboard-content" id="admin-dashboard-main" aria-labelledby="admin-dashboard-heading">
-      <!-- Botón hamburguesa (solo visible en mobile) -->
-      <button
-        type="button"
-        class="nav-hamburger"
-        (click)="toggleNav()"
-        [attr.aria-expanded]="navOpen"
-        aria-label="Abrir menú de navegación"
-      >
-        <span class="hamburger-label">{{ activeTab === 'overview' ? '📊 Resumen' : activeTab === 'users' ? '👤 Usuarios' : activeTab === 'staff' ? '👩‍⚕️ Enfermeras' : activeTab === 'areas' ? '🏥 Áreas' : activeTab === 'beds' ? '🛏️ Camas' : activeTab === 'patients' ? '🧑‍🤝‍🧑 Pacientes' : '📅 Horarios' }}</span>
-        <span class="hamburger-icon">☰</span>
-      </button>
-      <!-- Resumen: *ngIf solo la primera vez; [hidden] evita destruir el componente al cambiar de pestaña -->
-      <div
-        *ngIf="hasVisitedTab('overview')"
-        [hidden]="activeTab !== 'overview'"
-        class="tab-content"
-        role="tabpanel"
-        id="admin-panel-overview"
-        aria-labelledby="admin-tab-overview"
-      >
-        <app-overview
-          [onNavigate]="setActiveTab.bind(this)"
-          [onOpenCoordination]="openCoordination.bind(this)"
-          [onOpenReports]="openReports.bind(this)"
-        ></app-overview>
-      </div>
-
-      <div
-        *ngIf="hasVisitedTab('users')"
-        [hidden]="activeTab !== 'users'"
-        class="tab-content"
-        role="tabpanel"
-        id="admin-panel-users"
-        aria-labelledby="admin-tab-users"
-      >
-        <app-users-management></app-users-management>
-      </div>
-
-      <div
-        *ngIf="hasVisitedTab('staff')"
-        [hidden]="activeTab !== 'staff'"
-        class="tab-content"
-        role="tabpanel"
-        id="admin-panel-staff"
-        aria-labelledby="admin-tab-staff"
-      >
-        <app-staff-management></app-staff-management>
-      </div>
-
-      <div
-        *ngIf="hasVisitedTab('areas')"
-        [hidden]="activeTab !== 'areas'"
-        class="tab-content"
-        role="tabpanel"
-        id="admin-panel-areas"
-        aria-labelledby="admin-tab-areas"
-      >
-        <app-pharmacy-coverage-summary-card />
-        <app-areas-management></app-areas-management>
-      </div>
-
-      <div
-        *ngIf="hasVisitedTab('beds')"
-        [hidden]="activeTab !== 'beds'"
-        class="tab-content"
-        role="tabpanel"
-        id="admin-panel-beds"
-        aria-labelledby="admin-tab-beds"
-      >
-        <app-beds-management></app-beds-management>
-      </div>
-
-      <div
-        *ngIf="hasVisitedTab('patients')"
-        [hidden]="activeTab !== 'patients'"
-        class="tab-content"
-        role="tabpanel"
-        id="admin-panel-patients"
-        aria-labelledby="admin-tab-patients"
-      >
-        <app-patients-management></app-patients-management>
-      </div>
-
-      <div
-        *ngIf="hasVisitedTab('schedules')"
-        [hidden]="activeTab !== 'schedules'"
-        class="tab-content"
-        role="tabpanel"
-        id="admin-panel-schedules"
-        aria-labelledby="admin-tab-schedules"
-      >
-        <app-schedules-management></app-schedules-management>
-      </div>
-    </main>
   </div>
-</div>
 
+  <main
+    staffShellMain
+    class="dashboard-content"
+    id="admin-dashboard-main"
+    aria-labelledby="admin-dashboard-heading"
+  >
+    <button
+      id="admin-shell-nav-hamburger-btn"
+      type="button"
+      class="nav-hamburger"
+      (click)="staffShell.toggleNav()"
+      [attr.aria-expanded]="staffShell.navOpen"
+      [attr.aria-label]="adminHamburgerOpenNavAriaLabel"
+    >
+      <span class="hamburger-label">{{ hamburgerSectionLabel }}</span>
+      <span class="hamburger-icon">☰</span>
+    </button>
+
+    <div
+      *ngIf="hasVisitedTab('overview')"
+      [hidden]="tabState.activeTab() !== 'overview'"
+      class="tab-content"
+      role="tabpanel"
+      id="admin-panel-overview"
+      aria-labelledby="admin-tab-overview"
+    >
+      <app-overview
+        [onNavigate]="setActiveTab.bind(this)"
+        [onOpenCoordination]="openCoordination.bind(this)"
+        [onOpenReports]="openReports.bind(this)"
+      ></app-overview>
+    </div>
+
+    <div
+      *ngIf="hasVisitedTab('users')"
+      [hidden]="tabState.activeTab() !== 'users'"
+      class="tab-content"
+      role="tabpanel"
+      id="admin-panel-users"
+      aria-labelledby="admin-tab-users"
+    >
+      <app-users-management></app-users-management>
+    </div>
+
+    <div
+      *ngIf="hasVisitedTab('staff')"
+      [hidden]="tabState.activeTab() !== 'staff'"
+      class="tab-content"
+      role="tabpanel"
+      id="admin-panel-staff"
+      aria-labelledby="admin-tab-staff"
+    >
+      <app-staff-management></app-staff-management>
+    </div>
+
+    <div
+      *ngIf="hasVisitedTab('areas')"
+      [hidden]="tabState.activeTab() !== 'areas'"
+      class="tab-content"
+      role="tabpanel"
+      id="admin-panel-areas"
+      aria-labelledby="admin-tab-areas"
+    >
+      <app-pharmacy-coverage-summary-card />
+      <app-areas-management></app-areas-management>
+    </div>
+
+    <div
+      *ngIf="hasVisitedTab('beds')"
+      [hidden]="tabState.activeTab() !== 'beds'"
+      class="tab-content"
+      role="tabpanel"
+      id="admin-panel-beds"
+      aria-labelledby="admin-tab-beds"
+    >
+      <app-beds-management></app-beds-management>
+    </div>
+
+    <div
+      *ngIf="hasVisitedTab('patients')"
+      [hidden]="tabState.activeTab() !== 'patients'"
+      class="tab-content"
+      role="tabpanel"
+      id="admin-panel-patients"
+      aria-labelledby="admin-tab-patients"
+    >
+      <app-patients-management></app-patients-management>
+    </div>
+
+    <div
+      *ngIf="hasVisitedTab('schedules')"
+      [hidden]="tabState.activeTab() !== 'schedules'"
+      class="tab-content"
+      role="tabpanel"
+      id="admin-panel-schedules"
+      aria-labelledby="admin-tab-schedules"
+    >
+      <app-schedules-management></app-schedules-management>
+    </div>
+  </main>
+</app-staff-dashboard-shell>

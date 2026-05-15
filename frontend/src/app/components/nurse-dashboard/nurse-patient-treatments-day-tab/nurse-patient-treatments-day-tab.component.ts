@@ -2,17 +2,18 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import type { TreatmentTodayItem } from '../treatment-today-item.model';
 import { AdminTableRowActionsModalComponent } from '../../../shared/components/admin-table-row-actions-modal/admin-table-row-actions-modal.component';
-import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
+import { BootstrapIconComponent } from '../../../shared/components/bootstrap-icon/bootstrap-icon.component';
 import {
   treatmentSlotPending,
   treatmentSlotStatusLabel,
   treatmentTypeLabel,
 } from '../nurse-treatments-today.helpers';
+import { nurseUiEmDash } from '../nurse-dashboard-ui-i18n.helpers';
 
 @Component({
   selector: 'app-nurse-patient-treatments-day-tab',
   standalone: true,
-  imports: [CommonModule, AdminTableRowActionsModalComponent, HeroIconComponent],
+  imports: [CommonModule, AdminTableRowActionsModalComponent, BootstrapIconComponent],
   templateUrl: './nurse-patient-treatments-day-tab.component.html',
   styleUrls: [
     '../../../shared/styles/admin-table-unified.css',
@@ -52,6 +53,15 @@ export class NursePatientTreatmentsDayTabComponent {
     this.selectedSlotForActions = null;
   }
 
+  notesCellDisplay(slot: TreatmentTodayItem): string {
+    const n = (slot.notes ?? '').trim();
+    return n ? n : nurseUiEmDash();
+  }
+
+  treatmentRowAriaLabel(slot: TreatmentTodayItem): string {
+    return $localize`:@@nursePatientTreatmentsDayTab.rowAriaOpenActions:Abrir acciones del tratamiento de las ${slot.time}:time:`;
+  }
+
   slotActionsTitle(): string {
     if (!this.selectedSlotForActions) {
       return 'Acciones';
@@ -64,10 +74,11 @@ export class NursePatientTreatmentsDayTabComponent {
     if (!slot) {
       return [];
     }
+    const notesLine = (slot.notes ?? '').trim() ? (slot.notes ?? '').trim() : nurseUiEmDash();
     return [
       `${this.typeLabel(slot.scheduleType)} · ${slot.description}`,
       `Estado: ${this.statusLabel(slot)}`,
-      `Notas: ${slot.notes || '—'}`,
+      `Notas: ${notesLine}`,
     ];
   }
 

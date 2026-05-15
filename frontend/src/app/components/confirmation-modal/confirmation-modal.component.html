@@ -1,5 +1,6 @@
 <div 
   *ngIf="show"
+  id="confirmation-modal-overlay"
   class="modal-overlay"
   appModalFocusTrap
   role="dialog"
@@ -16,6 +17,7 @@
     <div class="modal-header">
       <h2 [id]="'modal-title-' + type" class="modal-title">{{ title }}</h2>
       <button 
+        id="confirmation-modal-header-close-btn"
         type="button"
         class="modal-close"
         (click)="close()"
@@ -33,6 +35,7 @@
     
     <div class="modal-footer">
       <button 
+        id="confirmation-modal-cancel-btn"
         type="button"
         class="btn btn-secondary"
         (click)="cancel()"
@@ -41,6 +44,7 @@
         {{ cancelText }}
       </button>
       <button 
+        id="confirmation-modal-confirm-btn"
         type="button"
         class="btn btn-{{ type === 'danger' ? 'danger' : 'primary' }}"
         (click)="confirm()"

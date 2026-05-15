@@ -1,0 +1,34 @@
+<div
+  [class]="theme === 'standard' ? 'modal-backdrop' : 'admin-assign-modal-backdrop'"
+  [class.admin-assign-modal-backdrop--stack-top]="theme === 'adminAssign' && assignStackTop"
+  (click)="onBackdropClick()"
+>
+  <div
+    [class]="theme === 'standard' ? 'modal-content' : 'admin-assign-modal-content'"
+    [class.modal-large-assign]="theme === 'adminAssign' && assignLarge"
+    [ngClass]="theme === 'standard' ? contentClass : null"
+    (click)="$event.stopPropagation()"
+  >
+    @if (theme === 'standard') {
+      <div class="modal-header">
+        <h3 class="modal-shell-title">
+          @if (titleIcon) {
+            <app-bootstrap-icon [name]="titleIcon" />
+          }
+          <span class="modal-shell-title-text">{{ title }}</span>
+        </h3>
+        <button type="button" class="close-btn admin-close-btn" (click)="onCloseClick()" aria-label="Cerrar">
+          ✕
+        </button>
+      </div>
+    } @else {
+      <div class="admin-assign-modal-header">
+        <h3>{{ title }}</h3>
+        <button type="button" class="admin-assign-modal-close" (click)="onCloseClick()" aria-label="Cerrar">
+          ✕
+        </button>
+      </div>
+    }
+    <ng-content />
+  </div>
+</div>

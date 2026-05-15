@@ -1,10 +1,15 @@
 <div class="section-header">
-  <h2 class="section-title"><app-hero-icon name="users" /> Pacientes del área</h2>
+  <h2 id="nurse-patients-area-title" class="section-title">
+    <app-bootstrap-icon name="users" /> <span i18n="@@nursePatientsAssigned.sectionTitle">Pacientes del área</span>
+  </h2>
 </div>
 
 <div class="filters-container patients-filters-bar">
   <div class="filter-box">
-    <label for="nurse-patient-search"><app-hero-icon name="magnifying-glass" /> Buscar por nombre o cama</label>
+    <label for="nurse-patient-search"
+      ><app-bootstrap-icon name="magnifying-glass" />
+      <span i18n="@@nursePatientsAssigned.labelSearchByNameOrBed">Buscar por nombre o cama</span></label
+    >
     <input
       id="nurse-patient-search"
       type="text"
@@ -13,27 +18,36 @@
       [ngModel]="searchTerm"
       (ngModelChange)="onSearchTermChange($event)"
       placeholder="Ej. María, 2B…"
+      i18n-placeholder="@@nursePatientsAssigned.searchPlaceholder"
     />
   </div>
   <div class="filter-box">
-    <label for="nurse-patient-filter-type"><app-hero-icon name="clipboard-document-list" /> Filtrar lista</label>
+    <label for="nurse-patient-filter-type"
+      ><app-bootstrap-icon name="clipboard-document-list" />
+      <span i18n="@@nursePatientsAssigned.labelFilterList">Filtrar lista</span></label
+    >
     <select
       id="nurse-patient-filter-type"
       class="neuro-select neuro-select-inline"
       [ngModel]="selectedFilter"
       (ngModelChange)="onSelectedFilterChange($event)"
     >
-      <option value="mine">Mis pacientes (asignados a mí)</option>
-      <option value="all">Todos en el área</option>
-      <option value="medications">Con medicamentos hoy</option>
-      <option value="tasks">Con tareas pendientes</option>
-      <option value="critical">Casos críticos</option>
+      <option value="mine" i18n="@@nursePatientsAssigned.filterOptionMine">Mis pacientes (asignados a mí)</option>
+      <option value="all" i18n="@@nursePatientsAssigned.filterOptionAll">Todos en el área</option>
+      <option value="medications" i18n="@@nursePatientsAssigned.filterOptionMedications">Con medicamentos hoy</option>
+      <option value="tasks" i18n="@@nursePatientsAssigned.filterOptionTasks">Con tareas pendientes</option>
+      <option value="critical" i18n="@@nursePatientsAssigned.filterOptionCritical">Casos críticos</option>
     </select>
   </div>
   <div class="filter-box filter-box-actions" *ngIf="showClearPatientFilters">
     <label class="filter-box-spacer" aria-hidden="true">&nbsp;</label>
-    <button type="button" class="neuro-btn neuro-btn-sm" (click)="onClearPatientFilters()">
-      <app-hero-icon name="arrow-path" /> Limpiar filtros
+    <button
+      type="button"
+      id="nurse-patients-assigned-section-clear-filters-btn"
+      class="neuro-btn neuro-btn-sm"
+      (click)="onClearPatientFilters()"
+    >
+      <app-bootstrap-icon name="arrow-path" /> <span i18n="@@nursePatientsAssigned.btnClearFilters">Limpiar filtros</span>
     </button>
   </div>
 </div>
@@ -41,12 +55,12 @@
 <!-- Cuadrícula tipo gestión de enfermeras (admin) -->
 <div *ngIf="patients.length > 0" class="patients-assigned-grid">
   <div
-    *ngFor="let patient of patients"
+    *ngFor="let patient of patients; let i = index"
     class="patient-assigned-card"
     [class.patient-assigned-card--critical]="patient.priority === 'critical'"
     role="button"
     tabindex="0"
-    [attr.aria-label]="'Ver detalle de ' + patient.name"
+    [attr.aria-label]="patientCardAriaLabel(patient)"
     (click)="openPatientDetails.emit(patient)"
     (keydown.enter)="openPatientDetails.emit(patient)"
     (keydown.space)="$event.preventDefault(); openPatientDetails.emit(patient)"
@@ -59,33 +73,40 @@
             *ngIf="patient.isAssignedToMe"
             class="patient-assignment-badge patient-assignment-badge--mine"
             title="Asignado a ti"
-            >Mi paciente</span
+            i18n-title="@@nursePatientsAssigned.badgeAssignedToMeTitle"
+            ><span i18n="@@nursePatientsAssigned.badgeMyPatient">Mi paciente</span></span
           >
           <span
             *ngIf="!patient.isAssignedToMe && patient.assignedToName"
             class="patient-assignment-badge patient-assignment-badge--other"
             title="Responsable según reparto de turno"
+            i18n-title="@@nursePatientsAssigned.badgeShiftAssigneeTitle"
             >{{ patient.assignedToName }}</span
           >
           <span
             *ngIf="!patient.isAssignedToMe && !patient.assignedToName"
             class="patient-assignment-badge patient-assignment-badge--pending"
             title="Sin enfermera asignada (pendiente de reparto)"
-            >Sin asignar</span
+            i18n-title="@@nursePatientsAssigned.badgeUnassignedTitle"
+            ><span i18n="@@nursePatientsAssigned.badgeUnassigned">Sin asignar</span></span
           >
           <button
             type="button"
             class="nurse-details-pill-btn"
+            [attr.id]="'nurse-patients-assigned-section-view-details-' + i"
             (click)="openPatientDetails.emit(patient); $event.stopPropagation()"
             title="Ver detalles del paciente"
+            i18n-title="@@nursePatientsAssigned.btnViewPatientDetailsTitle"
           >
-            Detalles
+            <span i18n="@@nursePatientsAssigned.btnDetails">Detalles</span>
           </button>
         </div>
         <p class="patient-assigned-card-meta">
-          <span class="patient-assigned-meta-item"><app-hero-icon name="rectangle-group" /> {{ patient.bedNumber }}</span>
+          <span class="patient-assigned-meta-item"><app-bootstrap-icon name="rectangle-group" /> {{ patient.bedNumber }}</span>
           <span class="patient-assigned-meta-sep">·</span>
-          <span class="patient-assigned-meta-item"><app-hero-icon name="cake" /> {{ patient.age }} años</span>
+          <span class="patient-assigned-meta-item"
+            ><app-bootstrap-icon name="cake" /> <span i18n="@@nursePatientsAssigned.ageYearsLine">{{ patient.age }} años</span></span
+          >
         </p>
       </div>
       <div class="patient-assigned-kpis">
@@ -93,12 +114,14 @@
           class="patient-assigned-task-pill"
           [class.patient-assigned-task-pill--active]="medicationDosesToday(patient) > 0"
         >
-          <app-hero-icon name="beaker" /> {{ medicationDosesToday(patient) }} medicamentos
+          <app-bootstrap-icon name="beaker" />
+          <span i18n="@@nursePatientsAssigned.kpiMedicationsCount">{{ medicationDosesToday(patient) }} medicamentos</span>
         </div>
         <div
           class="patient-assigned-task-pill patient-assigned-task-pill--muted"
         >
-          <app-hero-icon name="shield-check" /> {{ treatmentsTodayCount(patient) }} tratamientos
+          <app-bootstrap-icon name="shield-check" />
+          <span i18n="@@nursePatientsAssigned.kpiTreatmentsCount">{{ treatmentsTodayCount(patient) }} tratamientos</span>
         </div>
       </div>
     </div>
@@ -110,8 +133,8 @@
         [notesFromApi]="patient.clinicalNotes?.diagnosis ?? []"
         [legacySingleFieldText]="patient.diagnosis"
         [compact]="true"
-        blockLabel="Diagnóstico"
-        emptyLabel="Sin diagnóstico"
+        [blockLabel]="clinicalDiagnosisBlockLabel"
+        [emptyLabel]="clinicalDiagnosisEmptyLabel"
       />
       <app-nurse-clinical-notes-scope-block
         [patientId]="patient.id"
@@ -119,11 +142,13 @@
         [notesFromApi]="patient.clinicalNotes?.medical ?? []"
         [legacySingleFieldText]="patient.medicalObservations ?? ''"
         [compact]="true"
-        blockLabel="Obs. médicas"
-        emptyLabel="Sin observaciones"
+        [blockLabel]="clinicalMedicalBlockLabel"
+        [emptyLabel]="clinicalMedicalEmptyLabel"
       />
     </div>
   </div>
 </div>
 
-<p *ngIf="patients.length === 0" class="empty-message">No se encontraron pacientes con los filtros seleccionados</p>
+<p *ngIf="patients.length === 0" class="empty-message" i18n="@@nursePatientsAssigned.emptyNoPatientsWithFilters">
+  No se encontraron pacientes con los filtros seleccionados
+</p>

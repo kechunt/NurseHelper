@@ -5,7 +5,7 @@ import {
   PharmacyService,
   PharmacyShiftCoverageSummaryShift,
 } from '../../../services/pharmacy.service';
-import { HeroIconComponent } from '../hero-icon/hero-icon.component';
+import { BootstrapIconComponent } from '../bootstrap-icon/bootstrap-icon.component';
 
 function formatLocalDateIsoYmd(d: Date): string {
   const y = d.getFullYear();
@@ -17,7 +17,7 @@ function formatLocalDateIsoYmd(d: Date): string {
 @Component({
   selector: 'app-pharmacy-coverage-summary-card',
   standalone: true,
-  imports: [CommonModule, FormsModule, HeroIconComponent],
+  imports: [CommonModule, FormsModule, BootstrapIconComponent],
   templateUrl: './pharmacy-coverage-summary-card.component.html',
   styleUrl: './pharmacy-coverage-summary-card.component.css',
 })
@@ -26,6 +26,8 @@ export class PharmacyCoverageSummaryCardComponent implements OnInit {
   shifts: PharmacyShiftCoverageSummaryShift[] = [];
   loading = false;
   error: string | null = null;
+
+  readonly pharmacyCoverageErrLoad = $localize`:@@pharmacyCoverageCard.errLoad:No se pudo cargar la cobertura de farmacia`;
 
   constructor(private pharmacyService: PharmacyService) {}
 
@@ -49,7 +51,7 @@ export class PharmacyCoverageSummaryCardComponent implements OnInit {
       error: (err) => {
         this.loading = false;
         this.shifts = [];
-        this.error = err?.error?.message || 'No se pudo cargar la cobertura de farmacia';
+        this.error = err?.error?.message || this.pharmacyCoverageErrLoad;
       },
     });
   }

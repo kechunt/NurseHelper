@@ -15,4 +15,5 @@ import { StaffQuickActionsService } from './staff-quick-actions.service';
 })
 export class StaffDashboardQuickActionsModalsComponent {
   readonly qa = inject(StaffQuickActionsService);
+  readonly staffQuickActionsReportsScopeSuffix = $localize`:@@staffQuickActionsHtml.reportsScopeSuffix:Todos los pacientes del centro si no eliges enfermera; al elegir una enfermera, solo su ámbito de pacientes.`;
 }

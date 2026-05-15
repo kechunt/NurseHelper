@@ -13,9 +13,10 @@
   >
     <div class="modal-header">
       <h3 id="nurse-pharmacy-patients-dialog-title" i18n="@@nursePharmacyPatientsModal.title">
-        <app-hero-icon name="users" /> Pacientes — {{ med.name }}
+        <app-bootstrap-icon name="users" /> Pacientes — {{ med.name }}
       </h3>
       <button
+        id="nurse-pharmacy-patients-close-btn"
         type="button"
         class="close-btn"
         aria-label="Cerrar"
@@ -39,13 +40,24 @@
         <li *ngFor="let p of med.patients" class="pharmacy-patients-list-item">
           <div class="pharmacy-patient-line-name">{{ p.patientName }}</div>
           <div class="pharmacy-patient-line-meta">
-            <span *ngIf="p.bedNumber" i18n="@@nursePharmacyPatientsModal.bed"><app-hero-icon name="rectangle-group" /> Cama {{ p.bedNumber }}</span>
+            <span *ngIf="p.bedNumber" i18n="@@nursePharmacyPatientsModal.bed"><app-bootstrap-icon name="rectangle-group" /> Cama {{ p.bedNumber }}</span>
             <span *ngIf="p.areaName" class="pharmacy-patient-area" i18n="@@nursePharmacyPatientsModal.areaSuffix">
               · {{ p.areaName }}
             </span>
           </div>
         </li>
       </ul>
+    </div>
+    <div class="modal-footer nurse-reports-modal-footer">
+      <button
+        id="nurse-pharmacy-patients-footer-close-btn"
+        type="button"
+        class="btn-primary-neuro"
+        (click)="onCloseClick()"
+        i18n="@@nursePharmacyPatientsModal.footerClose"
+      >
+        Cerrar
+      </button>
     </div>
   </div>
 </div>

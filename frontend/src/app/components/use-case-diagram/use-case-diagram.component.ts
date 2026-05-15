@@ -1,6 +1,6 @@
 import { Component, OnInit, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HeroIconComponent } from '../../shared/components/hero-icon/hero-icon.component';
+import { BootstrapIconComponent } from '../../shared/components/bootstrap-icon/bootstrap-icon.component';
 
 interface Actor {
   id: string;
@@ -39,7 +39,7 @@ interface Relation {
 @Component({
   selector: 'app-use-case-diagram',
   standalone: true,
-  imports: [CommonModule, HeroIconComponent],
+  imports: [CommonModule, BootstrapIconComponent],
   templateUrl: './use-case-diagram.component.html',
   styleUrl: './use-case-diagram.component.css'
 })

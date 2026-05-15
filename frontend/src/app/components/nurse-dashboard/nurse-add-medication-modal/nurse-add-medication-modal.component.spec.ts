@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { NurseAddMedicationModalComponent } from './nurse-add-medication-modal.component';
+import { NurseDashboardPatientCareCreateFacade } from '../facades/nurse-dashboard-patient-care-create.facade';
 import { NurseService } from '../../../services/nurse.service';
 import { ToastService } from '../../../services/toast.service';
 
@@ -32,6 +33,7 @@ describe('NurseAddMedicationModalComponent', () => {
     await TestBed.configureTestingModule({
       imports: [NurseAddMedicationModalComponent],
       providers: [
+        NurseDashboardPatientCareCreateFacade,
         { provide: NurseService, useValue: nurseServiceMock },
         { provide: ToastService, useValue: toastMock },
       ],
@@ -49,6 +51,30 @@ describe('NurseAddMedicationModalComponent', () => {
     nurseServiceMock.addMedication.and.returnValue(of({ schedulesCreated: 2 }));
     fixture.componentRef.setInput('initialPatientId', '');
     fixture.componentInstance.ngOnInit();
+  });
+
+  it('plantilla: título modal y opción Meses en duración', () => {
+    const h3 = fixture.nativeElement.querySelector('h3');
+    expect(h3?.textContent).toContain('Medicamento');
+    const unitSelect = fixture.nativeElement.querySelector('select[name="durationUnit"]') as HTMLSelectElement;
+    expect(unitSelect?.options.length).toBeGreaterThanOrEqual(3);
+    expect(Array.from(unitSelect.options).map((o) => o.textContent || '').join(' ')).toContain('Mes');
+  });
+
+  it('plantilla: botón enviar alta medicamento con id', () => {
+    const btn = fixture.nativeElement.querySelector('#nurse-add-medication-submit-btn') as HTMLButtonElement;
+    expect(btn).toBeTruthy();
+    expect(btn.disabled).toBeFalse();
+    expect(fixture.nativeElement.querySelector('#nurse-add-medication-header-close-btn')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('#nurse-add-medication-cancel-btn')).toBeTruthy();
+  });
+
+  it('emite dismissed al pulsar Cancelar', () => {
+    let n = 0;
+    const sub = fixture.componentInstance.dismissed.subscribe(() => n++);
+    (fixture.nativeElement.querySelector('#nurse-add-medication-cancel-btn') as HTMLButtonElement).click();
+    expect(n).toBe(1);
+    sub.unsubscribe();
   });
 
   it('inicializa selectedPatientId desde initialPatientId', () => {

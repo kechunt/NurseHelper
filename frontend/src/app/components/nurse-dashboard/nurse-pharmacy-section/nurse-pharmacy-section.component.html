@@ -1,11 +1,19 @@
 <div class="pharmacy-modules-stack">
   <section class="pharmacy-module-card" aria-labelledby="nurse-pharmacy-today-title">
     <div class="section-header">
-      <h2 id="nurse-pharmacy-today-title" class="section-title"><app-hero-icon name="beaker" /> Medicamentos de Hoy - Solicitud a Farmacia</h2>
+      <h2 id="nurse-pharmacy-today-title" class="section-title">
+        <app-bootstrap-icon name="beaker" />
+        <span i18n="@@nursePharmacySection.todaySectionTitle">Medicamentos de Hoy - Solicitud a Farmacia</span>
+      </h2>
       <div class="tasks-actions header-actions">
         <div class="summary-inline">
-          <span class="summary-badge"><app-hero-icon name="archive-box" /> {{ uniqueMedicationsCount }} medicamentos</span>
-          <span class="summary-badge"><app-hero-icon name="beaker" /> {{ totalDosesToday }} dosis</span>
+          <span class="summary-badge"
+            ><app-bootstrap-icon name="archive-box" />
+            <span i18n="@@nursePharmacySection.summaryUniqueMedications">{{ uniqueMedicationsCount }} medicamentos</span></span
+          >
+          <span class="summary-badge"
+            ><app-bootstrap-icon name="beaker" /> <span i18n="@@nursePharmacySection.summaryTotalDoses">{{ totalDosesToday }} dosis</span></span
+          >
         </div>
       </div>
     </div>
@@ -15,27 +23,34 @@
       class="pharmacy-shift-contacts"
       role="region"
       aria-label="Contacto farmacia por turno"
+      i18n-aria-label="@@nursePharmacySection.contactShiftRegionAriaLabel"
     >
-      <p class="pharmacy-shift-contacts-intro">Encargado de farmacia por turno (hoy)</p>
+      <p class="pharmacy-shift-contacts-intro" i18n="@@nursePharmacySection.shiftContactsIntro">
+        Encargado de farmacia por turno (hoy)
+      </p>
       <div class="pharmacy-shift-contacts-grid-wrap">
-      <ul class="pharmacy-shift-contacts-list">
-        <li *ngFor="let c of pharmacyContactsByShift" class="pharmacy-shift-contact-row">
-          <span class="pharmacy-shift-slot">
-            {{ c.shiftName }}
-            <span class="pharmacy-shift-time">({{ c.startTime }}–{{ c.endTime }})</span>
-          </span>
-          <span class="pharmacy-shift-contact-detail">
-            <ng-container *ngIf="c.hasOnDutyContact; else noPharmacyDuty">
-              <span class="pharmacy-shift-contact-name">{{ c.contactName || 'Farmacia' }}</span>
-              <a *ngIf="c.phone" [href]="'tel:' + c.phone" class="pharmacy-shift-contact-tel">{{ c.phone }}</a>
-              <span *ngIf="!c.phone" class="pharmacy-shift-no-phone">Sin teléfono registrado</span>
-            </ng-container>
-            <ng-template #noPharmacyDuty>
-              <span class="pharmacy-shift-contact-missing">Sin encargado de farmacia en este turno</span>
-            </ng-template>
-          </span>
-        </li>
-      </ul>
+        <ul class="pharmacy-shift-contacts-list">
+          <li *ngFor="let c of pharmacyContactsByShift" class="pharmacy-shift-contact-row">
+            <span class="pharmacy-shift-slot">
+              {{ c.shiftName }}
+              <span class="pharmacy-shift-time">({{ c.startTime }}–{{ c.endTime }})</span>
+            </span>
+            <span class="pharmacy-shift-contact-detail">
+              <ng-container *ngIf="c.hasOnDutyContact; else noPharmacyDuty">
+                <span class="pharmacy-shift-contact-name">{{ pharmacyContactDisplayName(c.contactName) }}</span>
+                <a *ngIf="c.phone" [href]="'tel:' + c.phone" class="pharmacy-shift-contact-tel">{{ c.phone }}</a>
+                <span *ngIf="!c.phone" class="pharmacy-shift-no-phone" i18n="@@nursePharmacySection.shiftContactNoPhone"
+                  >Sin teléfono registrado</span
+                >
+              </ng-container>
+              <ng-template #noPharmacyDuty>
+                <span class="pharmacy-shift-contact-missing" i18n="@@nursePharmacySection.shiftContactMissingDuty"
+                  >Sin encargado de farmacia en este turno</span
+                >
+              </ng-template>
+            </span>
+          </li>
+        </ul>
       </div>
     </div>
 
@@ -44,17 +59,23 @@
         <thead>
           <tr>
             <th style="width: 40px">
-              <input type="checkbox" (change)="toggleAllMedications($event)" title="Seleccionar todos" />
+              <input
+                id="nurse-pharmacy-section-select-all-checkbox"
+                type="checkbox"
+                (change)="toggleAllMedications($event)"
+                title="Seleccionar todos"
+                i18n-title="@@nursePharmacySection.selectAllCheckboxTitle"
+              />
             </th>
-            <th>Medicamento</th>
-            <th>Dosis</th>
-            <th>Cantidad</th>
-            <th>Pacientes</th>
-            <th>Estado</th>
+            <th i18n="@@nursePharmacySection.todayColMedication">Medicamento</th>
+            <th i18n="@@nursePharmacySection.todayColDosage">Dosis</th>
+            <th i18n="@@nursePharmacySection.todayColQuantity">Cantidad</th>
+            <th i18n="@@nursePharmacySection.todayColPatients">Pacientes</th>
+            <th i18n="@@nursePharmacySection.todayColStatus">Estado</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let med of medicationsForPharmacy">
+          <tr *ngFor="let med of medicationsForPharmacy; let i = index">
             <td>
               <input type="checkbox" [(ngModel)]="med.requested" />
             </td>
@@ -65,27 +86,32 @@
               <span class="pharmacy-dosage-plain">{{ med.dosage }}</span>
             </td>
             <td>
-              <span class="pharmacy-dose-count-plain">{{ med.totalDoses }} dosis</span>
+              <span class="pharmacy-dose-count-plain" i18n="@@nursePharmacySection.doseCountLine">{{ med.totalDoses }} dosis</span>
             </td>
             <td class="pharmacy-patients-cell">
               <div class="pharmacy-patients-summary">
-                <span class="pharmacy-patient-count-text">
-                  {{ med.patientsCount }} {{ med.patientsCount === 1 ? 'paciente' : 'pacientes' }}
-                </span>
+                <span
+                  class="pharmacy-patient-count-text"
+                  i18n="@@nursePharmacySection.patientCountLine"
+                  >{med.patientsCount, plural, =1 {{{ med.patientsCount }} paciente} other {{{ med.patientsCount }} pacientes}}</span
+                >
                 <button
                   type="button"
                   class="pharmacy-view-patients-btn"
+                  [attr.id]="'nurse-pharmacy-section-view-patients-' + i"
                   (click)="viewPatients.emit(med)"
                   title="Ver quiénes requieren este medicamento hoy"
+                  i18n-title="@@nursePharmacySection.viewPatientsWhoNeedMedTitle"
                 >
-                  Ver pacientes
+                  <span i18n="@@nursePharmacySection.btnViewPatients">Ver pacientes</span>
                 </button>
               </div>
             </td>
             <td>
               <span class="status-indicator" [class.done]="med.requested" [class.pending]="!med.requested">
-                <app-hero-icon [name]="med.requested ? 'check-circle' : 'clock'" />
-                {{ med.requested ? 'Solicitado' : 'Pendiente' }}
+                <app-bootstrap-icon [name]="med.requested ? 'check-circle' : 'clock'" />
+                <span *ngIf="med.requested" i18n="@@nursePharmacySection.rowStatusRequested">Solicitado</span>
+                <span *ngIf="!med.requested" i18n="@@nursePharmacySection.rowStatusPending">Pendiente</span>
               </span>
             </td>
           </tr>
@@ -94,62 +120,79 @@
     </div>
 
     <div class="pharmacy-footer">
-      <button type="button" class="neuro-btn btn-primary-neuro large" (click)="sendRequest.emit()">
-        <app-hero-icon name="paper-airplane" /> Enviar Solicitud a Farmacia ({{ requestedCount }} seleccionados)
+      <button
+        id="nurse-pharmacy-section-send-request-btn"
+        type="button"
+        class="neuro-btn btn-primary-neuro large"
+        (click)="sendRequest.emit()"
+      >
+        <app-bootstrap-icon name="paper-airplane" />
+        <span i18n="@@nursePharmacySection.btnSendRequestToPharmacy"
+          >Enviar Solicitud a Farmacia ({{ requestedCount }} seleccionados)</span
+        >
       </button>
     </div>
 
-    <p *ngIf="medicationsForPharmacy.length === 0" class="empty-message">No hay medicamentos programados para hoy</p>
+    <p *ngIf="medicationsForPharmacy.length === 0" class="empty-message" i18n="@@nursePharmacySection.emptyNoMedicationsToday">
+      No hay medicamentos programados para hoy
+    </p>
   </section>
 
   <section class="pharmacy-module-card pharmacy-module-card--history" aria-labelledby="nurse-pharmacy-history-title">
     <div class="pharmacy-history-shell">
       <div class="pharmacy-history-toolbar">
         <div class="pharmacy-history-heading-block">
-          <h3 id="nurse-pharmacy-history-title" class="pharmacy-history-title"><app-hero-icon name="document-text" /> Historial de solicitudes a farmacia</h3>
+          <h3 id="nurse-pharmacy-history-title" class="pharmacy-history-title">
+            <app-bootstrap-icon name="document-text" />
+            <span i18n="@@nursePharmacySection.historySectionTitle">Historial de solicitudes a farmacia</span>
+          </h3>
           <p class="pharmacy-history-subtitle">
-            Registro de pedidos enviados por fecha.
-            <span *ngIf="!historyOpen" class="pharmacy-history-collapsed-hint"> Pulsa <strong>Mostrar</strong> para ver la tabla.</span>
+            <span i18n="@@nursePharmacySection.historySubtitleLead">Registro de pedidos enviados por fecha.</span>
+            <span *ngIf="!historyOpen" class="pharmacy-history-collapsed-hint" i18n="@@nursePharmacySection.historyCollapsedHint">
+              Pulsa <strong>Mostrar</strong> para ver la tabla.
+            </span>
           </p>
         </div>
         <button
+          id="nurse-pharmacy-section-history-toggle-btn"
           type="button"
           class="toggle-btn-neuro"
           (click)="toggleHistory.emit()"
           [attr.aria-expanded]="historyOpen"
           aria-controls="nurse-pharmacy-history-panel"
         >
-          {{ historyOpen ? 'Ocultar' : 'Mostrar' }}
+          <span *ngIf="historyOpen" i18n="@@nursePharmacySection.historyToggleHide">Ocultar</span>
+          <span *ngIf="!historyOpen" i18n="@@nursePharmacySection.historyToggleShow">Mostrar</span>
         </button>
       </div>
 
       <div *ngIf="historyOpen" id="nurse-pharmacy-history-panel" class="pharmacy-history-panel">
         <div class="pharmacy-history-filters">
           <label class="pharmacy-history-label">
-            <span>Fecha</span>
+            <span i18n="@@nursePharmacySection.historyDateLabel">Fecha</span>
             <input type="date" class="pharmacy-history-date" [value]="historyDate" (change)="onHistoryDateChange($event)" />
           </label>
-          <span class="pharmacy-history-help">Por defecto: hoy</span>
+          <span class="pharmacy-history-help" i18n="@@nursePharmacySection.historyDateDefaultHint">Por defecto: hoy</span>
         </div>
 
-        <p *ngIf="historyLoading" class="empty-message">Cargando historial…</p>
+        <p *ngIf="historyLoading" class="empty-message" i18n="@@nursePharmacySection.historyLoading">Cargando historial…</p>
         <p *ngIf="!historyLoading && historyError" class="empty-message">{{ historyError }}</p>
 
         <div *ngIf="!historyLoading && !historyError" class="table-wrapper-neuro unified-table-container nurse-table-shell-flat">
           <table class="unified-tasks-table neuro-table nurse-tasks-table pharmacy-history-table">
             <thead>
               <tr>
-                <th>Hora</th>
-                <th>ID</th>
-                <th>Medicamento</th>
-                <th>Dosis</th>
-                <th>Cantidad</th>
-                <th>Estado</th>
+                <th i18n="@@nursePharmacySection.historyColTime">Hora</th>
+                <th i18n="@@nursePharmacySection.historyColId">ID</th>
+                <th i18n="@@nursePharmacySection.historyColMedication">Medicamento</th>
+                <th i18n="@@nursePharmacySection.historyColDosage">Dosis</th>
+                <th i18n="@@nursePharmacySection.historyColQuantity">Cantidad</th>
+                <th i18n="@@nursePharmacySection.historyColStatus">Estado</th>
               </tr>
             </thead>
             <tbody>
               <tr *ngFor="let r of historyItems">
-                <td>{{ r.requestedAt | date:'HH:mm' }}</td>
+                <td>{{ r.requestedAt | date: 'HH:mm' }}</td>
                 <td><span class="pharmacy-history-id">{{ r.requestId }}</span></td>
                 <td>{{ r.medication }}</td>
                 <td>{{ r.dosage }}</td>
@@ -160,7 +203,7 @@
           </table>
         </div>
 
-        <p *ngIf="!historyLoading && !historyError && historyItems.length === 0" class="empty-message">
+        <p *ngIf="!historyLoading && !historyError && historyItems.length === 0" class="empty-message" i18n="@@nursePharmacySection.historyEmptyNoRequests">
           No hay solicitudes en esa fecha.
         </p>
       </div>

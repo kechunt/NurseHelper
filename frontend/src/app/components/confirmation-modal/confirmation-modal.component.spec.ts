@@ -34,15 +34,18 @@ describe('ConfirmationModalComponent', () => {
   it('muestra título, mensaje y botones por defecto cuando show es true', () => {
     fixture.componentRef.setInput('show', true);
     fixture.detectChanges();
-    const overlay = fixture.nativeElement.querySelector('.modal-overlay') as HTMLElement;
+    const overlay = fixture.nativeElement.querySelector('#confirmation-modal-overlay') as HTMLElement;
     expect(overlay).toBeTruthy();
+    expect(overlay.querySelector('#confirmation-modal-header-close-btn')).toBeTruthy();
+    expect(overlay.querySelector('#confirmation-modal-cancel-btn')).toBeTruthy();
+    expect(overlay.querySelector('#confirmation-modal-confirm-btn')).toBeTruthy();
     expect(overlay.querySelector('.modal-title')?.textContent).toContain('Confirmar acción');
     expect(overlay.textContent).toContain('¿Estás seguro de realizar esta acción?');
     const buttons = overlay.querySelectorAll('button');
     const labels = Array.from(buttons).map((b) => b.textContent?.trim());
     expect(labels.some((t) => t?.includes('Cancelar'))).toBeTrue();
     expect(labels.some((t) => t?.includes('Confirmar'))).toBeTrue();
-    const closeBtn = overlay.querySelector('.modal-close') as HTMLButtonElement | null;
+    const closeBtn = overlay.querySelector('#confirmation-modal-header-close-btn') as HTMLButtonElement | null;
     expect(closeBtn?.getAttribute('aria-label')).toContain('Cerrar');
   });
 });

@@ -31,3 +31,12 @@ Tras desplegar código nuevo, asegúrate de que las migraciones se hayan ejecuta
 ## `backend/frontend/package.json`
 
 Carpeta **`backend/frontend/`** con un `package.json` mínimo es un **stub de compatibilidad** para despliegues que esperan un comando de build de “frontend” dentro del árbol del backend (p. ej. configuraciones heredadas en Vercel). El script solo hace `echo` y **no construye** la app Angular (el frontend real está en `../frontend/`). **No lo borres** si tu pipeline o documentación de deploy lo referencian; si unifica el build, puedes eliminar la carpeta y actualizar la plataforma.
+
+## Entrada serverless (`api/`)
+
+El handler de Vercel u otras funciones serverless está en [`api/index.ts`](api/index.ts). Ese archivo importa la instancia de Express desde [`src/app-test.ts`](src/app-test.ts) (no desde [`src/app.ts`](src/app.ts)).
+
+- **Propósito habitual de `app-test`:** exponer una app HTTP mínima o de prueba para el arranque en entorno serverless (inicialización de DB, health, rutas acotadas), sin cargar toda la superficie del servidor “completo”.
+- **Si en producción debe usarse la API completa:** cambia el import en `api/index.ts` para apuntar al módulo que exporte la app real (por ejemplo [`src/app.ts`](src/app.ts)), verifica CORS, orden de middlewares y que todas las rutas necesarias estén registradas; vuelve a desplegar y prueba los flujos críticos.
+
+No se modifica el comportamiento por defecto en el código salvo decisión explícita del equipo de despliegue.

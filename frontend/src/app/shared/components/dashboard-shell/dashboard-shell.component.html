@@ -1,8 +1,9 @@
 <app-dashboard-user-profile-modal #dashProfileModal />
 
-<div class="dashboard-header">
+<div id="dashboard-shell-header" class="dashboard-header">
   <div class="header-content">
     <div
+      id="dashboard-shell-logo-section"
       class="logo-section"
       role="button"
       tabindex="0"
@@ -25,6 +26,7 @@
       <ng-content select="[appDashboardHeaderActions]"></ng-content>
       <button
         *ngIf="profileEditable"
+        id="dashboard-shell-profile-trigger-btn"
         type="button"
         class="user-info profile-trigger-btn"
         (click)="dashProfileModal.open()"
@@ -39,21 +41,23 @@
         <span class="user-role">{{ roleLabel }}</span>
       </div>
       <button
+        id="dashboard-shell-logout-btn"
         type="button"
         class="neuro-btn-icon logout-btn"
         (click)="onLogout()"
         title="Cerrar Sesión"
         aria-label="Cerrar sesión"
       >
-        🚪
+        <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
       </button>
     </div>
   </div>
 </div>
 
-<div class="dashboard-body">
+<div id="dashboard-shell-body" class="dashboard-body">
   <!-- Overlay para cerrar el nav en mobile al tocar fuera -->
   <div
+    id="dashboard-shell-nav-mobile-overlay"
     class="nav-mobile-overlay"
     [class.visible]="navOpen"
     (click)="closeNav()"
@@ -61,6 +65,7 @@
   ></div>
 
   <nav
+    id="dashboard-shell-nav"
     class="dashboard-nav"
     [class.nav-open]="navOpen"
     [attr.aria-label]="navAriaLabel"
@@ -69,6 +74,7 @@
   >
     <!-- Botón cerrar dentro del menú (mobile) -->
     <button
+      id="dashboard-shell-nav-mobile-close-btn"
       type="button"
       class="nav-mobile-close"
       (click)="closeNav()"
@@ -78,9 +84,10 @@
     <ng-content select="[appDashboardNav]"></ng-content>
   </nav>
 
-  <div class="dashboard-main-wrapper">
+  <div id="dashboard-shell-main-wrapper" class="dashboard-main-wrapper">
     <!-- Botón hamburguesa (solo visible en mobile) -->
     <button
+      id="dashboard-shell-nav-hamburger-btn"
       type="button"
       class="nav-hamburger"
       (click)="toggleNav()"
@@ -91,8 +98,12 @@
       <span class="hamburger-icon">☰</span>
     </button>
 
-    <ng-content></ng-content>
+    <div id="dashboard-shell-main-slot" class="dashboard-shell-main-slot">
+      <ng-content></ng-content>
+    </div>
   </div>
 </div>
 
-<ng-content select="[appDashboardOverlays]"></ng-content>
+<div id="dashboard-shell-overlays-slot" class="dashboard-shell-overlays-slot">
+  <ng-content select="[appDashboardOverlays]"></ng-content>
+</div>

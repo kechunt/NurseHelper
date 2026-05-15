@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ModalFocusTrapDirective } from '../../../shared/directives/modal-focus-trap.directive';
 import { FormsModule } from '@angular/forms';
 import { MedicationForPharmacy } from '../../../services/nurse.service';
-import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
+import { BootstrapIconComponent } from '../../../shared/components/bootstrap-icon/bootstrap-icon.component';
 import {
   countPharmacyMedicationsRequested,
   setAllPharmacyMedicationsRequested,
@@ -12,7 +12,7 @@ import {
 @Component({
   selector: 'app-nurse-pharmacy-quick-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, ModalFocusTrapDirective, HeroIconComponent],
+  imports: [CommonModule, FormsModule, ModalFocusTrapDirective, BootstrapIconComponent],
   templateUrl: './nurse-pharmacy-quick-modal.component.html',
   styleUrls: [
     '../nurse-postpone-task-modal/nurse-postpone-task-modal.component.css',

@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { NurseAddTreatmentModalComponent } from './nurse-add-treatment-modal.component';
+import { NurseDashboardPatientCareCreateFacade } from '../facades/nurse-dashboard-patient-care-create.facade';
 import { NurseService } from '../../../services/nurse.service';
 import { ToastService } from '../../../services/toast.service';
 
@@ -32,6 +33,7 @@ describe('NurseAddTreatmentModalComponent', () => {
     await TestBed.configureTestingModule({
       imports: [NurseAddTreatmentModalComponent],
       providers: [
+        NurseDashboardPatientCareCreateFacade,
         { provide: NurseService, useValue: nurseServiceMock },
         { provide: ToastService, useValue: toastMock },
       ],
@@ -49,6 +51,28 @@ describe('NurseAddTreatmentModalComponent', () => {
     fixture.componentRef.setInput('fromPatientContext', null);
     fixture.componentRef.setInput('initialPatientId', '');
     fixture.componentInstance.ngOnInit();
+  });
+
+  it('plantilla: opción Meses en unidad de duración (recurrente)', () => {
+    const unitSelect = fixture.nativeElement.querySelector('select[name="durationUnit"]') as HTMLSelectElement;
+    expect(unitSelect).toBeTruthy();
+    expect(Array.from(unitSelect.options).map((o) => o.textContent || '').join(' ')).toContain('Mes');
+  });
+
+  it('plantilla: botón enviar alta tratamiento con id', () => {
+    const btn = fixture.nativeElement.querySelector('#nurse-add-treatment-submit-btn') as HTMLButtonElement;
+    expect(btn).toBeTruthy();
+    expect(btn.disabled).toBeFalse();
+    expect(fixture.nativeElement.querySelector('#nurse-add-treatment-header-close-btn')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('#nurse-add-treatment-cancel-btn')).toBeTruthy();
+  });
+
+  it('emite dismissed al pulsar Cancelar', () => {
+    let n = 0;
+    const sub = fixture.componentInstance.dismissed.subscribe(() => n++);
+    (fixture.nativeElement.querySelector('#nurse-add-treatment-cancel-btn') as HTMLButtonElement).click();
+    expect(n).toBe(1);
+    sub.unsubscribe();
   });
 
   it('en modo fromPatient inicializa paciente y tipo recurrente', () => {

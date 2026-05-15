@@ -94,6 +94,20 @@ describe('NurseEditBedModalComponent', () => {
     toastMock.error.calls.reset();
   });
 
+  it('plantilla expone ids de cerrar, cancelar y guardar', () => {
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('#nurse-edit-bed-modal-close-btn')).toBeTruthy();
+    expect(root.querySelector('#nurse-edit-bed-cancel-btn')).toBeTruthy();
+    expect(root.querySelector('#nurse-edit-bed-save-btn')).toBeTruthy();
+  });
+
+  it('Cancelar y cerrar cabecera emiten dismissed', () => {
+    spyOn(fixture.componentInstance.dismissed, 'emit');
+    (fixture.nativeElement.querySelector('#nurse-edit-bed-cancel-btn') as HTMLButtonElement).click();
+    (fixture.nativeElement.querySelector('#nurse-edit-bed-modal-close-btn') as HTMLButtonElement).click();
+    expect(fixture.componentInstance.dismissed.emit).toHaveBeenCalledTimes(2);
+  });
+
   it('getPatientBed encuentra la cama del paciente', () => {
     expect(fixture.componentInstance.getPatientBed(11)?.bedNumber).toBe('206');
     expect(fixture.componentInstance.getPatientBed(null)).toBeNull();
@@ -116,6 +130,13 @@ describe('NurseEditBedModalComponent', () => {
     expect(fixture.componentInstance.filteredPatientsForBed[0].id).toBe(1);
   });
 
+  it('patientRowSelectAriaLabel incluye nombre del paciente', () => {
+    const p = MOCK_AREA_PATIENTS[0]!;
+    const aria = fixture.componentInstance.patientRowSelectAriaLabel(p);
+    expect(aria).toContain('Ana');
+    expect(aria).toContain('García');
+  });
+
   it('saveBedChanges valida número de cama vacío', () => {
     fixture.componentInstance.editBedForm.bedNumber = '   ';
     fixture.componentInstance.saveBedChanges();
@@ -130,7 +151,7 @@ describe('NurseEditBedModalComponent', () => {
     });
     fixture.componentInstance.editBedForm.bedNumber = ' 208 ';
     fixture.componentInstance.editBedForm.patientId = 10;
-    fixture.componentInstance.saveBedChanges();
+    (fixture.nativeElement.querySelector('#nurse-edit-bed-save-btn') as HTMLButtonElement).click();
     expect(adminMock.updateBed).toHaveBeenCalledWith(1, {
       bedNumber: '208',
       isActive: true,

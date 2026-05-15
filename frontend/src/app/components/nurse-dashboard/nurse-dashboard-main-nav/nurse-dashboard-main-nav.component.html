@@ -28,7 +28,8 @@
     (click)="select('tasks')"
     (keydown)="onMainViewTabKeydown($event, 'tasks')"
   >
-    ⏰ <span i18n="@@nurseDashboardMainNav.tab.tasks">Tareas</span>
+    <app-bootstrap-icon name="clock" [size]="16" />
+    <span i18n="@@nurseDashboardMainNav.tab.tasks">Tareas</span>
   </button>
   <button
     type="button"
@@ -41,7 +42,8 @@
     (click)="select('pharmacy')"
     (keydown)="onMainViewTabKeydown($event, 'pharmacy')"
   >
-    💊 <span i18n="@@nurseDashboardMainNav.tab.pharmacy">Farmacia</span>
+    <app-bootstrap-icon name="beaker" [size]="16" />
+    <span i18n="@@nurseDashboardMainNav.tab.pharmacy">Farmacia</span>
   </button>
   <button
     type="button"
@@ -54,7 +56,8 @@
     (click)="select('beds')"
     (keydown)="onMainViewTabKeydown($event, 'beds')"
   >
-    🛏️ <span i18n="@@nurseDashboardMainNav.tab.beds">Camas</span>
+    <app-bootstrap-icon name="rectangle-group" [size]="16" />
+    <span i18n="@@nurseDashboardMainNav.tab.beds">Camas</span>
   </button>
   <button
     type="button"
@@ -67,11 +70,13 @@
     (click)="select('patients')"
     (keydown)="onMainViewTabKeydown($event, 'patients')"
   >
-    👥 <span i18n="@@nurseDashboardMainNav.tab.patients">Pacientes</span>
+    <app-bootstrap-icon name="users" [size]="16" />
+    <span i18n="@@nurseDashboardMainNav.tab.patients">Pacientes</span>
   </button>
 
   <button
     type="button"
+    id="nurse-dashboard-main-nav-handover-quick-btn"
     class="nav-link"
     (click)="entregaClick.emit()"
     title="Nota de paso de turno: el texto guardado solo se consulta en esta ventana, eligiendo fecha, para enfermeras del mismo área."
@@ -79,13 +84,15 @@
     i18n-title="@@nurseDashboardMainNav.quick.handoverTitle"
     i18n-aria-label="@@nurseDashboardMainNav.quick.handoverAriaLabel"
   >
-    📋 <span i18n="@@nurseDashboardMainNav.quick.handover">Entrega</span>
+    <app-bootstrap-icon name="clipboard-document" [size]="16" />
+    <span i18n="@@nurseDashboardMainNav.quick.handover">Entrega</span>
     @if (handoverPendingNotice) {
-      <span class="quick-pending-chip">Pendiente</span>
+      <span class="quick-pending-chip" i18n="@@nurseDashboardMainNav.quick.handoverPendingChip">Pendiente</span>
     }
   </button>
   <button
     type="button"
+    id="nurse-dashboard-main-nav-reports-quick-btn"
     class="nav-link"
     (click)="reportesClick.emit()"
     title="Reportes últimos 7 días"
@@ -93,6 +100,7 @@
     i18n-title="@@nurseDashboardMainNav.quick.reportsTitle"
     i18n-aria-label="@@nurseDashboardMainNav.quick.reportsAriaLabel"
   >
-    📈 <span i18n="@@nurseDashboardMainNav.quick.reports">Reportes</span>
+    <app-bootstrap-icon name="chart-bar" [size]="16" />
+    <span i18n="@@nurseDashboardMainNav.quick.reports">Reportes</span>
   </button>
 </div>

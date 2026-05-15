@@ -1,4 +1,5 @@
 <div
+  id="terms-modal-backdrop"
   class="modal-backdrop"
   *ngIf="isOpen"
   (click)="onBackdropClick($event)"
@@ -6,7 +7,14 @@
   <div class="modal-content" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h2>Términos y Condiciones</h2>
-      <button class="close-btn" (click)="close()">✕</button>
+      <button
+        id="terms-modal-header-close-btn"
+        type="button"
+        class="close-btn"
+        (click)="close()"
+      >
+        ✕
+      </button>
     </div>
 
     <div class="modal-body">
@@ -131,10 +139,20 @@
     </div>
 
     <div class="modal-footer">
-      <button class="neuro-btn outlined" (click)="close()">
+      <button
+        id="terms-modal-cancel-btn"
+        type="button"
+        class="neuro-btn outlined"
+        (click)="close()"
+      >
         Cancelar
       </button>
-      <button class="neuro-btn" (click)="acceptTerms()">
+      <button
+        id="terms-modal-accept-btn"
+        type="button"
+        class="neuro-btn"
+        (click)="acceptTerms()"
+      >
         Acepto los Términos
       </button>
     </div>

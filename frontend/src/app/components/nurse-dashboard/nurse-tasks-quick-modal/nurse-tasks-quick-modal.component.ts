@@ -3,7 +3,8 @@ import { CommonModule } from '@angular/common';
 import { ModalFocusTrapDirective } from '../../../shared/directives/modal-focus-trap.directive';
 import { FormsModule } from '@angular/forms';
 import { TaskItem } from '../../../services/nurse.service';
-import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
+import { BootstrapIconComponent } from '../../../shared/components/bootstrap-icon/bootstrap-icon.component';
+import { nurseUiEmDash } from '../nurse-dashboard-ui-i18n.helpers';
 
 export interface NurseTasksQuickPatientOption {
   id: string;
@@ -19,7 +20,7 @@ export interface NurseTasksQuickHourGroup {
 @Component({
   selector: 'app-nurse-tasks-quick-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, ModalFocusTrapDirective, HeroIconComponent],
+  imports: [CommonModule, FormsModule, ModalFocusTrapDirective, BootstrapIconComponent],
   templateUrl: './nurse-tasks-quick-modal.component.html',
   styleUrls: [
     '../../../shared/styles/admin-panel-responsive.css',
@@ -47,7 +48,7 @@ export class NurseTasksQuickModalComponent {
   descriptionPreview(task: TaskItem): string {
     const d = (task.description || '').trim();
     if (!d) {
-      return '—';
+      return nurseUiEmDash();
     }
     return d.length > 72 ? `${d.slice(0, 69)}…` : d;
   }
@@ -66,10 +67,11 @@ export class NurseTasksQuickModalComponent {
   taskRowAriaLabel(task: TaskItem): string {
     const kind =
       task.type === 'medication'
-        ? 'Medicamento'
+        ? $localize`:@@nurseTasksQuickModal.taskKindMedication:Medicamento`
         : task.type === 'treatment'
-          ? 'Tratamiento'
-          : 'Chequeo';
-    return `Abrir detalle y acciones: ${task.time}, ${kind}, ${task.patientName}, cama ${task.bedNumber}`;
+          ? $localize`:@@nurseTasksQuickModal.taskKindTreatment:Tratamiento`
+          : $localize`:@@nurseTasksQuickModal.taskKindCheck:Chequeo`;
+    const bedLabel = $localize`:@@nurseTasksQuickModal.rowAriaBedWord:cama` + ' ' + String(task.bedNumber ?? '');
+    return $localize`:@@nurseTasksQuickModal.rowAriaTemplate:Abrir detalle y acciones: ${task.time}:time:, ${kind}:kind:, ${task.patientName}:patient:, ${bedLabel}:bed:`;
   }
 }

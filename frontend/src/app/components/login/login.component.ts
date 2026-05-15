@@ -4,12 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService, defaultDashboardPath } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
-import { HeroIconComponent } from '../../shared/components/hero-icon/hero-icon.component';
+import { BootstrapIconComponent } from '../../shared/components/bootstrap-icon/bootstrap-icon.component';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, HeroIconComponent],
+  imports: [CommonModule, FormsModule, RouterModule, BootstrapIconComponent],
   templateUrl: './login.component.html',
   styleUrls: ['../../shared/styles/auth-pages.css', './login.component.css'],
 })

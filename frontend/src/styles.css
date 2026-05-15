@@ -1,4 +1,5 @@
 /* You can add global styles to this file, and also import other style files */
+@import 'bootstrap-icons/font/bootstrap-icons.css';
 @import './app/shared/styles/table-actions-normalized.css';
 /** Layout cabecera + nav + cuerpo (admin, farmacia, shell enfermera). Debe ser global: si se importa solo en un componente encapsulado, no aplica bien al host del shell. */
 @import './app/shared/styles/dashboard-layout.css';

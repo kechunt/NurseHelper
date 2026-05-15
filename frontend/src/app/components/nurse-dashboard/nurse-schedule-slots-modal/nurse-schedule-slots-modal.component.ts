@@ -4,7 +4,7 @@ import { ModalFocusTrapDirective } from '../../../shared/directives/modal-focus-
 import { treatmentTypeLabel as treatmentTypeLabelFromHelper } from '../nurse-treatments-today.helpers';
 import { scheduleModalSlotStatusLabel } from '../nurse-schedule-modal-slot-status.helpers';
 import { nurseWeekdayShortLabelsMondayFirst } from '../nurse-dashboard-ui-i18n.helpers';
-import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
+import { BootstrapIconComponent } from '../../../shared/components/bootstrap-icon/bootstrap-icon.component';
 
 export interface ScheduleSlotsModalRow {
   scheduledTime: string;
@@ -18,7 +18,7 @@ export interface ScheduleSlotsModalRow {
 @Component({
   selector: 'app-nurse-schedule-slots-modal',
   standalone: true,
-  imports: [CommonModule, ModalFocusTrapDirective, HeroIconComponent],
+  imports: [CommonModule, ModalFocusTrapDirective, BootstrapIconComponent],
   templateUrl: './nurse-schedule-slots-modal.component.html',
   styleUrls: [
     '../nurse-postpone-task-modal/nurse-postpone-task-modal.component.css',
@@ -133,7 +133,7 @@ export class NurseScheduleSlotsModalComponent {
         continue;
       }
       seen.add(key);
-      out.push({ when: when || 'Horario', body });
+      out.push({ when: when || $localize`:@@nurseScheduleSlotsModal.slotNoteWhenFallback:Horario`, body });
       if (out.length >= limit) {
         break;
       }

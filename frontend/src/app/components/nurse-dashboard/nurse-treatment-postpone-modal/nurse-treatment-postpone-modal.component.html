@@ -12,8 +12,9 @@
     (click)="$event.stopPropagation()"
   >
     <div class="modal-header">
-      <h3 id="nurse-treatment-postpone-dialog-title" i18n="@@nurseTreatmentPostponeModal.title"><app-hero-icon name="clock" /> Posponer tratamiento</h3>
+      <h3 id="nurse-treatment-postpone-dialog-title" i18n="@@nurseTreatmentPostponeModal.title"><app-bootstrap-icon name="clock" /> Posponer tratamiento</h3>
       <button
+        id="nurse-treatment-postpone-header-close-btn"
         type="button"
         class="close-btn"
         aria-label="Cerrar"
@@ -42,13 +43,29 @@
       <div class="form-group">
         <label for="treatment-postpone-time" i18n="@@nurseTreatmentPostponeModal.newTimeLabel">Nueva hora *</label>
         <input id="treatment-postpone-time" type="time" class="neuro-input" [(ngModel)]="newTime" required />
+        <small class="hint-text" i18n="@@nurseTreatmentPostponeModal.dateTimeHint">
+          Seleccione la nueva fecha y hora para este tratamiento
+        </small>
       </div>
     </div>
     <div class="modal-footer">
-      <button type="button" class="btn-secondary-neuro" (click)="onCancel()" i18n="@@nurseTreatmentPostponeModal.cancel">
+      <button
+        id="nurse-treatment-postpone-cancel-btn"
+        type="button"
+        class="btn-secondary-neuro"
+        (click)="onCancel()"
+        i18n="@@nurseTreatmentPostponeModal.cancel"
+      >
         Cancelar
       </button>
-      <button type="button" class="btn-primary-neuro" (click)="onConfirm()" [disabled]="!canSubmit" i18n="@@nurseTreatmentPostponeModal.save">
+      <button
+        id="nurse-treatment-postpone-save-btn"
+        type="button"
+        class="btn-primary-neuro"
+        (click)="onConfirm()"
+        [disabled]="!canSubmit"
+        i18n="@@nurseTreatmentPostponeModal.save"
+      >
         Guardar
       </button>
     </div>

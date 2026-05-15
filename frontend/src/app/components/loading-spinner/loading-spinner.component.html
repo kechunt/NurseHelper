@@ -1,11 +1,12 @@
 <div 
+  id="global-loading-spinner"
   class="loading-spinner-wrapper"
   [class.overlay]="overlay"
   role="status"
   [attr.aria-live]="overlay ? 'polite' : 'off'"
   aria-label="Cargando"
 >
-  <div class="loading-spinner" [class.size-{{ size }}]="true">
+  <div class="loading-spinner" [ngClass]="'size-' + size">
     <div class="spinner" aria-hidden="true">
       <div class="spinner-circle"></div>
       <div class="spinner-circle"></div>

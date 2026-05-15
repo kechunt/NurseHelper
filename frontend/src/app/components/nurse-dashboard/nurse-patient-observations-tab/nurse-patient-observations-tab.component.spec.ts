@@ -1,5 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { NursePatientObservationsTabComponent } from './nurse-patient-observations-tab.component';
+import { NurseClinicalNotesScopeBlockComponent } from '../nurse-clinical-notes-scope-block/nurse-clinical-notes-scope-block.component';
 
 function ensureLocalizeShim(): void {
   const g = globalThis as any;
@@ -48,6 +50,20 @@ describe('NursePatientObservationsTabComponent', () => {
     expect(blocks.length).toBe(5);
   });
 
+  it('pasa emptyLabel localizado a cada bloque clínico', () => {
+    const blocks = fixture.debugElement.queryAll(By.directive(NurseClinicalNotesScopeBlockComponent));
+    expect(blocks.length).toBe(5);
+    const cmp = fixture.componentInstance;
+    const labels = blocks.map((el) => el.injector.get(NurseClinicalNotesScopeBlockComponent).emptyLabel);
+    expect(labels).toEqual([
+      cmp.emptyLabelDiagnosis,
+      cmp.emptyLabelMedical,
+      cmp.emptyLabelAllergies,
+      cmp.emptyLabelSpecial,
+      cmp.emptyLabelGeneral,
+    ]);
+  });
+
   it('resetObservationEditState limpia modo edición', () => {
     fixture.componentInstance.startEditingDiagnosis();
     expect(fixture.componentInstance.editingDiagnosis).toBeTrue();
@@ -61,8 +77,7 @@ describe('NursePatientObservationsTabComponent', () => {
     const sub = fixture.componentInstance.saveDiagnosis.subscribe((v) => {
       payload = v;
     });
-    const editBtns = fixture.nativeElement.querySelectorAll('.edit-observation-btn');
-    (editBtns[0] as HTMLButtonElement).click();
+    fixture.componentInstance.startEditingDiagnosis();
     fixture.detectChanges();
     fixture.componentInstance.editedDiagnosis = '  Nuevo dx  ';
     fixture.componentInstance.emitSaveDiagnosis();

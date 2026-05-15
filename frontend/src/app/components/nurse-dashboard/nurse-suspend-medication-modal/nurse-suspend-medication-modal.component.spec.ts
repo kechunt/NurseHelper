@@ -85,6 +85,27 @@ describe('NurseSuspendMedicationModalComponent', () => {
     sub.unsubscribe();
   });
 
+  it('plantilla: id confirmar suspender y pista en fecha personalizada', () => {
+    expect(fixture.nativeElement.querySelector('#nurse-suspend-medication-header-close-btn')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('#nurse-suspend-medication-cancel-btn')).toBeTruthy();
+    const btn = fixture.nativeElement.querySelector('#nurse-suspend-medication-confirm-btn') as HTMLButtonElement;
+    expect(btn).toBeTruthy();
+    expect(btn.disabled).toBeTrue();
+    fixture.componentInstance.durationType = 'custom';
+    fixture.componentInstance.untilDate = '2030-01-02';
+    fixture.detectChanges();
+    const hint = fixture.nativeElement.querySelector('.hint-text') as HTMLElement;
+    expect(hint?.textContent?.trim().length).toBeGreaterThan(10);
+  });
+
+  it('emite dismissed al pulsar Cancelar', () => {
+    let dismissed = 0;
+    const sub = fixture.componentInstance.dismissed.subscribe(() => dismissed++);
+    (fixture.nativeElement.querySelector('#nurse-suspend-medication-cancel-btn') as HTMLButtonElement).click();
+    expect(dismissed).toBe(1);
+    sub.unsubscribe();
+  });
+
   it('ngOnChanges reinicia estado al cambiar medication', () => {
     fixture.componentInstance.durationType = 'custom';
     fixture.componentInstance.untilDate = '2030-01-01';

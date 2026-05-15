@@ -1,19 +1,18 @@
 <div class="users-management">
-  <div class="section-header">
-    <h2 class="section-title">Gestión de Usuarios</h2>
-    <button class="neuro-btn" (click)="loadUsers(); loadSupervisors(); loadPharmacyUsers();"><app-hero-icon name="arrow-path" /> Actualizar</button>
-  </div>
+  <app-section-header [title]="usersMgmtSectionTitle">
+    <button sectionHeaderActions type="button" class="neuro-btn" (click)="loadUsers(); loadSupervisors(); loadPharmacyUsers();">
+      <app-bootstrap-icon name="arrow-path" /> {{ usersMgmtRefresh }}
+    </button>
+  </app-section-header>
 
   <!-- Sección de Jefas de Enfermeras -->
   <div class="role-section">
-    <h3 class="role-section-title"><app-hero-icon name="user-group" /> Jefas de Enfermeras</h3>
+    <h3 class="role-section-title"><app-bootstrap-icon name="user-group" /> {{ usersMgmtSupervisorsTitle }}</h3>
     <div *ngIf="loadingSupervisors" class="loading-state">
-      <p><app-hero-icon name="clock" /> Cargando jefas de enfermeras...</p>
+      <p><app-bootstrap-icon name="clock" /> {{ usersMgmtLoadingSupervisors }}</p>
     </div>
     <div *ngIf="!loadingSupervisors" class="role-cards-container">
-      <div *ngIf="supervisors.length === 0" class="no-role-users">
-        <p>No hay jefas de enfermeras asignadas</p>
-      </div>
+      <app-admin-empty-state *ngIf="supervisors.length === 0" [message]="usersMgmtEmptySupervisors" />
       <div *ngFor="let supervisor of supervisors" class="role-card">
         <div class="role-card-content">
           <div class="role-card-info">
@@ -21,7 +20,7 @@
             <p class="role-card-username">@{{ supervisor.username }}</p>
             <p class="role-card-email">{{ supervisor.email }}</p>
             <p class="role-card-phone" *ngIf="(supervisor.phone || '').toString().trim()">
-              <app-hero-icon name="phone" /> {{ supervisor.phone }}
+              <app-bootstrap-icon name="phone" /> {{ supervisor.phone }}
             </p>
             <span class="neuro-status" [class.role-admin]="supervisor.role === 'admin'"
               [class.role-supervisor]="supervisor.role === 'supervisor'">
@@ -29,8 +28,14 @@
             </span>
           </div>
           <div class="role-card-actions">
-            <button class="neuro-btn-icon" (click)="openSupervisorRoleModal(supervisor)" title="Cambiar Rol">
-              <app-hero-icon name="arrow-path" />
+            <button
+              type="button"
+              class="neuro-btn-icon"
+              (click)="openEditModal(supervisor)"
+              [title]="usersMgmtEditUserTitle"
+              [attr.aria-label]="usersMgmtEditUserTitle"
+            >
+              <app-bootstrap-icon name="pencil" />
             </button>
           </div>
         </div>
@@ -40,14 +45,12 @@
 
   <!-- Sección de Encargado de Farmacia -->
   <div class="role-section">
-    <h3 class="role-section-title"><app-hero-icon name="beaker" /> Encargado de Farmacia</h3>
+    <h3 class="role-section-title"><app-bootstrap-icon name="beaker" /> {{ usersMgmtPharmacyTitle }}</h3>
     <div *ngIf="loadingPharmacy" class="loading-state">
-      <p><app-hero-icon name="clock" /> Cargando encargado de farmacia...</p>
+      <p><app-bootstrap-icon name="clock" /> {{ usersMgmtLoadingPharmacy }}</p>
     </div>
     <div *ngIf="!loadingPharmacy" class="role-cards-container">
-      <div *ngIf="pharmacyUsers.length === 0" class="no-role-users">
-        <p>No hay encargado de farmacia asignado</p>
-      </div>
+      <app-admin-empty-state *ngIf="pharmacyUsers.length === 0" [message]="usersMgmtEmptyPharmacy" />
       <div *ngFor="let pharmacyUser of pharmacyUsers" class="role-card">
         <div class="role-card-content">
           <div class="role-card-info">
@@ -55,15 +58,21 @@
             <p class="role-card-username">@{{ pharmacyUser.username }}</p>
             <p class="role-card-email">{{ pharmacyUser.email }}</p>
             <p class="role-card-phone" *ngIf="(pharmacyUser.phone || '').toString().trim()">
-              <app-hero-icon name="phone" /> {{ pharmacyUser.phone }}
+              <app-bootstrap-icon name="phone" /> {{ pharmacyUser.phone }}
             </p>
             <span class="neuro-status role-pharmacy">
               {{ getRoleLabel(pharmacyUser.role) }}
             </span>
           </div>
           <div class="role-card-actions">
-            <button class="neuro-btn-icon" (click)="openPharmacyRoleModal(pharmacyUser)" title="Cambiar Rol">
-              <app-hero-icon name="arrow-path" />
+            <button
+              type="button"
+              class="neuro-btn-icon"
+              (click)="openEditModal(pharmacyUser)"
+              [title]="usersMgmtEditUserTitle"
+              [attr.aria-label]="usersMgmtEditUserTitle"
+            >
+              <app-bootstrap-icon name="pencil" />
             </button>
           </div>
         </div>
@@ -74,18 +83,14 @@
   <!-- Filtros -->
   <div class="filters-container">
     <div class="filter-group">
-      <label for="role-filter">Filtrar por Rol:</label>
+      <label for="role-filter">{{ usersMgmtFilterRoleLabel }}</label>
       <select id="role-filter" class="neuro-select" [(ngModel)]="selectedRole" (change)="onRoleFilterChange()">
-        <option value="all">Todos los roles</option>
-        <option value="admin">Administrador</option>
-        <option value="nurse">Enfermera</option>
-        <option value="supervisor">Supervisor</option>
-        <option value="pharmacy">Farmacia</option>
+        <option *ngFor="let opt of usersMgmtRoleFilterOptions" [ngValue]="opt.value">{{ opt.label }}</option>
       </select>
     </div>
 
     <div class="filter-group search-group">
-      <label for="search-input">Buscar Usuario:</label>
+      <label for="search-input">{{ usersMgmtSearchLabel }}</label>
       <div class="search-input-wrapper">
         <input
           type="text"
@@ -95,49 +100,67 @@
           appDebounce
           [debounceTime]="300"
           (debounced)="onSearchInput($event)"
-          placeholder="Buscar por nombre, usuario, email o teléfono..."
-          aria-label="Buscar usuario por nombre, usuario, email o teléfono"
+          [placeholder]="usersMgmtSearchPlaceholder"
+          [attr.aria-label]="usersMgmtSearchAria"
         />
-        <span class="search-icon"><app-hero-icon name="magnifying-glass" /></span>
+        <span class="search-icon"><app-bootstrap-icon name="magnifying-glass" /></span>
       </div>
     </div>
 
     <div class="filter-group" *ngIf="selectedRole !== 'all' || searchQuery.trim()">
       <button class="neuro-btn clear-filters-btn" (click)="clearFilters()">
-        <app-hero-icon name="trash" /> Limpiar Filtros
+        <app-bootstrap-icon name="trash" /> {{ usersMgmtClearFilters }}
       </button>
     </div>
   </div>
 
   <div class="results-info" *ngIf="!loading">
     <p>
-      Mostrando {{ filteredUsers.length }} de {{ totalUsers || users.length }} usuarios
-      <span *ngIf="selectedRole !== 'all'">(Rol: {{ getRoleLabel(selectedRole) }})</span>
-      <span *ngIf="searchQuery.trim()">(Búsqueda: "{{ searchQuery }}")</span>
+      {{ getUsersResultsLine() }}
+      <span *ngIf="selectedRole !== 'all'">{{ getUsersResultsRolePart() }}</span>
+      <span *ngIf="searchQuery.trim()">{{ getUsersResultsSearchPart() }}</span>
     </p>
   </div>
 
   <div *ngIf="loading" class="loading-state">
-    <p><app-hero-icon name="clock" /> Cargando usuarios...</p>
+    <p><app-bootstrap-icon name="clock" /> {{ usersMgmtLoadingUsers }}</p>
   </div>
 
 
   <div *ngIf="!loading" class="table-container">
-    <div class="table-header-actions">
-      <button class="neuro-btn" (click)="exportToCSV()" title="Exportar a CSV">
-        <app-hero-icon name="document-arrow-down" /> Exportar CSV
-      </button>
+    <div class="export-panel export-panel--admin-users" [attr.aria-label]="usersMgmtExportPanelAria">
+      <div class="export-panel__icon" aria-hidden="true">
+        <app-bootstrap-icon name="user-group" />
+      </div>
+      <div class="export-panel__body">
+        <div class="export-panel__title">{{ usersMgmtExportTitle }}</div>
+        <p class="export-panel__hint">{{ usersMgmtExportHint }}</p>
+        <div class="export-panel__actions">
+          <button type="button" class="export-btn export-btn--print" (click)="printUsers()">
+            <app-bootstrap-icon name="printer" />
+            {{ usersMgmtExportPrint }}
+          </button>
+          <button type="button" class="export-btn export-btn--csv" (click)="exportToCSV()">
+            <app-bootstrap-icon name="document-text" />
+            {{ usersMgmtExportSaveCsv }}
+          </button>
+          <button type="button" class="export-btn export-btn--excel" (click)="exportToExcel()">
+            <app-bootstrap-icon name="table-cells" />
+            {{ usersMgmtExportSaveExcel }}
+          </button>
+        </div>
+      </div>
     </div>
-    <table class="neuro-table" role="table" aria-label="Tabla de usuarios">
+    <table class="neuro-table" role="table" [attr.aria-label]="usersMgmtTableAria">
       <thead>
         <tr>
-          <th scope="col">ID</th>
-          <th scope="col">Usuario</th>
-          <th scope="col">Email</th>
-          <th scope="col">Nombre Completo</th>
-          <th scope="col">Teléfono</th>
-          <th scope="col">Rol</th>
-          <th scope="col">Estado</th>
+          <th scope="col">{{ usersMgmtColId }}</th>
+          <th scope="col">{{ usersMgmtColUsername }}</th>
+          <th scope="col">{{ usersMgmtColEmail }}</th>
+          <th scope="col">{{ usersMgmtColFullName }}</th>
+          <th scope="col">{{ usersMgmtColPhone }}</th>
+          <th scope="col">{{ usersMgmtColRole }}</th>
+          <th scope="col">{{ usersMgmtColStatus }}</th>
         </tr>
       </thead>
       <tbody>
@@ -147,7 +170,7 @@
           class="admin-table-row--clickable"
           tabindex="0"
           role="button"
-          [attr.aria-label]="'Acciones para usuario ' + user.username"
+          [attr.aria-label]="userTableRowAriaLabel(user.username)"
           (click)="openUserRowActionsSheet(user)"
           (keydown)="onUserTableRowKeydown(user, $event)"
         >
@@ -155,7 +178,7 @@
           <td>{{ user.username }}</td>
           <td>{{ user.email }}</td>
           <td>{{ user.firstName }} {{ user.lastName }}</td>
-          <td>{{ (user.phone || '').toString().trim() || '—' }}</td>
+          <td>{{ (user.phone || '').toString().trim() || usersMgmtHtmlTableDash }}</td>
           <td>
             <span class="neuro-status" [class.role-admin]="user.role === 'admin'"
               [class.role-supervisor]="user.role === 'supervisor'"
@@ -167,7 +190,7 @@
           <td>
             <span class="neuro-status" [class.active]="user.isActive"
               [class.inactive]="!user.isActive">
-              {{ user.isActive ? 'Activo' : 'Inactivo' }}
+              {{ user.isActive ? usersMgmtStatusActive : usersMgmtStatusInactive }}
             </span>
           </td>
         </tr>
@@ -175,7 +198,7 @@
     </table>
     
     <div *ngIf="filteredUsers.length === 0 && !loading" class="no-results" role="status" aria-live="polite">
-      <p>No se encontraron usuarios que coincidan con los filtros seleccionados.</p>
+      <p>{{ usersMgmtNoResults }}</p>
     </div>
     
     <!-- Componente de paginación -->
@@ -189,99 +212,93 @@
 
   <app-admin-table-row-actions-modal
     [open]="!!userRowActionsTarget"
-    [title]="'Usuario'"
+    [title]="usersMgmtSheetTitle"
     [summaryLines]="userRowActionsTarget ? userRowActionsSummary(userRowActionsTarget) : []"
     (dismissed)="closeUserRowActionsSheet()"
   >
-    <button type="button" class="neuro-btn" (click)="fromUserSheetOpenEdit()"><app-hero-icon name="pencil" /> Editar datos</button>
-    <button type="button" class="neuro-btn" (click)="fromUserSheetOpenRole()"><app-hero-icon name="arrow-path" /> Cambiar rol</button>
-    <button type="button" class="neuro-btn outlined delete-btn" (click)="fromUserSheetDelete()"><app-hero-icon name="trash" /> Eliminar permanentemente</button>
+    <button type="button" class="neuro-btn" (click)="fromUserSheetOpenEdit()"><app-bootstrap-icon name="pencil" /> {{ usersMgmtSheetEdit }}</button>
+    <button type="button" class="neuro-btn outlined delete-btn" (click)="fromUserSheetDelete()"><app-bootstrap-icon name="trash" /> {{ usersMgmtSheetDelete }}</button>
   </app-admin-table-row-actions-modal>
 
-  <!-- Modal para editar usuario -->
-  <div *ngIf="showEditModal" class="modal-backdrop" (click)="closeEditModal()">
-    <div class="modal-content" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h3>Editar Usuario</h3>
-        <button class="close-btn admin-close-btn" (click)="closeEditModal()">✕</button>
-      </div>
-      <div class="modal-body">
+  <app-modal-shell
+    *ngIf="showEditModal"
+    titleIcon="pencil"
+    [title]="usersMgmtEditModalTitle"
+    contentClass="users-edit-modal"
+    (dismiss)="closeEditModal()"
+  >
+    <div class="modal-body">
         <div class="form-grid">
           <div class="input-group">
-            <label for="edit-username">Usuario *</label>
+            <label for="edit-username">{{ usersMgmtHtmlLabelUsername }}</label>
             <input
               type="text"
               id="edit-username"
               class="neuro-input"
               [(ngModel)]="editForm.username"
-              placeholder="Ingrese el nombre de usuario"
+              [attr.placeholder]="usersMgmtHtmlPhUsername"
             />
+            <p class="modal-field-hint">{{ usersMgmtHtmlWarnUsernameLoginHint }}</p>
+            <p class="modal-warning" *ngIf="isEditUsernameChanged()">
+              <app-bootstrap-icon name="exclamation-triangle" /> {{ getEditUsernameLoginWarning() }}
+            </p>
           </div>
           <div class="input-group">
-            <label for="edit-email">Email *</label>
+            <label for="edit-email">{{ usersMgmtHtmlLabelEmail }}</label>
             <input
               type="email"
               id="edit-email"
               class="neuro-input"
               [(ngModel)]="editForm.email"
-              placeholder="usuario@ejemplo.com"
+              [attr.placeholder]="usersMgmtHtmlPhEmail"
             />
           </div>
           <div class="input-group">
-            <label for="edit-firstName">Nombre *</label>
+            <label for="edit-firstName">{{ usersMgmtHtmlLabelFirstName }}</label>
             <input
               type="text"
               id="edit-firstName"
               class="neuro-input"
               [(ngModel)]="editForm.firstName"
-              placeholder="Ingrese el nombre"
+              [attr.placeholder]="usersMgmtHtmlPhFirstName"
             />
           </div>
           <div class="input-group">
-            <label for="edit-lastName">Apellido *</label>
+            <label for="edit-lastName">{{ usersMgmtHtmlLabelLastName }}</label>
             <input
               type="text"
               id="edit-lastName"
               class="neuro-input"
               [(ngModel)]="editForm.lastName"
-              placeholder="Ingrese el apellido"
+              [attr.placeholder]="usersMgmtHtmlPhLastName"
             />
           </div>
           <div class="input-group">
-            <label for="edit-phone">Teléfono</label>
+            <label for="edit-phone">{{ usersMgmtHtmlLabelPhone }}</label>
             <input
               type="tel"
               id="edit-phone"
               class="neuro-input"
               [(ngModel)]="editForm.phone"
-              placeholder="Opcional"
+              [attr.placeholder]="usersMgmtHtmlPhPhoneOptional"
               maxlength="30"
             />
           </div>
-          <div class="input-group" *ngIf="editForm.role === 'pharmacy'">
-            <label for="edit-pharmacy-roster">Orden de roster (contacto)</label>
-            <input
-              type="number"
-              id="edit-pharmacy-roster"
-              class="neuro-input"
-              [(ngModel)]="editForm.pharmacyRosterOrder"
-              min="0"
-              max="999"
-              placeholder="Opcional (0–999)"
-            />
-            <p class="pharmacy-roster-hint">
-              Prioridad al elegir encargado de farmacia por turno: número más bajo primero (mismo turno, varios presentes).
-            </p>
-          </div>
           <div class="input-group">
-            <label for="edit-role">Rol *</label>
+            <label for="edit-role">{{ usersMgmtHtmlLabelRole }}</label>
             <select id="edit-role" class="neuro-select" [(ngModel)]="editForm.role">
-              <option value="nurse">Enfermera</option>
-              <option value="supervisor">Supervisor</option>
-              <option value="admin">Administrador</option>
-              <option value="pharmacy">Farmacia</option>
+              <option value="nurse">{{ usersMgmtHtmlOptNurse }}</option>
+              <option value="supervisor">{{ usersMgmtHtmlOptSupervisorShort }}</option>
+              <option value="admin">{{ usersMgmtHtmlOptAdmin }}</option>
+              <option value="pharmacy">{{ usersMgmtHtmlOptPharmacy }}</option>
             </select>
           </div>
+          <p class="modal-warning" *ngIf="isEditRoleChangeFromNurse()">
+            <app-bootstrap-icon name="exclamation-triangle" /> {{ usersMgmtHtmlWarnNursePatients }}
+          </p>
+          <p class="modal-warning" *ngIf="isEditRoleChanged() && !isEditRoleChangeFromNurse()">
+            <app-bootstrap-icon name="exclamation-triangle" /> {{ usersMgmtHtmlWarnRolePermissions }}
+          </p>
           <div class="input-group checkbox-group">
             <label class="checkbox-label">
               <input
@@ -290,50 +307,15 @@
                 [(ngModel)]="editForm.isActive"
                 class="neuro-checkbox"
               />
-              <span>Usuario Activo</span>
+              <span>{{ usersMgmtHtmlUserActive }}</span>
             </label>
           </div>
         </div>
       </div>
       <div class="modal-footer">
-        <button class="neuro-btn outlined" (click)="closeEditModal()">Cancelar</button>
-        <button class="neuro-btn" (click)="updateUser()">Guardar Cambios</button>
+        <button class="neuro-btn outlined" (click)="closeEditModal()">{{ usersMgmtConfirmCancel }}</button>
+        <button class="neuro-btn" (click)="updateUser()">{{ usersMgmtHtmlSaveChanges }}</button>
       </div>
-    </div>
-  </div>
-
-  <!-- Modal para cambiar rol -->
-  <div *ngIf="showRoleModal" class="modal-backdrop" (click)="closeRoleModal()">
-    <div class="modal-content" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h3>Cambiar Rol de Usuario</h3>
-        <button class="close-btn admin-close-btn" (click)="closeRoleModal()">✕</button>
-      </div>
-      <div class="modal-body">
-        <p><strong>Usuario:</strong> {{ selectedUser?.username }}</p>
-        <p><strong>Nombre:</strong> {{ selectedUser?.firstName }} {{ selectedUser?.lastName }}</p>
-        <p><strong>Rol Actual:</strong> {{ getRoleLabel(selectedUser?.role || '') }}</p>
-        <div class="input-group">
-          <label for="role">Nuevo Rol *</label>
-          <select id="role" class="neuro-select" [(ngModel)]="newRole">
-            <option value="nurse">Enfermera</option>
-            <option value="supervisor">Supervisor (Jefa de Enfermeras)</option>
-            <option value="admin">Administrador</option>
-            <option value="pharmacy">Farmacia</option>
-          </select>
-        </div>
-        <p class="modal-warning" *ngIf="selectedUser?.role === 'nurse' && newRole !== 'nurse'">
-          <app-hero-icon name="exclamation-triangle" /> Esta enfermera tiene pacientes asignados. Al cambiar el rol, los pacientes mantendrán su área asignada pero quedarán sin enfermera asignada para poder asignar otra.
-        </p>
-        <p class="modal-warning" *ngIf="selectedUser?.role !== 'nurse' || newRole === 'nurse'">
-          <app-hero-icon name="exclamation-triangle" /> Al cambiar el rol, el usuario perderá los permisos del rol anterior y obtendrá los del nuevo rol.
-        </p>
-      </div>
-      <div class="modal-footer">
-        <button class="neuro-btn outlined" (click)="closeRoleModal()">Cancelar</button>
-        <button class="neuro-btn" (click)="updateRole()">Guardar Cambios</button>
-      </div>
-    </div>
-  </div>
+  </app-modal-shell>
 </div>
 

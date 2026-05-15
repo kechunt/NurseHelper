@@ -1,17 +1,32 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, inject, LOCALE_ID } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ModalFocusTrapDirective } from '../../../shared/directives/modal-focus-trap.directive';
 import { TaskItem } from '../../../services/nurse.service';
-import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
+import { BootstrapIconComponent } from '../../../shared/components/bootstrap-icon/bootstrap-icon.component';
+import { nurseUiEmDash } from '../nurse-dashboard-ui-i18n.helpers';
 
 @Component({
   selector: 'app-nurse-pending-task-detail-modal',
   standalone: true,
-  imports: [CommonModule, ModalFocusTrapDirective, HeroIconComponent],
+  imports: [CommonModule, ModalFocusTrapDirective, BootstrapIconComponent],
   templateUrl: './nurse-pending-task-detail-modal.component.html',
-  styleUrls: ['./nurse-pending-task-detail-modal.component.css'],
+  styleUrls: [
+    '../nurse-postpone-task-modal/nurse-postpone-task-modal.component.css',
+    './nurse-pending-task-detail-modal.component.css',
+  ],
 })
 export class NursePendingTaskDetailModalComponent {
+  private readonly localeId = inject(LOCALE_ID);
+
+  readonly nursePendingTaskTypeMedication = $localize`:@@nursePendingTaskDetailModal.typeMedication:Medicamento`;
+  readonly nursePendingTaskTypeTreatment = $localize`:@@nursePendingTaskDetailModal.typeTreatment:Tratamiento`;
+  readonly nursePendingTaskTypeCheck = $localize`:@@nursePendingTaskDetailModal.typeCheck:Chequeo`;
+  readonly nursePendingTaskTypeOther = $localize`:@@nursePendingTaskDetailModal.typeOther:Otro`;
+
+  readonly nursePendingTaskStatusCompleted = $localize`:@@nursePendingTaskDetailModal.statusCompleted:Completada`;
+  readonly nursePendingTaskStatusNotDone = $localize`:@@nursePendingTaskDetailModal.statusNotDone:No realizada`;
+  readonly nursePendingTaskStatusPending = $localize`:@@nursePendingTaskDetailModal.statusPending:Pendiente`;
+
   @Input({ required: true }) task!: TaskItem;
 
   @Output() readonly dismissed = new EventEmitter<void>();
@@ -20,27 +35,31 @@ export class NursePendingTaskDetailModalComponent {
   @Output() readonly notCompletedRequested = new EventEmitter<TaskItem>();
   @Output() readonly postponeRequested = new EventEmitter<TaskItem>();
 
+  emDash(): string {
+    return nurseUiEmDash();
+  }
+
   typeLabel(t: TaskItem): string {
     if (t.type === 'medication') {
-      return 'Medicamento';
+      return this.nursePendingTaskTypeMedication;
     }
     if (t.type === 'treatment') {
-      return 'Tratamiento';
+      return this.nursePendingTaskTypeTreatment;
     }
     if (t.type === 'check') {
-      return 'Chequeo';
+      return this.nursePendingTaskTypeCheck;
     }
-    return 'Otro';
+    return this.nursePendingTaskTypeOther;
   }
 
   statusSummary(t: TaskItem): string {
     if (t.completed) {
-      return 'Completada';
+      return this.nursePendingTaskStatusCompleted;
     }
     if (t.notCompleted) {
-      return 'No realizada';
+      return this.nursePendingTaskStatusNotDone;
     }
-    return 'Pendiente';
+    return this.nursePendingTaskStatusPending;
   }
 
   actionsDisabled(t: TaskItem): boolean {
@@ -56,7 +75,7 @@ export class NursePendingTaskDetailModalComponent {
       if (Number.isNaN(d.getTime())) {
         return null;
       }
-      return d.toLocaleString('es-ES', {
+      return d.toLocaleString(this.localeId, {
         weekday: 'short',
         day: 'numeric',
         month: 'short',

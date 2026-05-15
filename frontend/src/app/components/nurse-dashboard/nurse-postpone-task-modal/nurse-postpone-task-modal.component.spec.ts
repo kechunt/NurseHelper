@@ -35,6 +35,12 @@ describe('NursePostponeTaskModalComponent', () => {
     fixture.detectChanges();
   });
 
+  it('expone id estable en el botón confirmar', () => {
+    expect(fixture.nativeElement.querySelector('#nurse-postpone-task-save-btn')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('#nurse-postpone-task-cancel-btn')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('#nurse-postpone-task-header-close-btn')).toBeTruthy();
+  });
+
   it('inicializa hora recortada al recibir task', () => {
     expect(fixture.componentInstance.postponeNewTime).toBe('08:30');
   });

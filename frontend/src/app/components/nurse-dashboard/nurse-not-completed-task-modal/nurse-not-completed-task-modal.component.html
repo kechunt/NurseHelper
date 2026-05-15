@@ -12,8 +12,9 @@
     (click)="$event.stopPropagation()"
   >
     <div class="modal-header">
-      <h3 id="nurse-not-completed-dialog-title" i18n="@@nurseNotCompletedTaskModal.title"><app-hero-icon name="exclamation-triangle" /> Tarea No Realizada</h3>
+      <h3 id="nurse-not-completed-dialog-title" i18n="@@nurseNotCompletedTaskModal.title"><app-bootstrap-icon name="exclamation-triangle" /> Tarea No Realizada</h3>
       <button
+        id="nurse-not-completed-header-close-btn"
         type="button"
         class="close-btn"
         aria-label="Cerrar"
@@ -49,6 +50,9 @@
           rows="4"
           maxlength="500"
         ></textarea>
+        <small class="hint-text" i18n="@@nurseNotCompletedTaskModal.reasonHint">
+          Describe qué ocurrió. El motivo debe tener al menos 10 caracteres.
+        </small>
         <div class="char-count" i18n="@@nurseNotCompletedTaskModal.charCount">
           {{ (reason || '').length }}/500 caracteres
         </div>
@@ -56,10 +60,23 @@
     </div>
 
     <div class="modal-footer">
-      <button type="button" class="btn-secondary-neuro" (click)="onCancel()" i18n="@@nurseNotCompletedTaskModal.cancel">
+      <button
+        id="nurse-not-completed-cancel-btn"
+        type="button"
+        class="btn-secondary-neuro"
+        (click)="onCancel()"
+        i18n="@@nurseNotCompletedTaskModal.cancel"
+      >
         Cancelar
       </button>
-      <button type="button" class="btn-primary-neuro" (click)="onConfirm()" [disabled]="!canConfirm" i18n="@@nurseNotCompletedTaskModal.confirm">
+      <button
+        type="button"
+        id="nurse-not-completed-confirm-btn"
+        class="btn-primary-neuro"
+        (click)="onConfirm()"
+        [disabled]="!canConfirm"
+        i18n="@@nurseNotCompletedTaskModal.confirm"
+      >
         Confirmar
       </button>
     </div>

@@ -5,22 +5,6 @@
   width: 100%;
 }
 
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-}
-
-.section-title {
-  color: #4a5568;
-  font-size: 1.75rem;
-  font-weight: 300;
-  margin: 0;
-  text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8),
-    -1px -1px 2px rgba(174, 174, 192, 0.4);
-}
-
 .loading-state {
   text-align: center;
   padding: 3rem;
@@ -265,66 +249,9 @@ button.area-shift-alert--clickable:focus-visible {
   justify-content: flex-end;
 }
 
-.modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 2rem;
-  backdrop-filter: blur(4px);
-}
-
-.modal-content {
-  background: #e0e5ec;
-  border-radius: 30px;
-  max-width: 500px;
-  width: 100%;
-  box-shadow: 30px 30px 60px rgba(0, 0, 0, 0.3),
-    -30px -30px 60px rgba(255, 255, 255, 0.1);
-}
-
-.modal-content.modal-large {
+/* app-modal-shell: mantener ancho amplio para tablas (antes .modal-content.modal-large en este componente) */
+:host ::ng-deep app-modal-shell .modal-content.modal-large {
   max-width: 800px;
-}
-
-.modal-header {
-  padding: 2rem 2rem 1rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid rgba(174, 174, 192, 0.3);
-}
-
-.modal-header h3 {
-  color: #4a5568;
-  font-size: 1.5rem;
-  font-weight: 300;
-  margin: 0;
-}
-
-.close-btn {
-  background: #e0e5ec;
-  border: none;
-  width: 35px;
-  height: 35px;
-  border-radius: 50%;
-  font-size: 20px;
-  color: #4a5568;
-  cursor: pointer;
-  box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.close-btn:hover {
-  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
 }
 
 .modal-body {

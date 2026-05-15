@@ -31,6 +31,31 @@ describe('NurseDeleteMedicationModalComponent', () => {
     toastMock.warning.calls.reset();
   });
 
+  it('plantilla muestra medicamento en resumen', () => {
+    expect((fixture.nativeElement.textContent || '').includes('Omeprazol')).toBeTrue();
+  });
+
+  it('plantilla: pista de motivo, id confirmar y botón deshabilitado con motivo corto', () => {
+    const hint = fixture.nativeElement.querySelector('.hint-text') as HTMLElement;
+    expect(hint?.textContent?.trim().length).toBeGreaterThan(10);
+    expect(fixture.nativeElement.querySelector('#nurse-delete-medication-header-close-btn')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('#nurse-delete-medication-cancel-btn')).toBeTruthy();
+    const btn = fixture.nativeElement.querySelector('#nurse-delete-medication-confirm-btn') as HTMLButtonElement;
+    expect(btn).toBeTruthy();
+    expect(btn.disabled).toBeTrue();
+    fixture.componentInstance.deleteReason = 'motivo largo suficiente para eliminar';
+    fixture.detectChanges();
+    expect(btn.disabled).toBeFalse();
+  });
+
+  it('emite dismissed al pulsar Cancelar', () => {
+    let dismissed = 0;
+    const sub = fixture.componentInstance.dismissed.subscribe(() => dismissed++);
+    (fixture.nativeElement.querySelector('#nurse-delete-medication-cancel-btn') as HTMLButtonElement).click();
+    expect(dismissed).toBe(1);
+    sub.unsubscribe();
+  });
+
   it('emite dismissed al hacer clic en backdrop', () => {
     let dismissed = 0;
     const sub = fixture.componentInstance.dismissed.subscribe(() => dismissed++);

@@ -1,8 +1,20 @@
-<div *ngIf="visible" class="modal-backdrop" (click)="close()">
+<div
+  *ngIf="visible"
+  id="dashboard-user-profile-modal-backdrop"
+  class="modal-backdrop"
+  (click)="close()"
+>
   <div class="modal-content" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <h3><app-hero-icon name="pencil" /> Editar Usuario</h3>
-      <button type="button" class="close-btn" (click)="close()">✕</button>
+      <h3><app-bootstrap-icon name="pencil" /> Editar Usuario</h3>
+      <button
+        id="dashboard-user-profile-modal-header-close-btn"
+        type="button"
+        class="close-btn"
+        (click)="close()"
+      >
+        ✕
+      </button>
     </div>
     <div class="modal-body">
       <div class="form-grid">
@@ -60,8 +72,22 @@
       </div>
     </div>
     <div class="modal-footer">
-      <button type="button" class="neuro-btn outlined" (click)="close()" [disabled]="saving">Cancelar</button>
-      <button type="button" class="neuro-btn" (click)="save()" [disabled]="saving">
+      <button
+        id="dashboard-user-profile-modal-cancel-btn"
+        type="button"
+        class="neuro-btn outlined"
+        (click)="close()"
+        [disabled]="saving"
+      >
+        Cancelar
+      </button>
+      <button
+        id="dashboard-user-profile-modal-save-btn"
+        type="button"
+        class="neuro-btn"
+        (click)="save()"
+        [disabled]="saving"
+      >
         {{ saving ? 'Guardando...' : 'Guardar cambios' }}
       </button>
     </div>

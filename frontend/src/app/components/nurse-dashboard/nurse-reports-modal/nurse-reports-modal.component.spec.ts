@@ -67,11 +67,34 @@ describe('NurseReportsModalComponent', () => {
   it('emite csvDownload al pulsar botones CSV', () => {
     const kinds: Array<'compliance' | 'medication'> = [];
     const sub = fixture.componentInstance.csvDownload.subscribe((k) => kinds.push(k));
-    const buttons = Array.from(fixture.nativeElement.querySelectorAll('.modal-footer button')) as HTMLButtonElement[];
-    const csvButtons = buttons.filter((b) => (b.textContent || '').includes('CSV'));
-    expect(csvButtons.length).toBe(2);
-    csvButtons[0].click();
-    csvButtons[1].click();
+    (fixture.nativeElement.querySelector('#nurse-reports-download-csv-compliance-btn') as HTMLButtonElement).click();
+    (fixture.nativeElement.querySelector('#nurse-reports-download-csv-medication-btn') as HTMLButtonElement).click();
+    expect(kinds).toEqual(['compliance', 'medication']);
+    sub.unsubscribe();
+  });
+
+  it('botones de exportación tienen tooltips localizables', () => {
+    const csvCompliance = fixture.nativeElement.querySelector(
+      '#nurse-reports-download-csv-compliance-btn'
+    ) as HTMLButtonElement;
+    const csvMed = fixture.nativeElement.querySelector('#nurse-reports-download-csv-medication-btn') as HTMLButtonElement;
+    const xlsCompliance = fixture.nativeElement.querySelector(
+      '#nurse-reports-download-excel-compliance-btn'
+    ) as HTMLButtonElement;
+    const xlsMed = fixture.nativeElement.querySelector(
+      '#nurse-reports-download-excel-medication-btn'
+    ) as HTMLButtonElement;
+    expect(csvCompliance?.title.toLowerCase()).toContain('csv');
+    expect(csvMed?.title.toLowerCase()).toContain('csv');
+    expect(xlsCompliance?.title.toLowerCase()).toContain('excel');
+    expect(xlsMed?.title.toLowerCase()).toContain('excel');
+  });
+
+  it('emite excelDownload al pulsar botones Excel', () => {
+    const kinds: Array<'compliance' | 'medication'> = [];
+    const sub = fixture.componentInstance.excelDownload.subscribe((k) => kinds.push(k));
+    (fixture.nativeElement.querySelector('#nurse-reports-download-excel-compliance-btn') as HTMLButtonElement).click();
+    (fixture.nativeElement.querySelector('#nurse-reports-download-excel-medication-btn') as HTMLButtonElement).click();
     expect(kinds).toEqual(['compliance', 'medication']);
     sub.unsubscribe();
   });
@@ -87,5 +110,80 @@ describe('NurseReportsModalComponent', () => {
     fixture.componentRef.setInput('error', 'Fallo de red');
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.nurse-reports-error')?.textContent).toContain('Fallo de red');
+  });
+
+  it('línea de periodo muestra prefijo Periodo localizable', () => {
+    const p = fixture.nativeElement.querySelector('.nurse-reports-period-line') as HTMLElement;
+    expect(p?.textContent).toContain('Periodo');
+    expect(p?.textContent).toContain('2026-01-01');
+  });
+
+  it('con filtro de personal: etiqueta, aria del select y opción «todas» localizables', () => {
+    fixture.componentRef.setInput('showStaffNurseFilter', true);
+    fixture.componentRef.setInput('staffNurses', [{ id: 1, name: 'Lucía' }]);
+    fixture.componentRef.setInput('staffNurseUserId', null);
+    fixture.detectChanges();
+    const label = fixture.nativeElement.querySelector('.nurse-reports-staff-filter__label') as HTMLLabelElement;
+    expect(label?.textContent?.toLowerCase()).toContain('enfermer');
+    const select = fixture.nativeElement.querySelector('#staff-reports-nurse-select') as HTMLSelectElement;
+    expect(select?.getAttribute('aria-label')?.toLowerCase()).toContain('enfermer');
+    expect(select?.options[0]?.textContent?.toLowerCase()).toContain('todas');
+  });
+
+  it('emite staffNurseFilterChange al elegir una enfermera', () => {
+    fixture.componentRef.setInput('showStaffNurseFilter', true);
+    fixture.componentRef.setInput('staffNurses', [
+      { id: 1, name: 'Lucía' },
+      { id: 2, name: 'Pedro' },
+    ]);
+    fixture.detectChanges();
+    const emitted: Array<number | null> = [];
+    const sub = fixture.componentInstance.staffNurseFilterChange.subscribe((id) => emitted.push(id));
+    const select = fixture.nativeElement.querySelector('#staff-reports-nurse-select') as HTMLSelectElement;
+    select.value = '2';
+    select.dispatchEvent(new Event('change'));
+    expect(emitted).toEqual([2]);
+    sub.unsubscribe();
+  });
+
+  it('muestra títulos de sección y cabeceras de tabla localizables', () => {
+    const titles = Array.from(
+      fixture.nativeElement.querySelectorAll('.nurse-reports-section-title')
+    ) as HTMLElement[];
+    expect(titles.length).toBe(2);
+    expect(titles[0].textContent?.toLowerCase()).toContain('cumplimiento');
+    expect(titles[1].textContent?.toLowerCase()).toContain('medicación');
+    const th = Array.from(fixture.nativeElement.querySelectorAll('.nurse-reports-table-wrap th')) as HTMLElement[];
+    expect(th.some((el) => (el.textContent || '').includes('Paciente'))).toBeTrue();
+    expect(th.some((el) => (el.textContent || '').includes('Medicamento'))).toBeTrue();
+  });
+
+  it('cabecera y pie Cerrar exponen ids y emiten dismissed', () => {
+    spyOn(fixture.componentInstance.dismissed, 'emit');
+    expect(fixture.nativeElement.querySelector('#nurse-reports-header-close-btn')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('#nurse-reports-footer-close-btn')).toBeTruthy();
+    (fixture.nativeElement.querySelector('#nurse-reports-header-close-btn') as HTMLButtonElement).click();
+    (fixture.nativeElement.querySelector('#nurse-reports-footer-close-btn') as HTMLButtonElement).click();
+    expect(fixture.componentInstance.dismissed.emit).toHaveBeenCalledTimes(2);
+  });
+
+  it('pie del modal incluye botón Cerrar localizable', () => {
+    const close = fixture.nativeElement.querySelector('#nurse-reports-footer-close-btn') as HTMLButtonElement;
+    expect(close).toBeTruthy();
+    expect(close.textContent?.trim()).toContain('Cerrar');
+  });
+
+  it('plantilla: ids en KPI de cumplimiento y filtro cancelados por id', () => {
+    expect(fixture.nativeElement.querySelector('#nurse-reports-kpi-scheduled-btn')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('#nurse-reports-kpi-completed-btn')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('#nurse-reports-kpi-missed-btn')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('#nurse-reports-kpi-cancelled-btn')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('#nurse-reports-kpi-rate-btn')).toBeTruthy();
+    (fixture.nativeElement.querySelector('#nurse-reports-kpi-cancelled-btn') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    const empty = fixture.nativeElement.querySelector(
+      '.nurse-reports-section .empty-message'
+    ) as HTMLElement;
+    expect(empty?.textContent?.toLowerCase()).toContain('cancel');
   });
 });

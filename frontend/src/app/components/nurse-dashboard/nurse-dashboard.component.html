@@ -1,19 +1,19 @@
 <app-dashboard-shell
   panelSkin="nurse-dashboard"
   topAnchorId="dashboard-top"
-  [panelTitle]="'Panel de Enfermera'"
+  [panelTitle]="nurseShellPanelTitle"
   [subtitle]="assignedArea || null"
   [userName]="headerUserName"
-  [roleLabel]="'Enfermera'"
+  [roleLabel]="nurseShellRoleLabel"
   [profileEditable]="true"
-  [navAriaLabel]="'Módulos de enfermería'"
+  [navAriaLabel]="nurseShellNavAriaLabel"
   panelHeadingId="nurse-dashboard-heading"
   [headerLogoAlt]="''"
-  [logoSectionAriaLabel]="'Ir al resumen del panel'"
+  [logoSectionAriaLabel]="nurseShellLogoSectionAriaLabel"
   (logoClick)="goToSummaryFromLogo()"
   (logoutClick)="logout()"
 >
-  <div appDashboardHeaderActions class="nurse-header-actions">
+  <div id="nurse-dashboard-shell-header-actions" appDashboardHeaderActions class="nurse-header-actions">
     <app-in-app-notifications-bell dashboardKind="nurse" />
     <app-nurse-dashboard-header-search (debounced)="onHeaderPatientSearch($event)" />
   </div>

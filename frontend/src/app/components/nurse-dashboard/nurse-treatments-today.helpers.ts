@@ -18,18 +18,19 @@ export function treatmentSlotPending(slot: TreatmentTodayItem): boolean {
 
 export function treatmentSlotStatusLabel(slot: TreatmentTodayItem): string {
   if (slot.status === 'completed' || slot.completed) {
-    return 'Realizado';
+    return $localize`:@@nurseTreatment.todaySlot.status.done:Realizado`;
   }
   if (slot.status === 'cancelled' || slot.cancelled) {
-    return 'Cancelado';
+    return $localize`:@@nurseTreatment.todaySlot.status.cancelled:Cancelado`;
   }
   if (slot.status === 'missed' || slot.notCompleted) {
-    return 'No realizado';
+    return $localize`:@@nurseTreatment.todaySlot.status.notDone:No realizado`;
   }
   if (slot.status === 'pending') {
-    return 'Pendiente';
+    return $localize`:@@nurseTreatment.todaySlot.status.pending:Pendiente`;
   }
-  return String(slot.status || '—');
+  const raw = String(slot.status || '').trim();
+  return raw ? raw : nurseUiEmDash();
 }
 
 /** Etiqueta UI para `scheduleType` (tabla del día y modal de horarios). */

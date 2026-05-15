@@ -16,6 +16,7 @@
         ▶️ Reactivar Medicamento
       </h3>
       <button
+        id="nurse-reactivate-medication-header-close-btn"
         type="button"
         class="close-btn"
         aria-label="Cerrar"
@@ -35,16 +36,28 @@
 
       <div class="info-box">
         <p i18n="@@nurseReactivateMedicationModal.info">
-          <app-hero-icon name="check-circle" /> Esta acción reactivará todas las dosis futuras programadas de este medicamento.
+          <app-bootstrap-icon name="check-circle" /> Esta acción reactivará todas las dosis futuras programadas de este medicamento.
         </p>
       </div>
     </div>
 
     <div class="modal-footer">
-      <button type="button" class="btn-secondary-neuro" (click)="onCancel()" i18n="@@nurseReactivateMedicationModal.cancel">
+      <button
+        id="nurse-reactivate-medication-cancel-btn"
+        type="button"
+        class="btn-secondary-neuro"
+        (click)="onCancel()"
+        i18n="@@nurseReactivateMedicationModal.cancel"
+      >
         Cancelar
       </button>
-      <button type="button" class="btn-primary-neuro" (click)="onConfirm()" i18n="@@nurseReactivateMedicationModal.confirm">
+      <button
+        type="button"
+        id="nurse-reactivate-medication-confirm-btn"
+        class="btn-primary-neuro"
+        (click)="onConfirm()"
+        i18n="@@nurseReactivateMedicationModal.confirm"
+      >
         ▶️ Reactivar Medicamento
       </button>
     </div>

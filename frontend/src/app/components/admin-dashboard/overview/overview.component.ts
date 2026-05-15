@@ -29,7 +29,9 @@ export class OverviewComponent implements OnInit, OnDestroy {
 
   loading = true;
   liveDateTimeLabel = '';
-  liveCurrentShiftLabel = 'Sin turno activo';
+  liveCurrentShiftLabel = '';
+
+  readonly adminOverviewErrLoadStats = $localize`:@@adminOverview.errLoadStats:Error al cargar las estadísticas`;
   private shifts: Shift[] = [];
   private clockTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -80,7 +82,7 @@ export class OverviewComponent implements OnInit, OnDestroy {
         this.loading = false;
       },
       error: (error) => {
-        const errorMessage = error.error?.message || error.message || 'Error al cargar las estadísticas';
+        const errorMessage = error.error?.message || error.message || this.adminOverviewErrLoadStats;
         this.toastService.error(errorMessage);
         // Establecer valores por defecto en caso de error
         this.stats = {

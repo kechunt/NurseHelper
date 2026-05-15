@@ -2,14 +2,14 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ModalFocusTrapDirective } from '../../../shared/directives/modal-focus-trap.directive';
 import { ComplianceStats, MedicationReport } from '../../../services/report.service';
-import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
+import { BootstrapIconComponent } from '../../../shared/components/bootstrap-icon/bootstrap-icon.component';
 
 type ComplianceFilter = 'scheduled' | 'completed' | 'missed' | 'cancelled' | 'rate' | null;
 
 @Component({
   selector: 'app-nurse-reports-modal',
   standalone: true,
-  imports: [CommonModule, ModalFocusTrapDirective, HeroIconComponent],
+  imports: [CommonModule, ModalFocusTrapDirective, BootstrapIconComponent],
   templateUrl: './nurse-reports-modal.component.html',
   styleUrls: ['../nurse-neomorphic-modal.shared.css', './nurse-reports-modal.component.css'],
 })

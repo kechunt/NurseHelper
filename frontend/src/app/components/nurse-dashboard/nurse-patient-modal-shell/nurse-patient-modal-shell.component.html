@@ -9,8 +9,9 @@
       (click)="$event.stopPropagation()"
     >
       <div class="modal-header">
-        <h3 id="nurse-patient-modal-title" i18n="@@nursePatientModalShell.title"><app-hero-icon name="clipboard-document" /> {{ patient.name }}</h3>
+        <h3 id="nurse-patient-modal-title" i18n="@@nursePatientModalShell.title"><app-bootstrap-icon name="clipboard-document" /> {{ patient.name }}</h3>
         <button
+          id="nurse-patient-modal-header-close-btn"
           type="button"
           class="close-btn"
           aria-label="Cerrar"
@@ -38,7 +39,7 @@
           (click)="activeTabChange.emit('medications')"
           (keydown)="onPatientTabKeydown($event, 'medications')"
         >
-          <span i18n="@@nursePatientModalShell.tabMedications"><app-hero-icon name="beaker" /> Medicamentos</span>
+          <span i18n="@@nursePatientModalShell.tabMedications"><app-bootstrap-icon name="beaker" /> Medicamentos</span>
         </button>
         <button
           type="button"
@@ -51,7 +52,7 @@
           (click)="activeTabChange.emit('schedule')"
           (keydown)="onPatientTabKeydown($event, 'schedule')"
         >
-          <span i18n="@@nursePatientModalShell.tabTreatments"><app-hero-icon name="shield-check" /> Tratamientos del día</span>
+          <span i18n="@@nursePatientModalShell.tabTreatments"><app-bootstrap-icon name="shield-check" /> Tratamientos del día</span>
         </button>
         <button
           type="button"
@@ -64,7 +65,7 @@
           (click)="activeTabChange.emit('observations')"
           (keydown)="onPatientTabKeydown($event, 'observations')"
         >
-          <span i18n="@@nursePatientModalShell.tabObservations"><app-hero-icon name="clipboard-document" /> Observaciones</span>
+          <span i18n="@@nursePatientModalShell.tabObservations"><app-bootstrap-icon name="clipboard-document" /> Observaciones</span>
         </button>
         <button
           type="button"
@@ -77,7 +78,7 @@
           (click)="activeTabChange.emit('history')"
           (keydown)="onPatientTabKeydown($event, 'history')"
         >
-          <span i18n="@@nursePatientModalShell.tabHistory"><app-hero-icon name="document-text" /> Historial</span>
+          <span i18n="@@nursePatientModalShell.tabHistory"><app-bootstrap-icon name="document-text" /> Historial</span>
         </button>
       </div>
 
@@ -200,17 +201,45 @@
       />
 
       <div class="modal-footer">
-        <button type="button" class="btn-secondary-neuro" (click)="closed.emit()" i18n="@@nursePatientModalShell.footerClose">
+        <button
+          id="nurse-patient-modal-close-btn"
+          type="button"
+          class="btn-secondary-neuro"
+          (click)="closed.emit()"
+          i18n="@@nursePatientModalShell.footerClose"
+        >
           Cerrar
         </button>
-        <button type="button" class="btn-secondary-neuro" (click)="exportTabCsv()">
-          <app-hero-icon name="document-text" /> CSV
+        <button
+          id="nurse-patient-export-csv-btn"
+          type="button"
+          class="btn-secondary-neuro"
+          (click)="exportTabCsv()"
+          i18n-title="@@nursePatientModalShell.exportCsvTitle"
+          title="Descargar la pestaña actual como CSV"
+        >
+          <app-bootstrap-icon name="document-text" />
+          <span i18n="@@nursePatientModalShell.footerExportCsv">CSV</span>
         </button>
-        <button type="button" class="btn-secondary-neuro" (click)="exportTabExcel()">
-          <app-hero-icon name="table-cells" /> Excel
+        <button
+          id="nurse-patient-export-excel-btn"
+          type="button"
+          class="btn-secondary-neuro"
+          (click)="exportTabExcel()"
+          i18n-title="@@nursePatientModalShell.exportExcelTitle"
+          title="Descargar la pestaña actual como Excel"
+        >
+          <app-bootstrap-icon name="table-cells" />
+          <span i18n="@@nursePatientModalShell.footerExportExcel">Excel</span>
         </button>
-        <button type="button" class="btn-primary-neuro" (click)="printRequested.emit()" i18n="@@nursePatientModalShell.footerPrint">
-          <app-hero-icon name="printer" /> Imprimir
+        <button
+          id="nurse-patient-print-btn"
+          type="button"
+          class="btn-primary-neuro"
+          (click)="printRequested.emit()"
+          i18n="@@nursePatientModalShell.footerPrint"
+        >
+          <app-bootstrap-icon name="printer" /> Imprimir
         </button>
       </div>
     </div>

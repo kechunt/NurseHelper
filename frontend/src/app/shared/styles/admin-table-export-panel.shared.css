@@ -1,0 +1,113 @@
+/**
+ * Panel de exportación (imprimir / CSV / Excel) — mismo lenguaje que farmacia y enfermería.
+ * Importar en componentes admin con tabla exportable.
+ */
+
+.export-panel {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  padding: 1rem 1.25rem;
+  border-radius: 18px;
+  margin-bottom: 1.25rem;
+  box-shadow: 6px 6px 14px #bebebe, -4px -4px 12px #ffffff;
+  border: 1px solid rgba(113, 128, 150, 0.2);
+}
+
+.export-panel--admin-users {
+  background: linear-gradient(135deg, #ebe8f4 0%, #e0e5ec 55%, #e4e8f2 100%);
+  border-color: rgba(102, 126, 234, 0.28);
+}
+
+.export-panel__icon {
+  font-size: 2rem;
+  line-height: 1;
+  flex-shrink: 0;
+  width: 3rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: #e0e5ec;
+  box-shadow: inset 4px 4px 8px #bebebe, inset -3px -3px 8px #ffffff;
+}
+
+.export-panel__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.export-panel__title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #2d3748;
+  margin-bottom: 0.35rem;
+}
+
+.export-panel__hint {
+  margin: 0 0 0.75rem;
+  font-size: 0.8rem;
+  color: #718096;
+  line-height: 1.45;
+}
+
+.export-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.export-btn {
+  background: #e0e5ec;
+  color: #4a5568;
+  border: none;
+  border-radius: 999px;
+  padding: 8px 14px;
+  min-height: 36px;
+  min-width: 7.5rem;
+  font-size: 0.84rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.32rem;
+  touch-action: manipulation;
+}
+
+.export-btn:hover {
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+}
+
+.export-btn:active {
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+}
+
+.export-btn:focus-visible {
+  outline: 2px solid #4299e1;
+  outline-offset: 2px;
+}
+
+@media (max-width: 768px) {
+  .export-panel {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .export-panel__icon {
+    align-self: flex-start;
+  }
+
+  .export-panel__actions {
+    flex-direction: column;
+  }
+
+  .export-btn {
+    width: 100%;
+    min-width: unset;
+  }
+}

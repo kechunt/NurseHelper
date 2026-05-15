@@ -63,14 +63,16 @@ describe('NursePatientModalShellComponent', () => {
   it('emite printRequested al pulsar Imprimir', () => {
     let n = 0;
     const sub = fixture.componentInstance.printRequested.subscribe(() => n++);
-    const buttons = Array.from(
-      fixture.nativeElement.querySelectorAll('button')
-    ) as HTMLButtonElement[];
-    const printBtn = buttons.find((b) => b.textContent?.includes('Imprimir'));
+    const printBtn = fixture.nativeElement.querySelector('#nurse-patient-print-btn') as HTMLButtonElement;
     expect(printBtn).toBeTruthy();
-    printBtn!.click();
+    printBtn.click();
     expect(n).toBe(1);
     sub.unsubscribe();
+  });
+
+  it('cabecera y pie: botones cerrar con id', () => {
+    expect(fixture.nativeElement.querySelector('#nurse-patient-modal-header-close-btn')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('#nurse-patient-modal-close-btn')).toBeTruthy();
   });
 
   it('muestra CSV y Excel en el footer y emite eventos con pestaña', () => {
@@ -82,20 +84,21 @@ describe('NursePatientModalShellComponent', () => {
     const subC = fixture.componentInstance.exportCsvRequested.subscribe((v) => emittedCsv.push(v));
     const subX = fixture.componentInstance.exportExcelRequested.subscribe((v) => emittedXls.push(v));
 
-    const buttons = Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[];
-    const csvBtn = buttons.find((b) => (b.textContent || '').includes('CSV'));
-    const xlsBtn = buttons.find((b) => (b.textContent || '').includes('Excel'));
+    const csvBtn = fixture.nativeElement.querySelector('#nurse-patient-export-csv-btn') as HTMLButtonElement;
+    const xlsBtn = fixture.nativeElement.querySelector('#nurse-patient-export-excel-btn') as HTMLButtonElement;
     expect(csvBtn && xlsBtn).toBeTruthy();
+    expect(csvBtn.title.length).toBeGreaterThan(0);
+    expect(xlsBtn.title.length).toBeGreaterThan(0);
 
-    csvBtn!.click();
-    xlsBtn!.click();
+    csvBtn.click();
+    xlsBtn.click();
     expect(emittedCsv).toEqual([{ tab: 'history' }]);
     expect(emittedXls).toEqual([{ tab: 'history' }]);
 
     fixture.componentRef.setInput('activeTab', 'medications');
     fixture.detectChanges();
-    csvBtn!.click();
-    xlsBtn!.click();
+    csvBtn.click();
+    xlsBtn.click();
     expect(emittedCsv[1]).toEqual({ tab: 'medications' });
     expect(emittedXls[1]).toEqual({ tab: 'medications' });
 

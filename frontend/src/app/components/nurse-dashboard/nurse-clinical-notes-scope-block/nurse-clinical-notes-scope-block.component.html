@@ -6,7 +6,7 @@
     [class.ncnsb__preview--clickable]="effectiveNotes().length > 0"
     (click)="onPreviewStripClick($event)"
     role="group"
-    [attr.aria-label]="blockLabel || 'Vista previa de notas'"
+    [attr.aria-label]="blockLabel || ncnsbPreviewAria"
   >
     <button
       *ngFor="let note of previewNotes()"
@@ -16,7 +16,7 @@
     >
       <span class="ncnsb__preview-text">{{ displayBody(note) }}</span>
     </button>
-    <p *ngIf="effectiveNotes().length === 0" class="ncnsb__empty">{{ emptyLabel }}</p>
+    <p *ngIf="effectiveNotes().length === 0" class="ncnsb__empty">{{ emptyLabel || ncnsbEmptyDefault }}</p>
   </div>
 
   <button
@@ -25,7 +25,7 @@
     class="ncnsb__expand-btn neuro-btn neuro-btn-sm"
     (click)="openList(); $event.stopPropagation()"
   >
-    Ver todas ({{ effectiveNotes().length }})
+    {{ expandAllLabel(effectiveNotes().length) }}
   </button>
 
   <!-- Lista completa: solo aquí elige 0–3 visibles fuera -->
@@ -43,14 +43,17 @@
       (click)="$event.stopPropagation()"
     >
       <div class="ncnsb-list-header">
-        <h5 id="ncnsb-list-title" class="ncnsb-list-title">{{ blockLabel || 'Todas las notas' }}</h5>
-        <button type="button" class="ncnsb-list-close neuro-btn neuro-btn-sm ncnsb__icon-close" (click)="closeList()" aria-label="Cerrar">
+        <h5 id="ncnsb-list-title" class="ncnsb-list-title">{{ blockLabel || ncnsbListTitleFallback }}</h5>
+        <button
+          type="button"
+          class="ncnsb-list-close neuro-btn neuro-btn-sm ncnsb__icon-close"
+          (click)="closeList()"
+          [attr.aria-label]="ncnsbCloseAria"
+        >
           ✕
         </button>
       </div>
-      <p class="ncnsb-list-hint">
-        Pulse el texto para ver fecha y hora. Solo aquí: elige qué notas se muestran fuera (en este recuadro, pacientes y camas); entre 0 y 3.
-      </p>
+      <p class="ncnsb-list-hint">{{ ncnsbListHint }}</p>
       <ul class="ncnsb-list-ul">
         <li *ngFor="let note of listNotesSorted()" class="ncnsb-list-li">
           <div class="ncnsb-list-row-wrap">
@@ -60,10 +63,10 @@
               [class.ncnsb__eye-btn--active]="isPinned(note)"
               [attr.aria-pressed]="isPinned(note)"
               (click)="onTogglePin($event, note)"
-              title="Mostrar u ocultar en vistas compactas (máx. 3)"
-              aria-label="Mostrar u ocultar nota destacada"
+              [title]="ncnsbPinTitle"
+              [attr.aria-label]="ncnsbPinAria"
             >
-              <app-hero-icon name="eye" />
+              <app-bootstrap-icon name="eye" />
             </button>
             <button type="button" class="ncnsb-list-row-main" (click)="openDetail(note)">
               <span class="ncnsb-list-body">{{ displayBody(note) }}</span>
@@ -71,7 +74,14 @@
           </div>
         </li>
       </ul>
-      <button type="button" class="ncnsb-list-done neuro-btn neuro-btn-sm" (click)="closeList()">Cerrar</button>
+      <button
+        type="button"
+        class="ncnsb-list-done neuro-btn neuro-btn-sm"
+        (click)="closeList()"
+        i18n="@@ncnsb.listDoneClose"
+      >
+        Cerrar
+      </button>
     </div>
   </div>
 
@@ -84,22 +94,34 @@
   >
     <div class="ncnsb-detail-dialog" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
       <div class="ncnsb-detail-header">
-        <h5 class="ncnsb-detail-title">Detalle de la observación</h5>
-        <button type="button" class="ncnsb-detail-close neuro-btn neuro-btn-sm ncnsb__icon-close" (click)="closeDetail()" aria-label="Cerrar">
+        <h5 class="ncnsb-detail-title" i18n="@@ncnsb.detailTitle">Detalle de la observación</h5>
+        <button
+          type="button"
+          class="ncnsb-detail-close neuro-btn neuro-btn-sm ncnsb__icon-close"
+          (click)="closeDetail()"
+          [attr.aria-label]="ncnsbCloseAria"
+        >
           ✕
         </button>
       </div>
       <dl class="ncnsb-detail-meta">
-        <dt>Enfermera / autor</dt>
+        <dt i18n="@@ncnsb.detailMetaAuthor">Enfermera / autor</dt>
         <dd>{{ detailAuthorLabel(dn) }}</dd>
-        <dt>Fecha</dt>
+        <dt i18n="@@ncnsb.detailMetaDate">Fecha</dt>
         <dd>{{ detailDateLabel(dn) }}</dd>
-        <dt>Hora</dt>
+        <dt i18n="@@ncnsb.detailMetaTime">Hora</dt>
         <dd>{{ detailTimeLabel(dn) }}</dd>
       </dl>
-      <p class="ncnsb-detail-body-label">Observación</p>
+      <p class="ncnsb-detail-body-label" i18n="@@ncnsb.detailBodyLabel">Observación</p>
       <p class="ncnsb-detail-body">{{ dn.body }}</p>
-      <button type="button" class="ncnsb-detail-done neuro-btn neuro-btn-sm" (click)="closeDetail()">Cerrar</button>
+      <button
+        type="button"
+        class="ncnsb-detail-done neuro-btn neuro-btn-sm"
+        (click)="closeDetail()"
+        i18n="@@ncnsb.detailDoneClose"
+      >
+        Cerrar
+      </button>
     </div>
   </div>
 </div>

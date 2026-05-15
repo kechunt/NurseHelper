@@ -36,23 +36,39 @@ describe('NurseDashboardMainNavComponent', () => {
 
   it('emite viewSelect al elegir vista Tareas', () => {
     spyOn(fixture.componentInstance.viewSelect, 'emit');
-    const buttons = fixture.nativeElement.querySelectorAll('.nurse-nav-tablist button.nav-link');
-    (buttons[1] as HTMLButtonElement).click();
+    const tab = fixture.nativeElement.querySelector('#nurse-tab-tasks') as HTMLButtonElement;
+    expect(tab).toBeTruthy();
+    tab.click();
     expect(fixture.componentInstance.viewSelect.emit).toHaveBeenCalledWith('tasks');
   });
 
-  it('emite entregaClick y reportesClick', () => {
+  it('emite entregaClick y reportesClick desde accesos rápidos con id estable', () => {
     spyOn(fixture.componentInstance.entregaClick, 'emit');
     spyOn(fixture.componentInstance.reportesClick, 'emit');
-    const quickButtons = fixture.nativeElement.querySelectorAll(
-      '.nurse-nav-quick-group button'
-    ) as NodeListOf<HTMLButtonElement>;
-    const entrega = quickButtons[0];
-    const reportes = quickButtons[1];
+    const entrega = fixture.nativeElement.querySelector(
+      '#nurse-dashboard-main-nav-handover-quick-btn'
+    ) as HTMLButtonElement;
+    const reportes = fixture.nativeElement.querySelector(
+      '#nurse-dashboard-main-nav-reports-quick-btn'
+    ) as HTMLButtonElement;
+    expect(entrega).toBeTruthy();
+    expect(reportes).toBeTruthy();
     entrega.click();
     reportes.click();
     expect(fixture.componentInstance.entregaClick.emit).toHaveBeenCalled();
     expect(fixture.componentInstance.reportesClick.emit).toHaveBeenCalled();
+  });
+
+  it('plantilla: ids en accesos rápidos Entrega y Reportes', () => {
+    expect(fixture.nativeElement.querySelector('#nurse-dashboard-main-nav-handover-quick-btn')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('#nurse-dashboard-main-nav-reports-quick-btn')).toBeTruthy();
+  });
+
+  it('muestra chip Pendiente en entrega cuando handoverPendingNotice', () => {
+    fixture.componentRef.setInput('handoverPendingNotice', true);
+    fixture.detectChanges();
+    const chip = fixture.nativeElement.querySelector('.quick-pending-chip') as HTMLElement;
+    expect(chip?.textContent?.toLowerCase()).toContain('pendiente');
   });
 
   it('onMainViewTabKeydown con ArrowRight activa la siguiente vista', () => {

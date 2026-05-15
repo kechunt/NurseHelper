@@ -1,15 +1,15 @@
 <app-dashboard-shell
   panelSkin="pharmacy-dashboard"
   topAnchorId="pharmacy-top"
-  [panelTitle]="'Panel de Farmacia'"
+  [panelTitle]="pharmacyShellPanelTitle"
   [userName]="headerUserName"
-  [roleLabel]="'Farmacia'"
+  [roleLabel]="pharmacyShellRoleLabel"
   [profileEditable]="true"
-  [navAriaLabel]="'Módulos de farmacia'"
+  [navAriaLabel]="pharmacyShellNavAriaLabel"
   [navRoleTablist]="true"
   panelHeadingId="pharmacy-dashboard-heading"
   [headerLogoAlt]="''"
-  [logoSectionAriaLabel]="'Ir al módulo de solicitudes'"
+  [logoSectionAriaLabel]="pharmacyShellLogoSectionAriaLabel"
   (logoClick)="goToRequestsFromLogo()"
   (logoutClick)="logout()"
 >
@@ -25,7 +25,7 @@
       (click)="changeSection('requests')"
       (keydown)="onPharmacyTabKeydown($event, 'requests')"
     >
-      📋 Solicitudes
+      {{ pharmacyShellTabRequestsLabel }}
     </button>
     <button
       type="button"
@@ -38,7 +38,7 @@
       (click)="changeSection('history')"
       (keydown)="onPharmacyTabKeydown($event, 'history')"
     >
-      📦 Historial
+      {{ pharmacyShellTabHistoryLabel }}
     </button>
     <button
       type="button"
@@ -51,17 +51,17 @@
       (click)="changeSection('inventory')"
       (keydown)="onPharmacyTabKeydown($event, 'inventory')"
     >
-      🗃️ Inventario
+      {{ pharmacyShellTabInventoryLabel }}
     </button>
     <button
       type="button"
       role="tab"
       id="pharmacy-tab-asistencia"
       class="nav-link"
-      title="Abrir asistencia de farmacia"
+      [title]="pharmacyShellTabAttendanceTitle"
       (click)="goToAttendance()"
     >
-      ✅ Asistencia
+      {{ pharmacyShellTabAttendanceLabel }}
     </button>
   </ng-container>
 
@@ -77,56 +77,51 @@
         <div class="section-card pharmacy-module">
           <div class="section-header pharmacy-module-header">
             <h2 class="section-title">
-              <app-hero-icon name="clipboard-document-list"></app-hero-icon>
-              Solicitudes de Medicamentos
+              <app-bootstrap-icon name="clipboard-document-list"></app-bootstrap-icon>
+              {{ pharmacyRequestsSectionTitle }}
             </h2>
             <div class="section-actions">
               <input
                 type="text"
                 class="search-input"
                 [(ngModel)]="searchTerm"
-                placeholder="Buscar medicamento o enfermera..."
+                [placeholder]="pharmacyRequestsSearchPlaceholder"
                 (ngModelChange)="onRequestSearchChange($event)"
               />
               <select class="filter-select" [(ngModel)]="requestFilter" (change)="onRequestFilterChange()">
-                <option value="all">Todas</option>
-                <option value="pending">Pendientes</option>
-                <option value="in_preparation">En Preparación</option>
-                <option value="ready">Listas</option>
-                <option value="delivered">Entregadas</option>
-                <option value="cancelled">Rechazadas</option>
+                <option *ngFor="let opt of pharmacyRequestFilterOptions" [value]="opt.value">{{ opt.label }}</option>
               </select>
             </div>
           </div>
 
-          <div class="summary-unified-neuro pharmacy-requests-kpis" aria-label="Resumen del flujo de solicitudes">
-            <p class="pharmacy-kpis-title">Estado del día</p>
+          <div class="summary-unified-neuro pharmacy-requests-kpis" [attr.aria-label]="pharmacyRequestsKpisAria">
+            <p class="pharmacy-kpis-title">{{ pharmacyRequestsKpisTitle }}</p>
             <div class="quick-stats pharmacy-quick-stats pharmacy-requests-kpi-grid">
               <div class="stat-card" [class.has-pending]="pendingRequestsCount > 0" (click)="selectRequestKpi('pending')">
-                <div class="stat-icon"><app-hero-icon name="clock" [size]="28" /></div>
+                <div class="stat-icon"><app-bootstrap-icon name="clock" [size]="28" /></div>
                 <div class="stat-content">
-                  <div class="stat-label">Pendientes</div>
+                  <div class="stat-label">{{ pharmacyKpiPending }}</div>
                   <div class="stat-value">{{ pendingRequestsCount }}</div>
                 </div>
               </div>
               <div class="stat-card" (click)="selectRequestKpi('in_preparation')">
-                <div class="stat-icon"><app-hero-icon name="arrow-path" [size]="28" /></div>
+                <div class="stat-icon"><app-bootstrap-icon name="arrow-path" [size]="28" /></div>
                 <div class="stat-content">
-                  <div class="stat-label">En preparación</div>
+                  <div class="stat-label">{{ pharmacyKpiInPrep }}</div>
                   <div class="stat-value">{{ inPreparationCount }}</div>
                 </div>
               </div>
               <div class="stat-card" [class.ready]="readyForDeliveryCount > 0" (click)="selectRequestKpi('ready')">
-                <div class="stat-icon"><app-hero-icon name="check-circle" [size]="28" /></div>
+                <div class="stat-icon"><app-bootstrap-icon name="check-circle" [size]="28" /></div>
                 <div class="stat-content">
-                  <div class="stat-label">Listas para entregar</div>
+                  <div class="stat-label">{{ pharmacyKpiReady }}</div>
                   <div class="stat-value">{{ readyForDeliveryCount }}</div>
                 </div>
               </div>
-              <div class="stat-card" (click)="goToDeliveredTodayDetail()" title="Ver historial de entregas">
-                <div class="stat-icon"><app-hero-icon name="archive-box" [size]="28" /></div>
+              <div class="stat-card" (click)="goToDeliveredTodayDetail()" [title]="pharmacyKpiDeliveredTodayTitle">
+                <div class="stat-icon"><app-bootstrap-icon name="archive-box" [size]="28" /></div>
                 <div class="stat-content">
-                  <div class="stat-label">Entregadas hoy</div>
+                  <div class="stat-label">{{ pharmacyKpiDeliveredToday }}</div>
                   <div class="stat-value">{{ deliveredTodayCount }}</div>
                 </div>
               </div>
@@ -135,17 +130,17 @@
 
           <app-pharmacy-shift-attendance-section />
 
-    <div *ngIf="loadingRequests" class="module-feedback loading">Cargando solicitudes...</div>
+    <div *ngIf="loadingRequests" class="module-feedback loading">{{ pharmacyRequestsLoading }}</div>
     <div *ngIf="!loadingRequests && requestsError" class="module-feedback error">{{ requestsError }}</div>
 
           <div class="table-container table-wrapper-neuro">
       <table class="unified-tasks-table neuro-table">
         <thead>
           <tr>
-            <th>Medicamento</th>
-            <th>Enfermera</th>
-            <th>Cantidad</th>
-            <th>Área</th>
+            <th>{{ pharmacyThMedication }}</th>
+            <th>{{ pharmacyThNurse }}</th>
+            <th>{{ pharmacyThQuantity }}</th>
+            <th>{{ pharmacyThArea }}</th>
           </tr>
         </thead>
         <tbody>
@@ -176,10 +171,10 @@
             <td>
               <div class="area-badge">
                 <span *ngIf="request.patients && request.patients.length > 0">
-                  {{ request.patients[0].areaName || request.patients[0].area || 'N/A' }}
+                  {{ request.patients[0].areaName || request.patients[0].area || pharmacyValueNotAvailable }}
                 </span>
                 <span *ngIf="!request.patients || request.patients.length === 0">
-                  N/A
+                  {{ pharmacyValueNotAvailable }}
                 </span>
               </div>
             </td>
@@ -188,13 +183,13 @@
       </table>
     </div>
     <div class="pagination-bar" *ngIf="requestsPagination.totalPages > 1">
-      <button type="button" class="pagination-btn" (click)="prevRequestsPage()" [disabled]="requestsPagination.page <= 1">← Anterior</button>
-      <span class="pagination-info">Página {{ requestsPagination.page }} de {{ requestsPagination.totalPages }} · {{ requestsPagination.total }} registros</span>
-      <button type="button" class="pagination-btn" (click)="nextRequestsPage()" [disabled]="requestsPagination.page >= requestsPagination.totalPages">Siguiente →</button>
+      <button type="button" class="pagination-btn" (click)="prevRequestsPage()" [disabled]="requestsPagination.page <= 1">{{ pharmacyPaginationPrev }}</button>
+      <span class="pagination-info">{{ pharmacyRequestsPaginationInfo() }}</span>
+      <button type="button" class="pagination-btn" (click)="nextRequestsPage()" [disabled]="requestsPagination.page >= requestsPagination.totalPages">{{ pharmacyPaginationNext }}</button>
     </div>
 
     <p *ngIf="filteredRequests.length === 0" class="empty-message">
-      No hay solicitudes que coincidan con los filtros seleccionados
+      {{ pharmacyRequestsEmptyMessage }}
     </p>
         </div>
       </div>
@@ -210,44 +205,44 @@
         <div class="section-card pharmacy-module pharmacy-module--history">
     <div class="section-header">
       <h2 class="section-title">
-        <app-hero-icon name="archive-box"></app-hero-icon>
-        Historial de Entregas y Rechazos
+        <app-bootstrap-icon name="archive-box"></app-bootstrap-icon>
+        {{ pharmacyHistorySectionTitle }}
       </h2>
       <div class="section-actions">
         <input 
           type="text" 
           class="search-input" 
           [(ngModel)]="historySearchTerm" 
-          placeholder="Buscar en historial..."
+          [placeholder]="pharmacyHistorySearchPlaceholder"
           (ngModelChange)="onHistorySearchChange($event)"
         />
       </div>
     </div>
 
-    <div *ngIf="loadingHistory" class="module-feedback loading">Cargando historial...</div>
+    <div *ngIf="loadingHistory" class="module-feedback loading">{{ pharmacyHistoryLoading }}</div>
     <div *ngIf="!loadingHistory && historyError" class="module-feedback error">{{ historyError }}</div>
 
-    <div class="export-panel export-panel--history" aria-label="Exportar historial">
+    <div class="export-panel export-panel--history" [attr.aria-label]="pharmacyExportHistoryAria">
       <div class="export-panel__icon" aria-hidden="true">
-        <app-hero-icon name="clipboard-document-list"></app-hero-icon>
+        <app-bootstrap-icon name="clipboard-document-list"></app-bootstrap-icon>
       </div>
       <div class="export-panel__body">
-        <div class="export-panel__title">Exportar historial</div>
+        <div class="export-panel__title">{{ pharmacyExportHistoryTitle }}</div>
         <p class="export-panel__hint">
-          Se exportan los registros <strong>visibles</strong> con el buscador actual. El nombre del archivo incluye la fecha y hora en que se genera.
+          {{ pharmacyExportHistoryHint }}
         </p>
         <div class="export-panel__actions">
           <button type="button" class="export-btn export-btn--print" (click)="printHistory()">
-            <app-hero-icon name="printer"></app-hero-icon>
-            Imprimir
+            <app-bootstrap-icon name="printer"></app-bootstrap-icon>
+            {{ pharmacyExportPrint }}
           </button>
           <button type="button" class="export-btn export-btn--csv" (click)="exportHistoryCsv()">
-            <app-hero-icon name="document-text"></app-hero-icon>
-            Guardar CSV
+            <app-bootstrap-icon name="document-text"></app-bootstrap-icon>
+            {{ pharmacyExportSaveCsv }}
           </button>
           <button type="button" class="export-btn export-btn--excel" (click)="exportHistoryExcel()">
-            <app-hero-icon name="table-cells"></app-hero-icon>
-            Guardar Excel
+            <app-bootstrap-icon name="table-cells"></app-bootstrap-icon>
+            {{ pharmacyExportSaveExcel }}
           </button>
         </div>
       </div>
@@ -257,11 +252,11 @@
       <table class="unified-tasks-table neuro-table">
         <thead>
           <tr>
-            <th>Tipo</th>
-            <th>Fecha/Hora</th>
-            <th>Medicamento</th>
-            <th>Cantidad</th>
-            <th>Solicitado por</th>
+            <th>{{ pharmacyThHistoryType }}</th>
+            <th>{{ pharmacyThHistoryDateTime }}</th>
+            <th>{{ pharmacyThMedication }}</th>
+            <th>{{ pharmacyThHistoryQuantity }}</th>
+            <th>{{ pharmacyThHistoryRequestedBy }}</th>
           </tr>
         </thead>
         <tbody>
@@ -303,13 +298,13 @@
       </table>
     </div>
     <div class="pagination-bar" *ngIf="historyPagination.totalPages > 1">
-      <button type="button" class="pagination-btn" (click)="prevHistoryPage()" [disabled]="historyPagination.page <= 1">← Anterior</button>
-      <span class="pagination-info">Página {{ historyPagination.page }} de {{ historyPagination.totalPages }} · {{ historyPagination.total }} entregas</span>
-      <button type="button" class="pagination-btn" (click)="nextHistoryPage()" [disabled]="historyPagination.page >= historyPagination.totalPages">Siguiente →</button>
+      <button type="button" class="pagination-btn" (click)="prevHistoryPage()" [disabled]="historyPagination.page <= 1">{{ pharmacyPaginationPrev }}</button>
+      <span class="pagination-info">{{ pharmacyHistoryPaginationInfo() }}</span>
+      <button type="button" class="pagination-btn" (click)="nextHistoryPage()" [disabled]="historyPagination.page >= historyPagination.totalPages">{{ pharmacyPaginationNext }}</button>
     </div>
 
     <p *ngIf="filteredHistory.length === 0" class="empty-message">
-      No hay registros en el historial
+      {{ pharmacyHistoryEmptyMessage }}
     </p>
         </div>
       </div>
@@ -325,92 +320,92 @@
         <div class="section-card pharmacy-module pharmacy-module--inventory">
     <div class="inventory-stats-grid">
       <button class="inventory-stat-card" (click)="setInventoryStatusFilter('all')">
-        <span class="inventory-stat-label">Medicamentos</span>
+        <span class="inventory-stat-label">{{ pharmacyStatTotalMedications }}</span>
         <span class="inventory-stat-value">{{ totalInventoryItems }}</span>
       </button>
       <button class="inventory-stat-card warning" (click)="setInventoryStatusFilter('low_stock')">
-        <span class="inventory-stat-label">Stock Bajo</span>
+        <span class="inventory-stat-label">{{ pharmacyStatLowStock }}</span>
         <span class="inventory-stat-value">{{ lowStockItems }}</span>
       </button>
       <button class="inventory-stat-card danger" (click)="setInventoryStatusFilter('out_of_stock')">
-        <span class="inventory-stat-label">Sin Stock</span>
+        <span class="inventory-stat-label">{{ pharmacyStatOutOfStock }}</span>
         <span class="inventory-stat-value">{{ outOfStockItems }}</span>
       </button>
       <button class="inventory-stat-card alert" (click)="setInventoryStatusFilter('expiring_soon')">
-        <span class="inventory-stat-label">Por caducar ({{ expiringSoonWindowLabel() }}d)</span>
+        <span class="inventory-stat-label">{{ pharmacyInventoryStatExpiringSoonLabel(expiringSoonWindowLabel()) }}</span>
         <span class="inventory-stat-value">{{ expiringSoonItems }}</span>
       </button>
     </div>
 
     <div class="section-header">
       <h2 class="section-title">
-        <app-hero-icon name="table-cells"></app-hero-icon>
-        Gestión de Inventario
+        <app-bootstrap-icon name="table-cells"></app-bootstrap-icon>
+        {{ pharmacyInventorySectionTitle }}
       </h2>
       <div class="section-actions">
         <input 
           type="text" 
           class="search-input" 
           [(ngModel)]="inventorySearchTerm" 
-          placeholder="Medicamento, ubicación o fecha de caducidad (AAAA-MM-DD)…"
+          [placeholder]="pharmacyInventorySearchPlaceholder"
           (ngModelChange)="onInventorySearchChange($event)"
         />
         <button class="neuro-btn" (click)="openAddMedicationModal()">
-          <app-hero-icon name="plus-circle"></app-hero-icon>
-          Agregar Medicamento
+          <app-bootstrap-icon name="plus-circle"></app-bootstrap-icon>
+          {{ pharmacyAddMedication }}
         </button>
       </div>
     </div>
 
     <div class="inventory-filter-chips">
-      <button class="chip-btn" [class.active]="inventoryStatusFilter === 'all'" (click)="setInventoryStatusFilter('all')">Todos</button>
-      <button class="chip-btn" [class.active]="inventoryStatusFilter === 'available'" (click)="setInventoryStatusFilter('available')">Disponibles</button>
-      <button class="chip-btn" [class.active]="inventoryStatusFilter === 'low_stock'" (click)="setInventoryStatusFilter('low_stock')">Stock bajo</button>
-      <button class="chip-btn" [class.active]="inventoryStatusFilter === 'out_of_stock'" (click)="setInventoryStatusFilter('out_of_stock')">Sin stock</button>
-      <button class="chip-btn" [class.active]="inventoryStatusFilter === 'expired'" (click)="setInventoryStatusFilter('expired')">Vencidos</button>
-      <button class="chip-btn" [class.active]="inventoryStatusFilter === 'expiring_soon'" (click)="setInventoryStatusFilter('expiring_soon')">Por caducar ({{ expiringSoonWindowLabel() }}d)</button>
+      <button class="chip-btn" [class.active]="inventoryStatusFilter === 'all'" (click)="setInventoryStatusFilter('all')">{{ pharmacyChipAll }}</button>
+      <button class="chip-btn" [class.active]="inventoryStatusFilter === 'available'" (click)="setInventoryStatusFilter('available')">{{ pharmacyChipAvailable }}</button>
+      <button class="chip-btn" [class.active]="inventoryStatusFilter === 'low_stock'" (click)="setInventoryStatusFilter('low_stock')">{{ pharmacyChipLowStock }}</button>
+      <button class="chip-btn" [class.active]="inventoryStatusFilter === 'out_of_stock'" (click)="setInventoryStatusFilter('out_of_stock')">{{ pharmacyChipOutOfStock }}</button>
+      <button class="chip-btn" [class.active]="inventoryStatusFilter === 'expired'" (click)="setInventoryStatusFilter('expired')">{{ pharmacyChipExpired }}</button>
+      <button class="chip-btn" [class.active]="inventoryStatusFilter === 'expiring_soon'" (click)="setInventoryStatusFilter('expiring_soon')">{{ pharmacyInventoryStatExpiringSoonLabel(expiringSoonWindowLabel()) }}</button>
     </div>
 
-    <div class="export-panel export-panel--bodega" aria-label="Exportar inventario de bodega">
+    <div class="export-panel export-panel--bodega" [attr.aria-label]="pharmacyExportInventoryAria">
       <div class="export-panel__icon" aria-hidden="true">
-        <app-hero-icon name="archive-box"></app-hero-icon>
+        <app-bootstrap-icon name="archive-box"></app-bootstrap-icon>
       </div>
       <div class="export-panel__body">
-        <div class="export-panel__title">Exportar bodega / stock</div>
+        <div class="export-panel__title">{{ pharmacyExportInventoryTitle }}</div>
         <p class="export-panel__hint">
-          Incluye medicamento, dosis, stock, mínimos, ubicación, caducidad y estado. Respeta <strong>filtros y búsqueda</strong> actuales. El archivo lleva fecha y hora de generación en el nombre.
+          {{ pharmacyExportInventoryHint }}
         </p>
         <div class="export-panel__actions">
           <button type="button" class="export-btn export-btn--print" (click)="printInventory()">
-            <app-hero-icon name="printer"></app-hero-icon>
-            Imprimir
+            <app-bootstrap-icon name="printer"></app-bootstrap-icon>
+            {{ pharmacyExportPrint }}
           </button>
           <button type="button" class="export-btn export-btn--csv" (click)="exportInventoryCsv()">
-            <app-hero-icon name="document-text"></app-hero-icon>
-            Guardar CSV
+            <app-bootstrap-icon name="document-text"></app-bootstrap-icon>
+            {{ pharmacyExportSaveCsv }}
           </button>
           <button type="button" class="export-btn export-btn--excel" (click)="exportInventoryExcel()">
-            <app-hero-icon name="table-cells"></app-hero-icon>
-            Guardar Excel
+            <app-bootstrap-icon name="table-cells"></app-bootstrap-icon>
+            {{ pharmacyExportSaveExcel }}
           </button>
         </div>
       </div>
     </div>
 
-    <div *ngIf="loadingInventory" class="module-feedback loading">Cargando inventario...</div>
+    <div *ngIf="loadingInventory" class="module-feedback loading">{{ pharmacyInventoryLoading }}</div>
     <div *ngIf="!loadingInventory && inventoryError" class="module-feedback error">{{ inventoryError }}</div>
 
     <div class="table-container table-wrapper-neuro">
       <table class="unified-tasks-table neuro-table">
         <thead>
           <tr>
-            <th>Medicamento</th>
-            <th>Dosis</th>
-            <th>Stock Actual</th>
-            <th>Stock Mínimo</th>
-            <th>Ubicación</th>
-            <th>Fecha de Vencimiento</th>
-            <th>Estado</th>
+            <th>{{ pharmacyThInvMedication }}</th>
+            <th>{{ pharmacyThInvDosage }}</th>
+            <th>{{ pharmacyThInvStockCurrent }}</th>
+            <th>{{ pharmacyThInvStockMin }}</th>
+            <th>{{ pharmacyThInvLocation }}</th>
+            <th>{{ pharmacyThInvExpiry }}</th>
+            <th>{{ pharmacyThInvStatus }}</th>
           </tr>
         </thead>
         <tbody>
@@ -462,13 +457,13 @@
       </table>
     </div>
     <div class="pagination-bar" *ngIf="inventoryPagination.totalPages > 1">
-      <button type="button" class="pagination-btn" (click)="prevInventoryPage()" [disabled]="inventoryPagination.page <= 1">← Anterior</button>
-      <span class="pagination-info">Página {{ inventoryPagination.page }} de {{ inventoryPagination.totalPages }} · {{ inventoryPagination.total }} medicamentos</span>
-      <button type="button" class="pagination-btn" (click)="nextInventoryPage()" [disabled]="inventoryPagination.page >= inventoryPagination.totalPages">Siguiente →</button>
+      <button type="button" class="pagination-btn" (click)="prevInventoryPage()" [disabled]="inventoryPagination.page <= 1">{{ pharmacyPaginationPrev }}</button>
+      <span class="pagination-info">{{ pharmacyInventoryPaginationInfo() }}</span>
+      <button type="button" class="pagination-btn" (click)="nextInventoryPage()" [disabled]="inventoryPagination.page >= inventoryPagination.totalPages">{{ pharmacyPaginationNext }}</button>
     </div>
 
     <p *ngIf="filteredInventory.length === 0" class="empty-message">
-      No hay medicamentos en inventario
+      {{ pharmacyInventoryEmptyMessage }}
     </p>
         </div>
       </div>
@@ -488,8 +483,8 @@
         *ngIf="selectedRequestForActions as r"
         (click)="openRequestDetailModal(r)"
       >
-        <app-hero-icon name="eye"></app-hero-icon>
-        Ver detalle
+        <app-bootstrap-icon name="eye"></app-bootstrap-icon>
+        {{ pharmacyActionViewDetail }}
       </button>
       <button
         type="button"
@@ -498,8 +493,8 @@
         [disabled]="!canAcceptRequest(r)"
         (click)="closeRequestActions(); changeRequestStatus(r, 'in_preparation')"
       >
-        <app-hero-icon name="check-circle"></app-hero-icon>
-        Aceptar (en preparación)
+        <app-bootstrap-icon name="check-circle"></app-bootstrap-icon>
+        {{ pharmacyActionAcceptPrep }}
       </button>
       <button
         type="button"
@@ -508,8 +503,8 @@
         [disabled]="!canMarkReady(r)"
         (click)="closeRequestActions(); changeRequestStatus(r, 'ready')"
       >
-        <app-hero-icon name="archive-box"></app-hero-icon>
-        Marcar como lista
+        <app-bootstrap-icon name="archive-box"></app-bootstrap-icon>
+        {{ pharmacyActionMarkReady }}
       </button>
       <button
         type="button"
@@ -518,8 +513,8 @@
         [disabled]="!canDeliver(r)"
         (click)="closeRequestActions(); openDeliveryModal(r)"
       >
-        <app-hero-icon name="truck"></app-hero-icon>
-        Entregar
+        <app-bootstrap-icon name="truck"></app-bootstrap-icon>
+        {{ pharmacyActionDeliver }}
       </button>
       <button
         type="button"
@@ -528,8 +523,8 @@
         [disabled]="!canReject(r)"
         (click)="closeRequestActions(); openRejectModal(r)"
       >
-        <app-hero-icon name="x-circle"></app-hero-icon>
-        Rechazar
+        <app-bootstrap-icon name="x-circle"></app-bootstrap-icon>
+        {{ pharmacyActionReject }}
       </button>
     </app-admin-table-row-actions-modal>
 
@@ -537,35 +532,35 @@
       <div class="modal-content modal-delivery" (click)="$event.stopPropagation()">
         <div class="modal-header">
           <h3>
-            <app-hero-icon name="clipboard-document"></app-hero-icon>
-            Detalle de solicitud {{ rd.requestId }}
+            <app-bootstrap-icon name="clipboard-document"></app-bootstrap-icon>
+            {{ requestDetailModalTitle(rd.requestId) }}
           </h3>
           <button class="close-btn" (click)="closeRequestDetailModal()">✕</button>
         </div>
         <div class="modal-body">
           <div class="delivery-summary">
-            <div class="summary-row"><span class="summary-label">ID:</span><span class="summary-value">{{ rd.requestId }}</span></div>
-            <div class="summary-row"><span class="summary-label">Medicamento:</span><span class="summary-value">{{ rd.medication }} {{ rd.dosage }}</span></div>
-            <div class="summary-row"><span class="summary-label">Solicitada por:</span><span class="summary-value">{{ rd.requestedBy }}</span></div>
-            <div class="summary-row"><span class="summary-label">Cantidad:</span><span class="summary-value">{{ rd.quantity }}</span></div>
-            <div class="summary-row"><span class="summary-label">Estado:</span><span class="summary-value">{{ getStatusLabel(rd.status) }}</span></div>
-            <div class="summary-row"><span class="summary-label">Prioridad:</span><span class="summary-value">{{ rd.priority }}</span></div>
-            <div class="summary-row"><span class="summary-label">Solicitud:</span><span class="summary-value">{{ rd.requestedAt }}</span></div>
-            <div class="summary-row"><span class="summary-label">Último cambio:</span><span class="summary-value">{{ rd.statusUpdatedAtRaw ? (rd.statusUpdatedAtRaw | date:'dd/MM/yyyy, HH:mm') : '—' }}</span></div>
-            <div class="summary-row"><span class="summary-label">Stock:</span><span class="summary-value">{{ rd.stockAvailable || 0 }}</span></div>
+            <div class="summary-row"><span class="summary-label">{{ pharmacyLblId }}</span><span class="summary-value">{{ rd.requestId }}</span></div>
+            <div class="summary-row"><span class="summary-label">{{ pharmacyLblMedication }}</span><span class="summary-value">{{ rd.medication }} {{ rd.dosage }}</span></div>
+            <div class="summary-row"><span class="summary-label">{{ pharmacyLblRequestedBy }}</span><span class="summary-value">{{ rd.requestedBy }}</span></div>
+            <div class="summary-row"><span class="summary-label">{{ pharmacyLblQuantity }}</span><span class="summary-value">{{ rd.quantity }}</span></div>
+            <div class="summary-row"><span class="summary-label">{{ pharmacyLblStatus }}</span><span class="summary-value">{{ getStatusLabel(rd.status) }}</span></div>
+            <div class="summary-row"><span class="summary-label">{{ pharmacyLblPriority }}</span><span class="summary-value">{{ rd.priority }}</span></div>
+            <div class="summary-row"><span class="summary-label">{{ pharmacyLblRequestTime }}</span><span class="summary-value">{{ rd.requestedAt }}</span></div>
+            <div class="summary-row"><span class="summary-label">{{ pharmacyLblLastChange }}</span><span class="summary-value">{{ rd.statusUpdatedAtRaw ? (rd.statusUpdatedAtRaw | date:'dd/MM/yyyy, HH:mm') : pharmacyEmDash }}</span></div>
+            <div class="summary-row"><span class="summary-label">{{ pharmacyLblStock }}</span><span class="summary-value">{{ rd.stockAvailable || 0 }}</span></div>
           </div>
           <div class="patients-delivery-info">
-            <h4>Pacientes</h4>
+            <h4>{{ pharmacyPatientsHeading }}</h4>
             <div *ngFor="let patient of rd.patients" class="patient-delivery-card">
               <div class="patient-header-delivery">
                 <span class="patient-name-delivery">{{ patient.patientName }}</span>
-                <span class="bed-badge-delivery">{{ patient.bedNumber || 'Sin cama' }}</span>
+                <span class="bed-badge-delivery">{{ patient.bedNumber || pharmacyBedNone }}</span>
               </div>
             </div>
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn-secondary-neuro" (click)="closeRequestDetailModal()">Cerrar</button>
+          <button class="btn-secondary-neuro" (click)="closeRequestDetailModal()">{{ pharmacyModalClose }}</button>
         </div>
       </div>
     </div>
@@ -582,8 +577,8 @@
         *ngIf="selectedInventoryForActions as i"
         (click)="closeInventoryActions(); openStockMovementModal(i, 'entry')"
       >
-        <app-hero-icon name="plus-circle"></app-hero-icon>
-        Entrada
+        <app-bootstrap-icon name="plus-circle"></app-bootstrap-icon>
+        {{ pharmacyInventoryActionEntry }}
       </button>
       <button
         type="button"
@@ -591,8 +586,8 @@
         *ngIf="selectedInventoryForActions as i"
         (click)="closeInventoryActions(); openStockMovementModal(i, 'exit')"
       >
-        <app-hero-icon name="minus-circle"></app-hero-icon>
-        Salida
+        <app-bootstrap-icon name="minus-circle"></app-bootstrap-icon>
+        {{ pharmacyInventoryActionExit }}
       </button>
       <button
         type="button"
@@ -600,8 +595,8 @@
         *ngIf="selectedInventoryForActions as i"
         (click)="closeInventoryActions(); openStockMovementModal(i, 'adjustment')"
       >
-        <app-hero-icon name="cog-6-tooth"></app-hero-icon>
-        Ajuste
+        <app-bootstrap-icon name="cog-6-tooth"></app-bootstrap-icon>
+        {{ pharmacyInventoryActionAdjust }}
       </button>
       <button
         type="button"
@@ -609,8 +604,8 @@
         *ngIf="selectedInventoryForActions as i"
         (click)="closeInventoryActions(); openKardexModal(i)"
       >
-        <app-hero-icon name="clipboard-document-list"></app-hero-icon>
-        Kardex
+        <app-bootstrap-icon name="clipboard-document-list"></app-bootstrap-icon>
+        {{ pharmacyInventoryActionKardex }}
       </button>
       <button
         type="button"
@@ -618,8 +613,8 @@
         *ngIf="selectedInventoryForActions as i"
         (click)="closeInventoryActions(); openDeleteMedicationModal(i)"
       >
-        <app-hero-icon name="trash"></app-hero-icon>
-        Eliminar
+        <app-bootstrap-icon name="trash"></app-bootstrap-icon>
+        {{ pharmacyInventoryActionDelete }}
       </button>
     </app-admin-table-row-actions-modal>
 
@@ -634,7 +629,7 @@
         class="neuro-btn"
         (click)="closeHistoryActions()"
       >
-        Cerrar
+        {{ pharmacyModalClose }}
       </button>
     </app-admin-table-row-actions-modal>
 
@@ -643,8 +638,8 @@
     <div class="modal-content modal-delivery" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3>
-          <app-hero-icon name="archive-box"></app-hero-icon>
-          Confirmar Entrega
+          <app-bootstrap-icon name="archive-box"></app-bootstrap-icon>
+          {{ pharmacyDeliveryTitle }}
         </h3>
         <button class="close-btn" (click)="closeDeliveryModal()">✕</button>
       </div>
@@ -652,29 +647,29 @@
       <div class="modal-body">
         <div class="delivery-summary">
           <div class="summary-row">
-            <span class="summary-label">ID Solicitud:</span>
+            <span class="summary-label">{{ pharmacyLblRequestId }}</span>
             <span class="summary-value">{{ selectedRequest?.requestId }}</span>
           </div>
           <div class="summary-row">
-            <span class="summary-label">Medicamento:</span>
+            <span class="summary-label">{{ pharmacyLblMedication }}</span>
             <span class="summary-value">{{ selectedRequest?.medication }} {{ selectedRequest?.dosage }}</span>
           </div>
           <div class="summary-row">
-            <span class="summary-label">Cantidad:</span>
+            <span class="summary-label">{{ pharmacyLblQuantity }}</span>
             <span class="summary-value">{{ selectedRequest?.quantity }}</span>
           </div>
           <div class="summary-row">
-            <span class="summary-label">Solicitado por:</span>
+            <span class="summary-label">{{ pharmacyLblRequestedBy }}</span>
             <span class="summary-value">{{ selectedRequest?.requestedBy }}</span>
           </div>
         </div>
 
         <div class="patients-delivery-info">
-          <h4>Pacientes que recibirán este medicamento:</h4>
+          <h4>{{ pharmacyPatientsDeliveryHeading }}</h4>
           <div *ngFor="let patient of selectedRequest?.patients" class="patient-delivery-card">
             <div class="patient-header-delivery">
               <span class="patient-name-delivery">{{ patient.patientName }}</span>
-              <span class="bed-badge-delivery">{{ patient.bedNumber }}</span>
+              <span class="bed-badge-delivery">{{ patient.bedNumber || pharmacyBedNone }}</span>
             </div>
             <div class="doses-list">
               <div *ngFor="let dose of patient.doses" class="dose-item">
@@ -686,18 +681,18 @@
         </div>
 
         <div class="form-group">
-          <label>Notas de Entrega</label>
+          <label>{{ pharmacyDeliveryNotesLabel }}</label>
           <textarea class="neuro-input" [(ngModel)]="deliveryNotes" 
-                    placeholder="Observaciones sobre la entrega..." 
+                    [placeholder]="pharmacyDeliveryNotesPlaceholder" 
                     rows="3"></textarea>
         </div>
       </div>
 
       <div class="modal-footer">
-        <button class="btn-secondary-neuro" (click)="closeDeliveryModal()">Cancelar</button>
+        <button class="btn-secondary-neuro" (click)="closeDeliveryModal()">{{ pharmacyModalCancel }}</button>
         <button class="btn-primary-neuro" (click)="confirmDelivery()">
-          <app-hero-icon name="check-circle"></app-hero-icon>
-          Confirmar Entrega
+          <app-bootstrap-icon name="check-circle"></app-bootstrap-icon>
+          {{ pharmacyDeliveryConfirmBtn }}
         </button>
       </div>
     </div>
@@ -708,8 +703,8 @@
     <div class="modal-content modal-delivery" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3>
-          <app-hero-icon name="x-circle"></app-hero-icon>
-          Rechazar Solicitud
+          <app-bootstrap-icon name="x-circle"></app-bootstrap-icon>
+          {{ pharmacyRejectTitle }}
         </h3>
         <button class="close-btn" (click)="closeRejectModal()">✕</button>
       </div>
@@ -717,40 +712,40 @@
       <div class="modal-body">
         <div class="delivery-summary">
           <div class="summary-row">
-            <span class="summary-label">ID Solicitud:</span>
+            <span class="summary-label">{{ pharmacyLblRequestId }}</span>
             <span class="summary-value">{{ selectedRequest?.requestId }}</span>
           </div>
           <div class="summary-row">
-            <span class="summary-label">Medicamento:</span>
+            <span class="summary-label">{{ pharmacyLblMedication }}</span>
             <span class="summary-value">{{ selectedRequest?.medication }} {{ selectedRequest?.dosage }}</span>
           </div>
           <div class="summary-row">
-            <span class="summary-label">Cantidad:</span>
+            <span class="summary-label">{{ pharmacyLblQuantity }}</span>
             <span class="summary-value">{{ selectedRequest?.quantity }}</span>
           </div>
           <div class="summary-row">
-            <span class="summary-label">Solicitado por:</span>
+            <span class="summary-label">{{ pharmacyLblRequestedBy }}</span>
             <span class="summary-value">{{ selectedRequest?.requestedBy }}</span>
           </div>
         </div>
 
         <div class="form-group">
-          <label>Razón del Rechazo *</label>
+          <label>{{ pharmacyRejectReasonLabel }}</label>
           <textarea 
             class="neuro-input" 
             [(ngModel)]="rejectionReason" 
-            placeholder="Ej: Medicamento no disponible en inventario, requiere autorización especial, etc." 
+            [placeholder]="pharmacyRejectReasonPlaceholder" 
             rows="4"
             required></textarea>
-          <small>Es obligatorio proporcionar una razón para rechazar la solicitud</small>
+          <small>{{ pharmacyRejectReasonHint }}</small>
         </div>
       </div>
 
       <div class="modal-footer">
-        <button class="btn-secondary-neuro" (click)="closeRejectModal()">Cancelar</button>
+        <button class="btn-secondary-neuro" (click)="closeRejectModal()">{{ pharmacyModalCancel }}</button>
         <button class="btn-danger-neuro" (click)="confirmRejection()" [disabled]="!rejectionReason.trim()">
-          <app-hero-icon name="x-circle"></app-hero-icon>
-          Confirmar Rechazo
+          <app-bootstrap-icon name="x-circle"></app-bootstrap-icon>
+          {{ pharmacyRejectConfirmBtn }}
         </button>
       </div>
     </div>
@@ -761,48 +756,48 @@
     <div class="modal-content modal-delivery" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3>
-          <app-hero-icon name="plus-circle"></app-hero-icon>
-          Agregar Medicamento al Inventario
+          <app-bootstrap-icon name="plus-circle"></app-bootstrap-icon>
+          {{ pharmacyAddMedModalTitle }}
         </h3>
         <button class="close-btn" (click)="closeAddMedicationModal()">✕</button>
       </div>
 
       <div class="modal-body">
         <div class="form-group">
-          <label>Nombre del Medicamento *</label>
+          <label>{{ pharmacyAddMedNameLabel }}</label>
           <input 
             type="text" 
             class="neuro-input" 
             [(ngModel)]="newMedicationForm.name"
-            placeholder="Ej: Paracetamol, Ibuprofeno, etc."
+            [placeholder]="pharmacyAddMedNamePlaceholder"
             required
           />
         </div>
 
         <div class="form-group">
-          <label>Dosis *</label>
+          <label>{{ pharmacyAddMedDosageLabel }}</label>
           <input 
             type="text" 
             class="neuro-input" 
             [(ngModel)]="newMedicationForm.dosage"
-            placeholder="Ej: 500mg, 10ml, etc."
+            [placeholder]="pharmacyAddMedDosagePlaceholder"
             required
           />
         </div>
 
         <div class="form-group">
-          <label>Descripción</label>
+          <label>{{ pharmacyAddMedDescLabel }}</label>
           <textarea 
             class="neuro-input" 
             [(ngModel)]="newMedicationForm.description"
-            placeholder="Descripción del medicamento..."
+            [placeholder]="pharmacyAddMedDescPlaceholder"
             rows="3"
           ></textarea>
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label>Stock Inicial</label>
+            <label>{{ pharmacyAddMedStockInitLabel }}</label>
             <input 
               type="number" 
               class="neuro-input" 
@@ -813,7 +808,7 @@
           </div>
 
           <div class="form-group">
-            <label>Stock Mínimo</label>
+            <label>{{ pharmacyAddMedStockMinLabel }}</label>
             <input 
               type="number" 
               class="neuro-input" 
@@ -825,17 +820,17 @@
         </div>
 
         <div class="form-group">
-          <label>Ubicación</label>
+          <label>{{ pharmacyAddMedLocationLabel }}</label>
           <input 
             type="text" 
             class="neuro-input" 
             [(ngModel)]="newMedicationForm.location"
-            placeholder="Ej: Estante A-1, Refrigerador, etc."
+            [placeholder]="pharmacyAddMedLocationPlaceholder"
           />
         </div>
 
         <div class="form-group">
-          <label>Fecha de Vencimiento</label>
+          <label>{{ pharmacyAddMedExpiryLabel }}</label>
           <input 
             type="date" 
             class="neuro-input" 
@@ -845,10 +840,10 @@
       </div>
 
       <div class="modal-footer">
-        <button class="btn-secondary-neuro" (click)="closeAddMedicationModal()">Cancelar</button>
+        <button class="btn-secondary-neuro" (click)="closeAddMedicationModal()">{{ pharmacyModalCancel }}</button>
         <button class="btn-primary-neuro" (click)="createMedication()" [disabled]="!newMedicationForm.name || !newMedicationForm.dosage">
-          <app-hero-icon name="plus-circle"></app-hero-icon>
-          Agregar al Inventario
+          <app-bootstrap-icon name="plus-circle"></app-bootstrap-icon>
+          {{ pharmacyAddMedSubmitBtn }}
         </button>
       </div>
     </div>
@@ -859,8 +854,8 @@
     <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3>
-          <app-hero-icon name="trash"></app-hero-icon>
-          Eliminar Medicamento del Inventario
+          <app-bootstrap-icon name="trash"></app-bootstrap-icon>
+          {{ pharmacyDeleteMedModalTitle }}
         </h3>
         <button class="close-btn" (click)="closeDeleteMedicationModal()">✕</button>
       </div>
@@ -868,30 +863,29 @@
       <div class="modal-body">
         <div class="delivery-summary">
           <div class="summary-row">
-            <span class="summary-label">Medicamento:</span>
+            <span class="summary-label">{{ pharmacyLblMedication }}</span>
             <span class="summary-value">{{ selectedMedicationForDelete?.medication }} {{ selectedMedicationForDelete?.dosage }}</span>
           </div>
           <div class="summary-row">
-            <span class="summary-label">Stock Actual:</span>
+            <span class="summary-label">{{ pharmacyLblStockCurrent }}</span>
             <span class="summary-value">{{ selectedMedicationForDelete?.stock }}</span>
           </div>
           <div class="summary-row">
-            <span class="summary-label">Ubicación:</span>
-            <span class="summary-value">{{ selectedMedicationForDelete?.location || 'N/A' }}</span>
+            <span class="summary-label">{{ pharmacyLblLocation }}</span>
+            <span class="summary-value">{{ selectedMedicationForDelete?.location || pharmacyValueNotAvailable }}</span>
           </div>
         </div>
 
         <p class="warning-message">
-          Esta acción marcará el medicamento como inactivo en el inventario. 
-          No se eliminará físicamente de la base de datos, pero dejará de aparecer en las listas activas.
+          {{ pharmacyDeleteMedWarning }}
         </p>
       </div>
 
       <div class="modal-footer">
-        <button class="btn-secondary-neuro" (click)="closeDeleteMedicationModal()">Cancelar</button>
+        <button class="btn-secondary-neuro" (click)="closeDeleteMedicationModal()">{{ pharmacyModalCancel }}</button>
         <button class="btn-danger-neuro" (click)="confirmDeleteMedication()">
-          <app-hero-icon name="trash"></app-hero-icon>
-          Confirmar Eliminación
+          <app-bootstrap-icon name="trash"></app-bootstrap-icon>
+          {{ pharmacyDeleteMedConfirmBtn }}
         </button>
       </div>
     </div>
@@ -902,8 +896,8 @@
     <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3>
-          <app-hero-icon name="archive-box"></app-hero-icon>
-          Movimiento de Inventario
+          <app-bootstrap-icon name="archive-box"></app-bootstrap-icon>
+          {{ pharmacyStockMoveTitle }}
         </h3>
         <button class="close-btn" (click)="closeStockMovementModal()">✕</button>
       </div>
@@ -911,44 +905,44 @@
       <div class="modal-body">
         <div class="delivery-summary">
           <div class="summary-row">
-            <span class="summary-label">Medicamento:</span>
+            <span class="summary-label">{{ pharmacyLblMedication }}</span>
             <span class="summary-value">{{ selectedInventoryItem?.medication }} {{ selectedInventoryItem?.dosage }}</span>
           </div>
           <div class="summary-row">
-            <span class="summary-label">Stock actual:</span>
+            <span class="summary-label">{{ pharmacyLblStockCurrent }}</span>
             <span class="summary-value">{{ selectedInventoryItem?.stock }}</span>
           </div>
         </div>
 
         <div class="form-group">
-          <label>Tipo de movimiento</label>
+          <label>{{ pharmacyStockMoveTypeLabel }}</label>
           <select class="filter-select" [(ngModel)]="stockMovementForm.type">
-            <option value="entry">Entrada (+)</option>
-            <option value="exit">Salida (-)</option>
-            <option value="adjustment">Ajuste (valor final)</option>
+            <option value="entry">{{ pharmacyStockMoveOptEntry }}</option>
+            <option value="exit">{{ pharmacyStockMoveOptExit }}</option>
+            <option value="adjustment">{{ pharmacyStockMoveOptAdjustment }}</option>
           </select>
         </div>
 
         <div class="form-group">
-          <label>{{ stockMovementForm.type === 'adjustment' ? 'Stock final' : 'Cantidad' }}</label>
+          <label>{{ stockMovementQuantityLabel() }}</label>
           <input type="number" class="neuro-input" min="0" [(ngModel)]="stockMovementForm.quantity" />
         </div>
 
         <div class="form-group" *ngIf="stockMovementForm.type === 'entry'">
-          <label>Caducidad del lote (opcional)</label>
+          <label>{{ pharmacyStockMoveEntryExpiryLabel }}</label>
           <input type="date" class="neuro-input" [(ngModel)]="stockMovementForm.entryExpiryDate" />
-          <small class="field-hint">Actualiza la fecha de caducidad del artículo en inventario. Varias fechas por lote requerirán una tabla de lotes en backend.</small>
+          <small class="field-hint">{{ pharmacyStockMoveEntryExpiryHint }}</small>
         </div>
 
         <div class="form-group">
-          <label>Motivo (opcional)</label>
-          <textarea class="neuro-input" rows="3" [(ngModel)]="stockMovementForm.reason" placeholder="Compra, consumo, merma, ajuste físico, etc."></textarea>
+          <label>{{ pharmacyStockMoveReasonLabel }}</label>
+          <textarea class="neuro-input" rows="3" [(ngModel)]="stockMovementForm.reason" [placeholder]="pharmacyStockMoveReasonPlaceholder"></textarea>
         </div>
       </div>
 
       <div class="modal-footer">
-        <button class="btn-secondary-neuro" (click)="closeStockMovementModal()">Cancelar</button>
-        <button class="btn-primary-neuro" (click)="applyStockMovement()">Guardar movimiento</button>
+        <button class="btn-secondary-neuro" (click)="closeStockMovementModal()">{{ pharmacyModalCancel }}</button>
+        <button class="btn-primary-neuro" (click)="applyStockMovement()">{{ pharmacyStockMoveSaveBtn }}</button>
       </div>
     </div>
   </div>
@@ -958,25 +952,25 @@
     <div class="modal-content modal-delivery modal-kardex" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3>
-          <app-hero-icon name="clipboard-document-list"></app-hero-icon>
-          Kardex — {{ kardexItem?.medication }} {{ kardexItem?.dosage }}
+          <app-bootstrap-icon name="clipboard-document-list"></app-bootstrap-icon>
+          {{ pharmacyKardexModalTitlePrefix }} {{ kardexItem?.medication }} {{ kardexItem?.dosage }}
         </h3>
         <button type="button" class="close-btn" (click)="closeKardexModal()">✕</button>
       </div>
       <div class="modal-body kardex-modal-body">
-        <p *ngIf="kardexLoading" class="kardex-loading">Cargando historial…</p>
+        <p *ngIf="kardexLoading" class="kardex-loading">{{ pharmacyKardexLoading }}</p>
         <p *ngIf="!kardexLoading && kardexError" class="module-feedback error">{{ kardexError }}</p>
         <div *ngIf="!kardexLoading && kardexMovements.length > 0" class="table-container table-wrapper-neuro kardex-table-wrap">
           <table class="unified-tasks-table kardex-table neuro-table">
             <thead>
               <tr>
-                <th>Fecha</th>
-                <th>Tipo</th>
-                <th>Δ</th>
-                <th>Antes</th>
-                <th>Después</th>
-                <th>Usuario</th>
-                <th>Motivo</th>
+                <th>{{ pharmacyThKardexDate }}</th>
+                <th>{{ pharmacyThKardexType }}</th>
+                <th>{{ pharmacyThKardexDelta }}</th>
+                <th>{{ pharmacyThKardexBefore }}</th>
+                <th>{{ pharmacyThKardexAfter }}</th>
+                <th>{{ pharmacyThKardexUser }}</th>
+                <th>{{ pharmacyThKardexReason }}</th>
               </tr>
             </thead>
             <tbody>
@@ -988,23 +982,23 @@
                 </td>
                 <td>{{ m.stockBefore }}</td>
                 <td>{{ m.stockAfter }}</td>
-                <td>{{ m.performedByName || '—' }}</td>
-                <td class="kardex-reason">{{ m.reason || '—' }}</td>
+                <td>{{ m.performedByName || pharmacyEmDash }}</td>
+                <td class="kardex-reason">{{ m.reason || pharmacyEmDash }}</td>
               </tr>
             </tbody>
           </table>
         </div>
         <div class="pagination-bar" *ngIf="!kardexLoading && kardexPagination.totalPages > 1">
-          <button type="button" class="pagination-btn" (click)="prevKardexPage()" [disabled]="kardexPagination.page <= 1">← Anterior</button>
-          <span class="pagination-info">Página {{ kardexPagination.page }} de {{ kardexPagination.totalPages }} · {{ kardexPagination.total }} movimientos</span>
-          <button type="button" class="pagination-btn" (click)="nextKardexPage()" [disabled]="kardexPagination.page >= kardexPagination.totalPages">Siguiente →</button>
+          <button type="button" class="pagination-btn" (click)="prevKardexPage()" [disabled]="kardexPagination.page <= 1">{{ pharmacyPaginationPrev }}</button>
+          <span class="pagination-info">{{ pharmacyKardexPaginationInfo() }}</span>
+          <button type="button" class="pagination-btn" (click)="nextKardexPage()" [disabled]="kardexPagination.page >= kardexPagination.totalPages">{{ pharmacyPaginationNext }}</button>
         </div>
         <p *ngIf="!kardexLoading && kardexMovements.length === 0" class="empty-message">
-          No hay movimientos registrados para este medicamento.
+          {{ pharmacyKardexEmptyMovements }}
         </p>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn-secondary-neuro" (click)="closeKardexModal()">Cerrar</button>
+        <button type="button" class="btn-secondary-neuro" (click)="closeKardexModal()">{{ pharmacyModalClose }}</button>
       </div>
     </div>
   </div>

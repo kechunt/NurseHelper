@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, ViewChild, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -10,22 +10,30 @@ import { AreasManagementComponent } from './areas-management/areas-management.co
 import { BedsManagementComponent } from './beds-management/beds-management.component';
 import { PatientsManagementComponent } from './patients-management/patients-management.component';
 import { SchedulesManagementComponent } from './schedules-management/schedules-management.component';
-import { DashboardUserProfileModalComponent } from '../../shared/components/dashboard-user-profile-modal/dashboard-user-profile-modal.component';
 import { AdminNursePickModalHostComponent } from '../../shared/components/admin-nurse-pick-modal-host/admin-nurse-pick-modal-host.component';
 import { StaffDashboardQuickActionsToolbarComponent } from '../../shared/components/staff-dashboard-quick-actions/staff-dashboard-quick-actions-toolbar.component';
 import { StaffDashboardQuickActionsModalsComponent } from '../../shared/components/staff-dashboard-quick-actions/staff-dashboard-quick-actions-modals.component';
 import { StaffQuickActionsService } from '../../shared/components/staff-dashboard-quick-actions/staff-quick-actions.service';
 import { PharmacyCoverageSummaryCardComponent } from '../../shared/components/pharmacy-coverage-summary-card/pharmacy-coverage-summary-card.component';
-import { InAppNotificationsBellComponent } from '../../shared/components/in-app-notifications-bell/in-app-notifications-bell.component';
+import { StaffDashboardShellComponent } from '../../shared/components/staff-dashboard-shell/staff-dashboard-shell.component';
+import {
+  DASHBOARD_TAB_STATE_CONFIG,
+  DashboardTabStateService,
+} from '../../shared/services/dashboard-tab-state.service';
+import { ADMIN_DASHBOARD_TAB_STATE_CONFIG } from '../../shared/staff-dashboard-tab-state.config';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  providers: [StaffQuickActionsService],
+  providers: [
+    StaffQuickActionsService,
+    { provide: DASHBOARD_TAB_STATE_CONFIG, useValue: ADMIN_DASHBOARD_TAB_STATE_CONFIG },
+    DashboardTabStateService,
+  ],
   imports: [
     CommonModule,
     RouterModule,
-    DashboardUserProfileModalComponent,
+    StaffDashboardShellComponent,
     AdminNursePickModalHostComponent,
     StaffDashboardQuickActionsToolbarComponent,
     StaffDashboardQuickActionsModalsComponent,
@@ -37,7 +45,6 @@ import { InAppNotificationsBellComponent } from '../../shared/components/in-app-
     PatientsManagementComponent,
     SchedulesManagementComponent,
     PharmacyCoverageSummaryCardComponent,
-    InAppNotificationsBellComponent,
   ],
   templateUrl: './admin-dashboard.component.html',
   styleUrl: './admin-dashboard.component.css',
@@ -45,48 +52,60 @@ import { InAppNotificationsBellComponent } from '../../shared/components/in-app-
 export class AdminDashboardComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly staffQuick = inject(StaffQuickActionsService);
+  readonly tabState = inject(DashboardTabStateService);
 
-  activeTab: string = 'overview';
-  private readonly storageKey = 'admin-dashboard-active-tab-v1';
-  private readonly allowedTabs = new Set(['overview', 'users', 'staff', 'areas', 'beds', 'patients', 'schedules']);
-  /** Pestañas ya visitadas: el componente se mantiene montado (oculto) para no repetir llamadas a la API al volver. */
-  private readonly visitedTabs = new Set<string>(['overview']);
+  @ViewChild('staffShell') private staffShell?: StaffDashboardShellComponent;
 
-  /** Orden de pestañas en la barra (sincronizado con `allowedTabs` y con los `id="admin-tab-*"` del template). */
-  readonly adminTabOrder: readonly string[] = [
-    'overview',
-    'users',
-    'staff',
-    'areas',
-    'beds',
-    'patients',
-    'schedules',
-  ];
+  private readonly allowedTabs = new Set(ADMIN_DASHBOARD_TAB_STATE_CONFIG.allowedTabs);
+
+  private readonly hamburgerLabels: Record<string, string> = {
+    overview: $localize`:@@adminHamburger.overview:📊 Resumen`,
+    users: $localize`:@@adminHamburger.users:👤 Usuarios`,
+    staff: $localize`:@@adminHamburger.staff:👩‍⚕️ Enfermeras`,
+    areas: $localize`:@@adminHamburger.areas:🏥 Áreas`,
+    beds: $localize`:@@adminHamburger.beds:🛏️ Camas`,
+    patients: $localize`:@@adminHamburger.patients:🧑‍🤝‍🧑 Pacientes`,
+    schedules: $localize`:@@adminHamburger.schedules:📅 Horarios`,
+  };
+
+  readonly adminShellDashboardTitle = $localize`:@@adminShell.dashboardTitle:Panel de Administración`;
+  readonly adminShellRoleDisplayLabel = $localize`:@@adminShell.roleDisplay:Administrador`;
+  readonly adminShellLogoAriaLabel = $localize`:@@adminShell.logoAria:Ir al resumen del panel`;
+  readonly adminShellNavAriaLabel = $localize`:@@adminShell.navAria:Secciones del panel de administración`;
+  readonly adminHamburgerOpenNavAriaLabel = $localize`:@@adminShell.hamburgerAria:Abrir menú de navegación`;
+  private readonly hamburgerMenuFallback = $localize`:@@adminHamburger.menu:Menú`;
 
   constructor(
     private authService: AuthService,
     private router: Router,
     private route: ActivatedRoute
   ) {}
-  
+
   get currentUser() {
     return this.authService.currentUser;
   }
 
+  get headerUserDisplayName(): string {
+    const u = this.currentUser();
+    return `${u?.firstName || ''} ${u?.lastName || ''}`.trim();
+  }
+
+  get hamburgerSectionLabel(): string {
+    return this.hamburgerLabels[this.tabState.activeTab()] ?? this.hamburgerMenuFallback;
+  }
+
   ngOnInit(): void {
-    // Verificar autenticación y rol
     if (!this.authService.isAuthenticated()) {
       this.router.navigate(['/login']);
       return;
     }
-    
+
     const user = this.currentUser();
     if (!user || user.role !== 'admin') {
       this.router.navigate(['/dashboard']);
       return;
     }
 
-    this.restoreActiveTab();
     const tabFromQuery = this.route.snapshot.queryParamMap.get('tab');
     if (tabFromQuery && this.allowedTabs.has(tabFromQuery)) {
       this.setActiveTab(tabFromQuery);
@@ -97,64 +116,15 @@ export class AdminDashboardComponent implements OnInit {
         this.setActiveTab(t);
       }
     });
-    this.visitedTabs.add(this.activeTab);
   }
 
   hasVisitedTab(tab: string): boolean {
-    return this.visitedTabs.has(tab);
-  }
-
-  navOpen = false;
-
-  toggleNav(): void {
-    this.navOpen = !this.navOpen;
-  }
-
-  closeNav(): void {
-    this.navOpen = false;
+    return this.tabState.hasVisitedTab(tab);
   }
 
   setActiveTab(tab: string): void {
-    if (!this.allowedTabs.has(tab)) {
-      return;
-    }
-    this.activeTab = tab;
-    this.visitedTabs.add(tab);
-    this.persistActiveTab();
-    this.closeNav(); // cierra el menú al seleccionar en mobile
-  }
-
-  /**
-   * Teclado en pestañas (WAI-ARIA tabs): ←/→, Inicio, Fin.
-   * Activa la sección y mueve el foco al botón correspondiente.
-   */
-  onAdminTabKeydown(event: KeyboardEvent, currentTab: string): void {
-    const key = event.key;
-    if (key !== 'ArrowLeft' && key !== 'ArrowRight' && key !== 'Home' && key !== 'End') {
-      return;
-    }
-    event.preventDefault();
-
-    let idx = this.adminTabOrder.indexOf(currentTab);
-    if (idx < 0) {
-      return;
-    }
-
-    if (key === 'Home') {
-      idx = 0;
-    } else if (key === 'End') {
-      idx = this.adminTabOrder.length - 1;
-    } else if (key === 'ArrowRight') {
-      idx = Math.min(this.adminTabOrder.length - 1, idx + 1);
-    } else {
-      idx = Math.max(0, idx - 1);
-    }
-
-    const next = this.adminTabOrder[idx];
-    this.setActiveTab(next);
-    queueMicrotask(() => {
-      document.getElementById(`admin-tab-${next}`)?.focus();
-    });
+    this.tabState.setActiveTab(tab);
+    this.staffShell?.closeNav();
   }
 
   goToOverviewFromLogo(): void {
@@ -173,18 +143,4 @@ export class AdminDashboardComponent implements OnInit {
     this.authService.logout();
     this.router.navigate(['/login']);
   }
-
-  private persistActiveTab(): void {
-    localStorage.setItem(this.storageKey, this.activeTab);
-  }
-
-  private restoreActiveTab(): void {
-    const savedTab = localStorage.getItem(this.storageKey);
-    if (savedTab && this.allowedTabs.has(savedTab)) {
-      this.activeTab = savedTab;
-    } else {
-      this.activeTab = 'overview';
-    }
-  }
-
 }

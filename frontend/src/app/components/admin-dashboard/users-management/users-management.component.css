@@ -1,5 +1,6 @@
 @import '../../../shared/styles/admin-table-unified.css';
 @import '../../../shared/styles/admin-panel-responsive.css';
+@import '../../../shared/styles/admin-table-export-panel.shared.css';
 
 .users-management {
   width: 100%;
@@ -438,8 +439,16 @@
   box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
 }
 
+:host ::ng-deep app-modal-shell .modal-content.users-edit-modal {
+  max-width: min(100%, 34rem);
+}
+
 .modal-body {
   padding: 2rem;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .modal-body p {
@@ -560,7 +569,28 @@
   display: flex;
   gap: 1rem;
   justify-content: flex-end;
+  flex-shrink: 0;
+  background: #e0e5ec;
   border-top: 1px solid rgba(174, 174, 192, 0.3);
+  border-radius: 0 0 30px 30px;
+}
+
+.modal-field-hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.8rem;
+  color: var(--nh-text-muted, #6c757d);
+  line-height: 1.35;
+}
+
+.modal-warning {
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  background: #fff3cd;
+  border-radius: 8px;
+  color: #856404;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  border-left: 3px solid #ffc107;
 }
 
 @media (max-width: 1024px) {
@@ -645,20 +675,27 @@
   .modal-header h3 {
     font-size: 1.3rem;
   }
-  
-.modal-body {
-  padding: 1.5rem;
-}
 
-.modal-warning {
-  margin-top: 1rem;
-  padding: 0.75rem;
-  background: #fff3cd;
-  border-radius: 8px;
-  color: #856404;
-  font-size: 0.9rem;
-  border-left: 3px solid #ffc107;
-}
+  .modal-body {
+    padding: 1.25rem 1.5rem;
+  }
+
+  .modal-footer {
+    padding: 1rem 1.5rem max(1.25rem, env(safe-area-inset-bottom, 0px));
+    flex-direction: column-reverse;
+    gap: 0.75rem;
+    border-radius: 0 0 20px 20px;
+  }
+
+  .modal-footer .neuro-btn {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+  }
+
+  .modal-warning {
+    font-size: 0.8rem;
+  }
 }
 
 @media (max-width: 576px) {
@@ -699,12 +736,17 @@
   }
   
   .modal-body {
-    padding: 1rem;
+    padding: 1rem 1.25rem;
+  }
+
+  .modal-footer {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
   }
   
   .neuro-input,
   .neuro-select {
-    font-size: 14px;
+    font-size: 16px;
     padding: 12px 16px;
   }
 }

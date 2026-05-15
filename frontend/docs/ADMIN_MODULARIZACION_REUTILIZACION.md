@@ -4,7 +4,7 @@
 
 Documento de contexto para alinear futuros refactors: qué hay hoy en el área de administración, qué ya es compartido y qué conviene extraer como bloques reutilizables (UI y comportamiento).
 
-**Última revisión:** lectura del código en `frontend/src/app/components/admin-dashboard/`, `AdminService`, rutas y comparación superficial con el panel de supervisor.
+**Última revisión:** lectura del código en `frontend/src/app/components/admin-dashboard/`, `AdminService`, rutas y comparación superficial con el panel de supervisor; **actualización 2026-05:** shell compartido (`staff-dashboard-shell`), estado de pestañas (`DashboardTabStateService`), modal shell piloto, tipos admin extraídos.
 
 ---
 
@@ -90,17 +90,17 @@ Clases recurrentes: `neuro-btn`, `neuro-btn-icon`, `neuro-input`, `neuro-select`
 
 ### 4.1 Pestañas con persistencia y “lazy mount”
 
-Lógica en `AdminDashboardComponent`: `allowedTabs`, `visitedTabs`, `persistActiveTab` / `restoreActiveTab`, `setActiveTab`, `hasVisitedTab`.
+**Estado (2026-05):** implementado **`DashboardTabStateService`** (`signal` + `localStorage` + conjunto de visitadas) con configuración por `DASHBOARD_TAB_STATE_CONFIG` en admin y supervisor; la barra de pestañas vive en **`app-staff-dashboard-shell`**.
 
-**Recomendación:** `DashboardTabStateService` inyectable con factory por `storageKey`, o directiva + `signal`/`model` si se migra a un enfoque más moderno; el objetivo es **copiar el mismo comportamiento** en supervisor sin duplicar 40 líneas.
+Lógica que antes estaba duplicada en `AdminDashboardComponent` / `SupervisorDashboardComponent` (`allowedTabs`, `visitedTabs`, persistencia) quedó centralizada en el servicio por instancia de panel.
 
 ### 4.2 Perfil de usuario (modal en admin)
 
-Edición de nombre, apellido, username, email vía `AdminService.updateUser` + actualización de `AuthService.currentUser` y `localStorage`.
+Edición de nombre, apellido, username, email vía `AuthService.updateMyProfile` (flujo en **`app-dashboard-user-profile-modal`**) con **`ToastService`** para validación y errores.
 
-**Recomendación:** componente `ProfileEditModalComponent` + método único en `AuthService` o pequeño `UserProfileService` para “persistir sesión tras patch”.
+**Nota:** el documento mencionaba antes `alert()` en el shell admin frente a toast; en el código actual del frontend **no** hay `alert()` en ese flujo: el modal de perfil ya usa toast. Si reaparece feedback bloqueante, unificarlo con `ToastService`.
 
-**Inconsistencia actual:** éxito/error con `alert()` en el shell admin, mientras otras pantallas usan `ToastService`. Unificar en toast mejora reutilización del flujo de feedback.
+**Recomendación residual:** componente dedicado `ProfileEditModalComponent` o `UserProfileService` solo si el mismo modal se reutiliza fuera del shell compartido.
 
 ### 4.3 Búsqueda con debounce
 
@@ -114,9 +114,9 @@ Muchas pestañas siguen: cargar lista → modal crear/editar → confirmar borra
 
 ### 4.5 `AdminService` monolítico
 
-Interfaces `Area`, `Bed`, `Patient`, `Schedule` viven en el mismo archivo que el servicio.
+Interfaces `Area`, `Bed`, `Patient`, `Schedule`, etc. viven en **`models/admin.types.ts`** y se **reexportan** desde `admin.service.ts` para no romper imports existentes.
 
-**Recomendación gradual:** mover tipos a `models/admin.types.ts` (o por dominio); opcionalmente dividir el servicio en `AdminUsersApi`, `AdminAreasApi`, etc., manteniendo la misma API pública durante la transición.
+**Recomendación gradual:** opcionalmente dividir el servicio en `AdminUsersApi`, `AdminAreasApi`, etc., manteniendo la misma API pública durante la transición.
 
 ---
 
@@ -138,12 +138,12 @@ AdminDashboardComponent
 
 ## 6. Prioridades sugeridas (orden práctico)
 
-1. **Shell compartido** admin / supervisor (máximo impacto visual y de mantenimiento).
-2. **Modal shell** + estilos unificados (muchas plantillas HTML largas).
-3. **Unificar feedback** (`ToastService` en perfil admin; revisar otros `alert()`).
-4. **`SectionHeader` + estados loading/empty** (mejora densidad y lectura).
-5. **Servicio o helper de tabs** con persistencia.
-6. **Refactor de tipos y troceo de `AdminService`** cuando el equipo toque backend de admin con frecuencia.
+1. **Shell compartido** admin / supervisor — **aplicado:** `app-staff-dashboard-shell` + slots.
+2. **Modal shell** + estilos unificados — **piloto:** `app-modal-shell` en gestión de usuarios; extender a áreas y otras pestañas.
+3. **Unificar feedback** (`ToastService` en perfil) — **sin acción:** el perfil ya usa toast; vigilar nuevos `alert()`/`confirm()` en admin.
+4. **`SectionHeader` + estados loading/empty** — **piloto:** `app-section-header` y `app-admin-empty-state` en usuarios; extender.
+5. **Servicio o helper de tabs** con persistencia — **aplicado:** `DashboardTabStateService`.
+6. **Refactor de tipos y troceo de `AdminService`** — **tipos aplicados** en `admin.types.ts`; troceo de API pendiente si el tráfico de cambios lo justifica.
 
 ---
 

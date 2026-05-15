@@ -1,20 +1,21 @@
 /*
- * display: contents para que los botones participen en el flex del nav (admin)
- * o del host agrupador (supervisor).
+ * display: contents: los botones son hijos directos del .dashboard-nav (columna),
+ * igual que las pestañas y que Entrega/Reportes en el panel de enfermería.
  */
 :host {
   display: contents;
 }
 
-.staff-dashboard-quick-actions {
-  display: contents;
+:host-context(.admin-dashboard) .staff-dashboard-quick-link.nav-link,
+:host-context(.nurse-dashboard) .staff-dashboard-quick-link.nav-link {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  white-space: normal;
 }
 
-.staff-dashboard-quick-link.nav-link {
-  white-space: nowrap;
-}
-
-.staff-dashboard-quick-actions .quick-pending-chip {
+:host-context(.admin-dashboard) .quick-pending-chip,
+:host-context(.nurse-dashboard) .quick-pending-chip {
   margin-left: 0.4rem;
   padding: 2px 8px;
   border-radius: 999px;

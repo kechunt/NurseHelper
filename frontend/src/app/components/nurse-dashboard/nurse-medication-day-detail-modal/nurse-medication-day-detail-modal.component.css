@@ -2,6 +2,74 @@
   z-index: 2250 !important;
 }
 
+/* Auxiliar estrecho + cuerpo (antes compartido vía nurse-pending-task-detail-modal CSS). */
+.modal-content.nurse-aux-modal {
+  max-width: min(520px, 94vw);
+}
+
+.modal-content.nurse-aux-modal .modal-header {
+  padding: 1.2rem 1.5rem 1rem;
+}
+
+.modal-content.nurse-aux-modal .modal-header h3 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.modal-content.nurse-aux-modal .modal-body {
+  padding: 0.75rem 1.5rem 1.25rem;
+}
+
+.modal-content.nurse-aux-modal .modal-footer {
+  padding: 1rem 1.5rem 1.5rem;
+  justify-content: center;
+}
+
+.nurse-aux-modal__inset {
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.85rem;
+  background: #e0e5ec;
+  border-radius: 15px;
+  box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
+}
+
+.nurse-aux-modal__inset--compact {
+  margin-bottom: 0.65rem;
+}
+
+.history-detail-sep {
+  border: none;
+  border-top: 1px solid rgba(174, 174, 192, 0.45);
+  margin: 0.75rem 0;
+}
+
+.med-day-detail-line {
+  margin: 0.4rem 0;
+  font-size: 0.92rem;
+  color: #2d3748;
+  line-height: 1.45;
+}
+
+.med-day-detail-note-block {
+  margin: 0.35rem 0 0.75rem;
+  padding: 0.75rem;
+  background: #e0e5ec;
+  border-radius: 14px;
+  border: none;
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+  font-size: 0.9rem;
+  color: #2d3748;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.medication-day-detail-body {
+  max-height: min(72vh, 34rem);
+  overflow-y: auto;
+}
+
 .med-day-detail-empty {
   margin: 0.25rem 0 0.5rem;
   font-size: 0.88rem;

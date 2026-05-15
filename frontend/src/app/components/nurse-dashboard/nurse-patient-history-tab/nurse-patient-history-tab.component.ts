@@ -2,7 +2,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import type { TreatmentRecord } from '../nurse-treatment-record.model';
 import { AdminTableRowActionsModalComponent } from '../../../shared/components/admin-table-row-actions-modal/admin-table-row-actions-modal.component';
-import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
+import { BootstrapIconComponent } from '../../../shared/components/bootstrap-icon/bootstrap-icon.component';
 import {
   type HistoryOutcomeFilter,
   type HistoryPeriodFilter,
@@ -14,7 +14,7 @@ import {
 @Component({
   selector: 'app-nurse-patient-history-tab',
   standalone: true,
-  imports: [CommonModule, AdminTableRowActionsModalComponent, HeroIconComponent],
+  imports: [CommonModule, AdminTableRowActionsModalComponent, BootstrapIconComponent],
   templateUrl: './nurse-patient-history-tab.component.html',
   styleUrls: [
     '../../../shared/styles/admin-table-unified.css',
@@ -56,6 +56,10 @@ export class NursePatientHistoryTabComponent {
 
   closeRowActions(): void {
     this.selectedRecordForActions = null;
+  }
+
+  historyRecordRowAriaLabel(r: TreatmentRecord): string {
+    return $localize`:@@nursePatientHistoryTab.rowAriaOpenDetail:Abrir detalle del historial ${r.date}:histDate: ${r.time}:histTime:`;
   }
 
   recordTitle(r: TreatmentRecord | null): string {

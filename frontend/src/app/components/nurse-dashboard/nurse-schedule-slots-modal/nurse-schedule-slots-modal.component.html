@@ -13,10 +13,11 @@
   >
     <div class="modal-header">
       <h3 id="nurse-schedule-slots-dialog-title">
-        <ng-container *ngIf="kind === 'medication'" i18n="@@nurseScheduleSlotsModal.titleMedication"><app-hero-icon name="beaker" /> Horarios — {{ title }}</ng-container>
-        <ng-container *ngIf="kind === 'treatment'" i18n="@@nurseScheduleSlotsModal.titleTreatment"><app-hero-icon name="shield-check" /> Horarios — {{ title }}</ng-container>
+        <ng-container *ngIf="kind === 'medication'" i18n="@@nurseScheduleSlotsModal.titleMedication"><app-bootstrap-icon name="beaker" /> Horarios — {{ title }}</ng-container>
+        <ng-container *ngIf="kind === 'treatment'" i18n="@@nurseScheduleSlotsModal.titleTreatment"><app-bootstrap-icon name="shield-check" /> Horarios — {{ title }}</ng-container>
       </h3>
       <button
+        id="nurse-schedule-slots-header-close-btn"
         type="button"
         class="close-btn"
         aria-label="Cerrar"
@@ -30,7 +31,7 @@
       <p class="slots-modal-hint" i18n="@@nurseScheduleSlotsModal.hint">Hoy y el resto de fechas programadas para este ítem.</p>
 
       <div class="slots-modal-notes-panel" *ngIf="hasAnyNotes()">
-        <p class="slots-modal-section-title" i18n="@@nurseScheduleSlotsModal.notesTitle"><app-hero-icon name="clipboard-document" /> Notas / observaciones</p>
+        <p class="slots-modal-section-title" i18n="@@nurseScheduleSlotsModal.notesTitle"><app-bootstrap-icon name="clipboard-document" /> Notas / observaciones</p>
         <div class="slots-modal-notes-card">
           <p class="slots-modal-notes-line" *ngIf="notes && notes.trim()">
             <strong i18n="@@nurseScheduleSlotsModal.notesGeneral">Notas (pauta):</strong> {{ notes }}
@@ -46,7 +47,7 @@
       </div>
 
       <div class="med-weekly-pauta med-weekly-pauta--modal" *ngIf="weeklyHasAny()">
-        <p class="slots-modal-section-title" i18n="@@nurseScheduleSlotsModal.weeklyTitle"><app-hero-icon name="calendar-days" /> Vista semanal</p>
+        <p class="slots-modal-section-title" i18n="@@nurseScheduleSlotsModal.weeklyTitle"><app-bootstrap-icon name="calendar-days" /> Vista semanal</p>
         <p class="med-weekly-hint" i18n="@@nurseScheduleSlotsModal.weeklyHint">Misma pauta agrupada por día de la semana (horario local).</p>
         <div class="med-weekly-grid" role="presentation">
           <div
@@ -79,7 +80,9 @@
               <td *ngIf="kind === 'treatment'">{{ treatmentTypeLabel(s.scheduleType || '') }}</td>
               <td>{{ slotStatusLabel(s.status) }}</td>
               <td class="slots-modal-notes-cell">
-                <span *ngIf="hasNotes(s)" title="Tiene notas"><app-hero-icon name="clipboard-document" /></span>
+                <span *ngIf="hasNotes(s)" title="Tiene notas" i18n-title="@@nurseScheduleSlotsModal.hasNotesIconTitle"
+                  ><app-bootstrap-icon name="clipboard-document"
+                /></span>
                 <span *ngIf="!hasNotes(s)">—</span>
               </td>
             </tr>
@@ -109,16 +112,25 @@
               <td *ngIf="kind === 'treatment'">{{ treatmentTypeLabel(s.scheduleType || '') }}</td>
               <td>{{ slotStatusLabel(s.status) }}</td>
               <td class="slots-modal-notes-cell">
-                <span *ngIf="hasNotes(s)" title="Tiene notas"><app-hero-icon name="clipboard-document" /></span>
+                <span *ngIf="hasNotes(s)" title="Tiene notas" i18n-title="@@nurseScheduleSlotsModal.hasNotesIconTitle"
+                  ><app-bootstrap-icon name="clipboard-document"
+                /></span>
                 <span *ngIf="!hasNotes(s)">—</span>
               </td>
             </tr>
           </tbody>
         </table>
         <div class="slots-modal-more-row" *ngIf="otherSlotsHiddenCount() > 0">
-          <button type="button" class="neuro-btn neuro-btn-sm" (click)="toggleShowAllOtherSlots()">
-            <span *ngIf="!showAllOtherSlots">… Ver {{ otherSlotsHiddenCount() }} más</span>
-            <span *ngIf="showAllOtherSlots">Ver menos</span>
+          <button
+            id="nurse-schedule-slots-toggle-other-btn"
+            type="button"
+            class="neuro-btn neuro-btn-sm"
+            (click)="toggleShowAllOtherSlots()"
+          >
+            <span *ngIf="!showAllOtherSlots" i18n="@@nurseScheduleSlotsModal.toggleShowMoreOther"
+              >… Ver {{ otherSlotsHiddenCount() }} más</span
+            >
+            <span *ngIf="showAllOtherSlots" i18n="@@nurseScheduleSlotsModal.toggleShowLessOther">Ver menos</span>
           </button>
         </div>
       </div>
@@ -127,7 +139,15 @@
       </p>
     </div>
     <div class="modal-footer">
-      <button type="button" class="btn-secondary-neuro" (click)="onClose()" i18n="@@nurseScheduleSlotsModal.close">Cerrar</button>
+      <button
+        id="nurse-schedule-slots-close-btn"
+        type="button"
+        class="btn-secondary-neuro"
+        (click)="onClose()"
+        i18n="@@nurseScheduleSlotsModal.close"
+      >
+        Cerrar
+      </button>
     </div>
   </div>
 </div>

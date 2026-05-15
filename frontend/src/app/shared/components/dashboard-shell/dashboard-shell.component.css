@@ -5,3 +5,13 @@
 :host {
   display: block;
 }
+
+/* Slot de contenido: id estable sin alterar el flex de .dashboard-main-wrapper */
+.dashboard-shell-main-slot {
+  display: contents;
+}
+
+/* Proyección de overlays bajo el shell: id estable sin alterar el layout del host. */
+.dashboard-shell-overlays-slot {
+  display: contents;
+}

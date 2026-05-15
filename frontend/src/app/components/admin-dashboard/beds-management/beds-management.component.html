@@ -1,16 +1,16 @@
 <div class="beds-management">
   <div class="section-header">
-    <h2 class="section-title">Gestión de Camas</h2>
-    <button type="button" class="apm-btn" (click)="openCreateBedModal()" title="Agregar nueva cama">
-      Agregar cama
+    <h2 class="section-title">{{ bedsPageTitle }}</h2>
+    <button type="button" class="apm-btn" (click)="openCreateBedModal()" [title]="bedsAddBedTitle">
+      {{ bedsAddBedLabel }}
     </button>
   </div>
 
   <div class="filters-container">
     <div class="filter-group">
-      <label for="area-filter">Filtrar por área</label>
+      <label for="area-filter">{{ bedsFilterAreaLabel }}</label>
       <select id="area-filter" class="apm-select" [(ngModel)]="selectedAreaId">
-        <option [ngValue]="null">Todas las áreas</option>
+        <option [ngValue]="null">{{ bedsAllAreasOption }}</option>
         <option *ngFor="let area of areas" [ngValue]="area.id">
           {{ area.name }}
         </option>
@@ -18,7 +18,7 @@
     </div>
 
     <div class="filter-group">
-      <label>Filtrar por estado</label>
+      <label>{{ bedsFilterStatusLabel }}</label>
       <div class="filter-buttons">
         <button
           type="button"
@@ -26,7 +26,7 @@
           [class.active]="filterStatus === 'all'"
           (click)="filterStatus = 'all'"
         >
-          Todas
+          {{ bedsFilterAll }}
         </button>
         <button
           type="button"
@@ -34,7 +34,7 @@
           [class.active]="filterStatus === 'occupied'"
           (click)="filterStatus = 'occupied'"
         >
-          Ocupadas
+          {{ bedsFilterOccupied }}
         </button>
         <button
           type="button"
@@ -42,7 +42,7 @@
           [class.active]="filterStatus === 'available'"
           (click)="filterStatus = 'available'"
         >
-          Disponibles
+          {{ bedsFilterAvailable }}
         </button>
         <button
           type="button"
@@ -50,28 +50,28 @@
           [class.active]="filterStatus === 'unavailable'"
           (click)="filterStatus = 'unavailable'"
         >
-          No disponibles
+          {{ bedsFilterUnavailable }}
         </button>
       </div>
     </div>
   </div>
 
   <div *ngIf="loading" class="loading-state">
-    <p>Cargando camas...</p>
+    <p>{{ bedsLoadingMessage }}</p>
   </div>
 
   <div *ngIf="!loading" class="beds-by-area">
     <div *ngFor="let area of getUniqueAreas()" class="area-section">
       <h3 class="area-section-title">
         {{ area.name }}
-        <span class="area-beds-count">
+        <span class="area-beds-count" i18n="@@bedsMgmtHtml.areaBedCount">
           ({{ getBedsByArea(area.id!).length }} camas)
         </span>
       </h3>
 
       <div class="apm-shift-block">
         <div class="apm-shift-heading">
-          Enfermera(s) en este turno
+          <span i18n="@@bedsMgmtHtml.shiftNursesHeading">Enfermera(s) en este turno</span>
           <span class="apm-shift-turn-hint" *ngIf="shiftCoverageTurnHint()">{{ shiftCoverageTurnHint() }}</span>
         </div>
         <ul class="apm-shift-nurse-list" *ngIf="getAreaShiftNurses(area.id).length > 0">
@@ -82,7 +82,7 @@
             *ngIf="shiftCoverageAlertClickable(area)"
             type="button"
             class="apm-shift-alert apm-shift-alert--clickable"
-            [attr.aria-label]="'Resolver cobertura de turno para el área ' + area.name"
+            [attr.aria-label]="getAriaShiftCoverageResolve(area.name)"
             (click)="onShiftCoverageAlertClick(area)"
           >
             {{ shiftNotice }}
@@ -100,7 +100,7 @@
           [class.apm-area-card--inactive]="getBedClass(bed) === 'unavailable'"
           tabindex="0"
           role="button"
-          [attr.aria-label]="'Acciones para cama ' + bed.bedNumber"
+          [attr.aria-label]="getAriaBedCard(bed)"
           (click)="openBedCardActionsSheet(bed)"
           (keydown)="onBedCardKeydown(bed, $event)"
         >
@@ -115,27 +115,27 @@
               {{ getBedStatusLabel(bed) }}
             </span>
           </div>
-          <p *ngIf="getBedClass(bed) === 'occupied'" class="apm-area-description">
+          <p *ngIf="getBedClass(bed) === 'occupied'" class="apm-area-description" i18n="@@bedsMgmtHtml.bedCardPatientLine">
             <strong>Paciente:</strong> {{ getPatientNameForBed(bed) }}
           </p>
           <p *ngIf="getBedClass(bed) === 'available'" class="apm-area-description apm-area-description--muted">
-            Sin paciente · Lista para ingreso
+            {{ bedsPatientNoteReady }}
           </p>
           <p *ngIf="getBedClass(bed) === 'unavailable'" class="apm-area-description apm-area-description--muted">
-            Cama fuera de servicio
+            {{ bedsCardStatusUnavailableShort }}
           </p>
         </div>
       </div>
     </div>
 
     <div *ngIf="filteredBeds.length === 0" class="no-results">
-      <p>No hay camas que coincidan con los filtros seleccionados</p>
+      <p i18n="@@bedsMgmtHtml.noBedsWithFilters">No hay camas que coincidan con los filtros seleccionados</p>
     </div>
   </div>
 
   <app-admin-table-row-actions-modal
     [open]="!!bedCardActionsTarget"
-    [title]="bedCardActionsTarget && bedCardActionsTarget.bedNumber ? 'Cama ' + bedCardActionsTarget.bedNumber : 'Cama'"
+    [title]="getBedCardActionsModalTitle()"
     [summaryRows]="bedCardActionsTarget ? bedCardActionsSummaryRows(bedCardActionsTarget) : null"
     (dismissed)="closeBedCardActionsSheet()"
     (summaryRowAction)="onBedCardSummaryRowAction($event)"
@@ -145,59 +145,61 @@
       class="apm-btn"
       *ngIf="bedCardActionsTarget && getBedStatusLabel(bedCardActionsTarget) === 'Ocupada'"
       (click)="fromBedSheetViewPatient()"
+      i18n="@@bedsMgmtHtml.btnViewPatient"
     >
       Ver paciente
     </button>
-    <button type="button" class="apm-btn" (click)="fromBedSheetEdit()">Editar cama</button>
-    <button type="button" class="apm-btn apm-btn--danger" (click)="fromBedSheetDelete()">Eliminar cama</button>
+    <button type="button" class="apm-btn" (click)="fromBedSheetEdit()" i18n="@@bedsMgmtHtml.btnEditBed">Editar cama</button>
+    <button type="button" class="apm-btn apm-btn--danger" (click)="fromBedSheetDelete()" i18n="@@bedsMgmtHtml.btnDeleteBed">Eliminar cama</button>
   </app-admin-table-row-actions-modal>
 
   <!-- Modal editar cama (misma estructura que Gestión de Áreas) -->
   <div *ngIf="showEditBedModal" class="apm-backdrop" (click)="closeEditBedModal()">
     <div class="apm-shell apm-shell--large" (click)="$event.stopPropagation()">
       <div class="apm-header">
-        <h3>Editar cama</h3>
-        <button type="button" class="apm-close" (click)="closeEditBedModal()" aria-label="Cerrar">✕</button>
+        <h3 i18n="@@bedsMgmtHtml.editBedTitle">Editar cama</h3>
+        <button type="button" class="apm-close" (click)="closeEditBedModal()" [attr.aria-label]="bedsHtmlCloseAria">✕</button>
       </div>
       <div class="apm-body">
         <div class="apm-section">
-          <label class="apm-field-label" for="edit-bed-number">Número o nombre de cama *</label>
+          <label class="apm-field-label" for="edit-bed-number" i18n="@@bedsMgmtHtml.labelBedNumber">Número o nombre de cama *</label>
           <input
             type="text"
             id="edit-bed-number"
             class="apm-input"
             [(ngModel)]="editBedForm.bedNumber"
+            i18n-placeholder="@@bedsMgmtHtml.placeholderBedNumberExample"
             placeholder="Ej: SAL-001, Cama 7…"
           />
         </div>
         <div class="apm-section">
-          <label class="apm-field-label" for="edit-bed-availability">Estado de la cama</label>
+          <label class="apm-field-label" for="edit-bed-availability" i18n="@@bedsMgmtHtml.labelBedState">Estado de la cama</label>
           <select id="edit-bed-availability" class="apm-select" [(ngModel)]="editBedForm.isActive">
-            <option [ngValue]="true">Disponible (puede recibir pacientes)</option>
-            <option [ngValue]="false">No disponible (fuera de servicio)</option>
+            <option [ngValue]="true" i18n="@@bedsMgmtHtml.optionBedActive">Disponible (puede recibir pacientes)</option>
+            <option [ngValue]="false" i18n="@@bedsMgmtHtml.optionBedInactive">No disponible (fuera de servicio)</option>
           </select>
-          <span *ngIf="editBedForm.isActive" class="apm-hint apm-hint--ok">La cama está habilitada para uso.</span>
-          <span *ngIf="!editBedForm.isActive" class="apm-hint apm-hint--warn">
+          <span *ngIf="editBedForm.isActive" class="apm-hint apm-hint--ok" i18n="@@bedsMgmtHtml.hintBedEnabled">La cama está habilitada para uso.</span>
+          <span *ngIf="!editBedForm.isActive" class="apm-hint apm-hint--warn" i18n="@@bedsMgmtHtml.hintBedDisabled">
             Fuera de servicio: no se pueden asignar pacientes hasta activarla.
           </span>
         </div>
 
         <div class="apm-section">
-          <span class="apm-field-label">Asignación de paciente</span>
+          <span class="apm-field-label" i18n="@@bedsMgmtHtml.labelPatientAssignment">Asignación de paciente</span>
 
           <div *ngIf="editBedForm.patientId" class="apm-patient-bar">
             <div class="apm-patient-bar__row">
-              <span><strong>Paciente actual:</strong> {{ getCurrentPatientName() }}</span>
-              <button type="button" class="apm-btn apm-btn--outline" (click)="releaseBed()">Liberar cama</button>
+              <span><strong i18n="@@bedsMgmtHtml.labelCurrentPatient">Paciente actual:</strong> {{ getCurrentPatientName() }}</span>
+              <button type="button" class="apm-btn apm-btn--outline" (click)="releaseBed()" i18n="@@bedsMgmtHtml.btnReleaseBed">Liberar cama</button>
             </div>
           </div>
 
-          <p *ngIf="!editBedForm.patientId && editBedForm.isActive === false" class="apm-hint apm-hint--warn">
+          <p *ngIf="!editBedForm.patientId && editBedForm.isActive === false" class="apm-hint apm-hint--warn" i18n="@@bedsMgmtHtml.hintActivateToAssign">
             Activa la cama para poder asignar un paciente desde esta pantalla.
           </p>
 
           <ng-container *ngIf="editBedAllowsPatientPicker()">
-            <p class="apm-desc">
+            <p class="apm-desc" i18n="@@bedsMgmtHtml.editBedPatientPickerIntro">
               Pacientes en el área <strong>{{ getAreaName(editBedForm.areaId || undefined) }}</strong>. Pulsa una fila para elegir paciente; también puedes buscar en otras áreas o sin cama. Si hay varias enfermeras en el área, se pedirá cuál atiende al paciente.
             </p>
             <input
@@ -205,17 +207,18 @@
               class="apm-input"
               [(ngModel)]="patientSearchTerm"
               (input)="filterPatients()"
+              i18n-placeholder="@@bedsMgmtHtml.placeholderSearchPatientNameId"
               placeholder="Buscar por nombre o cédula…"
-              [attr.aria-label]="'Buscar pacientes del área ' + getAreaName(editBedForm.areaId || undefined)"
+              [attr.aria-label]="getAriaSearchPatientsInArea(getAreaName(editBedForm.areaId || undefined))"
             />
 
             <div class="table-wrapper-neuro beds-mgmt-assign-table-wrap beds-mgmt-patient-inset">
-              <table class="neuro-table" role="table" aria-label="Pacientes del área para asignar a la cama">
+              <table class="neuro-table" role="table" [attr.aria-label]="bedsAriaTablePatientsAssign">
                 <thead>
                   <tr>
-                    <th scope="col">Paciente</th>
-                    <th scope="col">Documento</th>
-                    <th scope="col">Cama actual</th>
+                    <th scope="col" i18n="@@bedsMgmtHtml.thPatient">Paciente</th>
+                    <th scope="col" i18n="@@bedsMgmtHtml.thDocument">Documento</th>
+                    <th scope="col" i18n="@@bedsMgmtHtml.thCurrentBed">Cama actual</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -226,7 +229,7 @@
                     tabindex="0"
                     role="button"
                     [attr.aria-pressed]="editBedForm.patientId === patient.id"
-                    [attr.aria-label]="'Seleccionar paciente ' + patient.firstName + ' ' + patient.lastName"
+                    [attr.aria-label]="getAriaSelectPatientRow(patient)"
                     (click)="selectPatient(patient)"
                     (keydown.enter)="selectPatient(patient)"
                     (keydown.space)="$event.preventDefault(); selectPatient(patient)"
@@ -235,30 +238,30 @@
                     <td>{{ patient.identificationNumber || '—' }}</td>
                     <td>
                       <span *ngIf="getPatientBed(patient.id) as pb">{{ pb.bedNumber }}</span>
-                      <span *ngIf="!getPatientBed(patient.id)" class="apm-hint apm-hint--ok">Sin cama</span>
+                      <span *ngIf="!getPatientBed(patient.id)" class="apm-hint apm-hint--ok" i18n="@@bedsMgmtHtml.noBedShort">Sin cama</span>
                     </td>
                   </tr>
                 </tbody>
               </table>
 
-              <div *ngIf="filteredPatients.length === 0 && patientSearchTerm" class="apm-empty beds-mgmt-table-empty">
+              <div *ngIf="filteredPatients.length === 0 && patientSearchTerm" class="apm-empty beds-mgmt-table-empty" i18n="@@bedsMgmtHtml.emptyNoMatchesInArea">
                 No hay coincidencias en esta área con ese criterio.
               </div>
 
               <div *ngIf="filteredPatients.length === 0 && !patientSearchTerm" class="apm-empty beds-mgmt-table-empty">
-                <p class="beds-mgmt-empty-lead">No hay pacientes en esta lista.</p>
+                <p class="beds-mgmt-empty-lead" i18n="@@bedsMgmtHtml.emptyNoPatientsInList">No hay pacientes en esta lista.</p>
               </div>
             </div>
 
             <div class="apm-toolbar">
-              <button type="button" class="apm-btn" (click)="openCrossAreaPatientModal()">Otras áreas o sin cama</button>
+              <button type="button" class="apm-btn" (click)="openCrossAreaPatientModal()" i18n="@@bedsMgmtHtml.btnOtherAreasNoBed">Otras áreas o sin cama</button>
             </div>
           </ng-container>
         </div>
       </div>
       <div class="apm-footer">
-        <button type="button" class="apm-btn apm-btn--outline" (click)="closeEditBedModal()">Cancelar</button>
-        <button type="button" class="apm-btn" (click)="saveBedChanges()">Guardar cambios</button>
+        <button type="button" class="apm-btn apm-btn--outline" (click)="closeEditBedModal()" i18n="@@bedsMgmtHtml.btnCancel">Cancelar</button>
+        <button type="button" class="apm-btn" (click)="saveBedChanges()" i18n="@@bedsMgmtHtml.btnSaveChanges">Guardar cambios</button>
       </div>
     </div>
   </div>
@@ -267,46 +270,48 @@
   <div *ngIf="showCreateBedModal" class="apm-backdrop" (click)="closeCreateBedModal()">
     <div class="apm-shell" (click)="$event.stopPropagation()">
       <div class="apm-header">
-        <h3>Agregar cama</h3>
-        <button type="button" class="apm-close" (click)="closeCreateBedModal()" aria-label="Cerrar">✕</button>
+        <h3 i18n="@@bedsMgmtHtml.createBedTitle">Agregar cama</h3>
+        <button type="button" class="apm-close" (click)="closeCreateBedModal()" [attr.aria-label]="bedsHtmlCloseAria">✕</button>
       </div>
       <div class="apm-body">
-        <p class="apm-desc">
+        <p class="apm-desc" i18n="@@bedsMgmtHtml.createBedIntro">
           La cama quedará en el área indicada como disponible. Podrás asignar pacientes al editar la cama.
         </p>
         <div class="apm-section">
-          <label class="apm-field-label" for="create-bed-number">Número o nombre de cama *</label>
+          <label class="apm-field-label" for="create-bed-number" i18n="@@bedsMgmtHtml.labelBedNumberCreate">Número o nombre de cama *</label>
           <input
             type="text"
             id="create-bed-number"
             class="apm-input"
             [(ngModel)]="createBedForm.bedNumber"
+            i18n-placeholder="@@bedsMgmtHtml.placeholderBedNumberExampleCreate"
             placeholder="Ej: SAL-001, Cama 7…"
           />
         </div>
         <div class="apm-section">
-          <label class="apm-field-label" for="create-bed-area">Área *</label>
+          <label class="apm-field-label" for="create-bed-area" i18n="@@bedsMgmtHtml.labelAreaRequired">Área *</label>
           <select id="create-bed-area" class="apm-select" [(ngModel)]="createBedForm.areaId">
-            <option [ngValue]="null">Selecciona un área</option>
+            <option [ngValue]="null" i18n="@@bedsMgmtHtml.optionSelectArea">Selecciona un área</option>
             <option *ngFor="let area of areas" [ngValue]="area.id">
               {{ area.name }}
             </option>
           </select>
         </div>
         <div class="apm-section">
-          <label class="apm-field-label" for="create-bed-notes">Notas (opcional)</label>
+          <label class="apm-field-label" for="create-bed-notes" i18n="@@bedsMgmtHtml.labelNotesOptional">Notas (opcional)</label>
           <textarea
             id="create-bed-notes"
             class="apm-input"
             [(ngModel)]="createBedForm.notes"
+            i18n-placeholder="@@bedsMgmtHtml.placeholderNotesExample"
             placeholder="Ej: equipamiento, observaciones…"
             rows="3"
           ></textarea>
         </div>
       </div>
       <div class="apm-footer">
-        <button type="button" class="apm-btn apm-btn--outline" (click)="closeCreateBedModal()">Cancelar</button>
-        <button type="button" class="apm-btn" (click)="createBed()">Crear cama</button>
+        <button type="button" class="apm-btn apm-btn--outline" (click)="closeCreateBedModal()" i18n="@@bedsMgmtHtml.btnCancel">Cancelar</button>
+        <button type="button" class="apm-btn" (click)="createBed()" i18n="@@bedsMgmtHtml.btnCreateBed">Crear cama</button>
       </div>
     </div>
   </div>
@@ -342,50 +347,51 @@
   <div *ngIf="showCrossAreaPatientModal" class="apm-backdrop apm-backdrop--nested" (click)="closeCrossAreaPatientModal()">
     <div class="apm-shell apm-shell--large" (click)="$event.stopPropagation()">
       <div class="apm-header">
-        <h3>Otras áreas o sin cama</h3>
-        <button type="button" class="apm-close" (click)="closeCrossAreaPatientModal()" aria-label="Cerrar">✕</button>
+        <h3 i18n="@@bedsMgmtHtml.crossAreaTitle">Otras áreas o sin cama</h3>
+        <button type="button" class="apm-close" (click)="closeCrossAreaPatientModal()" [attr.aria-label]="bedsHtmlCloseAria">✕</button>
       </div>
       <div class="apm-body">
-        <p class="apm-desc">
+        <p class="apm-desc" i18n="@@bedsMgmtHtml.crossAreaIntro">
           Cama <strong>{{ selectedBed?.bedNumber }}</strong>, área destino <strong>{{ getAreaName(editBedForm.areaId || undefined) }}</strong>. Si el paciente tiene otra cama, se liberará antes. Con varias enfermeras en el área destino elegirás cuál lo atiende.
         </p>
         <div class="apm-section">
-          <label class="apm-field-label" for="cross-area-filter">Mostrar pacientes de</label>
+          <label class="apm-field-label" for="cross-area-filter" i18n="@@bedsMgmtHtml.labelShowPatientsFrom">Mostrar pacientes de</label>
           <select
             id="cross-area-filter"
             class="apm-select"
             [(ngModel)]="crossAreaFilter"
             (ngModelChange)="onCrossAreaFilterChange()"
           >
-            <option value="">Selecciona origen…</option>
-            <option value="unassigned">Sin cama / sin área</option>
+            <option value="" i18n="@@bedsMgmtHtml.optionSelectOrigin">Selecciona origen…</option>
+            <option value="unassigned" i18n="@@bedsMgmtHtml.optionUnassignedNoArea">Sin cama / sin área</option>
             <option *ngFor="let area of areas" [value]="area.id">{{ area.name }}</option>
           </select>
         </div>
         <div class="apm-section" *ngIf="crossAreaFilter">
-          <label class="apm-field-label" for="cross-area-search">Buscar por nombre o cédula</label>
+          <label class="apm-field-label" for="cross-area-search" i18n="@@bedsMgmtHtml.labelSearchNameId">Buscar por nombre o cédula</label>
           <input
             id="cross-area-search"
             type="text"
             class="apm-input"
             [(ngModel)]="crossAreaSearchTerm"
             (input)="filterCrossAreaPatientsInput()"
+            i18n-placeholder="@@bedsMgmtHtml.placeholderFilterList"
             placeholder="Filtrar la lista…"
           />
         </div>
         <div class="table-wrapper-neuro beds-mgmt-assign-table-wrap" *ngIf="crossAreaFilter">
-          <table class="neuro-table" role="table" aria-label="Pacientes para asignar desde otras áreas o sin cama">
+          <table class="neuro-table" role="table" [attr.aria-label]="bedsAriaTableCrossAreaPatients">
             <thead>
               <tr>
                 <th scope="col" class="beds-mgmt-col-radio"></th>
-                <th scope="col">Paciente</th>
-                <th scope="col">Documento</th>
-                <th scope="col">Cama actual</th>
+                <th scope="col" i18n="@@bedsMgmtHtml.thPatientCross">Paciente</th>
+                <th scope="col" i18n="@@bedsMgmtHtml.thDocumentCross">Documento</th>
+                <th scope="col" i18n="@@bedsMgmtHtml.thCurrentBedCross">Cama actual</th>
               </tr>
             </thead>
             <tbody>
               <tr *ngIf="crossAreaPatients.length === 0">
-                <td colspan="4" class="apm-empty beds-mgmt-table-empty-inner">No hay pacientes para este filtro.</td>
+                <td colspan="4" class="apm-empty beds-mgmt-table-empty-inner" i18n="@@bedsMgmtHtml.emptyNoPatientsForFilter">No hay pacientes para este filtro.</td>
               </tr>
               <tr
                 *ngFor="let patient of crossAreaPatients"
@@ -393,7 +399,7 @@
                 [class.beds-mgmt-assign-row--selected]="isCrossAreaPatientSelected(patient)"
                 tabindex="0"
                 role="button"
-                [attr.aria-label]="'Seleccionar paciente ' + patient.firstName + ' ' + patient.lastName"
+                [attr.aria-label]="getAriaSelectPatientRow(patient)"
                 (click)="selectCrossAreaPatient(patient)"
                 (keydown.enter)="selectCrossAreaPatient(patient)"
                 (keydown.space)="$event.preventDefault(); selectCrossAreaPatient(patient)"
@@ -415,12 +421,13 @@
         </div>
       </div>
       <div class="apm-footer">
-        <button type="button" class="apm-btn apm-btn--outline" (click)="closeCrossAreaPatientModal()">Cancelar</button>
+        <button type="button" class="apm-btn apm-btn--outline" (click)="closeCrossAreaPatientModal()" i18n="@@bedsMgmtHtml.btnCancel">Cancelar</button>
         <button
           type="button"
           class="apm-btn"
           [disabled]="!selectedCrossAreaPatientId"
           (click)="confirmCrossAreaPatientAssignment()"
+          i18n="@@bedsMgmtHtml.btnAssignNow"
         >
           Asignar ahora
         </button>

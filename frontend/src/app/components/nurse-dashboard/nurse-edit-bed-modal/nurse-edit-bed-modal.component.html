@@ -10,6 +10,7 @@
     <div class="apm-header">
       <h3 id="nurse-edit-bed-dialog-title" i18n="@@nurseEditBedModal.title">Editar cama</h3>
       <button
+        id="nurse-edit-bed-modal-close-btn"
         type="button"
         class="apm-close"
         aria-label="Cerrar"
@@ -87,7 +88,7 @@
               Varias enfermeras en esta área. ¿Quién quedará asignada al paciente?
             </p>
             <p class="nurse-pick-sub"><strong>{{ np.firstName }} {{ np.lastName }}</strong></p>
-            <div class="admin-assign-nurse-radio-list" role="radiogroup" aria-label="Enfermera asignada">
+            <div class="admin-assign-nurse-radio-list" role="radiogroup" aria-label="Enfermera asignada" i18n-aria-label="@@nurseEditBedModal.radiogroupAssignedNurseAria">
               <label *ngFor="let n of areaNurses" class="admin-assign-nurse-radio-row">
                 <input type="radio" name="nursePickNurseEditBed" [value]="n.id" [(ngModel)]="selectedNurseIdForPick" />
                 <span>{{ n.firstName }} {{ n.lastName }}</span>
@@ -118,7 +119,7 @@
             />
 
             <div class="table-wrapper-neuro nurse-edit-bed-table-wrap">
-              <table class="neuro-table" role="table" aria-label="Pacientes disponibles para asignar">
+              <table class="neuro-table" role="table" aria-label="Pacientes disponibles para asignar" i18n-aria-label="@@nurseEditBedModal.tableAvailablePatientsAria">
                 <thead>
                   <tr>
                     <th scope="col" i18n="@@nurseEditBedModal.colPatient">Paciente</th>
@@ -134,7 +135,7 @@
                     [class.nurse-edit-bed-table-row--other]="patientIsOtherArea(patient)"
                     tabindex="0"
                     role="button"
-                    [attr.aria-label]="'Seleccionar paciente ' + patient.firstName + ' ' + patient.lastName"
+                    [attr.aria-label]="patientRowSelectAriaLabel(patient)"
                     (click)="startPatientAssignment(patient)"
                     (keydown.enter)="startPatientAssignment(patient)"
                     (keydown.space)="$event.preventDefault(); startPatientAssignment(patient)"
@@ -172,8 +173,24 @@
     </div>
 
     <div class="apm-footer">
-      <button type="button" class="apm-btn apm-btn--outline" (click)="onCancel()" i18n="@@nurseEditBedModal.cancel">Cancelar</button>
-      <button type="button" class="apm-btn" (click)="saveBedChanges()" i18n="@@nurseEditBedModal.save">Guardar cambios</button>
+      <button
+        id="nurse-edit-bed-cancel-btn"
+        type="button"
+        class="apm-btn apm-btn--outline"
+        (click)="onCancel()"
+        i18n="@@nurseEditBedModal.cancel"
+      >
+        Cancelar
+      </button>
+      <button
+        id="nurse-edit-bed-save-btn"
+        type="button"
+        class="apm-btn"
+        (click)="saveBedChanges()"
+        i18n="@@nurseEditBedModal.save"
+      >
+        Guardar cambios
+      </button>
     </div>
   </div>
 </div>

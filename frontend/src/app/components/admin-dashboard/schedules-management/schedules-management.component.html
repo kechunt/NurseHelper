@@ -4,37 +4,39 @@
       <div class="realtime-icon-neuro">🕒</div>
       <div class="realtime-content-neuro">
         <h3 class="realtime-value-neuro">{{ liveDateTimeLabel }}</h3>
-        <p class="realtime-title-neuro">Fecha y hora actual</p>
-        <p class="realtime-shift-neuro">Turno en curso: {{ liveCurrentShiftLabel }}</p>
+        <p class="realtime-title-neuro" i18n="@@schedMgmtHtml.realtimeDateTimeTitle">Fecha y hora actual</p>
+        <p class="realtime-shift-neuro">
+          <span i18n="@@schedMgmtHtml.realtimeShiftInProgressPrefix">Turno en curso:</span> {{ liveCurrentShiftLabel }}
+        </p>
       </div>
     </div>
 
     <div class="section-header-neuro compact-header-neuro">
-      <h2 class="section-title-neuro">📋 Toma de lista por turno</h2>
+      <h2 class="section-title-neuro" i18n="@@schedMgmtHtml.sectionAttendanceTitle">📋 Toma de lista por turno</h2>
     </div>
 
     <div class="attendance-controls-neuro module-section-neuro">
       <div class="attendance-summary-neuro">
-        <button type="button" class="badge-shift-neuro" [class.active]="attendanceSummaryFilter === 'present'" (click)="setAttendanceSummaryFilter('present')">Presentes: {{ getAttendanceCount('present') }}</button>
-        <button type="button" class="badge-shift-neuro" [class.active]="attendanceSummaryFilter === 'late'" (click)="setAttendanceSummaryFilter('late')">Tarde: {{ getAttendanceCount('late') }}</button>
-        <button type="button" class="badge-shift-neuro" [class.active]="attendanceSummaryFilter === 'justified'" (click)="setAttendanceSummaryFilter('justified')">Justificadas: {{ getAttendanceCount('justified') }}</button>
-        <button type="button" class="badge-shift-neuro" [class.active]="attendanceSummaryFilter === 'absent'" (click)="setAttendanceSummaryFilter('absent')">Ausentes: {{ getAttendanceCount('absent') }}</button>
-        <button type="button" class="badge-shift-neuro" [class.active]="attendanceSummaryFilter === 'missing'" (click)="setAttendanceSummaryFilter('missing')">Faltas: {{ getAttendanceCount('missing') }}</button>
+        <button type="button" class="badge-shift-neuro" [class.active]="attendanceSummaryFilter === 'present'" (click)="setAttendanceSummaryFilter('present')" i18n="@@schedMgmtHtml.badgePresent">Presentes: {{ getAttendanceCount('present') }}</button>
+        <button type="button" class="badge-shift-neuro" [class.active]="attendanceSummaryFilter === 'late'" (click)="setAttendanceSummaryFilter('late')" i18n="@@schedMgmtHtml.badgeLate">Tarde: {{ getAttendanceCount('late') }}</button>
+        <button type="button" class="badge-shift-neuro" [class.active]="attendanceSummaryFilter === 'justified'" (click)="setAttendanceSummaryFilter('justified')" i18n="@@schedMgmtHtml.badgeJustified">Justificadas: {{ getAttendanceCount('justified') }}</button>
+        <button type="button" class="badge-shift-neuro" [class.active]="attendanceSummaryFilter === 'absent'" (click)="setAttendanceSummaryFilter('absent')" i18n="@@schedMgmtHtml.badgeAbsent">Ausentes: {{ getAttendanceCount('absent') }}</button>
+        <button type="button" class="badge-shift-neuro" [class.active]="attendanceSummaryFilter === 'missing'" (click)="setAttendanceSummaryFilter('missing')" i18n="@@schedMgmtHtml.badgeMissing">Faltas: {{ getAttendanceCount('missing') }}</button>
       </div>
     </div>
 
     <div class="coverage-alert-neuro module-section-neuro" *ngIf="uncoveredAreasInCurrentShift.length > 0">
       <div class="coverage-alert-header-neuro">
-        <h3 class="subsection-title-neuro">Cobertura pendiente por área</h3>
-        <span class="coverage-alert-count-neuro">{{ uncoveredAreasInCurrentShift.length }} área(s)</span>
+        <h3 class="subsection-title-neuro" i18n="@@schedMgmtHtml.coveragePendingTitle">Cobertura pendiente por área</h3>
+        <span class="coverage-alert-count-neuro" i18n="@@schedMgmtHtml.coverageAreaCount">{{ uncoveredAreasInCurrentShift.length }} área(s)</span>
       </div>
-      <p class="coverage-alert-text-neuro">
+      <p class="coverage-alert-text-neuro" i18n="@@schedMgmtHtml.coverageAlertIntro">
         Áreas sin enfermeras en turno (<strong>presente</strong>/<strong>tarde</strong>):
       </p>
       <div class="coverage-alert-tags-neuro">
         <span class="coverage-alert-tag-neuro" *ngFor="let areaName of uncoveredAreasInCurrentShift">{{ areaName }}</span>
       </div>
-      <p class="coverage-alert-help-neuro">
+      <p class="coverage-alert-help-neuro" i18n="@@schedMgmtHtml.coverageAlertHelp">
         Asigna área a una o más enfermeras desde Gestión de Enfermeras para habilitar la asignación automática de pacientes.
       </p>
     </div>
@@ -42,16 +44,16 @@
     <div class="table-wrapper-neuro module-section-neuro">
       <h3 class="subsection-title-neuro">
         {{ getAttendanceTableTitle() }}
-        <span class="attendance-table-shift-label">· {{ liveCurrentShiftLabel || 'Sin turno activo' }}</span>
+        <span class="attendance-table-shift-label">· {{ getResolvedShiftLabelForDisplay() }}</span>
       </h3>
       <table class="shifts-table-neuro patients-table attendance-summary-table-neuro">
         <thead>
           <tr>
-            <th>Enfermera</th>
-            <th>Área</th>
-            <th>Turno actual</th>
-            <th>Estado</th>
-            <th>Hora registro</th>
+            <th i18n="@@schedMgmtHtml.thNurse">Enfermera</th>
+            <th i18n="@@schedMgmtHtml.thArea">Área</th>
+            <th i18n="@@schedMgmtHtml.thCurrentShift">Turno actual</th>
+            <th i18n="@@schedMgmtHtml.thStatus">Estado</th>
+            <th i18n="@@schedMgmtHtml.thCheckInTime">Hora registro</th>
           </tr>
         </thead>
         <tbody>
@@ -60,13 +62,13 @@
               class="admin-table-row--clickable"
               tabindex="0"
               role="button"
-              [attr.aria-label]="'Registrar asistencia: ' + item.nurseName"
+              [attr.aria-label]="getAriaLabelSummaryAttendance(item)"
               (click)="openSummaryAttendanceSheet(item)"
               (keydown)="onSummaryAttendanceKeydown(item, $event)"
             >
               <td>{{ item.nurseName }}</td>
               <td>{{ getAreaName(item.assignedAreaId) }}</td>
-              <td>{{ liveCurrentShiftLabel || 'Sin turno activo' }}</td>
+              <td>{{ getResolvedShiftLabelForDisplay() }}</td>
               <td>{{ getAttendanceStatusLabel(item.status) }}</td>
               <td>{{ formatDateTime(item.checkInAt) }}</td>
             </tr>
@@ -74,9 +76,9 @@
           <tr *ngIf="nursesInCurrentShift.length === 0">
             <td colspan="5" class="empty-neuro">
               <ng-container *ngIf="attendanceSummaryFilter === 'present'">
-                No hay enfermeras marcadas como presentes en este turno. Usa <strong>Mostrar listado</strong> abajo para tomar lista.
+                <span i18n="@@schedMgmtHtml.emptyNoPresentNurses">No hay enfermeras marcadas como presentes en este turno. Usa <strong>Mostrar listado</strong> abajo para tomar lista.</span>
               </ng-container>
-              <ng-container *ngIf="attendanceSummaryFilter !== 'present'">No hay enfermeras para el filtro seleccionado</ng-container>
+              <ng-container *ngIf="attendanceSummaryFilter !== 'present'"><span i18n="@@schedMgmtHtml.emptyFilterNoNurses">No hay enfermeras para el filtro seleccionado</span></ng-container>
             </td>
           </tr>
         </tbody>
@@ -85,7 +87,7 @@
 
     <div class="attendance-nurse-list-panel module-section-neuro" *ngIf="!loading">
       <div class="attendance-list-header-row-neuro">
-        <h3 class="subsection-title-neuro">Listado de enfermeras — Toma de lista</h3>
+        <h3 class="subsection-title-neuro" i18n="@@schedMgmtHtml.nurseListTitle">Listado de enfermeras — Toma de lista</h3>
         <app-admin-toggle-button
           class="btn-toggle-attendance-list-neuro"
           [expanded]="showAttendanceNurseList"
@@ -95,26 +97,26 @@
       <div class="attendance-nurse-list-body-neuro" *ngIf="showAttendanceNurseList">
       <div class="attendance-search-filters-neuro">
         <div class="filter-item-neuro">
-          <label><app-hero-icon name="magnifying-glass" /> Buscar enfermera</label>
-          <input type="text" class="input-neuro" [(ngModel)]="attendanceSearchQuery" placeholder="Nombre de enfermera..." />
+          <label><app-bootstrap-icon name="magnifying-glass" /> <span i18n="@@schedMgmtHtml.labelSearchNurse">Buscar enfermera</span></label>
+          <input type="text" class="input-neuro" [(ngModel)]="attendanceSearchQuery" i18n-placeholder="@@schedMgmtHtml.placeholderNurseName" placeholder="Nombre de enfermera..." />
         </div>
         <div class="filter-item-neuro">
-          <label><app-hero-icon name="building-office" /> Área</label>
+          <label><app-bootstrap-icon name="building-office" /> <span i18n="@@schedMgmtHtml.labelArea">Área</span></label>
           <select class="select-neuro" [(ngModel)]="attendanceAreaFilter">
-            <option [ngValue]="null">Todas las áreas</option>
+            <option [ngValue]="null" i18n="@@schedMgmtHtml.optionAllAreas">Todas las áreas</option>
             <option *ngFor="let area of areas" [ngValue]="area.id">{{ area.name }}</option>
           </select>
         </div>
         <div class="filter-item-neuro filter-actions-neuro" *ngIf="attendanceSearchQuery || attendanceAreaFilter !== null">
-          <button type="button" class="btn-attendance" (click)="clearAttendanceFilters()">Limpiar filtros</button>
+          <button type="button" class="btn-attendance" (click)="clearAttendanceFilters()" i18n="@@schedMgmtHtml.btnClearFilters">Limpiar filtros</button>
         </div>
       </div>
       <table class="shifts-table-neuro patients-table attendance-list-table-neuro">
         <thead>
           <tr>
-            <th>Enfermera</th>
-            <th>Área</th>
-            <th>Estado</th>
+            <th i18n="@@schedMgmtHtml.thNurseShort">Enfermera</th>
+            <th i18n="@@schedMgmtHtml.thAreaShort">Área</th>
+            <th i18n="@@schedMgmtHtml.thStatusShort">Estado</th>
           </tr>
         </thead>
         <tbody>
@@ -123,7 +125,7 @@
             class="admin-table-row--clickable"
             tabindex="0"
             role="button"
-            [attr.aria-label]="'Toma de lista: ' + item.nurseName"
+            [attr.aria-label]="getAriaLabelAttendanceListRow(item)"
             (click)="openAttendanceListSheet(item)"
             (keydown)="onAttendanceListKeydown(item, $event)"
           >
@@ -136,7 +138,7 @@
             </td>
           </tr>
           <tr *ngIf="filteredAttendanceItems.length === 0">
-            <td colspan="3" class="empty-neuro">No hay datos para esa fecha/turno</td>
+            <td colspan="3" class="empty-neuro" i18n="@@schedMgmtHtml.emptyNoDataShift">No hay datos para esa fecha/turno</td>
           </tr>
         </tbody>
       </table>
@@ -144,7 +146,7 @@
     </div>
 
     <div class="module-toggle-header-neuro module-section-neuro" (click)="toggleShiftConfigSection()">
-      <h3 class="subsection-title-neuro">Configuración de horarios de turnos</h3>
+      <h3 class="subsection-title-neuro" i18n="@@schedMgmtHtml.shiftConfigTitle">Configuración de horarios de turnos</h3>
       <app-admin-toggle-button
         [expanded]="showShiftConfigSection"
         (toggle)="toggleShiftConfigSection()"
@@ -155,9 +157,9 @@
       <table class="shifts-table-neuro patients-table">
         <thead>
           <tr>
-            <th>Turno</th>
-            <th>Hora inicio</th>
-            <th>Hora fin</th>
+            <th i18n="@@schedMgmtHtml.thShift">Turno</th>
+            <th i18n="@@schedMgmtHtml.thStartTime">Hora inicio</th>
+            <th i18n="@@schedMgmtHtml.thEndTime">Hora fin</th>
           </tr>
         </thead>
         <tbody>
@@ -166,7 +168,7 @@
             class="admin-table-row--clickable"
             tabindex="0"
             role="button"
-            [attr.aria-label]="'Acciones para turno ' + shift.name"
+            [attr.aria-label]="getAriaLabelShiftConfigRow(shift)"
             (click)="openShiftConfigRowSheet(shift)"
             (keydown)="onShiftConfigRowKeydown(shift, $event)"
           >
@@ -179,9 +181,9 @@
     </div>
 
     <div class="management-footer-neuro module-section-neuro">
-      <h3 class="subsection-title-neuro">Historial de turnos</h3>
-      <span *ngIf="savingAttendance" class="attendance-saving-hint-neuro" aria-live="polite">Guardando en el servidor…</span>
-      <button type="button" class="btn-attendance btn-module-show-neuro" (click)="openHistoryModal()" [disabled]="savingAttendance">
+      <h3 class="subsection-title-neuro" i18n="@@schedMgmtHtml.historySectionTitle">Historial de turnos</h3>
+      <span *ngIf="savingAttendance" class="attendance-saving-hint-neuro" aria-live="polite" i18n="@@schedMgmtHtml.savingHint">Guardando en el servidor…</span>
+      <button type="button" class="btn-attendance btn-module-show-neuro" (click)="openHistoryModal()" [disabled]="savingAttendance" i18n="@@schedMgmtHtml.btnShow">
         Mostrar
       </button>
     </div>
@@ -189,124 +191,122 @@
 
   <app-admin-table-row-actions-modal
     [open]="!!shiftConfigActionsRow"
-    [title]="shiftConfigActionsRow ? 'Turno: ' + shiftConfigActionsRow.name : 'Turno'"
-    [summaryLines]="shiftConfigActionsRow ? ['Inicio: ' + shiftConfigActionsRow.startTime, 'Fin: ' + shiftConfigActionsRow.endTime] : []"
+    [title]="shiftConfigActionsRow ? getShiftConfigModalTitle(shiftConfigActionsRow) : schedHtmlModalShiftFallback"
+    [summaryLines]="shiftConfigActionsRow ? getShiftConfigSummaryLines(shiftConfigActionsRow) : []"
     (dismissed)="closeShiftConfigRowSheet()"
   >
-    <button type="button" class="btn-attendance" (click)="fromShiftConfigSheetEdit()">Editar horario</button>
+    <button type="button" class="btn-attendance" (click)="fromShiftConfigSheetEdit()" i18n="@@schedMgmtHtml.btnEditShiftTime">Editar horario</button>
   </app-admin-table-row-actions-modal>
 
   <app-admin-table-row-actions-modal
     [open]="!!summaryAttendanceActionsItem"
-    [title]="summaryAttendanceActionsItem ? summaryAttendanceActionsItem.nurseName : 'Asistencia'"
+    [title]="getSummaryAttendanceModalTitle()"
     [summaryLines]="summaryAttendanceActionsItem ? summaryAttendanceSheetSummary(summaryAttendanceActionsItem) : []"
     (dismissed)="closeSummaryAttendanceSheet()"
   >
-    <button type="button" class="btn-attendance" [disabled]="savingAttendance" (click)="markPresent(summaryAttendanceActionsItem!); closeSummaryAttendanceSheet()">
+    <button type="button" class="btn-attendance" [disabled]="savingAttendance" (click)="markPresent(summaryAttendanceActionsItem!); closeSummaryAttendanceSheet()" i18n="@@schedMgmtHtml.markPresent">
       Presente
     </button>
-    <button type="button" class="btn-attendance" [disabled]="savingAttendance" (click)="markLate(summaryAttendanceActionsItem!); closeSummaryAttendanceSheet()">
+    <button type="button" class="btn-attendance" [disabled]="savingAttendance" (click)="markLate(summaryAttendanceActionsItem!); closeSummaryAttendanceSheet()" i18n="@@schedMgmtHtml.markLate">
       Tarde
     </button>
-    <button type="button" class="btn-attendance" [disabled]="savingAttendance" (click)="markJustified(summaryAttendanceActionsItem!); closeSummaryAttendanceSheet()">
+    <button type="button" class="btn-attendance" [disabled]="savingAttendance" (click)="markJustified(summaryAttendanceActionsItem!); closeSummaryAttendanceSheet()" i18n="@@schedMgmtHtml.markJustified">
       Justificada
     </button>
-    <button type="button" class="btn-attendance" [disabled]="savingAttendance" (click)="markMissing(summaryAttendanceActionsItem!); closeSummaryAttendanceSheet()">
+    <button type="button" class="btn-attendance" [disabled]="savingAttendance" (click)="markMissing(summaryAttendanceActionsItem!); closeSummaryAttendanceSheet()" i18n="@@schedMgmtHtml.markMissing">
       Falta
     </button>
-    <button type="button" class="btn-attendance" [disabled]="savingAttendance" (click)="markAbsent(summaryAttendanceActionsItem!); closeSummaryAttendanceSheet()">
+    <button type="button" class="btn-attendance" [disabled]="savingAttendance" (click)="markAbsent(summaryAttendanceActionsItem!); closeSummaryAttendanceSheet()" i18n="@@schedMgmtHtml.markAbsent">
       Ausente
     </button>
   </app-admin-table-row-actions-modal>
 
   <app-admin-table-row-actions-modal
     [open]="!!attendanceListActionsItem"
-    [title]="attendanceListActionsItem ? attendanceListActionsItem.nurseName : 'Toma de lista'"
+    [title]="getAttendanceListModalTitle()"
     [summaryLines]="attendanceListActionsItem ? attendanceListSheetSummary(attendanceListActionsItem) : []"
     (dismissed)="closeAttendanceListSheet()"
   >
-    <button type="button" class="btn-attendance" [disabled]="savingAttendance" (click)="markPresent(attendanceListActionsItem!); closeAttendanceListSheet()">
+    <button type="button" class="btn-attendance" [disabled]="savingAttendance" (click)="markPresent(attendanceListActionsItem!); closeAttendanceListSheet()" i18n="@@schedMgmtHtml.markPresent">
       Presente
     </button>
-    <button type="button" class="btn-attendance" [disabled]="savingAttendance" (click)="markLate(attendanceListActionsItem!); closeAttendanceListSheet()">
+    <button type="button" class="btn-attendance" [disabled]="savingAttendance" (click)="markLate(attendanceListActionsItem!); closeAttendanceListSheet()" i18n="@@schedMgmtHtml.markLate">
       Tarde
     </button>
-    <button type="button" class="btn-attendance" [disabled]="savingAttendance" (click)="markJustified(attendanceListActionsItem!); closeAttendanceListSheet()">
+    <button type="button" class="btn-attendance" [disabled]="savingAttendance" (click)="markJustified(attendanceListActionsItem!); closeAttendanceListSheet()" i18n="@@schedMgmtHtml.markJustified">
       Justificada
     </button>
-    <button type="button" class="btn-attendance" [disabled]="savingAttendance" (click)="markMissing(attendanceListActionsItem!); closeAttendanceListSheet()">
+    <button type="button" class="btn-attendance" [disabled]="savingAttendance" (click)="markMissing(attendanceListActionsItem!); closeAttendanceListSheet()" i18n="@@schedMgmtHtml.markMissing">
       Falta
     </button>
-    <button type="button" class="btn-attendance" [disabled]="savingAttendance" (click)="markAbsent(attendanceListActionsItem!); closeAttendanceListSheet()">
+    <button type="button" class="btn-attendance" [disabled]="savingAttendance" (click)="markAbsent(attendanceListActionsItem!); closeAttendanceListSheet()" i18n="@@schedMgmtHtml.markAbsent">
       Ausente
     </button>
   </app-admin-table-row-actions-modal>
 
-  <div class="modal-backdrop-neuro" *ngIf="showEditShiftModal" (click)="closeEditShiftModal()">
-    <div class="modal-content-neuro" (click)="$event.stopPropagation()">
-      <div class="modal-header-neuro">
-        <h3>Editar horario: {{ selectedShift?.name }}</h3>
-        <button class="btn-close-neuro admin-close-btn" (click)="closeEditShiftModal()">✕</button>
-      </div>
-      <div class="modal-body-neuro">
-        <div class="form-group-neuro">
-          <label>Hora inicio</label>
-          <div class="time-edit-row-neuro">
-            <input type="time" class="input-neuro time-input-neuro" [(ngModel)]="selectedShift.startTime" />
-            <div class="time-arrows-neuro">
-              <button type="button" class="time-arrow-btn-neuro" (click)="adjustShiftTime('startTime', 15)">▲</button>
-              <button type="button" class="time-arrow-btn-neuro" (click)="adjustShiftTime('startTime', -15)">▼</button>
-            </div>
-          </div>
-        </div>
-        <div class="form-group-neuro">
-          <label>Hora fin</label>
-          <div class="time-edit-row-neuro">
-            <input type="time" class="input-neuro time-input-neuro" [(ngModel)]="selectedShift.endTime" />
-            <div class="time-arrows-neuro">
-              <button type="button" class="time-arrow-btn-neuro" (click)="adjustShiftTime('endTime', 15)">▲</button>
-              <button type="button" class="time-arrow-btn-neuro" (click)="adjustShiftTime('endTime', -15)">▼</button>
-            </div>
+  <app-modal-shell
+    *ngIf="showEditShiftModal"
+    [title]="getEditShiftModalTitle()"
+    (dismiss)="closeEditShiftModal()"
+  >
+    <div class="modal-body-neuro">
+      <div class="form-group-neuro">
+        <label i18n="@@schedMgmtHtml.labelStartTime">Hora inicio</label>
+        <div class="time-edit-row-neuro">
+          <input type="time" class="input-neuro time-input-neuro" [(ngModel)]="selectedShift.startTime" />
+          <div class="time-arrows-neuro">
+            <button type="button" class="time-arrow-btn-neuro" (click)="adjustShiftTime('startTime', 15)">▲</button>
+            <button type="button" class="time-arrow-btn-neuro" (click)="adjustShiftTime('startTime', -15)">▼</button>
           </div>
         </div>
       </div>
-      <div class="modal-footer-neuro">
-        <button class="btn-cancel-neuro" (click)="closeEditShiftModal()">Cancelar</button>
-        <button class="btn-save-neuro" (click)="saveShiftTimes()">Guardar horario</button>
+      <div class="form-group-neuro">
+        <label i18n="@@schedMgmtHtml.labelEndTime">Hora fin</label>
+        <div class="time-edit-row-neuro">
+          <input type="time" class="input-neuro time-input-neuro" [(ngModel)]="selectedShift.endTime" />
+          <div class="time-arrows-neuro">
+            <button type="button" class="time-arrow-btn-neuro" (click)="adjustShiftTime('endTime', 15)">▲</button>
+            <button type="button" class="time-arrow-btn-neuro" (click)="adjustShiftTime('endTime', -15)">▼</button>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
+    <div class="modal-footer-neuro">
+      <button class="btn-cancel-neuro" (click)="closeEditShiftModal()" i18n="@@schedMgmtHtml.btnCancel">Cancelar</button>
+      <button class="btn-save-neuro" (click)="saveShiftTimes()" i18n="@@schedMgmtHtml.btnSaveShift">Guardar horario</button>
+    </div>
+  </app-modal-shell>
 
-  <div class="modal-backdrop-neuro" *ngIf="showHistoryModal" (click)="closeHistoryModal()">
-    <div class="modal-content-neuro modal-history-neuro" (click)="$event.stopPropagation()">
-      <div class="modal-header-neuro">
-        <h3>Historial de turnos y asistencia</h3>
-        <button class="btn-close-neuro admin-close-btn" (click)="closeHistoryModal()">✕</button>
-      </div>
-      <div class="modal-body-neuro">
+  <app-modal-shell
+    *ngIf="showHistoryModal"
+    [title]="schedHtmlHistoryModalTitle"
+    contentClass="modal-history-neuro"
+    (dismiss)="closeHistoryModal()"
+  >
+    <div class="modal-body-neuro">
         <div class="attendance-controls-neuro history-filters-neuro">
           <div class="filter-item-neuro">
-            <label>Desde</label>
+            <label i18n="@@schedMgmtHtml.labelDateFrom">Desde</label>
             <input type="date" class="input-neuro" [(ngModel)]="historyDateFrom" (change)="loadShiftAttendanceHistory()" />
           </div>
           <div class="filter-item-neuro">
-            <label>Hasta</label>
+            <label i18n="@@schedMgmtHtml.labelDateTo">Hasta</label>
             <input type="date" class="input-neuro" [(ngModel)]="historyDateTo" (change)="loadShiftAttendanceHistory()" />
           </div>
           <div class="filter-item-neuro">
-            <label>Turno</label>
+            <label i18n="@@schedMgmtHtml.labelShiftFilter">Turno</label>
             <select class="select-neuro" [(ngModel)]="historyShiftId" (change)="loadShiftAttendanceHistory()">
-              <option [ngValue]="null">Todos</option>
+              <option [ngValue]="null" i18n="@@schedMgmtHtml.optionAllShifts">Todos</option>
               <option *ngFor="let shift of getEditableShifts()" [ngValue]="shift.id">{{ shift.name }}</option>
             </select>
           </div>
         </div>
 
         <div class="history-export-actions-neuro">
-          <button type="button" class="btn-attendance btn-export-neuro" (click)="exportAttendanceHistoryCsv()">
+          <button type="button" class="btn-attendance btn-export-neuro" (click)="exportAttendanceHistoryCsv()" i18n="@@schedMgmtHtml.btnExportCsv">
             Exportar CSV
           </button>
-          <button type="button" class="btn-attendance btn-export-neuro" (click)="exportAttendanceHistoryExcel()">
+          <button type="button" class="btn-attendance btn-export-neuro" (click)="exportAttendanceHistoryExcel()" i18n="@@schedMgmtHtml.btnExportExcel">
             Exportar Excel
           </button>
         </div>
@@ -315,12 +315,12 @@
           <table class="shifts-table-neuro patients-table">
             <thead>
               <tr>
-                <th>Fecha</th>
-                <th>Turno</th>
-                <th>Horario</th>
-                <th>Enfermera</th>
-                <th>Estado</th>
-                <th>Entrada</th>
+                <th i18n="@@schedMgmtHtml.thHistoryDate">Fecha</th>
+                <th i18n="@@schedMgmtHtml.thHistoryShift">Turno</th>
+                <th i18n="@@schedMgmtHtml.thHistorySchedule">Horario</th>
+                <th i18n="@@schedMgmtHtml.thHistoryNurse">Enfermera</th>
+                <th i18n="@@schedMgmtHtml.thHistoryStatus">Estado</th>
+                <th i18n="@@schedMgmtHtml.thHistoryCheckIn">Entrada</th>
               </tr>
             </thead>
             <tbody>
@@ -333,32 +333,30 @@
                 <td>{{ formatDateTime(row.checkInAt) }}</td>
               </tr>
               <tr *ngIf="!loadingHistory && attendanceHistory.length === 0">
-                <td colspan="6" class="empty-neuro">No hay historial para los filtros seleccionados</td>
+                <td colspan="6" class="empty-neuro" i18n="@@schedMgmtHtml.emptyHistoryFilters">No hay historial para los filtros seleccionados</td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
-    </div>
-  </div>
+  </app-modal-shell>
 
-  <div class="modal-backdrop-neuro" *ngIf="showDayOffPickerModal" (click)="cancelDayOffPicker()">
-    <div class="modal-content-neuro day-off-picker-modal-neuro" (click)="$event.stopPropagation()">
-      <div class="modal-header-neuro">
-        <h3>Día de descanso</h3>
-        <button type="button" class="btn-close-neuro admin-close-btn" (click)="cancelDayOffPicker()">✕</button>
-      </div>
-      <div class="modal-body-neuro">
-        <p class="day-off-picker-hint-neuro">Elige el día libre en la semana</p>
+  <app-modal-shell
+    *ngIf="showDayOffPickerModal"
+    [title]="schedHtmlDayOffModalTitle"
+    contentClass="day-off-picker-modal-neuro"
+    (dismiss)="cancelDayOffPicker()"
+  >
+    <div class="modal-body-neuro">
+        <p class="day-off-picker-hint-neuro" i18n="@@schedMgmtHtml.dayOffHint">Elige el día libre en la semana</p>
         <div class="day-off-picker-grid-neuro">
           <button type="button" class="btn-attendance" *ngFor="let d of days" (click)="confirmDayOffChoice(d)">
             {{ dayNames[d] }}
           </button>
         </div>
       </div>
-      <div class="modal-footer-neuro">
-        <button type="button" class="btn-cancel-neuro" (click)="cancelDayOffPicker()">Cancelar</button>
-      </div>
+    <div class="modal-footer-neuro">
+      <button type="button" class="btn-cancel-neuro" (click)="cancelDayOffPicker()" i18n="@@schedMgmtHtml.btnCancel">Cancelar</button>
     </div>
-  </div>
+  </app-modal-shell>
 </div>

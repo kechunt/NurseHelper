@@ -3,12 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ModalFocusTrapDirective } from '../../directives/modal-focus-trap.directive';
 import { HANDOVER_SHIFT_CHOICES, type HandoverShiftSlot } from '../../../services/nurse.service';
-import { HeroIconComponent } from '../hero-icon/hero-icon.component';
+import { BootstrapIconComponent } from '../bootstrap-icon/bootstrap-icon.component';
 
 @Component({
   selector: 'app-admin-team-handover-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, ModalFocusTrapDirective, HeroIconComponent],
+  imports: [CommonModule, FormsModule, ModalFocusTrapDirective, BootstrapIconComponent],
   templateUrl: './admin-team-handover-modal.component.html',
   styleUrls: [
     '../../../components/nurse-dashboard/nurse-neomorphic-modal.shared.css',

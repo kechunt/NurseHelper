@@ -8,6 +8,18 @@ import { AdminDashboardComponent } from './admin-dashboard.component';
 import { AuthService } from '../../services/auth.service';
 import type { User } from '../../services/auth.service';
 
+function ensureLocalizeShim(): void {
+  const g = globalThis as any;
+  if (typeof g.$localize === 'function') {
+    return;
+  }
+  g.$localize = (strings: TemplateStringsArray, ...expr: unknown[]) =>
+    strings.reduce((acc, rawPart, idx) => {
+      const part = idx === 0 ? rawPart.replace(/^:.*?:/, '') : rawPart;
+      return acc + part + (idx < expr.length ? String(expr[idx]) : '');
+    }, '');
+}
+
 describe('AdminDashboardComponent', () => {
   const ADMIN_USER: User = {
     id: 1,
@@ -21,6 +33,7 @@ describe('AdminDashboardComponent', () => {
   let fixture: ComponentFixture<AdminDashboardComponent>;
 
   beforeEach(async () => {
+    ensureLocalizeShim();
     const key = 'admin-dashboard-active-tab-v1';
     localStorage.removeItem(key);
 
@@ -53,30 +66,16 @@ describe('AdminDashboardComponent', () => {
     expect(fixture.componentInstance).toBeTruthy();
   });
 
-  it('onAdminTabKeydown con ArrowRight cambia a la siguiente pestaña', () => {
+  it('expone textos localizados del shell admin', () => {
     const c = fixture.componentInstance;
-    expect(c.activeTab).toBe('overview');
-    const ev = new KeyboardEvent('keydown', { key: 'ArrowRight' });
-    spyOn(ev, 'preventDefault');
-    c.onAdminTabKeydown(ev, 'overview');
-    expect(ev.preventDefault).toHaveBeenCalled();
-    expect(c.activeTab).toBe('users');
+    expect(c.adminShellDashboardTitle.length).toBeGreaterThan(0);
+    expect(c.adminShellRoleDisplayLabel.length).toBeGreaterThan(0);
+    expect(c.adminHamburgerOpenNavAriaLabel.length).toBeGreaterThan(0);
   });
 
-  it('onAdminTabKeydown con End activa la última pestaña', () => {
-    const c = fixture.componentInstance;
-    const ev = new KeyboardEvent('keydown', { key: 'End' });
-    spyOn(ev, 'preventDefault');
-    c.onAdminTabKeydown(ev, 'overview');
-    expect(c.activeTab).toBe('schedules');
-  });
-
-  it('onAdminTabKeydown ignora teclas no gestionadas', () => {
-    const c = fixture.componentInstance;
-    c.setActiveTab('overview');
-    const ev = new KeyboardEvent('keydown', { key: 'a' });
-    spyOn(ev, 'preventDefault');
-    c.onAdminTabKeydown(ev, 'overview');
-    expect(ev.preventDefault).not.toHaveBeenCalled();
+  it('hamburguesa del layout móvil: id estable #admin-shell-nav-hamburger-btn', () => {
+    const btn = fixture.nativeElement.querySelector('#admin-shell-nav-hamburger-btn') as HTMLButtonElement | null;
+    expect(btn).toBeTruthy();
+    expect(btn?.tagName.toLowerCase()).toBe('button');
   });
 });

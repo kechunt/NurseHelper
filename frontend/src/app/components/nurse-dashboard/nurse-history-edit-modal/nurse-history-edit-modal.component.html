@@ -14,6 +14,7 @@
     <div class="modal-header">
       <h3 id="nurse-history-edit-dialog-title" i18n="@@nurseHistoryEditModal.title">Editar registro de historial</h3>
       <button
+        id="nurse-history-edit-header-close-btn"
         type="button"
         class="close-btn"
         aria-label="Cerrar"
@@ -42,6 +43,8 @@
           class="observation-input"
           [(ngModel)]="description"
           rows="3"
+          placeholder="Resuma el medicamento o tratamiento registrado…"
+          i18n-placeholder="@@nurseHistoryEditModal.descriptionPlaceholder"
         ></textarea>
       </div>
       <div class="input-group">
@@ -60,14 +63,35 @@
         *ngIf="showsStatusSelect() && (status === 'not_administered' || status === 'missed')"
       >
         <label for="history-edit-reason" i18n="@@nurseHistoryEditModal.reasonLabel">Motivo (no realizado / omitido)</label>
-        <textarea id="history-edit-reason" class="observation-input" [(ngModel)]="reason" rows="2"></textarea>
+        <textarea
+          id="history-edit-reason"
+          class="observation-input"
+          [(ngModel)]="reason"
+          rows="2"
+          placeholder="Explique por qué no se realizó u omitió…"
+          i18n-placeholder="@@nurseHistoryEditModal.reasonFieldPlaceholder"
+        ></textarea>
       </div>
     </div>
     <div class="modal-footer">
-      <button type="button" class="btn-secondary-neuro" (click)="onCancel()" i18n="@@nurseHistoryEditModal.cancel">
+      <button
+        id="nurse-history-edit-cancel-btn"
+        type="button"
+        class="btn-secondary-neuro"
+        (click)="onCancel()"
+        i18n="@@nurseHistoryEditModal.cancel"
+      >
         Cancelar
       </button>
-      <button type="button" class="btn-primary-neuro" (click)="save()" i18n="@@nurseHistoryEditModal.save">Guardar</button>
+      <button
+        type="button"
+        id="nurse-history-edit-save-btn"
+        class="btn-primary-neuro"
+        (click)="save()"
+        i18n="@@nurseHistoryEditModal.save"
+      >
+        Guardar
+      </button>
     </div>
   </div>
 </div>

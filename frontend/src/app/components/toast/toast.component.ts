@@ -1,12 +1,12 @@
 import { Component, Input, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ToastService, Toast, ToastType } from '../../services/toast.service';
-import { HeroIconComponent } from '../../shared/components/hero-icon/hero-icon.component';
+import { BootstrapIconComponent } from '../../shared/components/bootstrap-icon/bootstrap-icon.component';
 
 @Component({
   selector: 'app-toast',
   standalone: true,
-  imports: [CommonModule, HeroIconComponent],
+  imports: [CommonModule, BootstrapIconComponent],
   templateUrl: './toast.component.html',
   styleUrl: './toast.component.css',
 })

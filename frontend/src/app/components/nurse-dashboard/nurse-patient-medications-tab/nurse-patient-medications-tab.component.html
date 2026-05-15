@@ -6,7 +6,7 @@
   <div class="summary-item">
     <span class="label" i18n="@@nursePatientMedicationsTab.labelAge">Edad:</span>
     <span class="value" *ngIf="age != null">{{ age }} <span i18n="@@nursePatientMedicationsTab.ageYearsWord">años</span></span>
-    <span class="value" *ngIf="age == null">—</span>
+    <span class="value" *ngIf="age == null">{{ emDash() }}</span>
   </div>
   <div class="summary-item summary-item--diagnosis">
     <ng-container *ngIf="!showDiagnosisEditor">
@@ -67,13 +67,13 @@
 
 <div class="medications-header medications-header--stack">
   <div>
-    <h4 i18n="@@nursePatientMedicationsTab.sectionTitle"><app-hero-icon name="beaker" /> Medicamentos del día</h4>
+    <h4 i18n="@@nursePatientMedicationsTab.sectionTitle"><app-bootstrap-icon name="beaker" /> Medicamentos del día</h4>
     <p class="treatments-day-hint" i18n="@@nursePatientMedicationsTab.sectionHint">
       Una fila por cada hora programada para hoy. «Suspender» afecta todas las dosis con el mismo nombre de medicamento.
     </p>
   </div>
   <button type="button" class="neuro-btn add-med-btn" (click)="addMedication.emit()" i18n="@@nursePatientMedicationsTab.addMedicationBtn">
-    <app-hero-icon name="plus-circle" /> Agregar Medicamento
+    <app-bootstrap-icon name="plus-circle" /> Agregar Medicamento
   </button>
 </div>
 
@@ -96,7 +96,7 @@
         class="admin-table-row--clickable"
         role="button"
         tabindex="0"
-        [attr.aria-label]="'Abrir acciones del medicamento de las ' + slot.time"
+        [attr.aria-label]="medicationRowAriaLabel(slot)"
         (click)="openSlotActions(slot)"
         (keydown.enter)="openSlotActions(slot)"
         (keydown.space)="$event.preventDefault(); openSlotActions(slot)"
@@ -108,7 +108,7 @@
           <div class="med-name-table-modal">{{ slot.name }}</div>
         </td>
         <td class="med-dosis-cell">
-          <span class="med-table-plain">{{ slot.dosage || '—' }}</span>
+          <span class="med-table-plain">{{ slotDosageCell(slot) }}</span>
         </td>
         <td>
           <span class="treatment-slot-status">{{ slotStatusLabel(slot) }}</span>
@@ -136,7 +136,7 @@
   (dismissed)="closeSlotActions()"
 >
   <button type="button" class="neuro-btn" *ngIf="selectedSlotForActions && slotPending(selectedSlotForActions)" (click)="executeMarkGiven()">
-    <app-hero-icon name="check-circle" /> Marcar administrado
+    <app-bootstrap-icon name="check-circle" /> Marcar administrado
   </button>
   <button
     type="button"
@@ -144,13 +144,13 @@
     *ngIf="selectedSlotForActions && slotPending(selectedSlotForActions)"
     (click)="executeMarkNotAdministered()"
   >
-    <app-hero-icon name="exclamation-triangle" /> Marcar no administrado
+    <app-bootstrap-icon name="exclamation-triangle" /> Marcar no administrado
   </button>
   <button type="button" class="neuro-btn" *ngIf="selectedSlotForActions && !isCancelledSlot(selectedSlotForActions)" (click)="executeSuspend()">
-    <app-hero-icon name="pause-circle" /> Suspender medicamento
+    <app-bootstrap-icon name="pause-circle" /> Suspender medicamento
   </button>
   <button type="button" class="neuro-btn" *ngIf="selectedSlotForActions && isCancelledSlot(selectedSlotForActions)" (click)="executeReactivate()">
-    <app-hero-icon name="play-circle" /> Reactivar medicamento
+    <app-bootstrap-icon name="play-circle" /> Reactivar medicamento
   </button>
   <button
     type="button"
@@ -158,7 +158,7 @@
     *ngIf="selectedSlotForActions && slotPending(selectedSlotForActions)"
     (click)="executeDeleteSlot()"
   >
-    <app-hero-icon name="trash" /> Eliminar este horario
+    <app-bootstrap-icon name="trash" /> Eliminar este horario
   </button>
 </app-admin-table-row-actions-modal>
 

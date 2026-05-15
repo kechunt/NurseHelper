@@ -2,18 +2,22 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ModalFocusTrapDirective } from '../../../shared/directives/modal-focus-trap.directive';
-import { HANDOVER_SHIFT_CHOICES, type HandoverShiftSlot } from '../../../services/nurse.service';
-import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
+import { type HandoverShiftSlot } from '../../../services/nurse.service';
+import { BootstrapIconComponent } from '../../../shared/components/bootstrap-icon/bootstrap-icon.component';
 
 @Component({
   selector: 'app-nurse-handover-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, ModalFocusTrapDirective, HeroIconComponent],
+  imports: [CommonModule, FormsModule, ModalFocusTrapDirective, BootstrapIconComponent],
   templateUrl: './nurse-handover-modal.component.html',
   styleUrls: ['../nurse-neomorphic-modal.shared.css', './nurse-handover-modal.component.css'],
 })
 export class NurseHandoverModalComponent {
-  readonly shiftChoices = HANDOVER_SHIFT_CHOICES;
+  readonly shiftChoices: { value: HandoverShiftSlot; label: string }[] = [
+    { value: 'morning', label: $localize`:@@nurseHandoverModal.shiftChoiceMorning:Mañana` },
+    { value: 'afternoon', label: $localize`:@@nurseHandoverModal.shiftChoiceAfternoon:Tarde` },
+    { value: 'night', label: $localize`:@@nurseHandoverModal.shiftChoiceNight:Noche` },
+  ];
 
   @Input({ required: true }) handoverDate!: string;
   @Input({ required: true }) handoverShift!: HandoverShiftSlot;

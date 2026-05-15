@@ -3,11 +3,13 @@ import {
   Input,
   OnChanges,
   SimpleChanges,
+  inject,
+  LOCALE_ID,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import type { PatientClinicalNoteDto } from '../../../services/nurse.service';
 import { splitObservationLines } from '../nurse-patient-observations.helpers';
-import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
+import { BootstrapIconComponent } from '../../../shared/components/bootstrap-icon/bootstrap-icon.component';
 import {
   clinicalNoteDisplayBody,
   clinicalNotesPreviewSlice,
@@ -17,15 +19,28 @@ import {
   stableKeyForClinicalNote,
   toggleClinicalPin,
 } from '../nurse-clinical-notes-pin.helpers';
+import { nurseUiEmDash } from '../nurse-dashboard-ui-i18n.helpers';
 
 @Component({
   selector: 'app-nurse-clinical-notes-scope-block',
   standalone: true,
-  imports: [CommonModule, HeroIconComponent],
+  imports: [CommonModule, BootstrapIconComponent],
   templateUrl: './nurse-clinical-notes-scope-block.component.html',
   styleUrls: ['./nurse-clinical-notes-scope-block.component.css'],
 })
 export class NurseClinicalNotesScopeBlockComponent implements OnChanges {
+  private readonly localeId = inject(LOCALE_ID);
+
+  readonly ncnsbEmptyDefault = $localize`:@@ncnsb.emptyDefault:Sin datos`;
+  readonly ncnsbPreviewAria = $localize`:@@ncnsb.previewAria:Vista previa de notas`;
+  readonly ncnsbListTitleFallback = $localize`:@@ncnsb.listTitleFallback:Todas las notas`;
+  readonly ncnsbListHint = $localize`:@@ncnsb.listHint:Pulse el texto para ver fecha y hora. Solo aquí: elige qué notas se muestran fuera (en este recuadro, pacientes y camas); entre 0 y 3.`;
+  readonly ncnsbPinTitle = $localize`:@@ncnsb.pinTitle:Mostrar u ocultar en vistas compactas (máx. 3)`;
+  readonly ncnsbPinAria = $localize`:@@ncnsb.pinAria:Mostrar u ocultar nota destacada`;
+  readonly ncnsbAuthorLegacy = $localize`:@@ncnsb.authorLegacy:No registrada (nota anterior o texto libre)`;
+  readonly ncnsbAuthorMissing = $localize`:@@ncnsb.authorMissing:No registrada`;
+  readonly ncnsbCloseAria = $localize`:@@ncnsb.closeAria:Cerrar`;
+
   /** Paciente (string id del modelo `Patient` del dashboard). */
   @Input({ required: true }) patientId!: string;
   @Input({ required: true }) scope!: ClinicalNotesPinScope;
@@ -39,7 +54,7 @@ export class NurseClinicalNotesScopeBlockComponent implements OnChanges {
   @Input() compact = false;
   /** Celda de tabla del panel enfermería: texto denso, sin cajas neumórficas en la vista previa. */
   @Input() tableCell = false;
-  @Input() emptyLabel = 'Sin datos';
+  @Input() emptyLabel = '';
 
   listModalOpen = false;
   detailNote: PatientClinicalNoteDto | null = null;
@@ -127,19 +142,23 @@ export class NurseClinicalNotesScopeBlockComponent implements OnChanges {
     this.detailNote = null;
   }
 
+  expandAllLabel(count: number): string {
+    return $localize`:@@ncnsb.expandAll:Ver todas (${count}):n:)`;
+  }
+
   detailAuthorLabel(note: PatientClinicalNoteDto): string {
     if (note.authorName?.trim()) {
       return note.authorName.trim();
     }
-    return note.legacy ? 'No registrada (nota anterior o texto libre)' : 'No registrada';
+    return note.legacy ? this.ncnsbAuthorLegacy : this.ncnsbAuthorMissing;
   }
 
   detailDateLabel(note: PatientClinicalNoteDto): string {
     if (!note.createdAt) {
-      return '—';
+      return nurseUiEmDash();
     }
     const d = new Date(note.createdAt);
-    return d.toLocaleDateString('es-ES', {
+    return d.toLocaleDateString(this.localeId, {
       weekday: 'long',
       day: 'numeric',
       month: 'long',
@@ -149,9 +168,9 @@ export class NurseClinicalNotesScopeBlockComponent implements OnChanges {
 
   detailTimeLabel(note: PatientClinicalNoteDto): string {
     if (!note.createdAt) {
-      return '—';
+      return nurseUiEmDash();
     }
-    return new Date(note.createdAt).toLocaleTimeString('es-ES', {
+    return new Date(note.createdAt).toLocaleTimeString(this.localeId, {
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',

@@ -39,19 +39,34 @@ describe('NursePharmacyPatientsModalComponent', () => {
     fixture.detectChanges();
   });
 
+  it('plantilla: título con medicamento e intro con dosis', () => {
+    const h3 = fixture.nativeElement.querySelector('h3')?.textContent || '';
+    expect(h3).toContain('Paracetamol');
+    const intro = fixture.nativeElement.querySelector('.pharmacy-patients-modal-intro');
+    expect(intro?.textContent).toContain('500mg');
+  });
+
   it('renderiza lista de pacientes', () => {
     const items = fixture.nativeElement.querySelectorAll('.pharmacy-patients-list-item');
     expect(items.length).toBe(2);
   });
 
-  it('emite dismissed por backdrop y botón cerrar', () => {
+  it('emite dismissed por backdrop, cabecera ✕ y pie Cerrar', () => {
     spyOn(fixture.componentInstance.dismissed, 'emit');
     const backdrop = fixture.nativeElement.querySelector(
       '.nurse-pharmacy-patients-backdrop'
     ) as HTMLElement;
     backdrop.click();
-    const close = fixture.nativeElement.querySelector('.close-btn') as HTMLButtonElement;
-    close.click();
-    expect(fixture.componentInstance.dismissed.emit).toHaveBeenCalledTimes(2);
+    const headerClose = fixture.nativeElement.querySelector(
+      '#nurse-pharmacy-patients-close-btn'
+    ) as HTMLButtonElement;
+    expect(headerClose).toBeTruthy();
+    headerClose.click();
+    const footerClose = fixture.nativeElement.querySelector(
+      '#nurse-pharmacy-patients-footer-close-btn'
+    ) as HTMLButtonElement;
+    expect(footerClose).toBeTruthy();
+    footerClose.click();
+    expect(fixture.componentInstance.dismissed.emit).toHaveBeenCalledTimes(3);
   });
 });

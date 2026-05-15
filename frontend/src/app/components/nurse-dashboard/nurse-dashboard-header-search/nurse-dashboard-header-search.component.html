@@ -1,12 +1,16 @@
 <div class="nurse-header-actions-wrap">
   <input
+    id="nurse-dashboard-header-search-input"
     type="search"
     class="neuro-input neuro-input-inline nurse-header-search-input"
     placeholder="Buscar paciente o cama…"
+    i18n-placeholder="@@nurseDashboardHeaderSearch.inputPlaceholder"
     aria-label="Buscar paciente o cama"
+    i18n-aria-label="@@nurseDashboardHeaderSearch.inputAriaLabel"
     appDebounce
     [debounceTime]="350"
     (debounced)="debounced.emit($event)"
     title="Un resultado: abre ficha. Varios: va a Pacientes con filtro"
+    i18n-title="@@nurseDashboardHeaderSearch.searchHintTitle"
   />
 </div>

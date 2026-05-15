@@ -4,12 +4,12 @@ import { FormsModule } from '@angular/forms';
 import type { NurseDayHistoryItem, TaskItem } from '../../../services/nurse.service';
 import type { Patient } from '../nurse-dashboard.types';
 import { pendingTaskDescriptionPreview } from '../nurse-pending-task-description.helpers';
-import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
+import { BootstrapIconComponent } from '../../../shared/components/bootstrap-icon/bootstrap-icon.component';
 
 @Component({
   selector: 'app-nurse-tasks-section',
   standalone: true,
-  imports: [CommonModule, FormsModule, HeroIconComponent],
+  imports: [CommonModule, FormsModule, BootstrapIconComponent],
   templateUrl: './nurse-tasks-section.component.html',
   styleUrls: [
     '../../../shared/styles/admin-panel-responsive.css',
@@ -63,10 +63,11 @@ export class NurseTasksSectionComponent {
   taskRowAriaLabel(task: TaskItem): string {
     const kind =
       task.type === 'medication'
-        ? 'Medicamento'
+        ? $localize`:@@nurseTasksSection.taskKindMedication:Medicamento`
         : task.type === 'treatment'
-          ? 'Tratamiento'
-          : 'Chequeo';
-    return `Abrir detalle de tarea: ${task.time}, ${kind}, ${task.patientName}, cama ${task.bedNumber}`;
+          ? $localize`:@@nurseTasksSection.taskKindTreatment:Tratamiento`
+          : $localize`:@@nurseTasksSection.taskKindCheck:Chequeo`;
+    const bedLabel = $localize`:@@nurseTasksSection.rowAriaBedWord:cama` + ' ' + String(task.bedNumber ?? '');
+    return $localize`:@@nurseTasksSection.rowAriaTemplate:Abrir detalle de tarea: ${task.time}:time:, ${kind}:kind:, ${task.patientName}:patient:, ${bedLabel}:bed:`;
   }
 }

@@ -1,0 +1,27 @@
+@import '../../styles/dashboard-layout.css';
+@import '../../styles/admin-panel-responsive.css';
+
+/* Envoltorio del slot principal: id estable sin alterar el flex del cuerpo (.dashboard-body). */
+.staff-shell-main-slot {
+  display: contents;
+}
+
+.staff-shell-after-header-slot,
+.staff-shell-quick-modals-slot,
+.staff-shell-nav-end-slot {
+  display: contents;
+}
+
+/* Misma agrupación que .nurse-header-actions en el panel de enfermería */
+.staff-shell-header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .staff-shell-header-actions {
+    justify-content: flex-end;
+  }
+}

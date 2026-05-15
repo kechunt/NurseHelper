@@ -14,6 +14,7 @@
     <div class="modal-header">
       <h3 id="nurse-schedule-edit-dialog-title" i18n="@@nurseScheduleEditModal.title">Editar tratamiento / horario</h3>
       <button
+        id="nurse-schedule-edit-header-close-btn"
         type="button"
         class="close-btn"
         aria-label="Cerrar"
@@ -31,6 +32,8 @@
           class="observation-input"
           [(ngModel)]="description"
           rows="3"
+          placeholder="Descripción del tratamiento o tarea programada…"
+          i18n-placeholder="@@nurseScheduleEditModal.descriptionPlaceholder"
         ></textarea>
       </div>
       <div class="input-group">
@@ -40,14 +43,30 @@
           class="observation-input"
           [(ngModel)]="notes"
           rows="2"
+          placeholder="Notas para el equipo (opcional)…"
+          i18n-placeholder="@@nurseScheduleEditModal.notesPlaceholder"
         ></textarea>
       </div>
     </div>
     <div class="modal-footer">
-      <button type="button" class="btn-secondary-neuro" (click)="onCancel()" i18n="@@nurseScheduleEditModal.cancel">
+      <button
+        id="nurse-schedule-edit-cancel-btn"
+        type="button"
+        class="btn-secondary-neuro"
+        (click)="onCancel()"
+        i18n="@@nurseScheduleEditModal.cancel"
+      >
         Cancelar
       </button>
-      <button type="button" class="btn-primary-neuro" (click)="save()" i18n="@@nurseScheduleEditModal.save">Guardar</button>
+      <button
+        type="button"
+        id="nurse-schedule-edit-save-btn"
+        class="btn-primary-neuro"
+        (click)="save()"
+        i18n="@@nurseScheduleEditModal.save"
+      >
+        Guardar
+      </button>
     </div>
   </div>
 </div>

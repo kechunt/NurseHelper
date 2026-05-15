@@ -27,6 +27,18 @@ describe('NurseReactivateMedicationModalComponent', () => {
     fixture.detectChanges();
   });
 
+  it('plantilla muestra nombre del medicamento', () => {
+    expect((fixture.nativeElement.textContent || '').includes('Metformina')).toBeTrue();
+  });
+
+  it('plantilla: botón confirmar reactivar con id', () => {
+    expect(fixture.nativeElement.querySelector('#nurse-reactivate-medication-header-close-btn')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('#nurse-reactivate-medication-cancel-btn')).toBeTruthy();
+    const btn = fixture.nativeElement.querySelector('#nurse-reactivate-medication-confirm-btn') as HTMLButtonElement;
+    expect(btn).toBeTruthy();
+    expect(btn.disabled).toBeFalse();
+  });
+
   it('emite dismissed al hacer clic en backdrop', () => {
     let dismissed = 0;
     const sub = fixture.componentInstance.dismissed.subscribe(() => dismissed++);
@@ -38,10 +50,10 @@ describe('NurseReactivateMedicationModalComponent', () => {
     sub.unsubscribe();
   });
 
-  it('emite dismissed al cancelar', () => {
+  it('emite dismissed al pulsar Cancelar', () => {
     let dismissed = 0;
     const sub = fixture.componentInstance.dismissed.subscribe(() => dismissed++);
-    fixture.componentInstance.onCancel();
+    (fixture.nativeElement.querySelector('#nurse-reactivate-medication-cancel-btn') as HTMLButtonElement).click();
     expect(dismissed).toBe(1);
     sub.unsubscribe();
   });

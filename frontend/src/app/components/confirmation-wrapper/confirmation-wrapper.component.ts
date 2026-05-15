@@ -12,18 +12,21 @@ import { Subscription } from 'rxjs';
   selector: 'app-confirmation-wrapper',
   standalone: true,
   imports: [CommonModule, ConfirmationModalComponent],
+  styleUrl: './confirmation-wrapper.component.css',
   template: `
-    <app-confirmation-modal
-      [show]="showModal"
-      [title]="modalData?.title || defaultModalTitle"
-      [message]="modalData?.message || defaultModalMessage"
-      [confirmText]="modalData?.confirmText || defaultModalConfirmLabel"
-      [cancelText]="modalData?.cancelText || defaultModalCancelLabel"
-      [type]="modalData?.type || 'info'"
-      (confirmed)="handleConfirm()"
-      (cancelled)="handleCancel()"
-      (closed)="handleClose()"
-    ></app-confirmation-modal>
+    <div id="confirmation-wrapper-host" class="confirmation-wrapper-host">
+      <app-confirmation-modal
+        [show]="showModal"
+        [title]="modalData?.title || defaultModalTitle"
+        [message]="modalData?.message || defaultModalMessage"
+        [confirmText]="modalData?.confirmText || defaultModalConfirmLabel"
+        [cancelText]="modalData?.cancelText || defaultModalCancelLabel"
+        [type]="modalData?.type || 'info'"
+        (confirmed)="handleConfirm()"
+        (cancelled)="handleCancel()"
+        (closed)="handleClose()"
+      ></app-confirmation-modal>
+    </div>
   `,
 })
 export class ConfirmationWrapperComponent implements OnInit, OnDestroy {

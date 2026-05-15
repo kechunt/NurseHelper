@@ -2,9 +2,9 @@
   <!-- Sección de Ingreso de Nuevo Paciente - Formulario Compacto -->
   <div class="patient-form-section">
     <div class="section-header collapsible-header" (click)="showIngresoForm = !showIngresoForm">
-      <h2 class="section-title"><app-hero-icon name="clipboard-document-list" /> Ingreso de Nuevo Paciente</h2>
+      <h2 class="section-title"><app-bootstrap-icon name="clipboard-document-list" /> <span i18n="@@adminPatients.newPatientAdmission">Ingreso de Nuevo Paciente</span></h2>
       <div class="header-actions">
-        <button class="toggle-btn-neuro" (click)="resetForm(); $event.stopPropagation()"><app-hero-icon name="arrow-path" /> Limpiar</button>
+        <button class="toggle-btn-neuro" (click)="resetForm(); $event.stopPropagation()"><app-bootstrap-icon name="arrow-path" /> <span i18n="@@adminPatients.clearForm">Limpiar</span></button>
         <app-admin-toggle-button [expanded]="showIngresoForm" (toggle)="showIngresoForm = !showIngresoForm" />
       </div>
     </div>
@@ -13,115 +13,115 @@
       <form [formGroup]="wizardFormGroup" (ngSubmit)="quickSavePatient()">
       <!-- Datos Personales -->
       <div class="form-section">
-        <h3><app-hero-icon name="user-circle" /> Datos Personales</h3>
+        <h3><app-bootstrap-icon name="user-circle" /> <span i18n="@@adminPatients.personalData">Datos Personales</span></h3>
         <div class="form-grid-compact">
           <div class="input-group">
-            <label for="w-firstName">Nombre *</label>
+            <label for="w-firstName" i18n="@@adminPatients.labelFirstName">Nombre *</label>
             <input 
               type="text" 
               id="w-firstName" 
               class="neuro-input" 
               formControlName="firstName"
               [class.error]="wizardFormGroup.get('firstName')?.invalid && wizardFormGroup.get('firstName')?.touched"
-              placeholder="Nombre"/>
-            <small *ngIf="wizardFormGroup.get('firstName')?.invalid && wizardFormGroup.get('firstName')?.touched" class="error-message">
+              i18n-placeholder="@@adminPatients.phFirstName" placeholder="Nombre"/>
+            <small *ngIf="wizardFormGroup.get('firstName')?.invalid && wizardFormGroup.get('firstName')?.touched" class="error-message" i18n="@@adminPatients.errFirstName">
               El nombre es requerido (mínimo 2 caracteres)
             </small>
           </div>
           <div class="input-group">
-            <label for="w-lastName">Apellido *</label>
+            <label for="w-lastName" i18n="@@adminPatients.labelLastName">Apellido *</label>
             <input 
               type="text" 
               id="w-lastName" 
               class="neuro-input" 
               formControlName="lastName"
               [class.error]="wizardFormGroup.get('lastName')?.invalid && wizardFormGroup.get('lastName')?.touched"
-              placeholder="Apellido"/>
-            <small *ngIf="wizardFormGroup.get('lastName')?.invalid && wizardFormGroup.get('lastName')?.touched" class="error-message">
+              i18n-placeholder="@@adminPatients.phLastName" placeholder="Apellido"/>
+            <small *ngIf="wizardFormGroup.get('lastName')?.invalid && wizardFormGroup.get('lastName')?.touched" class="error-message" i18n="@@adminPatients.errLastName">
               El apellido es requerido (mínimo 2 caracteres)
             </small>
           </div>
           <div class="input-group">
-            <label for="w-identification">Cédula/ID *</label>
+            <label for="w-identification" i18n="@@adminPatients.labelId">Cédula/ID *</label>
             <input 
               type="text" 
               id="w-identification" 
               class="neuro-input" 
               formControlName="identificationNumber"
               [class.error]="wizardFormGroup.get('identificationNumber')?.invalid && wizardFormGroup.get('identificationNumber')?.touched"
-              placeholder="1234567890"/>
-            <small *ngIf="wizardFormGroup.get('identificationNumber')?.invalid && wizardFormGroup.get('identificationNumber')?.touched" class="error-message">
+              i18n-placeholder="@@adminPatients.phId" placeholder="1234567890"/>
+            <small *ngIf="wizardFormGroup.get('identificationNumber')?.invalid && wizardFormGroup.get('identificationNumber')?.touched" class="error-message" i18n="@@adminPatients.errId">
               La cédula/ID es requerida
             </small>
           </div>
           <div class="input-group">
-            <label for="w-birthdate">Fecha de Nacimiento *</label>
+            <label for="w-birthdate" i18n="@@adminPatients.labelDob">Fecha de Nacimiento *</label>
             <input 
               type="date" 
               id="w-birthdate" 
               class="neuro-input" 
               formControlName="dateOfBirth"
               [class.error]="wizardFormGroup.get('dateOfBirth')?.invalid && wizardFormGroup.get('dateOfBirth')?.touched"/>
-            <small *ngIf="wizardFormGroup.get('dateOfBirth')?.invalid && wizardFormGroup.get('dateOfBirth')?.touched" class="error-message">
+            <small *ngIf="wizardFormGroup.get('dateOfBirth')?.invalid && wizardFormGroup.get('dateOfBirth')?.touched" class="error-message" i18n="@@adminPatients.errDob">
               La fecha de nacimiento es requerida
             </small>
           </div>
           <div class="input-group">
-            <label for="w-gender">Género</label>
+            <label for="w-gender" i18n="@@adminPatients.labelGender">Género</label>
             <select id="w-gender" class="neuro-select" formControlName="gender">
-              <option value="">Seleccionar</option>
-              <option value="M">Masculino</option>
-              <option value="F">Femenino</option>
-              <option value="Otro">Otro</option>
+              <option value="" i18n="@@adminPatients.optSelect">Seleccionar</option>
+              <option value="M" i18n="@@adminPatients.optGenderM">Masculino</option>
+              <option value="F" i18n="@@adminPatients.optGenderF">Femenino</option>
+              <option value="Otro" i18n="@@adminPatients.optGenderOther">Otro</option>
             </select>
           </div>
           <div class="input-group">
-            <label for="w-phone">Teléfono</label>
-            <input type="tel" id="w-phone" class="neuro-input" formControlName="phone" placeholder="+1234567890"/>
+            <label for="w-phone" i18n="@@adminPatients.labelPhone">Teléfono</label>
+            <input type="tel" id="w-phone" class="neuro-input" formControlName="phone" i18n-placeholder="@@adminPatients.phPhone" placeholder="+1234567890"/>
           </div>
         </div>
       </div>
 
       <!-- Contacto de Emergencia -->
       <div class="form-section">
-        <h3><app-hero-icon name="exclamation-triangle" /> Contacto de Emergencia</h3>
+        <h3><app-bootstrap-icon name="exclamation-triangle" /> <span i18n="@@adminPatients.emergencyHeading">Contacto de Emergencia</span></h3>
         <div class="form-grid-compact">
           <div class="input-group">
-            <label for="w-emergency-contact">Nombre del Contacto *</label>
+            <label for="w-emergency-contact" i18n="@@adminPatients.labelEmergencyName">Nombre del Contacto *</label>
             <input 
               type="text" 
               id="w-emergency-contact" 
               class="neuro-input" 
               formControlName="emergencyContact"
               [class.error]="wizardFormGroup.get('emergencyContact')?.invalid && wizardFormGroup.get('emergencyContact')?.touched"
-              placeholder="Nombre completo"/>
-            <small *ngIf="wizardFormGroup.get('emergencyContact')?.invalid && wizardFormGroup.get('emergencyContact')?.touched" class="error-message">
+              i18n-placeholder="@@adminPatients.phFullName" placeholder="Nombre completo"/>
+            <small *ngIf="wizardFormGroup.get('emergencyContact')?.invalid && wizardFormGroup.get('emergencyContact')?.touched" class="error-message" i18n="@@adminPatients.errEmergencyName">
               El nombre del contacto es requerido
             </small>
           </div>
           <div class="input-group">
-            <label for="w-emergency-phone">Teléfono *</label>
+            <label for="w-emergency-phone" i18n="@@adminPatients.labelEmergencyPhone">Teléfono *</label>
             <input 
               type="tel" 
               id="w-emergency-phone" 
               class="neuro-input" 
               formControlName="emergencyPhone"
               [class.error]="wizardFormGroup.get('emergencyPhone')?.invalid && wizardFormGroup.get('emergencyPhone')?.touched"
-              placeholder="+1234567890"/>
-            <small *ngIf="wizardFormGroup.get('emergencyPhone')?.invalid && wizardFormGroup.get('emergencyPhone')?.touched" class="error-message">
+              i18n-placeholder="@@adminPatients.phPhone" placeholder="+1234567890"/>
+            <small *ngIf="wizardFormGroup.get('emergencyPhone')?.invalid && wizardFormGroup.get('emergencyPhone')?.touched" class="error-message" i18n="@@adminPatients.errEmergencyPhone">
               El teléfono de emergencia es requerido
             </small>
           </div>
           <div class="input-group">
-            <label for="w-emergency-relation">Parentesco</label>
+            <label for="w-emergency-relation" i18n="@@adminPatients.labelRelation">Parentesco</label>
             <select id="w-emergency-relation" class="neuro-select" formControlName="emergencyRelation">
-              <option value="">Seleccionar</option>
-              <option value="Hijo/a">Hijo/a</option>
-              <option value="Esposo/a">Esposo/a</option>
-              <option value="Hermano/a">Hermano/a</option>
-              <option value="Padre/Madre">Padre/Madre</option>
-              <option value="Otro familiar">Otro familiar</option>
-              <option value="Amigo/a">Amigo/a</option>
+              <option value="" i18n="@@adminPatients.optSelect">Seleccionar</option>
+              <option value="Hijo/a" i18n="@@adminPatients.relChild">Hijo/a</option>
+              <option value="Esposo/a" i18n="@@adminPatients.relSpouse">Esposo/a</option>
+              <option value="Hermano/a" i18n="@@adminPatients.relSibling">Hermano/a</option>
+              <option value="Padre/Madre" i18n="@@adminPatients.relParent">Padre/Madre</option>
+              <option value="Otro familiar" i18n="@@adminPatients.relOtherFamily">Otro familiar</option>
+              <option value="Amigo/a" i18n="@@adminPatients.relFriend">Amigo/a</option>
             </select>
           </div>
         </div>
@@ -129,37 +129,37 @@
 
       <!-- Ubicación -->
       <div class="form-section">
-        <h3><app-hero-icon name="building-office-2" /> Asignación de Ubicación</h3>
+        <h3><app-bootstrap-icon name="building-office-2" /> <span i18n="@@adminPatients.locationHeading">Asignación de Ubicación</span></h3>
         <div class="form-grid-compact">
           <div class="input-group">
-            <label for="w-area">Área *</label>
+            <label for="w-area" i18n="@@adminPatients.labelArea">Área *</label>
             <select 
               id="w-area" 
               class="neuro-select" 
               formControlName="selectedAreaId"
               [class.error]="wizardFormGroup.get('selectedAreaId')?.invalid && wizardFormGroup.get('selectedAreaId')?.touched"
               (change)="onAreaChangeForm()">
-              <option value="">Seleccionar Área</option>
+              <option value="" i18n="@@adminPatients.optSelectArea">Seleccionar Área</option>
               <option *ngFor="let area of areas" [value]="area.id">{{ area.name }} - {{ area.description }}
               </option>
             </select>
-            <small *ngIf="wizardFormGroup.get('selectedAreaId')?.invalid && wizardFormGroup.get('selectedAreaId')?.touched" class="error-message">
+            <small *ngIf="wizardFormGroup.get('selectedAreaId')?.invalid && wizardFormGroup.get('selectedAreaId')?.touched" class="error-message" i18n="@@adminPatients.errArea">
               Debe seleccionar un área
             </small>
           </div>
           <div class="input-group">
-            <label for="w-bed">Cama</label>
+            <label for="w-bed" i18n="@@adminPatients.labelBed">Cama</label>
             <select 
               id="w-bed" 
               class="neuro-select" 
               formControlName="selectedBedId" 
               [disabled]="!wizardFormGroup.get('selectedAreaId')?.value || availableBeds.length === 0">
-              <option value="">Sin asignar (se asignará después)</option>
-              <option *ngFor="let bed of availableBeds" [value]="bed.id">{{ bed.bedNumber }} - Disponible
+              <option value="" i18n="@@adminPatients.optBedLater">Sin asignar (se asignará después)</option>
+              <option *ngFor="let bed of availableBeds" [value]="bed.id">{{ bed.bedNumber }} — {{ adminPatientsBedAvailableSuffix }}
               </option>
             </select>
             <small *ngIf="wizardFormGroup.get('selectedAreaId')?.value && availableBeds.length === 0" style="color: #f56565;">
-              <app-hero-icon name="exclamation-triangle" /> No hay camas disponibles en esta área
+              <app-bootstrap-icon name="exclamation-triangle" /> <span i18n="@@adminPatients.warnNoBedsInArea">No hay camas disponibles en esta área</span>
             </small>
           </div>
         </div>
@@ -167,35 +167,38 @@
 
       <!-- Observaciones clínicas (opcional; mismos campos que edición y panel enfermería) -->
       <div class="form-section">
-        <h3><app-hero-icon name="clipboard-document" /> Observaciones clínicas</h3>
+        <h3><app-bootstrap-icon name="clipboard-document" /> <span i18n="@@adminPatients.clinicalHeading">Observaciones clínicas</span></h3>
         <div class="form-grid-compact">
           <div class="input-group full-width">
-            <label for="w-medical-history">Diagnóstico / historial clínico</label>
+            <label for="w-medical-history" i18n="@@adminPatients.labelMedicalHistory">Diagnóstico / historial clínico</label>
             <textarea
               id="w-medical-history"
               class="neuro-input"
               rows="3"
               formControlName="medicalHistory"
+              i18n-placeholder="@@adminPatients.phMedicalHistory"
               placeholder="Ej. Neumonía en resolución, DM2..."
             ></textarea>
           </div>
           <div class="input-group full-width">
-            <label for="w-medical-observations">Observaciones médicas / evolución</label>
+            <label for="w-medical-observations" i18n="@@adminPatients.labelMedicalObs">Observaciones médicas / evolución</label>
             <textarea
               id="w-medical-observations"
               class="neuro-input"
               rows="3"
               formControlName="medicalObservations"
+              i18n-placeholder="@@adminPatients.phMedicalObs"
               placeholder="Signos, evolución, alertas clínicas..."
             ></textarea>
           </div>
           <div class="input-group full-width">
-            <label for="w-general-observations">Observaciones generales</label>
+            <label for="w-general-observations" i18n="@@adminPatients.labelGeneralObs">Observaciones generales</label>
             <textarea
               id="w-general-observations"
               class="neuro-input"
               rows="3"
               formControlName="generalObservations"
+              i18n-placeholder="@@adminPatients.phGeneralObs"
               placeholder="Cuidados de enfermería, preferencias, otros datos relevantes..."
             ></textarea>
           </div>
@@ -208,8 +211,8 @@
           type="submit"
           class="neuro-btn-large success" 
           [disabled]="wizardFormGroup.invalid || loading">
-          <app-hero-icon [name]="loading ? 'clock' : 'check-circle'" />
-          {{ loading ? 'Guardando...' : 'Ingresar Paciente' }}
+          <app-bootstrap-icon [name]="loading ? 'clock' : 'check-circle'" />
+          {{ loading ? adminPatientsSubmitSaving : adminPatientsSubmitAdmission }}
         </button>
       </div>
     </form>
@@ -219,7 +222,7 @@
   <!-- Sección de Listado de Pacientes -->
   <div class="patients-list-section">
     <div class="section-header collapsible-header" (click)="showPatientsList = !showPatientsList">
-      <h2 class="section-title"><app-hero-icon name="chart-bar" /> Listado de Pacientes</h2>
+      <h2 class="section-title"><app-bootstrap-icon name="chart-bar" /> <span i18n="@@adminPatients.listTitle">Listado de Pacientes</span></h2>
       <app-admin-toggle-button [expanded]="showPatientsList" (toggle)="showPatientsList = !showPatientsList" />
     </div>
 
@@ -228,108 +231,113 @@
     <!-- Filtros y Búsqueda -->
     <div class="filters-container">
       <div class="filter-box">
-        <label for="patient-search">Buscar Paciente:</label>
+        <label for="patient-search" i18n="@@adminPatients.filterSearchLabel">Buscar Paciente:</label>
         <input 
           type="text" 
           id="patient-search" 
           class="neuro-input search-input" 
           [value]="searchTerm"
-          placeholder="Buscar por nombre o cédula..." 
+          i18n-placeholder="@@adminPatients.filterSearchPlaceholder" placeholder="Buscar por nombre o cédula..." 
           appDebounce
           [debounceTime]="300"
           (debounced)="onSearchInput($event)"
+          i18n-aria-label="@@adminPatients.filterSearchAria"
           aria-label="Buscar paciente por nombre o cédula"
         />
       </div>
       
       <div class="filter-box">
-        <label for="area-filter">Filtrar por Área:</label>
+        <label for="area-filter" i18n="@@adminPatients.filterAreaLabel">Filtrar por Área:</label>
         <select 
           id="area-filter" 
           class="neuro-select" 
           [(ngModel)]="selectedAreaFilter" 
           (change)="filterPatients()"
+          i18n-aria-label="@@adminPatients.filterAreaAria"
           aria-label="Filtrar pacientes por área"
         >
-          <option value="">Todas las Áreas</option>
+          <option value="" i18n="@@adminPatients.filterAllAreas">Todas las Áreas</option>
           <option *ngFor="let area of areas" [value]="area.id">{{ area.name }}</option>
         </select>
       </div>
 
       <div class="filter-box">
-        <label for="nurse-filter">Filtrar por Enfermera:</label>
+        <label for="nurse-filter" i18n="@@adminPatients.filterNurseLabel">Filtrar por Enfermera:</label>
         <select 
           id="nurse-filter" 
           class="neuro-select" 
           [(ngModel)]="selectedNurseFilter" 
           (change)="filterPatients()"
+          i18n-aria-label="@@adminPatients.filterNurseAria"
           aria-label="Filtrar pacientes por enfermera"
         >
-          <option value="">Todas las Enfermeras</option>
-          <option value="__unassigned__">Sin asignar</option>
+          <option value="" i18n="@@adminPatients.filterAllNurses">Todas las Enfermeras</option>
+          <option value="__unassigned__" i18n="@@adminPatients.filterNurseUnassigned">Sin asignar</option>
           <option *ngFor="let nurse of nurses" [value]="nurse.id">{{ nurse.firstName }} {{ nurse.lastName }}</option>
         </select>
       </div>
 
       <div class="filter-box">
-        <label for="status-filter">Estado del Paciente:</label>
+        <label for="status-filter" i18n="@@adminPatients.filterStatusLabel">Estado del Paciente:</label>
         <select 
           id="status-filter" 
           class="neuro-select" 
           [(ngModel)]="selectedStatusFilter" 
           (change)="filterPatients()"
+          i18n-aria-label="@@adminPatients.filterStatusAria"
           aria-label="Filtrar pacientes por estado"
         >
-          <option value="">Todos</option>
-          <option value="active">Activos</option>
-          <option value="inactive">Inactivos</option>
+          <option value="" i18n="@@adminPatients.filterStatusAll">Todos</option>
+          <option value="active" i18n="@@adminPatients.filterStatusActive">Activos</option>
+          <option value="inactive" i18n="@@adminPatients.filterStatusInactive">Inactivos</option>
         </select>
       </div>
 
       <div class="filter-box">
-        <label for="bed-filter">Asignación de Cama:</label>
+        <label for="bed-filter" i18n="@@adminPatients.filterBedLabel">Asignación de Cama:</label>
         <select 
           id="bed-filter" 
           class="neuro-select" 
           [(ngModel)]="selectedBedFilter" 
           (change)="filterPatients()"
+          i18n-aria-label="@@adminPatients.filterBedAria"
           aria-label="Filtrar pacientes por asignación de cama"
         >
-          <option value="">Todos</option>
-          <option value="assigned">Con cama asignada</option>
-          <option value="unassigned">Sin cama asignada</option>
+          <option value="" i18n="@@adminPatients.filterBedAll">Todos</option>
+          <option value="assigned" i18n="@@adminPatients.filterBedAssigned">Con cama asignada</option>
+          <option value="unassigned" i18n="@@adminPatients.filterBedUnassigned">Sin cama asignada</option>
         </select>
       </div>
 
       <div class="filter-box">
         <button class="neuro-btn clear-filters" (click)="clearFilters()" *ngIf="hasActiveFilters()">
-          <app-hero-icon name="arrow-path" /> Limpiar Filtros
+          <app-bootstrap-icon name="arrow-path" /> <span i18n="@@adminPatients.clearFilters">Limpiar Filtros</span>
         </button>
       </div>
     </div>
 
     <div *ngIf="loading" class="loading-state">
-      <p>Cargando pacientes...</p>
+      <p i18n="@@adminPatients.loadingList">Cargando pacientes...</p>
     </div>
 
     <div *ngIf="!loading" class="table-container">
       <div class="table-header-actions">
-        <button class="neuro-btn" (click)="exportToCSV()" title="Exportar a CSV">
-          <app-hero-icon name="document-arrow-down" /> Exportar CSV
+        <button class="neuro-btn" (click)="exportToCSV()" i18n-title="@@adminPatients.exportCsvTitle" title="Exportar a CSV">
+          <app-bootstrap-icon name="document-arrow-down" /> <span i18n="@@adminPatients.exportCsv">Exportar CSV</span>
         </button>
-        <button class="neuro-btn" (click)="exportToExcel()" title="Exportar a Excel">
-          <app-hero-icon name="chart-bar" /> Exportar Excel
+        <button class="neuro-btn" (click)="exportToExcel()" i18n-title="@@adminPatients.exportExcelTitle" title="Exportar a Excel">
+          <app-bootstrap-icon name="chart-bar" /> <span i18n="@@adminPatients.exportExcel">Exportar Excel</span>
         </button>
       </div>
-      <table class="neuro-table" role="table" aria-label="Tabla de pacientes">
+      <table class="neuro-table" role="table" i18n-aria-label="@@adminPatients.tableAria" aria-label="Tabla de pacientes">
         <thead>
           <tr>
-            <th scope="col">ID</th>
-            <th scope="col">Nombre Completo</th>
-            <th scope="col">Enfermera asignada</th>
-            <th scope="col">Área</th>
-            <th scope="col">Cama</th>
-            <th scope="col">Estado</th>
+            <th scope="col" i18n="@@adminPatients.thId">ID</th>
+            <th scope="col" i18n="@@adminPatients.thFullName">Nombre Completo</th>
+            <th scope="col" i18n="@@adminPatients.thNurse">Enfermera asignada</th>
+            <th scope="col" i18n="@@adminPatients.thArea">Área</th>
+            <th scope="col" i18n="@@adminPatients.thBed">Cama</th>
+            <th scope="col" i18n="@@adminPatients.thStatus">Estado</th>
           </tr>
         </thead>
         <tbody>
@@ -339,24 +347,24 @@
             class="admin-table-row--clickable"
             tabindex="0"
             role="button"
-            [attr.aria-label]="'Acciones para paciente ' + patient.firstName + ' ' + patient.lastName"
+            [attr.aria-label]="patientTableRowAriaLabel(patient)"
             (click)="openPatientRowActionsSheet(patient)"
             (keydown)="onPatientTableRowKeydown(patient, $event)"
           >
             <td>{{ patient.id }}</td>
             <td>{{ patient.firstName }} {{ patient.lastName }}</td>
             <td>{{ getAssignedNurseDisplay(patient) }}</td>
-            <td>{{ patient.areaName || 'Sin asignar' }}</td>
-            <td>{{ patient.bedNumber || '-' }}</td>
+            <td>{{ patient.areaName || adminPatientsNoArea }}</td>
+            <td>{{ patient.bedNumber || adminPatientsEmDash }}</td>
             <td>
-              <span class="neuro-status" [class.active]="patient.isActive" [class.inactive]="!patient.isActive" [attr.aria-label]="patient.isActive ? 'Paciente activo' : 'Paciente inactivo'">
-                {{ patient.isActive ? 'Activo' : 'Inactivo' }}
+              <span class="neuro-status" [class.active]="patient.isActive" [class.inactive]="!patient.isActive" [attr.aria-label]="patientStatusAriaLabel(patient.isActive)">
+                {{ patientStatusLabel(patient.isActive) }}
               </span>
             </td>
           </tr>
         </tbody>
       </table>
-      <p *ngIf="paginationConfig.totalItems === 0" class="empty-message" role="status" aria-live="polite">No se encontraron pacientes</p>
+      <p *ngIf="paginationConfig.totalItems === 0" class="empty-message" role="status" aria-live="polite" i18n="@@adminPatients.emptyList">No se encontraron pacientes</p>
       
       <!-- Componente de paginación -->
       <app-pagination 
@@ -370,16 +378,16 @@
 
   <app-admin-table-row-actions-modal
     [open]="!!patientRowActionsTarget"
-    [title]="'Paciente'"
+    [title]="adminPatientsRowActionsModalTitle"
     [summaryLines]="patientRowActionsTarget ? patientRowActionsSummary(patientRowActionsTarget) : []"
     (dismissed)="closePatientRowActionsSheet()"
   >
-    <button type="button" class="neuro-btn" (click)="fromPatientSheetOpenEdit()"><app-hero-icon name="eye" /> Ver / editar detalles</button>
+    <button type="button" class="neuro-btn" (click)="fromPatientSheetOpenEdit()"><app-bootstrap-icon name="eye" /> <span i18n="@@adminPatients.sheetViewEdit">Ver / editar detalles</span></button>
     <button type="button" class="neuro-btn" (click)="fromPatientSheetToggleActive()">
-      <app-hero-icon [name]="patientRowActionsTarget?.isActive ? 'lock-closed' : 'lock-open'" />
-      {{ patientRowActionsTarget?.isActive ? 'Desactivar' : 'Activar' }}
+      <app-bootstrap-icon [name]="patientRowActionsTarget?.isActive ? 'lock-closed' : 'lock-open'" />
+      {{ patientRowActionsTarget?.isActive ? adminPatientsDeactivate : adminPatientsActivate }}
     </button>
-    <button type="button" class="neuro-btn outlined delete-btn" (click)="fromPatientSheetDelete()"><app-hero-icon name="trash" /> Eliminar</button>
+    <button type="button" class="neuro-btn outlined delete-btn" (click)="fromPatientSheetDelete()"><app-bootstrap-icon name="trash" /> <span i18n="@@adminPatients.sheetDelete">Eliminar</span></button>
   </app-admin-table-row-actions-modal>
 
   <app-nurse-patient-modal-shell

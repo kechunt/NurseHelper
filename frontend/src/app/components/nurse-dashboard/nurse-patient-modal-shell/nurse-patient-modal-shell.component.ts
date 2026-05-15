@@ -14,7 +14,7 @@ import { NurseHistoryEditModalComponent } from '../nurse-history-edit-modal/nurs
 import { NurseScheduleEditModalComponent } from '../nurse-schedule-edit-modal/nurse-schedule-edit-modal.component';
 import type { HistoryOutcomeFilter, HistoryPeriodFilter } from '../nurse-patient-history.helpers';
 import type { ClinicalObservationAppendScope } from '../../../services/nurse.service';
-import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
+import { BootstrapIconComponent } from '../../../shared/components/bootstrap-icon/bootstrap-icon.component';
 
 export type NursePatientModalTabId = 'medications' | 'schedule' | 'observations' | 'history';
 
@@ -30,7 +30,7 @@ export type NursePatientModalTabId = 'medications' | 'schedule' | 'observations'
     NursePatientHistoryTabComponent,
     NurseHistoryEditModalComponent,
     NurseScheduleEditModalComponent,
-    HeroIconComponent,
+    BootstrapIconComponent,
   ],
   templateUrl: './nurse-patient-modal-shell.component.html',
   styleUrl: './nurse-patient-modal-shell.component.css',

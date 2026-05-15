@@ -52,6 +52,13 @@ describe('NursePatientHistoryTabComponent', () => {
     expect(fixture.componentInstance.notesBlockVisible(r)).toBeTrue();
   });
 
+  it('historyRecordRowAriaLabel incluye fecha y hora', () => {
+    const r = sampleRecord();
+    const aria = fixture.componentInstance.historyRecordRowAriaLabel(r);
+    expect(aria).toContain('2026-05-01');
+    expect(aria).toContain('09:00');
+  });
+
   it('emite periodFilterChange al cambiar periodo', () => {
     const vals: string[] = [];
     const sub = fixture.componentInstance.periodFilterChange.subscribe((v) => vals.push(v));

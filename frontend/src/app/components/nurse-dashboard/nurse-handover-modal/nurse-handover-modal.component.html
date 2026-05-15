@@ -14,10 +14,11 @@
   >
     <div class="modal-header">
       <h3 id="nurse-handover-dialog-title">
-        <app-hero-icon name="clipboard-document"></app-hero-icon>
+        <app-bootstrap-icon name="clipboard-document"></app-bootstrap-icon>
         <span i18n="@@nurseHandoverModal.title">Nota de entrega</span>
       </h3>
       <button
+        id="nurse-handover-modal-close-btn"
         type="button"
         class="close-btn"
         aria-label="Cerrar"
@@ -29,10 +30,10 @@
     </div>
     <div class="modal-body medication-day-detail-body">
       <div class="nurse-aux-modal__inset nurse-aux-modal__inset--compact">
-        <p class="handover-modal-intro">
+        <p class="handover-modal-intro" i18n="@@nurseHandoverModal.introPrimary">
           Nota de <strong>paso de turno</strong> para tu <strong>área</strong>: pacientes a vigilar, incidencias, pendientes para quien releva, etc.
         </p>
-        <p class="handover-modal-intro handover-modal-intro--muted">
+        <p class="handover-modal-intro handover-modal-intro--muted" i18n="@@nurseHandoverModal.introMuted">
           Se guarda <strong>una nota por área, por día y por turno</strong> (mañana / tarde / noche). Las enfermeras del mismo área eligen fecha y franja para leer o actualizar. No aparece en otra pantalla; es un registro compartido al paso de turno.
         </p>
         <div class="input-group">
@@ -46,7 +47,7 @@
           />
         </div>
         <div class="input-group">
-          <label for="handover-shift">Turno</label>
+          <label for="handover-shift" i18n="@@nurseHandoverModal.shiftLabel">Turno</label>
           <select
             id="handover-shift"
             class="neuro-input neuro-input-block"
@@ -71,20 +72,34 @@
       </div>
     </div>
     <div class="modal-footer nurse-aux-modal__footer">
-      <button type="button" class="btn-primary-neuro" (click)="dismissed.emit()" [disabled]="handoverSaving">
+      <button
+        id="nurse-handover-cancel-btn"
+        type="button"
+        class="btn-primary-neuro"
+        (click)="dismissed.emit()"
+        [disabled]="handoverSaving"
+      >
         <span i18n="@@nurseHandoverModal.cancel">Cancelar</span>
       </button>
       <button
+        id="nurse-handover-acknowledge-btn"
         type="button"
         class="btn-secondary-neuro"
         *ngIf="handoverCanAcknowledge"
         (click)="acknowledgeRequested.emit()"
         [disabled]="handoverSaving"
       >
-        Aceptar
+        <span i18n="@@nurseHandoverModal.acknowledge">Aceptar</span>
       </button>
-      <button type="button" class="btn-primary-neuro" (click)="saveRequested.emit()" [disabled]="handoverSaving">
-        {{ handoverSaving ? 'Guardando…' : 'Guardar' }}
+      <button
+        id="handover-save-btn"
+        type="button"
+        class="btn-primary-neuro"
+        (click)="saveRequested.emit()"
+        [disabled]="handoverSaving"
+      >
+        <span *ngIf="handoverSaving" i18n="@@nurseHandoverModal.saving">Guardando…</span>
+        <span *ngIf="!handoverSaving" i18n="@@nurseHandoverModal.save">Guardar</span>
       </button>
     </div>
   </div>

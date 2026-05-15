@@ -7,6 +7,20 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  .nurse-header-actions app-in-app-notifications-bell {
+    flex-shrink: 0;
+  }
+
+  .nurse-header-actions app-nurse-dashboard-header-search {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: block;
+  }
 }
 
 .nurse-dashboard .tab-content {

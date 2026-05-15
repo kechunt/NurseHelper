@@ -50,6 +50,18 @@ describe('NurseTreatmentPostponeModalComponent', () => {
     expect(fixture.componentInstance.canSubmit).toBeFalse();
   });
 
+  it('plantilla: título, pista fecha/hora y botón Guardar con id estable', () => {
+    const h3 = (fixture.nativeElement.querySelector('h3')?.textContent || '').toLowerCase();
+    expect(h3).toContain('tratamiento');
+    const hint = fixture.nativeElement.querySelector('.hint-text');
+    expect((hint?.textContent || '').trim().length).toBeGreaterThan(10);
+    const save = fixture.nativeElement.querySelector('#nurse-treatment-postpone-save-btn') as HTMLButtonElement;
+    expect(save).toBeTruthy();
+    expect(save.disabled).toBeFalse();
+    expect(fixture.nativeElement.querySelector('#nurse-treatment-postpone-cancel-btn')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('#nurse-treatment-postpone-header-close-btn')).toBeTruthy();
+  });
+
   it('emite dismissed al hacer clic en backdrop', () => {
     let n = 0;
     const sub = fixture.componentInstance.dismissed.subscribe(() => n++);

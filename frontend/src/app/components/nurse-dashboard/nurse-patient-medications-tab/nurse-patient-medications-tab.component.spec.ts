@@ -66,6 +66,30 @@ describe('NursePatientMedicationsTabComponent', () => {
     expect(root).toContain('Agregar');
   });
 
+  it('trata el guión localizado como diagnóstico vacío', () => {
+    fixture.componentRef.setInput('diagnosis', '—');
+    fixture.detectChanges();
+    expect(fixture.componentInstance.isDiagnosisPlaceholder).toBeTrue();
+    expect(fixture.nativeElement.textContent).toContain('Sin diagnóstico');
+  });
+
+  it('muestra guión localizado si edad es null', () => {
+    fixture.componentRef.setInput('age', null);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('—');
+  });
+
+  it('slotActionsSummary usa guión localizado sin notas', () => {
+    fixture.componentInstance.openSlotActions(pendingSlot());
+    const lines = fixture.componentInstance.slotActionsSummary();
+    expect(lines.some((l) => l.startsWith('Notas:') && l.includes('—'))).toBeTrue();
+  });
+
+  it('medicationRowAriaLabel incluye la hora del slot', () => {
+    const aria = fixture.componentInstance.medicationRowAriaLabel(pendingSlot());
+    expect(aria).toContain('08:00');
+  });
+
   it('emite saveDiagnosis al guardar desde el editor rápido', () => {
     fixture.componentRef.setInput('diagnosis', '');
     fixture.detectChanges();

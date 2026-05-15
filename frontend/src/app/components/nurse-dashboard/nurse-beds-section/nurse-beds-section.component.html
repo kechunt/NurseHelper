@@ -1,24 +1,34 @@
 <div class="section-card nurse-module nurse-beds-module">
   <div class="nurse-module-stack nurse-beds-stack">
     <div class="section-header beds-section-header">
-      <h2 class="section-title"><app-hero-icon name="rectangle-group" /> Mis Camas Asignadas</h2>
-      <span class="section-subtitle">{{ myBeds.length }} camas en {{ assignedArea }}</span>
+      <h2 id="nurse-beds-section-title" class="section-title">
+        <app-bootstrap-icon name="rectangle-group" /> <span i18n="@@nurseBedsSection.sectionTitle">Mis Camas Asignadas</span>
+      </h2>
+      <span class="section-subtitle" i18n="@@nurseBedsSection.sectionSubtitle"
+        >{{ myBeds.length }} camas en {{ assignedArea }}</span
+      >
     </div>
 
     <div class="beds-grid">
       <div
-        *ngFor="let bed of myBeds"
+        *ngFor="let bed of myBeds; let i = index"
         class="bed-card clickable-bed"
+        [attr.id]="'nurse-beds-section-bed-card-' + i"
         [class.occupied]="bed.patient"
         [class.available]="!bed.patient"
         (click)="bedEditRequest.emit(bed)"
         title="Click para editar cama"
+        i18n-title="@@nurseBedsSection.cardEditBedTitle"
       >
         <div class="bed-header">
           <div class="bed-number">{{ bed.bedNumber }}</div>
           <div class="bed-status-badge" [class.occupied]="bed.patient">
-            <span *ngIf="bed.patient"><app-hero-icon name="rectangle-group" /> Ocupada</span>
-            <span *ngIf="!bed.patient"><app-hero-icon name="check-circle" /> Disponible</span>
+            <span *ngIf="bed.patient"
+              ><app-bootstrap-icon name="rectangle-group" /> <span i18n="@@nurseBedsSection.statusOccupied">Ocupada</span></span
+            >
+            <span *ngIf="!bed.patient"
+              ><app-bootstrap-icon name="check-circle" /> <span i18n="@@nurseBedsSection.statusAvailable">Disponible</span></span
+            >
           </div>
         </div>
 
@@ -28,14 +38,18 @@
             <button
               type="button"
               class="nurse-details-pill-btn"
+              [attr.id]="'nurse-beds-section-view-patient-' + i"
               (click)="onViewPatientClick(bed.patient, $event)"
               title="Ver detalles del paciente"
+              i18n-title="@@nurseBedsSection.btnViewPatientTitle"
             >
-              Detalles
+              <span i18n="@@nurseBedsSection.btnDetails">Detalles</span>
             </button>
           </div>
           <p class="bed-patient-card-meta">
-            <span class="bed-patient-meta-item"><app-hero-icon name="cake" /> {{ bed.patient.age }} años</span>
+            <span class="bed-patient-meta-item"
+              ><app-bootstrap-icon name="cake" /> <span i18n="@@nurseBedsSection.ageYearsLine">{{ bed.patient.age }} años</span></span
+            >
           </p>
           <div class="bed-patient-clinical" *ngIf="bed.patient" (click)="$event.stopPropagation()">
             <app-nurse-clinical-notes-scope-block
@@ -44,8 +58,8 @@
               [notesFromApi]="bed.patient.clinicalNotes?.diagnosis ?? []"
               [legacySingleFieldText]="bed.patient.diagnosis ?? ''"
               [compact]="true"
-              blockLabel="Diagnóstico"
-              emptyLabel="Sin diagnóstico"
+              [blockLabel]="clinicalDiagnosisBlockLabel"
+              [emptyLabel]="clinicalDiagnosisEmptyLabel"
             />
             <app-nurse-clinical-notes-scope-block
               [patientId]="bed.patient.id"
@@ -53,16 +67,16 @@
               [notesFromApi]="bed.patient.clinicalNotes?.medical ?? []"
               [legacySingleFieldText]="bed.patient.medicalObservations ?? ''"
               [compact]="true"
-              blockLabel="Obs. médicas"
-              emptyLabel="Sin observaciones"
+              [blockLabel]="clinicalMedicalBlockLabel"
+              [emptyLabel]="clinicalMedicalEmptyLabel"
             />
           </div>
         </div>
 
         <div *ngIf="!bed.patient" class="bed-empty">
-          <div class="empty-icon"><app-hero-icon name="building-office-2" /></div>
-          <p>Cama disponible</p>
-          <small class="click-hint">Click para asignar paciente</small>
+          <div class="empty-icon"><app-bootstrap-icon name="building-office-2" /></div>
+          <p i18n="@@nurseBedsSection.emptyBedAvailable">Cama disponible</p>
+          <small class="click-hint" i18n="@@nurseBedsSection.emptyBedClickHint">Click para asignar paciente</small>
         </div>
       </div>
     </div>

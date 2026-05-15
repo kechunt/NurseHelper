@@ -1,4 +1,4 @@
-import { Injectable, inject, signal, computed, DestroyRef } from '@angular/core';
+import { Injectable, inject, signal, computed, DestroyRef, LOCALE_ID } from '@angular/core';
 import { forkJoin } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AdminService } from '../../../services/admin.service';
@@ -17,6 +17,22 @@ export class StaffQuickActionsService {
   private readonly reportService = inject(ReportService);
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly localeId = inject(LOCALE_ID);
+
+  readonly staffQuickWarnHandoverLoad = $localize`:@@staffQuickActions.warnHandoverLoad:No se pudo cargar la nota de coordinación.`;
+  readonly staffQuickToastHandoverRead = $localize`:@@staffQuickActions.toastHandoverRead:Nota marcada como leída.`;
+  readonly staffQuickWarnEmptyHandover = $localize`:@@staffQuickActions.warnEmptyHandover:Escribe un contenido antes de guardar.`;
+  readonly staffQuickToastHandoverSaved = $localize`:@@staffQuickActions.toastHandoverSaved:Nota de coordinación guardada.`;
+  readonly staffQuickErrHandoverSaveDefault = $localize`:@@staffQuickActions.errHandoverSaveDefault:No se pudo guardar la nota.`;
+  readonly staffQuickWarnNursesListReports = $localize`:@@staffQuickActions.warnNursesListReports:No se pudo cargar el listado de enfermeras; los reportes serán globales.`;
+  readonly staffQuickErrReportsLoad = $localize`:@@staffQuickActions.errReportsLoad:Error al cargar reportes`;
+  readonly staffQuickWarnCsvEmpty = $localize`:@@staffQuickActions.warnCsvEmpty:CSV vacío con los filtros actuales.`;
+  readonly staffQuickToastCsvDownloaded = $localize`:@@staffQuickActions.toastCsvDownloaded:CSV descargado`;
+  readonly staffQuickErrCsvDownload = $localize`:@@staffQuickActions.errCsvDownload:No se pudo descargar el CSV`;
+  readonly staffQuickWarnExcelEmpty = $localize`:@@staffQuickActions.warnExcelEmpty:Excel vacío con los filtros actuales.`;
+  readonly staffQuickToastExcelDownloaded = $localize`:@@staffQuickActions.toastExcelDownloaded:Excel descargado`;
+  readonly staffQuickErrExcelDownload = $localize`:@@staffQuickActions.errExcelDownload:No se pudo descargar el Excel`;
+  readonly staffQuickReportsPeriodSep = $localize`:@@staffQuickActions.reportsPeriodSep: → `;
 
   readonly showTeamHandover = signal(false);
   readonly handoverDate = signal('');
@@ -45,7 +61,9 @@ export class StaffQuickActionsService {
       return '';
     }
     const o: Intl.DateTimeFormatOptions = { day: '2-digit', month: 'short', year: 'numeric' };
-    return `${start.toLocaleDateString('es-ES', o)} → ${end.toLocaleDateString('es-ES', o)}`;
+    const loc = this.localeId;
+    const sep = this.staffQuickReportsPeriodSep;
+    return `${start.toLocaleDateString(loc, o)}${sep}${end.toLocaleDateString(loc, o)}`;
   });
 
   /** Llamar al montar la barra (p. ej. ngOnInit del toolbar o del wrapper). */
@@ -134,7 +152,7 @@ export class StaffQuickActionsService {
         this.handoverBody.set('');
         this.handoverReadKeyForCurrentNote = null;
         this.handoverCanAcknowledge.set(false);
-        this.toast.warning('No se pudo cargar la nota de coordinación.');
+        this.toast.warning(this.staffQuickWarnHandoverLoad);
       },
     });
   }
@@ -146,7 +164,7 @@ export class StaffQuickActionsService {
     this.markHandoverRead(this.handoverReadKeyForCurrentNote);
     this.handoverCanAcknowledge.set(false);
     this.refreshTeamHandoverPendingNotice();
-    this.toast.success('Nota marcada como leída.');
+    this.toast.success(this.staffQuickToastHandoverRead);
   }
 
   private handoverReadStorageKey(noteDate: string, shift: HandoverShiftSlot, noteId: number, updatedAt: string): string {
@@ -195,20 +213,20 @@ export class StaffQuickActionsService {
     const date = this.handoverDate();
     const body = this.handoverBody().trim();
     if (!date || !body) {
-      this.toast.warning('Escribe un contenido antes de guardar.');
+      this.toast.warning(this.staffQuickWarnEmptyHandover);
       return;
     }
     this.handoverSaving.set(true);
     this.adminService.putAdminHandoverNote(date, body, this.handoverShift()).subscribe({
       next: () => {
         this.handoverSaving.set(false);
-        this.toast.success('Nota de coordinación guardada.');
+        this.toast.success(this.staffQuickToastHandoverSaved);
         this.refreshTeamHandoverPendingNotice();
         this.closeTeamHandover();
       },
       error: (err) => {
         this.handoverSaving.set(false);
-        const msg = err?.error?.message || 'No se pudo guardar la nota.';
+        const msg = err?.error?.message || this.staffQuickErrHandoverSaveDefault;
         this.toast.error(msg);
       },
     });
@@ -238,15 +256,17 @@ export class StaffQuickActionsService {
               .filter((u) => u.id != null)
               .map((u) => ({
                 id: u.id as number,
-                name: `${(u.firstName || '').trim()} ${(u.lastName || '').trim()}`.trim() || (u.username ?? `ID ${u.id}`),
+                name:
+                  `${(u.firstName || '').trim()} ${(u.lastName || '').trim()}`.trim() ||
+                  (u.username ?? $localize`:@@staffQuickActions.nurseIdFallback:ID ${u.id}:id:${u.id}:`),
               }))
-              .sort((a, b) => a.name.localeCompare(b.name, 'es'))
+              .sort((a, b) => a.name.localeCompare(b.name, this.localeId))
           );
           this.loadReportsData();
         },
         error: () => {
           this.nursesForReports.set([]);
-          this.toast.warning('No se pudo cargar el listado de enfermeras; los reportes serán globales.');
+          this.toast.warning(this.staffQuickWarnNursesListReports);
           this.loadReportsData();
         },
       });
@@ -288,7 +308,7 @@ export class StaffQuickActionsService {
       },
       error: (err) => {
         this.reportsLoading.set(false);
-        const msg = err?.error?.message || 'Error al cargar reportes';
+        const msg = err?.error?.message || this.staffQuickErrReportsLoad;
         this.reportsError.set(msg);
         this.toast.error(msg);
       },
@@ -308,7 +328,7 @@ export class StaffQuickActionsService {
       next: (blob) => {
         this.reportsExporting.set(false);
         if (!blob?.size) {
-          this.toast.warning('CSV vacío con los filtros actuales.');
+          this.toast.warning(this.staffQuickWarnCsvEmpty);
           return;
         }
         const url = window.URL.createObjectURL(blob);
@@ -319,11 +339,11 @@ export class StaffQuickActionsService {
         link.click();
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
-        this.toast.success('CSV descargado');
+        this.toast.success(this.staffQuickToastCsvDownloaded);
       },
       error: () => {
         this.reportsExporting.set(false);
-        this.toast.error('No se pudo descargar el CSV');
+        this.toast.error(this.staffQuickErrCsvDownload);
       },
     });
   }
@@ -341,7 +361,7 @@ export class StaffQuickActionsService {
       next: (blob) => {
         this.reportsExporting.set(false);
         if (!blob?.size) {
-          this.toast.warning('Excel vacío con los filtros actuales.');
+          this.toast.warning(this.staffQuickWarnExcelEmpty);
           return;
         }
         const url = window.URL.createObjectURL(blob);
@@ -352,11 +372,11 @@ export class StaffQuickActionsService {
         link.click();
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
-        this.toast.success('Excel descargado');
+        this.toast.success(this.staffQuickToastExcelDownloaded);
       },
       error: () => {
         this.reportsExporting.set(false);
-        this.toast.error('No se pudo descargar el Excel');
+        this.toast.error(this.staffQuickErrExcelDownload);
       },
     });
   }

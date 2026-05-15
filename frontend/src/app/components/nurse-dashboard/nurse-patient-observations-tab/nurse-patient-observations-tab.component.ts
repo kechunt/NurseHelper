@@ -6,16 +6,22 @@ import type {
   PatientClinicalNoteDto,
 } from '../../../services/nurse.service';
 import { NurseClinicalNotesScopeBlockComponent } from '../nurse-clinical-notes-scope-block/nurse-clinical-notes-scope-block.component';
-import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
+import { BootstrapIconComponent } from '../../../shared/components/bootstrap-icon/bootstrap-icon.component';
 
 @Component({
   selector: 'app-nurse-patient-observations-tab',
   standalone: true,
-  imports: [CommonModule, FormsModule, NurseClinicalNotesScopeBlockComponent, HeroIconComponent],
+  imports: [CommonModule, FormsModule, NurseClinicalNotesScopeBlockComponent, BootstrapIconComponent],
   templateUrl: './nurse-patient-observations-tab.component.html',
   styleUrls: ['./nurse-patient-observations-tab.component.css'],
 })
 export class NursePatientObservationsTabComponent {
+  readonly emptyLabelDiagnosis = $localize`:@@nursePatientObservationsTab.emptyDiagnosis:Sin diagnóstico registrado`;
+  readonly emptyLabelMedical = $localize`:@@nursePatientObservationsTab.emptyMedical:Sin observaciones médicas registradas`;
+  readonly emptyLabelAllergies = $localize`:@@nursePatientObservationsTab.emptyAllergies:Ninguna conocida`;
+  readonly emptyLabelSpecial = $localize`:@@nursePatientObservationsTab.emptySpecial:Ninguna`;
+  readonly emptyLabelGeneral = $localize`:@@nursePatientObservationsTab.emptyGeneral:No hay observaciones registradas`;
+
   @ViewChildren(NurseClinicalNotesScopeBlockComponent)
   private clinicalScopeBlocks?: QueryList<NurseClinicalNotesScopeBlockComponent>;
 

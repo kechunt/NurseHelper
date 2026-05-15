@@ -61,3 +61,12 @@
   outline: none;
   box-shadow: inset 6px 6px 12px #bebebe, inset -6px -6px 12px #ffffff;
 }
+
+.hint-text {
+  display: block;
+  margin-top: 0.35rem;
+  color: #718096;
+  font-weight: 400;
+  font-size: 0.8rem;
+  line-height: 1.35;
+}

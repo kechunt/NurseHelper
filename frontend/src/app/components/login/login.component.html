@@ -11,7 +11,7 @@
     <h1 class="auth-title">Iniciar Sesión</h1>
     <p class="auth-subtitle">Ingresa a NurseHelper</p>
 
-    <form (ngSubmit)="onSubmit()" class="auth-form">
+    <form id="login-form" (ngSubmit)="onSubmit()" class="auth-form">
       <div class="auth-input-group">
         <label for="usernameOrEmail">Usuario o Correo</label>
         <input
@@ -38,13 +38,14 @@
             required
           />
           <button
+            id="login-password-toggle-btn"
             type="button"
             class="password-toggle-btn"
             (click)="togglePasswordVisibility()"
             [attr.aria-label]="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
             [attr.title]="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
           >
-            <app-hero-icon [name]="showPassword ? 'eye-slash' : 'eye'" />
+            <app-bootstrap-icon [name]="showPassword ? 'eye-slash' : 'eye'" />
           </button>
         </div>
       </div>
@@ -52,6 +53,7 @@
       <div *ngIf="error" class="auth-error">{{ error }}</div>
 
       <button
+        id="login-submit-btn"
         type="submit"
         class="neuro-btn"
         [disabled]="loading"
@@ -63,7 +65,7 @@
     <div class="auth-footer">
       <p>
         ¿No tienes cuenta?
-        <a routerLink="/register" class="auth-link">Regístrate aquí</a>
+        <a id="login-register-link" routerLink="/register" class="auth-link">Regístrate aquí</a>
       </p>
     </div>
   </div>

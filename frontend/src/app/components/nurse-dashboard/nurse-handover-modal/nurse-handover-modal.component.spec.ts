@@ -25,6 +25,7 @@ describe('NurseHandoverModalComponent', () => {
 
     fixture = TestBed.createComponent(NurseHandoverModalComponent);
     fixture.componentRef.setInput('handoverDate', '2030-01-15');
+    fixture.componentRef.setInput('handoverShift', 'morning');
     fixture.componentRef.setInput('handoverBody', 'texto');
     fixture.detectChanges();
   });
@@ -47,9 +48,35 @@ describe('NurseHandoverModalComponent', () => {
 
   it('emite saveRequested al guardar', () => {
     spyOn(fixture.componentInstance.saveRequested, 'emit');
-    const saveBtn = fixture.nativeElement.querySelector('.btn-primary-neuro') as HTMLButtonElement;
+    const saveBtn = fixture.nativeElement.querySelector('#handover-save-btn') as HTMLButtonElement;
     saveBtn.click();
     expect(fixture.componentInstance.saveRequested.emit).toHaveBeenCalled();
+  });
+
+  it('emite dismissed al cerrar cabecera, cancelar o backdrop', () => {
+    spyOn(fixture.componentInstance.dismissed, 'emit');
+    (fixture.nativeElement.querySelector('#nurse-handover-modal-close-btn') as HTMLButtonElement).click();
+    (fixture.nativeElement.querySelector('#nurse-handover-cancel-btn') as HTMLButtonElement).click();
+    expect(fixture.componentInstance.dismissed.emit).toHaveBeenCalledTimes(2);
+  });
+
+  it('emite acknowledgeRequested al pulsar Aceptar cuando handoverCanAcknowledge', () => {
+    fixture.componentRef.setInput('handoverCanAcknowledge', true);
+    fixture.detectChanges();
+    spyOn(fixture.componentInstance.acknowledgeRequested, 'emit');
+    const ack = fixture.nativeElement.querySelector('#nurse-handover-acknowledge-btn') as HTMLButtonElement;
+    expect(ack).toBeTruthy();
+    ack.click();
+    expect(fixture.componentInstance.acknowledgeRequested.emit).toHaveBeenCalled();
+  });
+
+  it('intro y opciones de turno muestran textos localizables', () => {
+    const intros = Array.from(fixture.nativeElement.querySelectorAll('.handover-modal-intro')) as HTMLElement[];
+    const joined = intros.map((p) => p.textContent || '').join(' ');
+    expect(joined.toLowerCase()).toContain('turno');
+    const select = fixture.nativeElement.querySelector('#handover-shift') as HTMLSelectElement;
+    const opts = Array.from(select.options).map((o) => o.textContent || '');
+    expect(opts.some((t) => t.toLowerCase().includes('mañana') || t.toLowerCase().includes('manana'))).toBeTrue();
   });
 
   it('expone patrón de diálogo accesible (role=dialog, título etiquetado)', () => {

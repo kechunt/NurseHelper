@@ -34,13 +34,16 @@
 @media (max-width: 768px) {
   .nurse-header-actions-wrap {
     width: 100%;
-    flex-direction: column;
-    align-items: stretch;
+    min-width: 0;
+    flex: 1 1 auto;
+    display: block;
   }
 
   .nurse-header-search-input {
     min-width: 0;
     max-width: none;
     width: 100%;
+    font-size: 0.85rem;
+    padding: 0.4rem 0.65rem;
   }
 }

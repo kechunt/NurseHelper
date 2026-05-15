@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MedicationForPharmacy, PharmacyShiftContactNurseDto } from '../../../services/nurse.service';
 import type { MedicationRequest } from '../../../services/pharmacy.service';
-import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
+import { BootstrapIconComponent } from '../../../shared/components/bootstrap-icon/bootstrap-icon.component';
 import {
   countPharmacyMedicationsRequested,
   setAllPharmacyMedicationsRequested,
@@ -12,7 +12,7 @@ import {
 @Component({
   selector: 'app-nurse-pharmacy-section',
   standalone: true,
-  imports: [CommonModule, FormsModule, HeroIconComponent],
+  imports: [CommonModule, FormsModule, BootstrapIconComponent],
   templateUrl: './nurse-pharmacy-section.component.html',
   styleUrls: [
     '../../../shared/styles/admin-panel-responsive.css',
@@ -61,18 +61,23 @@ export class NursePharmacySectionComponent {
     this.historyDateChange.emit(v);
   }
 
+  pharmacyContactDisplayName(name: string | null | undefined): string {
+    const t = (name ?? '').trim();
+    return t ? t : $localize`:@@nursePharmacySection.contactFallbackName:Farmacia`;
+  }
+
   statusLabel(status: MedicationRequest['status'] | string): string {
     switch (status) {
       case 'pending':
-        return 'Pendiente';
+        return $localize`:@@nursePharmacySection.statusPending:Pendiente`;
       case 'in_preparation':
-        return 'En preparación';
+        return $localize`:@@nursePharmacySection.statusInPreparation:En preparación`;
       case 'ready':
-        return 'Lista';
+        return $localize`:@@nursePharmacySection.statusReady:Lista`;
       case 'delivered':
-        return 'Entregada';
+        return $localize`:@@nursePharmacySection.statusDelivered:Entregada`;
       default:
-        return String(status || 'Pendiente');
+        return String(status || $localize`:@@nursePharmacySection.statusPending:Pendiente`);
     }
   }
 }

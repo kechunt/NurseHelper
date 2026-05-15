@@ -1,0 +1,9 @@
+.no-role-users {
+  text-align: center;
+  padding: 1.5rem 1rem;
+  color: #718096;
+}
+
+.no-role-users p {
+  margin: 0;
+}

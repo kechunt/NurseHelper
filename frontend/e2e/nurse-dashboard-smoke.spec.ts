@@ -105,7 +105,35 @@ test.describe('Nurse dashboard (API simulada)', () => {
     await page.click('button[type="submit"]');
 
     await expect(page).toHaveURL(/\/nurse-dashboard/, { timeout: 15000 });
+    await expect(page.locator('#app-router-slot')).toBeAttached();
+    await expect(page.locator('#confirmation-wrapper-host')).toBeAttached();
     await expect(page.getByText('Panel de Enfermera', { exact: true })).toBeVisible({ timeout: 15000 });
     await expect(page.getByText('Área simulada').first()).toBeVisible();
+
+    await expect(page.locator('#nurse-dashboard-shell-header-actions')).toBeVisible();
+    await expect(page.locator('#nurse-dashboard-header-search-input')).toBeVisible();
+    await expect(page.locator('#nurse-dashboard-main-nav-handover-quick-btn')).toBeVisible();
+    await expect(page.locator('#nurse-dashboard-main-nav-reports-quick-btn')).toBeVisible();
+    await expect(page.locator('#in-app-notifications-bell-nurse-toggle')).toBeVisible();
+    await expect(page.locator('#dashboard-shell-logo-section')).toBeVisible();
+    await expect(page.locator('#dashboard-shell-profile-trigger-btn')).toBeVisible();
+    await expect(page.locator('#dashboard-shell-logout-btn')).toBeVisible();
+
+    await expect(page.locator('#dashboard-shell-nav-mobile-overlay')).toBeAttached();
+    await expect(page.locator('#dashboard-shell-nav-mobile-close-btn')).toBeAttached();
+    await expect(page.locator('#dashboard-shell-nav-hamburger-btn')).toBeAttached();
+
+    await expect(page.locator('#dashboard-shell-nav')).toBeAttached();
+
+    await expect(page.locator('#dashboard-shell-main-wrapper')).toBeAttached();
+
+    await expect(page.locator('#dashboard-shell-main-slot')).toBeAttached();
+
+    await expect(page.locator('#dashboard-shell-overlays-slot')).toBeAttached();
+
+    await expect(page.locator('#toast-container')).toBeAttached();
+
+    await expect(page.locator('#dashboard-shell-header')).toBeAttached();
+    await expect(page.locator('#dashboard-shell-body')).toBeAttached();
   });
 });

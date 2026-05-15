@@ -1,8 +1,8 @@
 <div class="overview-container dashboard-overview">
-  <h2 class="section-title">Resumen General</h2>
+  <h2 class="section-title" i18n="@@adminOverview.generalSummary">Resumen General</h2>
 
   <div *ngIf="loading" class="loading-state">
-    <p>Cargando estadísticas...</p>
+    <p i18n="@@adminOverview.loadingStats">Cargando estadísticas...</p>
   </div>
 
   <!-- Tarjeta del reloj — diseño igual al de Horarios -->
@@ -10,8 +10,10 @@
     <div class="overview-realtime-icon">🕒</div>
     <div class="overview-realtime-content">
       <h3 class="overview-realtime-value">{{ liveDateTimeLabel }}</h3>
-      <p class="overview-realtime-title">Fecha y hora actual</p>
-      <p class="overview-realtime-shift">Turno en curso: {{ liveCurrentShiftLabel }}</p>
+      <p class="overview-realtime-title" i18n="@@adminOverview.currentDateTimeTitle">Fecha y hora actual</p>
+      <p class="overview-realtime-shift">
+        <span i18n="@@adminOverview.shiftInProgressPrefix">Turno en curso:</span> {{ liveCurrentShiftLabel }}
+      </p>
     </div>
   </div>
 
@@ -20,7 +22,7 @@
       <div class="stat-icon">👥</div>
       <div class="stat-content">
         <h3 class="stat-value">{{ stats.users }}</h3>
-        <p class="stat-label">Usuarios</p>
+        <p class="stat-label" i18n="@@adminOverview.statUsers">Usuarios</p>
       </div>
     </div>
 
@@ -28,7 +30,7 @@
       <div class="stat-icon">🏥</div>
       <div class="stat-content">
         <h3 class="stat-value">{{ stats.areas }}</h3>
-        <p class="stat-label">Áreas</p>
+        <p class="stat-label" i18n="@@adminOverview.statAreas">Áreas</p>
       </div>
     </div>
 
@@ -36,7 +38,7 @@
       <div class="stat-icon">🛏️</div>
       <div class="stat-content">
         <h3 class="stat-value">{{ stats.beds }}</h3>
-        <p class="stat-label">Total de Camas</p>
+        <p class="stat-label" i18n="@@adminOverview.statTotalBeds">Total de Camas</p>
       </div>
     </div>
 
@@ -44,7 +46,7 @@
       <div class="stat-icon">✅</div>
       <div class="stat-content">
         <h3 class="stat-value">{{ stats.availableBeds }}</h3>
-        <p class="stat-label">Camas Disponibles</p>
+        <p class="stat-label" i18n="@@adminOverview.statAvailableBeds">Camas Disponibles</p>
       </div>
     </div>
 
@@ -52,7 +54,7 @@
       <div class="stat-icon">👤</div>
       <div class="stat-content">
         <h3 class="stat-value">{{ stats.patients }}</h3>
-        <p class="stat-label">Pacientes</p>
+        <p class="stat-label" i18n="@@adminOverview.statPatients">Pacientes</p>
       </div>
     </div>
 
@@ -60,31 +62,31 @@
       <div class="stat-icon">👩‍⚕️</div>
       <div class="stat-content">
         <h3 class="stat-value">{{ stats.nurses }}</h3>
-        <p class="stat-label">Enfermeras Activas</p>
+        <p class="stat-label" i18n="@@adminOverview.statActiveNurses">Enfermeras Activas</p>
       </div>
     </div>
 
     <div class="stat-card" (click)="navigate('schedules')">
       <div class="stat-icon">📅</div>
       <div class="stat-content">
-        <h3 class="stat-value overview-action-value">Horarios</h3>
-        <p class="stat-label">Turnos Semanales</p>
+        <h3 class="stat-value overview-action-value" i18n="@@adminOverview.actionSchedules">Horarios</h3>
+        <p class="stat-label" i18n="@@adminOverview.statWeeklyShifts">Turnos Semanales</p>
       </div>
     </div>
 
     <div class="stat-card" (click)="onOpenCoordination && onOpenCoordination()">
       <div class="stat-icon">📋</div>
       <div class="stat-content">
-        <h3 class="stat-value overview-action-value">Coordinación</h3>
-        <p class="stat-label">Nota de turno</p>
+        <h3 class="stat-value overview-action-value" i18n="@@adminOverview.actionCoordination">Coordinación</h3>
+        <p class="stat-label" i18n="@@adminOverview.statShiftNote">Nota de turno</p>
       </div>
     </div>
 
     <div class="stat-card" (click)="onOpenReports && onOpenReports()">
       <div class="stat-icon">📈</div>
       <div class="stat-content">
-        <h3 class="stat-value overview-action-value">Reportes</h3>
-        <p class="stat-label">Últimos 7 días</p>
+        <h3 class="stat-value overview-action-value" i18n="@@adminOverview.actionReports">Reportes</h3>
+        <p class="stat-label" i18n="@@adminOverview.statLast7Days">Últimos 7 días</p>
       </div>
     </div>
   </div>

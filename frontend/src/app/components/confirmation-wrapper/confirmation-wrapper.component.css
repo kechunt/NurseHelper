@@ -1,0 +1,4 @@
+/* Ancla estable sin caja extra en el flujo del `app-root`. */
+.confirmation-wrapper-host {
+  display: contents;
+}

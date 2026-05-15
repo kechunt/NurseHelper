@@ -53,6 +53,32 @@ describe('NursePendingTaskDetailModalComponent', () => {
     expect(c.typeLabel(baseTask({ type: 'otro' }))).toContain('Otro');
   });
 
+  it('statusSummary devuelve estados localizados', () => {
+    const c = fixture.componentInstance;
+    expect(c.statusSummary(baseTask({ completed: true }))).toContain('Complet');
+    expect(c.statusSummary(baseTask({ notCompleted: true }))).toMatch(/realizada|No/i);
+    expect(c.statusSummary(baseTask({ completed: false, notCompleted: false }))).toContain('Pendiente');
+  });
+
+  it('expone cadenas de tipo localizables', () => {
+    const c = fixture.componentInstance;
+    expect(c.nursePendingTaskTypeMedication.length).toBeGreaterThan(2);
+    expect(c.nursePendingTaskStatusPending.length).toBeGreaterThan(2);
+  });
+
+  it('plantilla: pista de acciones, ids de botones del pie y completar por id', () => {
+    const hint = fixture.nativeElement.querySelector('.nurse-pending-task-detail-footer-hint') as HTMLElement;
+    expect(hint?.textContent?.trim().length).toBeGreaterThan(15);
+    expect(fixture.nativeElement.querySelector('#nurse-pending-task-detail-header-close-btn')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('#nurse-pending-task-detail-complete-btn')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('#nurse-pending-task-detail-not-completed-btn')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('#nurse-pending-task-detail-postpone-btn')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('#nurse-pending-task-detail-close-btn')).toBeTruthy();
+    spyOn(fixture.componentInstance.completeRequested, 'emit');
+    (fixture.nativeElement.querySelector('#nurse-pending-task-detail-complete-btn') as HTMLButtonElement).click();
+    expect(fixture.componentInstance.completeRequested.emit).toHaveBeenCalled();
+  });
+
   it('emite dismissed al hacer clic en backdrop', () => {
     let n = 0;
     const sub = fixture.componentInstance.dismissed.subscribe(() => n++);

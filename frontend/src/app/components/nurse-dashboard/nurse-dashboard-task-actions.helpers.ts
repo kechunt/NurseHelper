@@ -1,3 +1,5 @@
+const nurseTaskActionsDisplayFallback = $localize`:@@nurseDashboard.taskActions.displayFallback:Tarea`;
+
 export function hasTaskId(task: any): boolean {
   return !!task?.id;
 }
@@ -22,13 +24,13 @@ export function markTaskAsMissedLocally(task: any, reason: string): void {
 }
 
 export function taskDisplayName(task: any): string {
-  return task?.description || task?.medication || 'Tarea';
+  return task?.description || task?.medication || nurseTaskActionsDisplayFallback;
 }
 
-export function completeTaskLocally(task: any, now = new Date()): void {
+export function completeTaskLocally(task: any, now = new Date(), localeId?: string): void {
   if (!task) return;
   task.completed = true;
-  task.completedAt = now.toLocaleString('es-ES');
+  task.completedAt = now.toLocaleString(localeId);
   task.status = 'completed';
 }
 

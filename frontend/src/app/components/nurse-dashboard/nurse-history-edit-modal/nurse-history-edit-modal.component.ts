@@ -9,7 +9,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { ModalFocusTrapDirective } from '../../../shared/directives/modal-focus-trap.directive';
 import { FormsModule } from '@angular/forms';
-import { NurseService } from '../../../services/nurse.service';
+import { NurseDashboardPatientRecordPatchFacade } from '../facades/nurse-dashboard-patient-record-patch.facade';
 import { ToastService } from '../../../services/toast.service';
 import {
   NURSE_MODAL_HISTORY_EDIT_ERR_HISTORY,
@@ -32,6 +32,7 @@ export interface NurseHistoryEditRecord {
 @Component({
   selector: 'app-nurse-history-edit-modal',
   standalone: true,
+  providers: [NurseDashboardPatientRecordPatchFacade],
   imports: [CommonModule, FormsModule, ModalFocusTrapDirective],
   templateUrl: './nurse-history-edit-modal.component.html',
   styleUrls: [
@@ -52,7 +53,7 @@ export class NurseHistoryEditModalComponent implements OnChanges {
   status = '';
 
   constructor(
-    private readonly nurseService: NurseService,
+    private readonly recordPatch: NurseDashboardPatientRecordPatchFacade,
     private readonly toast: ToastService
   ) {}
 
@@ -118,7 +119,7 @@ export class NurseHistoryEditModalComponent implements OnChanges {
   save(): void {
     const rec = this.record;
     if (rec.historyId) {
-      this.nurseService
+      this.recordPatch
         .patchAdministrationHistory(this.patientId, rec.historyId, {
           notes: this.notes,
           reasonNotAdministered: this.reason || undefined,
@@ -148,7 +149,7 @@ export class NurseHistoryEditModalComponent implements OnChanges {
       if (st && rec.source !== 'postpone') {
         body.status = st;
       }
-      this.nurseService.patchPatientSchedule(this.patientId, rec.scheduleId, body).subscribe({
+      this.recordPatch.patchPatientSchedule(this.patientId, rec.scheduleId, body).subscribe({
         next: () => {
           this.toast.success(NURSE_MODAL_HISTORY_EDIT_SUCCESS_SCHEDULE);
           this.saved.emit();

@@ -34,13 +34,19 @@ describe('NurseHistoryDetailModalComponent', () => {
     fixture.detectChanges();
   });
 
+  it('plantilla: botón cerrar del pie y cabecera con id', () => {
+    const btn = fixture.nativeElement.querySelector('#nurse-history-detail-close-btn') as HTMLButtonElement;
+    expect(btn).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('#nurse-history-detail-header-close-btn')).toBeTruthy();
+  });
+
   it('emite dismissed en backdrop y cerrar', () => {
     spyOn(fixture.componentInstance.dismissed, 'emit');
     const backdrop = fixture.nativeElement.querySelector(
       '.nurse-history-detail-backdrop'
     ) as HTMLElement;
     backdrop.click();
-    const close = fixture.nativeElement.querySelector('.close-btn') as HTMLButtonElement;
+    const close = fixture.nativeElement.querySelector('#nurse-history-detail-header-close-btn') as HTMLButtonElement;
     close.click();
     expect(fixture.componentInstance.dismissed.emit).toHaveBeenCalledTimes(2);
   });
@@ -55,5 +61,21 @@ describe('NurseHistoryDetailModalComponent', () => {
     expect(fixture.componentInstance.notesBlockVisible({ notes: 'x' } as any)).toBeTrue();
     expect(fixture.componentInstance.notesBlockVisible({ reasonNotAdministered: 'motivo' } as any)).toBeTrue();
     expect(fixture.componentInstance.notesBlockVisible({} as any)).toBeFalse();
+  });
+
+  it('formatMaybeDateTime vacío devuelve guión localizado', () => {
+    expect(fixture.componentInstance.formatMaybeDateTime('')).toBe('—');
+    expect(fixture.componentInstance.formatMaybeDateTime('   ')).toBe('—');
+  });
+
+  it('formatMaybeDateTime formatea ISO con locale', () => {
+    const s = fixture.componentInstance.formatMaybeDateTime('2026-05-05T12:00:00.000Z');
+    expect(s.length).toBeGreaterThan(4);
+    expect(s).not.toBe('2026-05-05T12:00:00.000Z');
+  });
+
+  it('muestra etiquetas i18n de la rejilla', () => {
+    const text = (fixture.nativeElement as HTMLElement).textContent || '';
+    expect(text).toMatch(/Profesional|Professional/i);
   });
 });

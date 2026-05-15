@@ -1,9 +1,10 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, inject, LOCALE_ID } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ModalFocusTrapDirective } from '../../../shared/directives/modal-focus-trap.directive';
 import type { TreatmentRecord } from '../nurse-treatment-record.model';
 import { historyRecordStatusLabel } from '../nurse-patient-history.helpers';
-import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
+import { BootstrapIconComponent } from '../../../shared/components/bootstrap-icon/bootstrap-icon.component';
+import { nurseUiEmDash } from '../nurse-dashboard-ui-i18n.helpers';
 
 /** Fila de historial (alineada con `TreatmentRecord` del dashboard). */
 export interface NurseHistoryDetailRecord {
@@ -25,7 +26,7 @@ export interface NurseHistoryDetailRecord {
 @Component({
   selector: 'app-nurse-history-detail-modal',
   standalone: true,
-  imports: [CommonModule, ModalFocusTrapDirective, HeroIconComponent],
+  imports: [CommonModule, ModalFocusTrapDirective, BootstrapIconComponent],
   templateUrl: './nurse-history-detail-modal.component.html',
   styleUrls: [
     '../nurse-postpone-task-modal/nurse-postpone-task-modal.component.css',
@@ -33,6 +34,8 @@ export interface NurseHistoryDetailRecord {
   ],
 })
 export class NurseHistoryDetailModalComponent {
+  private readonly localeId = inject(LOCALE_ID);
+
   @Input({ required: true }) record!: NurseHistoryDetailRecord;
 
   @Output() readonly dismissed = new EventEmitter<void>();
@@ -45,6 +48,10 @@ export class NurseHistoryDetailModalComponent {
     this.dismissed.emit();
   }
 
+  emDash(): string {
+    return nurseUiEmDash();
+  }
+
   statusLabel(r: NurseHistoryDetailRecord): string {
     return historyRecordStatusLabel(r as TreatmentRecord);
   }
@@ -52,13 +59,13 @@ export class NurseHistoryDetailModalComponent {
   formatMaybeDateTime(value: string | null | undefined): string {
     const raw = (value || '').trim();
     if (!raw) {
-      return '—';
+      return nurseUiEmDash();
     }
     const d = new Date(raw);
     if (isNaN(d.getTime())) {
       return raw;
     }
-    return d.toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' });
+    return d.toLocaleString(this.localeId, { dateStyle: 'medium', timeStyle: 'short' });
   }
 
   hasExtraNotes(r: NurseHistoryDetailRecord): boolean {

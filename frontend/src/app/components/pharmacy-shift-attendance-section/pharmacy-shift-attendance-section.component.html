@@ -1,9 +1,9 @@
 <section class="pharmacy-coverage-summary" aria-labelledby="pharmacy-coverage-heading">
   <h3 id="pharmacy-coverage-heading" class="pharmacy-coverage-title">
-    <app-hero-icon name="building-office-2" /> Cobertura farmacia por turno ({{ pharmacyAttendanceDate }})
+    <app-bootstrap-icon name="building-office-2" /> {{ pharmacyCoverageTitle() }}
   </h3>
   <p *ngIf="pharmacyCoverageError" class="module-feedback error">{{ pharmacyCoverageError }}</p>
-  <p *ngIf="pharmacyCoverageLoading" class="module-feedback loading">Cargando resumen…</p>
+  <p *ngIf="pharmacyCoverageLoading" class="module-feedback loading">{{ pharmacyAttendanceCoverageLoading }}</p>
   <div *ngIf="!pharmacyCoverageLoading && pharmacyCoverageShifts.length" class="pharmacy-coverage-grid">
     <button
       type="button"
@@ -20,14 +20,14 @@
         <ng-container *ngIf="sh.hasOnDutyContact && sh.contactName; else noPharmacyContact">
           <span class="pharmacy-coverage-name">{{ sh.contactName }}</span>
           <a *ngIf="sh.phone" class="pharmacy-coverage-tel" [href]="'tel:' + sh.phone">{{ sh.phone }}</a>
-          <span *ngIf="!sh.phone" class="pharmacy-coverage-muted">Sin teléfono registrado</span>
+          <span *ngIf="!sh.phone" class="pharmacy-coverage-muted">{{ pharmacyAttendanceNoPhone }}</span>
         </ng-container>
         <ng-template #noPharmacyContact>
-          <span class="pharmacy-coverage-muted">Sin encargado en turno</span>
+          <span class="pharmacy-coverage-muted">{{ pharmacyAttendanceNoContactOnShift }}</span>
         </ng-template>
       </div>
       <div class="pharmacy-coverage-meta">
-        En turno: {{ pharmacyCoveragePresentCount(sh) }} · Pulsa para editar asistencia
+        {{ pharmacyCoverageMetaLine(sh) }}
       </div>
     </button>
   </div>
@@ -36,11 +36,11 @@
 <section class="pharmacy-shift-attendance-card" aria-labelledby="pharmacy-attendance-heading">
   <div class="pharmacy-shift-attendance-toolbar">
     <h3 id="pharmacy-attendance-heading" class="pharmacy-shift-attendance-title">
-      <app-hero-icon name="user-group" /> Asistencia del turno
+      <app-bootstrap-icon name="user-group" /> {{ pharmacyAttendanceSectionTitle }}
     </h3>
     <div class="pharmacy-shift-attendance-controls">
       <label class="pharmacy-shift-attendance-field">
-        <span>Fecha</span>
+        <span>{{ pharmacyAttendanceLabelDate }}</span>
         <input
           type="date"
           class="pharmacy-shift-attendance-input"
@@ -49,7 +49,7 @@
         />
       </label>
       <label class="pharmacy-shift-attendance-field">
-        <span>Turno</span>
+        <span>{{ pharmacyAttendanceLabelShift }}</span>
         <select
           class="pharmacy-shift-attendance-select"
           [(ngModel)]="pharmacyAttendanceShiftId"
@@ -63,17 +63,17 @@
     </div>
   </div>
   <p class="pharmacy-shift-attendance-hint" *ngIf="pharmacyAttendanceCurrentLabel">
-    Turno según hora actual: {{ pharmacyAttendanceCurrentLabel }}
+    {{ pharmacyAttendanceCurrentShiftHint() }}
   </p>
   <p *ngIf="pharmacyAttendanceLoadError" class="module-feedback error">{{ pharmacyAttendanceLoadError }}</p>
-  <p *ngIf="pharmacyAttendanceLoading" class="module-feedback loading">Cargando asistencia…</p>
+  <p *ngIf="pharmacyAttendanceLoading" class="module-feedback loading">{{ pharmacyAttendanceRowsLoading }}</p>
   <div *ngIf="!pharmacyAttendanceLoading && pharmacyAttendanceRows.length" class="pharmacy-shift-attendance-body">
     <div class="table-wrapper-neuro pharmacy-attendance-table-wrap">
       <table class="unified-tasks-table neuro-table pharmacy-attendance-table">
         <thead>
           <tr>
-            <th>Personal</th>
-            <th>Estado</th>
+            <th>{{ pharmacyAttendanceThStaff }}</th>
+            <th>{{ pharmacyAttendanceThStatus }}</th>
           </tr>
         </thead>
         <tbody>
@@ -81,11 +81,11 @@
             <td>{{ row.pharmacyUserName }}</td>
             <td>
               <select [(ngModel)]="row.status" class="pharmacy-attendance-status-select">
-                <option value="present">Presente</option>
-                <option value="late">Tarde</option>
-                <option value="absent">Ausente</option>
-                <option value="justified">Justificada</option>
-                <option value="missing">Falta</option>
+                <option value="present">{{ pharmacyAttendanceStatusPresent }}</option>
+                <option value="late">{{ pharmacyAttendanceStatusLate }}</option>
+                <option value="absent">{{ pharmacyAttendanceStatusAbsent }}</option>
+                <option value="justified">{{ pharmacyAttendanceStatusJustified }}</option>
+                <option value="missing">{{ pharmacyAttendanceStatusMissing }}</option>
               </select>
             </td>
           </tr>
@@ -99,7 +99,7 @@
         (click)="savePharmacyShiftAttendance()"
         [disabled]="pharmacyAttendanceSaving || !pharmacyAttendanceShiftId"
       >
-        {{ pharmacyAttendanceSaving ? 'Guardando…' : 'Guardar asistencia' }}
+        {{ pharmacyAttendanceSaveButtonLabel() }}
       </button>
     </div>
   </div>

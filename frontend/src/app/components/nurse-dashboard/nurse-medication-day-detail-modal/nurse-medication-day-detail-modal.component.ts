@@ -1,10 +1,10 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, inject, LOCALE_ID } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ModalFocusTrapDirective } from '../../../shared/directives/modal-focus-trap.directive';
 import type { MedicationTodaySlot } from '../medication-today-slot.model';
 import { medicationSlotStatusLabel } from '../nurse-patient-medication-helpers';
 import { nurseUiEmDash } from '../nurse-dashboard-ui-i18n.helpers';
-import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
+import { BootstrapIconComponent } from '../../../shared/components/bootstrap-icon/bootstrap-icon.component';
 
 /** Fila de medicación del día (misma idea que `MedicationTodaySlot` en el dashboard). */
 export interface MedicationDayDetailSlot {
@@ -36,14 +36,16 @@ export interface MedicationDayDetailPauta {
 @Component({
   selector: 'app-nurse-medication-day-detail-modal',
   standalone: true,
-  imports: [CommonModule, ModalFocusTrapDirective, HeroIconComponent],
+  imports: [CommonModule, ModalFocusTrapDirective, BootstrapIconComponent],
   templateUrl: './nurse-medication-day-detail-modal.component.html',
   styleUrls: [
-    '../nurse-pending-task-detail-modal/nurse-pending-task-detail-modal.component.css',
+    '../nurse-postpone-task-modal/nurse-postpone-task-modal.component.css',
     './nurse-medication-day-detail-modal.component.css',
   ],
 })
 export class NurseMedicationDayDetailModalComponent {
+  private readonly localeId = inject(LOCALE_ID);
+
   @Input({ required: true }) slot!: MedicationDayDetailSlot;
   @Input() patientName: string | null = null;
   @Input() pauta: MedicationDayDetailPauta | null = null;
@@ -58,9 +60,13 @@ export class NurseMedicationDayDetailModalComponent {
     this.dismissed.emit();
   }
 
+  emDash(): string {
+    return nurseUiEmDash();
+  }
+
   scheduledLabel(s: MedicationDayDetailSlot): string {
     try {
-      return new Date(s.scheduledTime).toLocaleString('es-ES', {
+      return new Date(s.scheduledTime).toLocaleString(this.localeId, {
         dateStyle: 'full',
         timeStyle: 'short',
       });
@@ -89,7 +95,7 @@ export class NurseMedicationDayDetailModalComponent {
     if (isNaN(d.getTime())) {
       return nurseUiEmDash();
     }
-    return d.toLocaleDateString('es-ES', { dateStyle: 'full' });
+    return d.toLocaleDateString(this.localeId, { dateStyle: 'full' });
   }
 
   selectedDayTimes(

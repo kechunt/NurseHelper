@@ -2,10 +2,10 @@ import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ModalFocusTrapDirective } from '../../../shared/directives/modal-focus-trap.directive';
 import { FormsModule } from '@angular/forms';
-import { NurseService } from '../../../services/nurse.service';
+import { NurseDashboardPatientCareCreateFacade } from '../facades/nurse-dashboard-patient-care-create.facade';
 import { ToastService } from '../../../services/toast.service';
 import { nurseWeekdaySelectOptionsMondayFirst } from '../nurse-dashboard-ui-i18n.helpers';
-import { HeroIconComponent } from '../../../shared/components/hero-icon/hero-icon.component';
+import { BootstrapIconComponent } from '../../../shared/components/bootstrap-icon/bootstrap-icon.component';
 import {
   NURSE_MODAL_ADD_MED_ERR_FALLBACK,
   NURSE_MODAL_ADD_MED_WARN_COMPLETE_FIELDS,
@@ -23,7 +23,8 @@ export interface NurseAddMedicationPatientOption {
 @Component({
   selector: 'app-nurse-add-medication-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, ModalFocusTrapDirective, HeroIconComponent],
+  providers: [NurseDashboardPatientCareCreateFacade],
+  imports: [CommonModule, FormsModule, ModalFocusTrapDirective, BootstrapIconComponent],
   templateUrl: './nurse-add-medication-modal.component.html',
   styleUrls: [
     '../nurse-postpone-task-modal/nurse-postpone-task-modal.component.css',
@@ -73,7 +74,7 @@ export class NurseAddMedicationModalComponent implements OnInit {
   selectedDays: string[] = [];
 
   constructor(
-    private readonly nurseService: NurseService,
+    private readonly careCreate: NurseDashboardPatientCareCreateFacade,
     private readonly toast: ToastService
   ) {}
 
@@ -223,9 +224,10 @@ export class NurseAddMedicationModalComponent implements OnInit {
 
     const patientIdNum = medicationData.patientId;
 
-    this.nurseService.addMedication(medicationData).subscribe({
+    this.careCreate.addMedication(medicationData).subscribe({
       next: (response) => {
-        this.toast.success(nurseModalAddMedicationSuccessToast(response.schedulesCreated || 0));
+        const r = response as { schedulesCreated?: number };
+        this.toast.success(nurseModalAddMedicationSuccessToast(r.schedulesCreated || 0));
         this.isAdding = false;
         this.saved.emit({ patientId: patientIdNum });
       },

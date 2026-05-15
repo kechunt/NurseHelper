@@ -10,12 +10,12 @@ import type { Shift } from '../../services/shifts.service';
 import { ShiftRealtimeService } from '../../shared/services/shift-realtime.service';
 import { formatLocalDateIsoYmd } from '../nurse-dashboard/nurse-dashboard-local-date.helpers';
 import { ToastService } from '../../services/toast.service';
-import { HeroIconComponent } from '../../shared/components/hero-icon/hero-icon.component';
+import { BootstrapIconComponent } from '../../shared/components/bootstrap-icon/bootstrap-icon.component';
 
 @Component({
   selector: 'app-pharmacy-shift-attendance-section',
   standalone: true,
-  imports: [CommonModule, FormsModule, HeroIconComponent],
+  imports: [CommonModule, FormsModule, BootstrapIconComponent],
   templateUrl: './pharmacy-shift-attendance-section.component.html',
   styleUrls: [
     '../../shared/styles/admin-table-unified.css',
@@ -23,6 +23,31 @@ import { HeroIconComponent } from '../../shared/components/hero-icon/hero-icon.c
   ],
 })
 export class PharmacyShiftAttendanceSectionComponent implements OnInit {
+  readonly pharmacyAttendanceErrLoadShifts = $localize`:@@pharmacyAttendance.errLoadShifts:No se pudieron cargar los turnos para asistencia`;
+  readonly pharmacyAttendanceErrCoverageSummary = $localize`:@@pharmacyAttendance.errCoverageSummary:No se pudo cargar el resumen de cobertura por turno`;
+  readonly pharmacyAttendanceErrLoadRows = $localize`:@@pharmacyAttendance.errLoadRows:No se pudo cargar la asistencia de farmacia`;
+  readonly pharmacyAttendanceWarnPickDateShift = $localize`:@@pharmacyAttendance.warnPickDateShift:Selecciona fecha y turno`;
+  readonly pharmacyAttendanceWarnNeedOnDuty = $localize`:@@pharmacyAttendance.warnNeedOnDuty:Debe haber al menos un encargado presente o tarde antes de guardar.`;
+  readonly pharmacyAttendanceToastSavedOk = $localize`:@@pharmacyAttendance.toastSavedOk:Asistencia guardada`;
+  readonly pharmacyAttendanceErrSave = $localize`:@@pharmacyAttendance.errSave:No se pudo guardar la asistencia`;
+
+  readonly pharmacyAttendanceCoverageLoading = $localize`:@@pharmacyAttendance.coverageLoading:Cargando resumen…`;
+  readonly pharmacyAttendanceNoPhone = $localize`:@@pharmacyAttendance.noPhone:Sin teléfono registrado`;
+  readonly pharmacyAttendanceNoContactOnShift = $localize`:@@pharmacyAttendance.noContactOnShift:Sin encargado en turno`;
+  readonly pharmacyAttendanceSectionTitle = $localize`:@@pharmacyAttendance.shiftSectionTitle:Asistencia del turno`;
+  readonly pharmacyAttendanceLabelDate = $localize`:@@pharmacyAttendance.labelDate:Fecha`;
+  readonly pharmacyAttendanceLabelShift = $localize`:@@pharmacyAttendance.labelShift:Turno`;
+  readonly pharmacyAttendanceRowsLoading = $localize`:@@pharmacyAttendance.rowsLoading:Cargando asistencia…`;
+  readonly pharmacyAttendanceThStaff = $localize`:@@pharmacyAttendance.thStaff:Personal`;
+  readonly pharmacyAttendanceThStatus = $localize`:@@pharmacyAttendance.thStatus:Estado`;
+  readonly pharmacyAttendanceStatusPresent = $localize`:@@pharmacyAttendance.statusPresent:Presente`;
+  readonly pharmacyAttendanceStatusLate = $localize`:@@pharmacyAttendance.statusLate:Tarde`;
+  readonly pharmacyAttendanceStatusAbsent = $localize`:@@pharmacyAttendance.statusAbsent:Ausente`;
+  readonly pharmacyAttendanceStatusJustified = $localize`:@@pharmacyAttendance.statusJustified:Justificada`;
+  readonly pharmacyAttendanceStatusMissing = $localize`:@@pharmacyAttendance.statusMissing:Falta`;
+  readonly pharmacyAttendanceSaveSaving = $localize`:@@pharmacyAttendance.saveSaving:Guardando…`;
+  readonly pharmacyAttendanceSaveIdle = $localize`:@@pharmacyAttendance.saveIdle:Guardar asistencia`;
+
   pharmacyWorkShifts: Shift[] = [];
   pharmacyAttendanceDate = formatLocalDateIsoYmd(new Date());
   pharmacyAttendanceShiftId: number | null = null;
@@ -47,6 +72,23 @@ export class PharmacyShiftAttendanceSectionComponent implements OnInit {
     this.bootstrapPharmacyShiftAttendance();
   }
 
+  pharmacyCoverageTitle(): string {
+    return $localize`:@@pharmacyAttendance.coverageTitle:Cobertura farmacia por turno (${this.pharmacyAttendanceDate}:date:)`;
+  }
+
+  pharmacyCoverageMetaLine(s: PharmacyShiftCoverageSummaryShift): string {
+    const n = this.pharmacyCoveragePresentCount(s);
+    return $localize`:@@pharmacyAttendance.coverageMeta:En turno: ${n}:count: · Pulsa para editar asistencia`;
+  }
+
+  pharmacyAttendanceCurrentShiftHint(): string {
+    return $localize`:@@pharmacyAttendance.currentShiftHint:Turno según hora actual: ${this.pharmacyAttendanceCurrentLabel}:label:`;
+  }
+
+  pharmacyAttendanceSaveButtonLabel(): string {
+    return this.pharmacyAttendanceSaving ? this.pharmacyAttendanceSaveSaving : this.pharmacyAttendanceSaveIdle;
+  }
+
   private bootstrapPharmacyShiftAttendance(): void {
     this.pharmacyService.getWorkShifts().subscribe({
       next: (shifts) => {
@@ -61,8 +103,7 @@ export class PharmacyShiftAttendanceSectionComponent implements OnInit {
         this.loadPharmacyCoverageSummary();
       },
       error: (err) => {
-        this.pharmacyAttendanceLoadError =
-          err?.error?.message || 'No se pudieron cargar los turnos para asistencia';
+        this.pharmacyAttendanceLoadError = err?.error?.message || this.pharmacyAttendanceErrLoadShifts;
       },
     });
   }
@@ -83,8 +124,7 @@ export class PharmacyShiftAttendanceSectionComponent implements OnInit {
       error: (err) => {
         this.pharmacyCoverageLoading = false;
         this.pharmacyCoverageShifts = [];
-        this.pharmacyCoverageError =
-          err?.error?.message || 'No se pudo cargar el resumen de cobertura por turno';
+        this.pharmacyCoverageError = err?.error?.message || this.pharmacyAttendanceErrCoverageSummary;
       },
     });
   }
@@ -125,8 +165,7 @@ export class PharmacyShiftAttendanceSectionComponent implements OnInit {
       error: (err) => {
         this.pharmacyAttendanceLoading = false;
         this.pharmacyAttendanceRows = [];
-        this.pharmacyAttendanceLoadError =
-          err?.error?.message || 'No se pudo cargar la asistencia de farmacia';
+        this.pharmacyAttendanceLoadError = err?.error?.message || this.pharmacyAttendanceErrLoadRows;
       },
     });
   }
@@ -135,14 +174,14 @@ export class PharmacyShiftAttendanceSectionComponent implements OnInit {
     const sid = this.pharmacyAttendanceShiftId;
     const date = (this.pharmacyAttendanceDate || '').trim();
     if (!sid || !date) {
-      this.toastService.warning('Selecciona fecha y turno');
+      this.toastService.warning(this.pharmacyAttendanceWarnPickDateShift);
       return;
     }
     const hasOnDuty = this.pharmacyAttendanceRows.some(
       (r) => r.status === 'present' || r.status === 'late'
     );
     if (this.pharmacyAttendanceRows.length > 0 && !hasOnDuty) {
-      this.toastService.warning('Debe haber al menos un encargado presente o tarde antes de guardar.');
+      this.toastService.warning(this.pharmacyAttendanceWarnNeedOnDuty);
       return;
     }
     this.pharmacyAttendanceSaving = true;
@@ -156,13 +195,13 @@ export class PharmacyShiftAttendanceSectionComponent implements OnInit {
     this.pharmacyService.savePharmacyShiftAttendance(date, sid, payload).subscribe({
       next: (res) => {
         this.pharmacyAttendanceSaving = false;
-        this.toastService.success(res.message || 'Asistencia guardada');
+        this.toastService.success(res.message || this.pharmacyAttendanceToastSavedOk);
         this.loadPharmacyAttendanceRows();
         this.loadPharmacyCoverageSummary();
       },
       error: (err) => {
         this.pharmacyAttendanceSaving = false;
-        const msg = err?.error?.message || 'No se pudo guardar la asistencia';
+        const msg = err?.error?.message || this.pharmacyAttendanceErrSave;
         this.toastService.error(msg);
       },
     });

@@ -39,6 +39,19 @@ describe('NurseNotCompletedTaskModalComponent', () => {
     expect(fixture.componentInstance.taskLine).toBe('Chequeo');
   });
 
+  it('usa guión localizado sin paciente ni descripción/medicación', () => {
+    fixture.componentRef.setInput('task', {
+      id: 11,
+      patientName: '',
+      description: '',
+      medication: '',
+    });
+    fixture.componentRef.setInput('patientNameFallback', null);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.patientLine).toBe('—');
+    expect(fixture.componentInstance.taskLine).toBe('—');
+  });
+
   it('no confirma con motivo corto y sí con motivo válido', () => {
     spyOn(fixture.componentInstance.confirmed, 'emit');
     fixture.componentInstance.reason = 'corto';
@@ -55,5 +68,18 @@ describe('NurseNotCompletedTaskModalComponent', () => {
     spyOn(fixture.componentInstance.dismissed, 'emit');
     fixture.componentInstance.onCancel();
     expect(fixture.componentInstance.dismissed.emit).toHaveBeenCalled();
+  });
+
+  it('plantilla: pista de motivo, id confirmar y botón deshabilitado hasta motivo largo', () => {
+    const hint = fixture.nativeElement.querySelector('.hint-text') as HTMLElement;
+    expect(hint?.textContent?.trim().length).toBeGreaterThan(5);
+    const btn = fixture.nativeElement.querySelector('#nurse-not-completed-confirm-btn') as HTMLButtonElement;
+    expect(btn).toBeTruthy();
+    expect(btn.disabled).toBeTrue();
+    expect(fixture.nativeElement.querySelector('#nurse-not-completed-cancel-btn')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('#nurse-not-completed-header-close-btn')).toBeTruthy();
+    fixture.componentInstance.reason = 'motivo largo suficiente para confirmar';
+    fixture.detectChanges();
+    expect(btn.disabled).toBeFalse();
   });
 });

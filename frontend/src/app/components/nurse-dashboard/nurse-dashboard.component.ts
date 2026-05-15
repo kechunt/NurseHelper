@@ -1,12 +1,11 @@
-import { Component, DestroyRef, DoCheck, inject, OnInit, ViewChild } from '@angular/core';
+import { Component, DestroyRef, DoCheck, inject, LOCALE_ID, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { forkJoin, Subject, of } from 'rxjs';
+import { Subject, of } from 'rxjs';
 import { switchMap, catchError } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
-  NurseService,
   PatientDetail,
   BedWithPatient,
   MedicationForPharmacy,
@@ -287,10 +286,42 @@ import { NurseSummarySectionComponent } from './nurse-summary-section/nurse-summ
 import { NursePharmacySectionComponent } from './nurse-pharmacy-section/nurse-pharmacy-section.component';
 import { NurseTasksSectionComponent } from './nurse-tasks-section/nurse-tasks-section.component';
 import { NurseBedsSectionComponent } from './nurse-beds-section/nurse-beds-section.component';
+import { NurseDashboardSecondaryLoadFacade } from './facades/nurse-dashboard-secondary-load.facade';
+import { NurseDashboardPrimaryLoadFacade } from './facades/nurse-dashboard-primary-load.facade';
+import { NurseDashboardNurseReportsLoadFacade } from './facades/nurse-dashboard-nurse-reports-load.facade';
+import { NurseDashboardPharmacyBulkFacade } from './facades/nurse-dashboard-pharmacy-bulk.facade';
+import { NurseDashboardHandoverNoteFacade } from './facades/nurse-dashboard-handover-note.facade';
+import { NurseDashboardTasksDayHistoryFacade } from './facades/nurse-dashboard-tasks-day-history.facade';
+import { NurseDashboardMyPatientsSearchFacade } from './facades/nurse-dashboard-my-patients-search.facade';
+import { NurseDashboardPatientDetailsLoadFacade } from './facades/nurse-dashboard-patient-details-load.facade';
+import { NurseDashboardCompleteTaskFacade } from './facades/nurse-dashboard-complete-task.facade';
+import { NurseDashboardTaskLifecycleFacade } from './facades/nurse-dashboard-task-lifecycle.facade';
+import { NurseDashboardPatientScheduleWriteFacade } from './facades/nurse-dashboard-patient-schedule-write.facade';
+import { NurseDashboardTreatmentScheduleFacade } from './facades/nurse-dashboard-treatment-schedule.facade';
+import { NurseDashboardPatientClinicalWriteFacade } from './facades/nurse-dashboard-patient-clinical-write.facade';
+import { NurseDashboardAdministrationHistoryWriteFacade } from './facades/nurse-dashboard-administration-history-write.facade';
+import { NurseDashboardMedicationMutationFacade } from './facades/nurse-dashboard-medication-mutation.facade';
 
 @Component({
   selector: 'app-nurse-dashboard',
   standalone: true,
+  providers: [
+    NurseDashboardSecondaryLoadFacade,
+    NurseDashboardPrimaryLoadFacade,
+    NurseDashboardNurseReportsLoadFacade,
+    NurseDashboardPharmacyBulkFacade,
+    NurseDashboardHandoverNoteFacade,
+    NurseDashboardTasksDayHistoryFacade,
+    NurseDashboardMyPatientsSearchFacade,
+    NurseDashboardPatientDetailsLoadFacade,
+    NurseDashboardCompleteTaskFacade,
+    NurseDashboardTaskLifecycleFacade,
+    NurseDashboardPatientScheduleWriteFacade,
+    NurseDashboardTreatmentScheduleFacade,
+    NurseDashboardPatientClinicalWriteFacade,
+    NurseDashboardAdministrationHistoryWriteFacade,
+    NurseDashboardMedicationMutationFacade,
+  ],
   imports: [
     CommonModule,
     FormsModule,
@@ -314,12 +345,34 @@ import { NurseBedsSectionComponent } from './nurse-beds-section/nurse-beds-secti
 })
 export class NurseDashboardComponent implements OnInit, DoCheck {
   private readonly destroyRef = inject(DestroyRef);
+  private readonly localeId = inject(LOCALE_ID) as string;
+  private readonly secondaryLoad = inject(NurseDashboardSecondaryLoadFacade);
+  private readonly primaryLoad = inject(NurseDashboardPrimaryLoadFacade);
+  private readonly nurseReportsLoad = inject(NurseDashboardNurseReportsLoadFacade);
+  private readonly pharmacyBulk = inject(NurseDashboardPharmacyBulkFacade);
+  private readonly handoverNote = inject(NurseDashboardHandoverNoteFacade);
+  private readonly tasksDayHistoryLoad = inject(NurseDashboardTasksDayHistoryFacade);
+  private readonly myPatientsSearch = inject(NurseDashboardMyPatientsSearchFacade);
+  private readonly patientDetailsLoad = inject(NurseDashboardPatientDetailsLoadFacade);
+  private readonly completeTaskFacade = inject(NurseDashboardCompleteTaskFacade);
+  private readonly taskLifecycleFacade = inject(NurseDashboardTaskLifecycleFacade);
+  private readonly patientScheduleWriteFacade = inject(NurseDashboardPatientScheduleWriteFacade);
+  private readonly treatmentScheduleFacade = inject(NurseDashboardTreatmentScheduleFacade);
+  private readonly patientClinicalWriteFacade = inject(NurseDashboardPatientClinicalWriteFacade);
+  private readonly administrationHistoryWriteFacade = inject(NurseDashboardAdministrationHistoryWriteFacade);
+  private readonly medicationMutationFacade = inject(NurseDashboardMedicationMutationFacade);
 
   @ViewChild(NurseDashboardOverlaysStackComponent)
   private nurseOverlaysStack?: NurseDashboardOverlaysStackComponent;
 
   /** Referencia estable para `[vm]` del stack de overlays (campos sincronizados en `ngDoCheck`). */
   readonly overlaysStackVm = createEmptyNurseDashboardOverlaysStackVm();
+
+  /** Textos del `app-dashboard-shell` (i18n / extracción `$localize`). */
+  readonly nurseShellPanelTitle = $localize`:@@nurseDashboard.shellPanelTitle:Panel de Enfermera`;
+  readonly nurseShellRoleLabel = $localize`:@@nurseDashboard.shellRoleLabel:Enfermera`;
+  readonly nurseShellNavAriaLabel = $localize`:@@nurseDashboard.shellNavAriaLabel:Módulos de enfermería`;
+  readonly nurseShellLogoSectionAriaLabel = $localize`:@@nurseDashboard.shellLogoSectionAriaLabel:Ir al resumen del panel`;
 
   nurseName: string = '';
   /** Cabecera del shell: reacciona al usuario en sesión (p. ej. tras editar perfil). */
@@ -514,7 +567,6 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
   private highlightScheduleAfterLoad: number | null = null;
 
   constructor(
-    private nurseService: NurseService,
     private authService: AuthService,
     private pharmacyService: PharmacyService,
     private router: Router,
@@ -526,13 +578,7 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
   ) {
     this.reloadDashboard$
       .pipe(
-        switchMap(() =>
-          forkJoin({
-            stats: this.nurseService.getNurseStats(),
-            beds: this.nurseService.getMyBeds(),
-            patients: this.nurseService.getMyPatients(),
-          })
-        ),
+        switchMap(() => this.primaryLoad.loadPrimaryBundle()),
         takeUntilDestroyed()
       )
       .subscribe({
@@ -735,11 +781,7 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
   }
 
   private loadSecondaryData(): void {
-    forkJoin({
-      tasks: this.nurseService.getTodayTasks(),
-      medications: this.nurseService.getMedicationsForPharmacy(),
-      shiftContext: this.nurseService.getShiftContext().pipe(catchError(() => of(null))),
-    }).subscribe({
+    this.secondaryLoad.loadBundle().subscribe({
       next: ({ tasks, medications, shiftContext }) => {
         this.nurseShiftContext = shiftContext;
         this.refreshHandoverPendingNotice();
@@ -847,7 +889,7 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
       goPatientsTabWithFilter();
     };
 
-    this.nurseService.getMyPatients(term).subscribe({
+    this.myPatientsSearch.searchByQuery(term).subscribe({
       next: (list) => {
         if (list.length === 1) {
           const mapped = mapPatientDetailsToPatients(list, this.myBeds);
@@ -1259,10 +1301,7 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
     start.setDate(start.getDate() - 7);
     this.nurseReportsStart = start;
     this.nurseReportsEnd = end;
-    forkJoin({
-      med: this.reportService.generateMedicationReport(start, end),
-      comp: this.reportService.generateComplianceStats(start, end),
-    }).subscribe({
+    this.nurseReportsLoad.loadReportsBundle(start, end).subscribe({
       next: ({ med, comp }) => {
         this.nurseReportsMedication = med.report || [];
         this.nurseReportsCompliance = comp.stats;
@@ -1416,7 +1455,7 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
     if (!this.handoverDate || !isValidIsoYmdDateString(this.handoverDate)) {
       return;
     }
-    this.nurseService.getHandoverNote(this.handoverDate, this.handoverShift).subscribe({
+    this.handoverNote.fetchNote(this.handoverDate, this.handoverShift).subscribe({
       next: (res) => {
         this.handoverBody = res.note?.body ?? '';
         const n = res.note;
@@ -1483,7 +1522,7 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
     const today = formatLocalDateIsoYmd(new Date());
     const currentShift = this.nurseShiftContext?.shiftSlot ?? this.currentShiftSlotFallback();
     const prev = this.previousShiftTarget(today, currentShift);
-    this.nurseService.getHandoverNote(prev.date, prev.shift).subscribe({
+    this.handoverNote.fetchNote(prev.date, prev.shift).subscribe({
       next: (res) => {
         const n = res.note;
         if (!n?.body?.trim() || !n?.id || !n?.updatedAt) {
@@ -1508,7 +1547,7 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
       return;
     }
     this.handoverSaving = true;
-    this.nurseService.putHandoverNote(this.handoverDate, this.handoverBody, this.handoverShift).subscribe({
+    this.handoverNote.saveNote(this.handoverDate, this.handoverBody, this.handoverShift).subscribe({
       next: () => {
         this.handoverSaving = false;
         this.toastService.success(NURSE_DASHBOARD_HANDOVER_SAVE_SUCCESS_TOAST);
@@ -1587,7 +1626,7 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
     if (!this.selectedPatient || !medicationSlotPending(slot)) {
       return;
     }
-    this.nurseService.completeTask(slot.scheduleId).subscribe({
+    this.completeTaskFacade.completeByScheduleId(slot.scheduleId).subscribe({
       next: () => {
         this.toastService.success(
           nurseDashboardMedicationSlotAdministeredSuccessToast(slot.name, slot.time)
@@ -1645,7 +1684,7 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
       return;
     }
     const pid = parseInt(this.selectedPatient.id, 10);
-    this.nurseService.deletePatientSchedule(pid, slot.scheduleId).subscribe({
+    this.patientScheduleWriteFacade.deleteSchedule(pid, slot.scheduleId).subscribe({
       next: () => {
         this.toastService.success(NURSE_DASHBOARD_DELETE_MEDICATION_SLOT_SUCCESS_TOAST);
         this.loadPatientDetails(pid);
@@ -1669,7 +1708,7 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
       return;
     }
 
-    this.nurseService.completeTask(scheduleToComplete.scheduleId).subscribe({
+    this.completeTaskFacade.completeByScheduleId(scheduleToComplete.scheduleId).subscribe({
       next: () => {
         const adminTime = new Date().toLocaleString('es-ES');
         this.toastService.success(
@@ -1736,7 +1775,7 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
       return;
     }
     const pid = parseInt(this.selectedPatient.id, 10);
-    this.nurseService.patchTreatmentScheduleAction(pid, item.scheduleId, { action: 'accept' }).subscribe({
+    this.treatmentScheduleFacade.patchAction(pid, item.scheduleId, { action: 'accept' }).subscribe({
       next: () => {
         this.toastService.success(NURSE_DASHBOARD_TREATMENT_ACCEPT_SUCCESS_TOAST);
         this.closeScheduleSlotsModal();
@@ -1764,7 +1803,7 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
       return;
     }
     const pid = parseInt(this.selectedPatient.id, 10);
-    this.nurseService.patchTreatmentScheduleAction(pid, item.scheduleId, { action: 'cancel' }).subscribe({
+    this.treatmentScheduleFacade.patchAction(pid, item.scheduleId, { action: 'cancel' }).subscribe({
       next: () => {
         this.toastService.success(NURSE_DASHBOARD_TREATMENT_CANCEL_SUCCESS_TOAST);
         this.closeScheduleSlotsModal();
@@ -1792,8 +1831,8 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
     }
     const iso = new Date(`${event.date}T${event.time}:00`).toISOString();
     const pid = parseInt(this.selectedPatient.id, 10);
-    this.nurseService
-      .patchTreatmentScheduleAction(pid, this.treatmentPostponeItem.scheduleId, {
+    this.treatmentScheduleFacade
+      .patchAction(pid, this.treatmentPostponeItem.scheduleId, {
         action: 'postpone',
         newScheduledTime: iso,
       })
@@ -1818,7 +1857,7 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
       return;
     }
 
-    this.nurseService.completeTask(item.scheduleId).subscribe({
+    this.completeTaskFacade.completeByScheduleId(item.scheduleId).subscribe({
       next: () => {
         this.toastService.success(
           nurseDashboardCompleteScheduleItemSuccessToast(
@@ -1878,7 +1917,7 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
     }
     const pid = parseInt(this.selectedPatient.id, 10);
     this.isSavingObservation = true;
-    this.nurseService.saveObservation(pid, text, scope).subscribe({
+    this.patientClinicalWriteFacade.appendObservation(pid, text, scope).subscribe({
       next: () => {
         this.toastService.success(nurseDashboardSaveObservationSuccessToast(this.selectedPatient?.name));
         switch (scope) {
@@ -1911,7 +1950,7 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
     if (!this.selectedPatient) {
       return;
     }
-    this.nurseService.updateMedicalObservations(parseInt(this.selectedPatient.id, 10), text).subscribe({
+    this.patientClinicalWriteFacade.updateMedicalObservations(parseInt(this.selectedPatient.id, 10), text).subscribe({
       next: () => {
         this.nurseOverlaysStack?.resetObservationEditState();
         this.loadPatientDetails(this.selectedPatient!.id);
@@ -1927,7 +1966,7 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
     if (!this.selectedPatient) {
       return;
     }
-    this.nurseService.updateAllergies(parseInt(this.selectedPatient.id, 10), text).subscribe({
+    this.patientClinicalWriteFacade.updateAllergies(parseInt(this.selectedPatient.id, 10), text).subscribe({
       next: () => {
         this.nurseOverlaysStack?.resetObservationEditState();
         this.loadPatientDetails(this.selectedPatient!.id);
@@ -1943,7 +1982,7 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
     if (!this.selectedPatient) {
       return;
     }
-    this.nurseService.updateSpecialNeeds(parseInt(this.selectedPatient.id, 10), text).subscribe({
+    this.patientClinicalWriteFacade.updateSpecialNeeds(parseInt(this.selectedPatient.id, 10), text).subscribe({
       next: () => {
         this.nurseOverlaysStack?.resetObservationEditState();
         this.loadPatientDetails(this.selectedPatient!.id);
@@ -1959,7 +1998,7 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
     if (!this.selectedPatient) {
       return;
     }
-    this.nurseService.updateMedicalHistory(parseInt(this.selectedPatient.id, 10), text).subscribe({
+    this.patientClinicalWriteFacade.updateMedicalHistory(parseInt(this.selectedPatient.id, 10), text).subscribe({
       next: () => {
         this.selectedPatient!.diagnosis = text;
         this.nurseOverlaysStack?.resetObservationEditState();
@@ -1977,7 +2016,7 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
     if (!this.selectedPatient) {
       return;
     }
-    this.nurseService.replaceGeneralObservations(parseInt(this.selectedPatient.id, 10), text).subscribe({
+    this.patientClinicalWriteFacade.replaceGeneralObservations(parseInt(this.selectedPatient.id, 10), text).subscribe({
       next: () => {
         this.selectedPatient!.generalObservations = text;
         this.nurseOverlaysStack?.resetObservationEditState();
@@ -2024,7 +2063,7 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
       return;
     }
     if (target.kind === 'history') {
-      this.nurseService.deleteAdministrationHistory(pid, target.id).subscribe({
+      this.administrationHistoryWriteFacade.deleteHistory(pid, target.id).subscribe({
         next: () => {
           this.toastService.success(successMessageForHistoryDeleteTarget(target));
           this.loadPatientDetails(pid);
@@ -2034,7 +2073,7 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
       return;
     }
     if (target.kind === 'schedule') {
-      this.nurseService.deletePatientSchedule(pid, target.id).subscribe({
+      this.patientScheduleWriteFacade.deleteSchedule(pid, target.id).subscribe({
         next: () => {
           this.toastService.success(successMessageForHistoryDeleteTarget(target));
           this.loadPatientDetails(pid);
@@ -2086,7 +2125,7 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
         this.toastService.error(NURSE_DASHBOARD_DELETE_SCHEDULE_INVALID_PATIENT_ID_ERROR_TOAST);
         return;
       }
-      this.nurseService.deletePatientSchedule(pid, item.scheduleId).subscribe({
+      this.patientScheduleWriteFacade.deleteSchedule(pid, item.scheduleId).subscribe({
         next: () => {
           this.toastService.success(NURSE_DASHBOARD_PENDING_TREATMENT_DELETED_SUCCESS_TOAST);
           this.closeScheduleSlotsModal();
@@ -2181,11 +2220,7 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
 
     const requests = requestedMeds.map((med) => buildPharmacyMedicationRequestPayload(med));
 
-    const requestObservables = requests.map(req => {
-      return this.pharmacyService.createMedicationRequest(req);
-    });
-
-    forkJoin(requestObservables).subscribe({
+    this.pharmacyBulk.sendMedicationRequests(requests).subscribe({
       next: (responses) => {
         const successCount = responses.length;
         this.toastService.success(nurseDashboardPharmacyBulkRequestSuccessToast(successCount));
@@ -2357,7 +2392,7 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
     if (!startState.loading) {
       return;
     }
-    this.nurseService.getTasksDayHistory(startState.date).subscribe({
+    this.tasksDayHistoryLoad.loadHistory(startState.date).subscribe({
       next: (res) => {
         const successState = finishNurseDayHistoryLoadSuccessState(startState.date, res);
         this.tasksDayHistoryDate = successState.date;
@@ -2436,9 +2471,9 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
       return;
     }
 
-    this.nurseService.completeTask(task.id).subscribe({
+    this.completeTaskFacade.completeByScheduleId(task.id).subscribe({
       next: () => {
-        completeTaskLocally(task);
+        completeTaskLocally(task, new Date(), this.localeId);
         this.toastService.success(nurseDashboardCompleteTaskSuccessToast(taskDisplayName(task)));
         // Actualizar contadores
         this.pendingTasksCount = Math.max(0, this.pendingTasksCount - 1);
@@ -2469,7 +2504,7 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
       return;
     }
 
-    this.nurseService.getPatientDetails(idNum).subscribe({
+    this.patientDetailsLoad.loadDetails(idNum).subscribe({
       next: (patient) => {
         if (!this.selectedPatient || parseInt(this.selectedPatient.id, 10) !== idNum) {
           return;
@@ -2515,7 +2550,7 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
       return;
     }
 
-    this.nurseService.markTaskAsNotCompleted(taskId, reason).subscribe({
+    this.taskLifecycleFacade.markNotCompleted(taskId, reason).subscribe({
       next: () => {
         if (this.selectedTaskForNotCompleted) {
           markTaskAsMissedLocally(this.selectedTaskForNotCompleted, reason);
@@ -2608,12 +2643,13 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
     }
 
     const suspendUntil = resolveSuspendUntilDate(event);
-    this.nurseService
-      .suspendMedication(target.patientId, target.medicationName, reason, suspendUntil)
+    this.medicationMutationFacade
+      .suspend(target.patientId, target.medicationName, reason, suspendUntil)
       .subscribe({
         next: (response) => {
+          const r = response as { dosesAffected?: number };
           this.toastService.success(
-            nurseDashboardSuspendMedicationSuccessToast(response.dosesAffected || 0)
+            nurseDashboardSuspendMedicationSuccessToast(r.dosesAffected || 0)
           );
           this.closeSuspendMedicationModal();
           if (this.selectedPatient) {
@@ -2646,10 +2682,11 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
 
     const reason = event.reason.trim();
 
-    this.nurseService.deleteMedication(target.patientId, target.medicationName, reason).subscribe({
+    this.medicationMutationFacade.deleteMedication(target.patientId, target.medicationName, reason).subscribe({
       next: (response) => {
+        const r = response as { dosesDeleted?: number };
         this.toastService.success(
-          nurseDashboardDeleteMedicationSuccessToast(response.dosesDeleted || 0)
+          nurseDashboardDeleteMedicationSuccessToast(r.dosesDeleted || 0)
         );
         this.closeDeleteMedicationModal();
         if (this.selectedPatient && this.selectedPatient.id) {
@@ -2685,10 +2722,11 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
       return;
     }
 
-    this.nurseService.reactivateMedication(target.patientId, target.medicationName).subscribe({
+    this.medicationMutationFacade.reactivateMedication(target.patientId, target.medicationName).subscribe({
       next: (response) => {
+        const r = response as { dosesReactivated?: number };
         this.toastService.success(
-          nurseDashboardReactivateMedicationSuccessToast(response.dosesReactivated || 0)
+          nurseDashboardReactivateMedicationSuccessToast(r.dosesReactivated || 0)
         );
         this.closeReactivateMedicationModal();
         if (this.selectedPatient) {
@@ -2727,7 +2765,7 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
       return;
     }
 
-    this.nurseService.postponeTask(this.taskToPostpone.id, postponedAtIso).subscribe({
+    this.taskLifecycleFacade.postpone(this.taskToPostpone.id, postponedAtIso).subscribe({
       next: () => {
         this.toastService.success(
           nurseDashboardPostponeTaskSuccessToast(event.date, event.time)

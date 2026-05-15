@@ -90,4 +90,15 @@ describe('NursePatientTreatmentsDayTabComponent', () => {
     const modalTitle = fixture.nativeElement.querySelector('.admin-table-row-actions-header h3') as HTMLElement;
     expect(modalTitle.textContent || '').toContain('Acciones');
   });
+
+  it('slotActionsSummary usa guión localizado sin notas', () => {
+    fixture.componentInstance.openSlotActions(pendingItem());
+    const lines = fixture.componentInstance.slotActionsSummary();
+    expect(lines.some((l) => l.startsWith('Notas:') && l.includes('—'))).toBeTrue();
+  });
+
+  it('notesCellDisplay y treatmentRowAriaLabel cubren vacíos y hora', () => {
+    expect(fixture.componentInstance.notesCellDisplay(pendingItem())).toBe('—');
+    expect(fixture.componentInstance.treatmentRowAriaLabel(pendingItem())).toContain('10:00');
+  });
 });

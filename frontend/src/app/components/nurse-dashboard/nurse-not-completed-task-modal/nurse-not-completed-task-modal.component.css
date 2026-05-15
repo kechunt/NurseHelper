@@ -140,6 +140,15 @@
   font-weight: 600;
 }
 
+.hint-text {
+  display: block;
+  margin-top: 0.35rem;
+  color: #718096;
+  font-weight: 400;
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
 .reason-input-section {
   display: flex;
   flex-direction: column;

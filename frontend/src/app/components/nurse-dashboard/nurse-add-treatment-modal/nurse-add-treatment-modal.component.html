@@ -9,10 +9,11 @@
   >
     <div class="modal-header">
       <h3 id="nurse-add-treatment-dialog-title">
-        <span *ngIf="isFromPatient" i18n="@@nurseAddTreatmentModal.titleFromPatient"><app-hero-icon name="shield-check" /> Nuevo tratamiento</span>
-        <span *ngIf="!isFromPatient" i18n="@@nurseAddTreatmentModal.titleGlobal"><app-hero-icon name="shield-check" /> Agregar Tratamiento Médico</span>
+        <span *ngIf="isFromPatient" i18n="@@nurseAddTreatmentModal.titleFromPatient"><app-bootstrap-icon name="shield-check" /> Nuevo tratamiento</span>
+        <span *ngIf="!isFromPatient" i18n="@@nurseAddTreatmentModal.titleGlobal"><app-bootstrap-icon name="shield-check" /> Agregar Tratamiento Médico</span>
       </h3>
       <button
+        id="nurse-add-treatment-header-close-btn"
         type="button"
         class="close-btn"
         aria-label="Cerrar"
@@ -26,8 +27,8 @@
 
     <div class="modal-body">
       <div *ngIf="patients.length === 0 && !isFromPatient" class="empty-state-modal">
-        <div class="empty-icon"><app-hero-icon name="users" /></div>
-        <p class="empty-message" i18n="@@nurseAddTreatmentModal.emptyTitle"><app-hero-icon name="exclamation-triangle" /> No hay pacientes disponibles</p>
+        <div class="empty-icon"><app-bootstrap-icon name="users" /></div>
+        <p class="empty-message" i18n="@@nurseAddTreatmentModal.emptyTitle"><app-bootstrap-icon name="exclamation-triangle" /> No hay pacientes disponibles</p>
         <p class="empty-hint" i18n="@@nurseAddTreatmentModal.emptyHint">
           Asigna pacientes a tu área para poder agregar tratamientos
         </p>
@@ -111,7 +112,7 @@
                 </button>
               </div>
               <button type="button" class="add-time-btn" (click)="addTreatmentTime()" i18n="@@nurseAddTreatmentModal.addTimeBtn">
-                <app-hero-icon name="plus-circle" /> Agregar hora
+                <app-bootstrap-icon name="plus-circle" /> Agregar hora
               </button>
             </div>
           </div>
@@ -151,7 +152,7 @@
             <select class="neuro-input" [(ngModel)]="newTreatment.durationUnit" name="durationUnit">
               <option value="weeks" i18n="@@nurseAddTreatmentModal.unitWeeks">Semanas</option>
               <option value="days" i18n="@@nurseAddTreatmentModal.unitDays">Días</option>
-              <option value="months">Meses</option>
+              <option value="months" i18n="@@nurseAddTreatmentModal.unitMonths">Meses</option>
             </select>
           </div>
         </div>
@@ -173,13 +174,26 @@
     </div>
 
     <div class="modal-footer" *ngIf="patients.length > 0 || isFromPatient">
-      <button class="btn-secondary-neuro" type="button" (click)="onCancel()" [disabled]="isAdding" i18n="@@nurseAddTreatmentModal.cancel">
+      <button
+        id="nurse-add-treatment-cancel-btn"
+        class="btn-secondary-neuro"
+        type="button"
+        (click)="onCancel()"
+        [disabled]="isAdding"
+        i18n="@@nurseAddTreatmentModal.cancel"
+      >
         Cancelar
       </button>
-      <button class="btn-primary-neuro" type="button" (click)="confirmAdd()" [disabled]="isAdding">
-        <span *ngIf="isAdding" i18n="@@nurseAddTreatmentModal.adding"><app-hero-icon name="clock" /> Agregando...</span>
-        <span *ngIf="!isAdding && isFromPatient" i18n="@@nurseAddTreatmentModal.submitFromPatient"><app-hero-icon name="check-circle" /> Guardar tratamiento</span>
-        <span *ngIf="!isAdding && !isFromPatient" i18n="@@nurseAddTreatmentModal.submitGlobal"><app-hero-icon name="check-circle" /> Agregar Tratamiento</span>
+      <button
+        id="nurse-add-treatment-submit-btn"
+        class="btn-primary-neuro"
+        type="button"
+        (click)="confirmAdd()"
+        [disabled]="isAdding"
+      >
+        <span *ngIf="isAdding" i18n="@@nurseAddTreatmentModal.adding"><app-bootstrap-icon name="clock" /> Agregando...</span>
+        <span *ngIf="!isAdding && isFromPatient" i18n="@@nurseAddTreatmentModal.submitFromPatient"><app-bootstrap-icon name="check-circle" /> Guardar tratamiento</span>
+        <span *ngIf="!isAdding && !isFromPatient" i18n="@@nurseAddTreatmentModal.submitGlobal"><app-bootstrap-icon name="check-circle" /> Agregar Tratamiento</span>
       </button>
     </div>
   </div>

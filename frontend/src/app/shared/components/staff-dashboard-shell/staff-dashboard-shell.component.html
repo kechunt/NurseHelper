@@ -1,0 +1,115 @@
+<ng-content select="[staffShellTop]"></ng-content>
+
+<app-dashboard-user-profile-modal #staffShellProfile />
+
+<div [attr.id]="idPrefix + '-shell-header'" class="dashboard-header">
+  <div class="header-content">
+    <div
+      class="logo-section"
+      role="button"
+      tabindex="0"
+      [attr.id]="idPrefix + '-shell-logo-section'"
+      [attr.aria-label]="logoAriaLabel"
+      (click)="logoClick.emit()"
+      (keydown.enter)="logoClick.emit()"
+      (keydown.space)="logoClick.emit(); $event.preventDefault()"
+    >
+      <img src="/nursehelper.png" alt="" class="header-logo" />
+      <div class="title-section">
+        <h1 class="dashboard-title" [id]="panelHeadingId">{{ dashboardTitle }}</h1>
+      </div>
+    </div>
+    <div class="user-section">
+      <div
+        class="staff-shell-header-actions"
+        [attr.id]="idPrefix + '-shell-header-actions'"
+      >
+        <app-in-app-notifications-bell [dashboardKind]="notificationsKind" />
+        <ng-content select="[staffShellHeaderActions]"></ng-content>
+      </div>
+      <button
+        type="button"
+        class="user-info profile-trigger-btn"
+        [attr.id]="idPrefix + '-shell-profile-trigger-btn'"
+        (click)="staffShellProfile.open()"
+        title="Editar mi información"
+        aria-label="Editar mi información de usuario"
+      >
+        <span class="user-name">{{ userDisplayName }}</span>
+        <span class="user-role">{{ roleDisplayLabel }}</span>
+      </button>
+      <button
+        type="button"
+        class="neuro-btn-icon logout-btn"
+        [attr.id]="idPrefix + '-shell-logout-btn'"
+        (click)="onLogout()"
+        title="Cerrar Sesión"
+        aria-label="Cerrar sesión"
+      >
+        <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div [attr.id]="idPrefix + '-shell-after-header-slot'" class="staff-shell-after-header-slot">
+  <ng-content select="[staffShellAfterHeader]"></ng-content>
+</div>
+
+<div [attr.id]="idPrefix + '-shell-body'" class="dashboard-body">
+  @if (mobileDrawer) {
+    <div
+      class="nav-mobile-overlay"
+      [attr.id]="idPrefix + '-shell-nav-mobile-overlay'"
+      [class.visible]="navOpen"
+      (click)="closeNav()"
+      aria-hidden="true"
+    ></div>
+  }
+
+  <nav
+    class="dashboard-nav"
+    [attr.id]="idPrefix + '-shell-nav'"
+    [class.nav-open]="mobileDrawer && navOpen"
+    role="tablist"
+    [attr.aria-label]="navAriaLabel"
+  >
+    @if (mobileDrawer) {
+      <button
+        type="button"
+        class="nav-mobile-close"
+        [attr.id]="idPrefix + '-shell-nav-mobile-close-btn'"
+        (click)="closeNav()"
+        aria-label="Cerrar menú"
+      >✕</button>
+    }
+
+    @for (tab of tabs; track tab.key) {
+      <button
+        type="button"
+        role="tab"
+        [id]="idPrefix + '-tab-' + tab.key"
+        class="nav-link"
+        [class.active]="activeTab === tab.key"
+        [attr.aria-selected]="activeTab === tab.key"
+        [attr.aria-controls]="idPrefix + '-panel-' + tab.key"
+        (click)="selectTab(tab.key)"
+        (keydown)="onTabKeydown($event, tab.key)"
+      >
+        {{ tab.label }}
+      </button>
+    }
+
+    <div class="staff-shell-nav-end-slot" [attr.id]="idPrefix + '-shell-nav-end-slot'">
+      <ng-content select="[staffShellNavEnd]"></ng-content>
+    </div>
+  </nav>
+
+  <div [attr.id]="idPrefix + '-shell-quick-modals-slot'" class="staff-shell-quick-modals-slot">
+    <ng-content select="[staffShellQuickModals]"></ng-content>
+  </div>
+
+  <div [attr.id]="idPrefix + '-shell-main-slot'" class="staff-shell-main-slot">
+    <ng-content select="[staffShellMain]"></ng-content>
+  </div>
+</div>

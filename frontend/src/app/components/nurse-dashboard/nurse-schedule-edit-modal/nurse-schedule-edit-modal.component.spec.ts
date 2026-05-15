@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { NurseScheduleEditModalComponent } from './nurse-schedule-edit-modal.component';
+import { NurseDashboardPatientRecordPatchFacade } from '../facades/nurse-dashboard-patient-record-patch.facade';
 import { NurseService } from '../../../services/nurse.service';
 import { ToastService } from '../../../services/toast.service';
 
@@ -31,6 +32,7 @@ describe('NurseScheduleEditModalComponent', () => {
     await TestBed.configureTestingModule({
       imports: [NurseScheduleEditModalComponent],
       providers: [
+        NurseDashboardPatientRecordPatchFacade,
         { provide: NurseService, useValue: nurseMock },
         { provide: ToastService, useValue: toastMock },
       ],
@@ -50,12 +52,33 @@ describe('NurseScheduleEditModalComponent', () => {
     toastMock.error.calls.reset();
   });
 
+  it('plantilla: título y placeholders en descripción y notas', () => {
+    const h3 = (fixture.nativeElement.querySelector('h3')?.textContent || '').toLowerCase();
+    expect(h3).toContain('tratamiento');
+    const d = fixture.nativeElement.querySelector('#schedule-edit-desc') as HTMLTextAreaElement;
+    const n = fixture.nativeElement.querySelector('#schedule-edit-notes') as HTMLTextAreaElement;
+    expect((d?.getAttribute('placeholder') || '').length).toBeGreaterThan(5);
+    expect((n?.getAttribute('placeholder') || '').length).toBeGreaterThan(5);
+    const saveBtn = fixture.nativeElement.querySelector('#nurse-schedule-edit-save-btn') as HTMLButtonElement;
+    expect(saveBtn).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('#nurse-schedule-edit-header-close-btn')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('#nurse-schedule-edit-cancel-btn')).toBeTruthy();
+  });
+
+  it('emite dismissed al pulsar Cancelar', () => {
+    let n = 0;
+    const sub = fixture.componentInstance.dismissed.subscribe(() => n++);
+    (fixture.nativeElement.querySelector('#nurse-schedule-edit-cancel-btn') as HTMLButtonElement).click();
+    expect(n).toBe(1);
+    sub.unsubscribe();
+  });
+
   it('ngOnChanges copia descripción y notas desde edit', () => {
     expect(fixture.componentInstance.description).toBe('Curación inicial');
     expect(fixture.componentInstance.notes).toBe('Nota previa');
   });
 
-  it('save delega a NurseService y emite saved en éxito', () => {
+  it('save delega patchPatientSchedule vía facade y emite saved en éxito', () => {
     let saved = false;
     const sub = fixture.componentInstance.saved.subscribe(() => {
       saved = true;

@@ -2,13 +2,13 @@ import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { DashboardShellComponent } from '../../shared/components/dashboard-shell/dashboard-shell.component';
-import { HeroIconComponent } from '../../shared/components/hero-icon/hero-icon.component';
+import { BootstrapIconComponent } from '../../shared/components/bootstrap-icon/bootstrap-icon.component';
 import { PharmacyShiftAttendanceSectionComponent } from '../pharmacy-shift-attendance-section/pharmacy-shift-attendance-section.component';
 
 @Component({
   selector: 'app-pharmacy-attendance-page',
   standalone: true,
-  imports: [DashboardShellComponent, HeroIconComponent, PharmacyShiftAttendanceSectionComponent],
+  imports: [DashboardShellComponent, BootstrapIconComponent, PharmacyShiftAttendanceSectionComponent],
   templateUrl: './pharmacy-attendance-page.component.html',
   styleUrls: ['./pharmacy-attendance-page.component.css'],
 })
