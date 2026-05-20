@@ -1,13 +1,56 @@
+/**
+ * Misma herencia visual que horarios/asistencia (`schedules-management`) y
+ * `pharmacy-coverage-summary-card`: module-section-neuro, contenedor hundido y tarjetas elevadas.
+ */
+
 :host {
   display: block;
 }
 
+.pharmacy-shift-attendance {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.module-section-neuro {
+  border-radius: 16px;
+  margin: 0;
+  padding: 0.75rem;
+  background: #dde4ee;
+  border: 1px solid rgba(174, 174, 192, 0.24);
+  box-shadow: 8px 8px 16px #c2c8d0, -8px -8px 16px #f6f9ff;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.module-section-neuro::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  pointer-events: none;
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.75), inset -1px -1px 0 rgba(174, 174, 192, 0.12);
+}
+
+.subsection-title-neuro {
+  margin: 0;
+  color: #4a5568;
+  font-size: 1.05rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
 .module-feedback {
-  margin: 0.5rem 0 0.75rem;
+  margin: 0.35rem 0.5rem;
   padding: 0.65rem 0.85rem;
   border-radius: 12px;
   font-size: 0.85rem;
   font-weight: 600;
+  position: relative;
+  z-index: 1;
 }
 
 .module-feedback.loading {
@@ -22,146 +65,30 @@
   border: 1px solid #fed7d7;
 }
 
-.pharmacy-shift-attendance-card {
-  margin-bottom: 1.25rem;
-  padding: 1rem 1.15rem 1.15rem;
-  border-radius: 16px;
-  border: 1px solid rgba(174, 174, 192, 0.22);
-  background: linear-gradient(168deg, #e8ebf1 0%, #eef1f6 100%);
-  box-shadow: 8px 8px 16px #c5cad3, -6px -6px 14px #ffffff;
-}
-
-.pharmacy-shift-attendance-toolbar {
+/* ─── Cobertura por turno ─── */
+.pharmacy-coverage-head {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 0.75rem;
+  padding: 0.5rem 0.5rem 0.85rem;
+  margin-bottom: 0.35rem;
+  position: relative;
+  z-index: 1;
+  box-shadow: inset 0 -1px 0 rgba(174, 174, 192, 0.22);
 }
 
-.pharmacy-shift-attendance-title {
-  margin: 0;
-  font-size: 1.05rem;
-  font-weight: 600;
-  color: #4a5568;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-}
-
-.pharmacy-shift-attendance-controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem 1rem;
-}
-
-.pharmacy-shift-attendance-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: #718096;
-}
-
-.pharmacy-shift-attendance-input,
-.pharmacy-shift-attendance-select {
-  border: none;
-  border-radius: 10px;
-  padding: 0.45rem 0.65rem;
+.pharmacy-coverage-grid-wrap {
+  margin-top: 0.35rem;
+  padding: 1rem;
   background: #e0e5ec;
-  color: #4a5568;
-  font-weight: 600;
-  box-shadow: inset 2px 2px 5px #c4c4c4, inset -2px -2px 5px #ffffff;
-}
-
-.pharmacy-shift-attendance-hint {
-  margin: 0.5rem 0 0;
-  font-size: 0.82rem;
-  color: #718096;
-}
-
-.pharmacy-shift-attendance-body {
-  margin-top: 0.85rem;
-}
-
-.pharmacy-attendance-table-wrap {
-  margin-top: 0.5rem;
-}
-
-.pharmacy-attendance-status-select {
-  --pharmacy-attendance-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%234a5568'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  min-width: 10rem;
-  width: 100%;
-  max-width: 15rem;
-  border: none;
-  border-radius: 10px;
-  padding: 0.5rem 2.25rem 0.5rem 0.75rem;
-  background-color: #e0e5ec;
-  background-image: var(--pharmacy-attendance-chevron);
-  background-repeat: no-repeat;
-  background-position: right 0.55rem center;
-  background-size: 1rem;
-  color: #4a5568;
-  font-family: inherit;
-  font-size: 0.875rem;
-  font-weight: 600;
-  line-height: 1.3;
-  cursor: pointer;
-  box-shadow: inset 2px 2px 5px #c4c4c4, inset -2px -2px 5px #ffffff;
-}
-
-.pharmacy-attendance-status-select:hover {
-  color: #2d3748;
-}
-
-.pharmacy-attendance-status-select:focus {
-  outline: none;
-  box-shadow:
-    inset 2px 2px 5px #c4c4c4,
-    inset -2px -2px 5px #ffffff,
-    0 0 0 2px rgba(113, 128, 150, 0.45);
-}
-
-.pharmacy-attendance-status-select:disabled {
-  opacity: 0.65;
-  cursor: not-allowed;
-}
-
-.pharmacy-attendance-status-select::-ms-expand {
-  display: none;
-}
-
-.pharmacy-shift-attendance-actions {
-  margin-top: 1rem;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.pharmacy-attendance-save {
-  border-radius: 12px;
-}
-
-.pharmacy-coverage-summary {
-  margin-bottom: 1.25rem;
-  padding: 1rem 1.15rem 1.15rem;
   border-radius: 16px;
+  box-shadow: inset 4px 4px 8px #c2c8d0, inset -4px -4px 8px #f6f9ff;
+  overflow: auto;
   border: 1px solid rgba(174, 174, 192, 0.22);
-  background: linear-gradient(165deg, #e4e8ef 0%, #eef1f6 100%);
-  box-shadow: 7px 7px 14px #c8ccd4, -5px -5px 12px #ffffff;
-}
-
-.pharmacy-coverage-title {
-  margin: 0 0 0.85rem;
-  font-size: 1.05rem;
-  font-weight: 600;
-  color: #4a5568;
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
+  position: relative;
+  z-index: 1;
 }
 
 .pharmacy-coverage-grid {
@@ -170,29 +97,29 @@
   gap: 0.85rem;
 }
 
-.pharmacy-coverage-card {
+.pharmacy-coverage-cell {
   text-align: left;
   cursor: pointer;
-  border: 1px solid rgba(174, 174, 192, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.35);
   border-radius: 14px;
   padding: 0.85rem 1rem;
   background: #e0e5ec;
-  box-shadow: 5px 5px 10px #c4c8cf, -4px -4px 10px #ffffff;
+  box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
   font-family: inherit;
-  transition: box-shadow 0.18s ease, transform 0.12s ease;
+  transition: box-shadow 0.2s ease, transform 0.12s ease;
 }
 
-.pharmacy-coverage-card:hover {
+.pharmacy-coverage-cell:hover {
   transform: translateY(-1px);
-  box-shadow: 6px 6px 12px #b8bcc4, -5px -5px 11px #ffffff;
+  box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #ffffff;
 }
 
-.pharmacy-coverage-card--active {
-  outline: 2px solid #718096;
-  outline-offset: 2px;
+.pharmacy-coverage-cell--active {
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+  transform: translateY(0);
 }
 
-.pharmacy-coverage-card-head {
+.pharmacy-coverage-cell-head {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
@@ -244,4 +171,159 @@
   font-size: 0.72rem;
   color: #718096;
   font-weight: 600;
+}
+
+/* ─── Asistencia del turno ─── */
+.pharmacy-attendance-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem 1.25rem;
+  padding: 0.5rem 0.5rem 0.85rem;
+  margin-bottom: 0.35rem;
+  position: relative;
+  z-index: 1;
+  box-shadow: inset 0 -1px 0 rgba(174, 174, 192, 0.22);
+}
+
+.pharmacy-attendance-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+}
+
+.filter-item-neuro {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 160px;
+}
+
+.filter-item-neuro label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  color: #718096;
+  font-weight: 600;
+  font-size: 0.78rem;
+  margin: 0;
+}
+
+.select-neuro,
+.input-neuro {
+  padding: 10px 14px;
+  background: #e0e5ec;
+  border: none;
+  border-radius: 10px;
+  color: #4a5568;
+  font-weight: 600;
+  font-size: 0.95rem;
+  font-family: inherit;
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+  transition: box-shadow 0.2s ease;
+}
+
+.select-neuro:focus,
+.input-neuro:focus {
+  outline: none;
+  box-shadow: inset 6px 6px 12px #bebebe, inset -6px -6px 12px #ffffff;
+}
+
+.pharmacy-attendance-hint {
+  margin: 0 0.5rem 0.65rem;
+  font-size: 0.82rem;
+  color: #718096;
+  line-height: 1.45;
+  position: relative;
+  z-index: 1;
+}
+
+.pharmacy-attendance-body {
+  position: relative;
+  z-index: 1;
+}
+
+.table-wrapper-neuro {
+  margin-top: 0.35rem;
+  padding: 1rem;
+  background: #e0e5ec;
+  border-radius: 16px;
+  box-shadow: inset 4px 4px 8px #c2c8d0, inset -4px -4px 8px #f6f9ff;
+  overflow: auto;
+  border: 1px solid rgba(174, 174, 192, 0.22);
+}
+
+.badge-status-attendance {
+  display: inline;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #4a5568;
+}
+
+.pharmacy-attendance-actions {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.pharmacy-attendance-save {
+  border-radius: 999px;
+}
+
+/* Botones del modal de asistencia (misma familia que schedules-management) */
+.btn-attendance {
+  border: none;
+  border-radius: 999px;
+  padding: 8px 14px;
+  margin: 0;
+  font-size: 0.84rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  color: #4a5568;
+  background: #e0e5ec;
+  font-family: inherit;
+  box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #ffffff;
+  transition: all 0.2s ease;
+  min-height: 36px;
+  min-width: 104px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-attendance:hover:not(:disabled) {
+  box-shadow: 3px 3px 6px #bebebe, -3px -3px 6px #ffffff;
+  transform: translateY(-1px);
+}
+
+.btn-attendance:active:not(:disabled) {
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+  transform: translateY(0);
+}
+
+.btn-attendance:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+  .pharmacy-attendance-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pharmacy-attendance-filters {
+    flex-direction: column;
+  }
+
+  .filter-item-neuro {
+    min-width: 0;
+  }
+
+  .select-neuro,
+  .input-neuro {
+    width: 100%;
+  }
 }

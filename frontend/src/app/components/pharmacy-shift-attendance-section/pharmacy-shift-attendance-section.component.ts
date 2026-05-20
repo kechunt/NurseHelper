@@ -6,16 +6,17 @@ import {
   PharmacyShiftAttendanceRow,
   PharmacyShiftCoverageSummaryShift,
 } from '../../services/pharmacy.service';
-import type { Shift } from '../../services/shifts.service';
+import type { Shift, ShiftAttendanceStatus } from '../../services/shifts.service';
 import { ShiftRealtimeService } from '../../shared/services/shift-realtime.service';
 import { formatLocalDateIsoYmd } from '../nurse-dashboard/nurse-dashboard-local-date.helpers';
 import { ToastService } from '../../services/toast.service';
 import { BootstrapIconComponent } from '../../shared/components/bootstrap-icon/bootstrap-icon.component';
+import { AdminTableRowActionsModalComponent } from '../../shared/components/admin-table-row-actions-modal/admin-table-row-actions-modal.component';
 
 @Component({
   selector: 'app-pharmacy-shift-attendance-section',
   standalone: true,
-  imports: [CommonModule, FormsModule, BootstrapIconComponent],
+  imports: [CommonModule, FormsModule, BootstrapIconComponent, AdminTableRowActionsModalComponent],
   templateUrl: './pharmacy-shift-attendance-section.component.html',
   styleUrls: [
     '../../shared/styles/admin-table-unified.css',
@@ -47,8 +48,11 @@ export class PharmacyShiftAttendanceSectionComponent implements OnInit {
   readonly pharmacyAttendanceStatusMissing = $localize`:@@pharmacyAttendance.statusMissing:Falta`;
   readonly pharmacyAttendanceSaveSaving = $localize`:@@pharmacyAttendance.saveSaving:Guardando…`;
   readonly pharmacyAttendanceSaveIdle = $localize`:@@pharmacyAttendance.saveIdle:Guardar asistencia`;
+  readonly pharmacyAttendanceModalFallback = $localize`:@@pharmacyAttendance.modalFallback:Asistencia`;
 
   pharmacyWorkShifts: Shift[] = [];
+  pharmacyAttendanceActionsRow: PharmacyShiftAttendanceRow | null = null;
+  private pharmacyAttendancePersistTimer: ReturnType<typeof setTimeout> | null = null;
   pharmacyAttendanceDate = formatLocalDateIsoYmd(new Date());
   pharmacyAttendanceShiftId: number | null = null;
   pharmacyAttendanceRows: PharmacyShiftAttendanceRow[] = [];
@@ -168,6 +172,115 @@ export class PharmacyShiftAttendanceSectionComponent implements OnInit {
         this.pharmacyAttendanceLoadError = err?.error?.message || this.pharmacyAttendanceErrLoadRows;
       },
     });
+  }
+
+  openPharmacyAttendanceSheet(row: PharmacyShiftAttendanceRow): void {
+    this.pharmacyAttendanceActionsRow = row;
+  }
+
+  closePharmacyAttendanceSheet(): void {
+    this.pharmacyAttendanceActionsRow = null;
+  }
+
+  onPharmacyAttendanceRowKeydown(row: PharmacyShiftAttendanceRow, event: KeyboardEvent): void {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      this.openPharmacyAttendanceSheet(row);
+    }
+  }
+
+  getPharmacyAttendanceModalTitle(): string {
+    return this.pharmacyAttendanceActionsRow?.pharmacyUserName ?? this.pharmacyAttendanceModalFallback;
+  }
+
+  getPharmacyAttendanceRowAriaLabel(row: PharmacyShiftAttendanceRow): string {
+    return $localize`:@@pharmacyAttendance.ariaRow:Toma de lista: ${row.pharmacyUserName}:name:`;
+  }
+
+  pharmacyAttendanceSheetSummary(row: PharmacyShiftAttendanceRow): string[] {
+    return [
+      row.pharmacyUserName,
+      this.getPharmacyAttendanceStatusLabel(row.status),
+      this.formatPharmacyCheckIn(row.checkInAt),
+    ];
+  }
+
+  getPharmacyAttendanceStatusLabel(status: ShiftAttendanceStatus): string {
+    switch (status) {
+      case 'present':
+        return this.pharmacyAttendanceStatusPresent;
+      case 'late':
+        return this.pharmacyAttendanceStatusLate;
+      case 'justified':
+        return this.pharmacyAttendanceStatusJustified;
+      case 'missing':
+        return this.pharmacyAttendanceStatusMissing;
+      case 'absent':
+        return this.pharmacyAttendanceStatusAbsent;
+      default:
+        return this.pharmacyAttendanceStatusAbsent;
+    }
+  }
+
+  formatPharmacyCheckIn(value?: string | null): string {
+    if (!value) {
+      return '—';
+    }
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) {
+      return '—';
+    }
+    return d.toLocaleString('es-MX', {
+      hour12: false,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }
+
+  setPharmacyAttendanceStatus(row: PharmacyShiftAttendanceRow, status: ShiftAttendanceStatus): void {
+    row.status = status;
+    const nowIso = new Date().toISOString();
+    if (status === 'present' || status === 'late') {
+      row.checkInAt = row.checkInAt || nowIso;
+      row.checkOutAt = null;
+    } else {
+      row.checkInAt = null;
+      row.checkOutAt = null;
+    }
+    this.schedulePharmacyAttendancePersist();
+  }
+
+  markPharmacyPresent(row: PharmacyShiftAttendanceRow): void {
+    this.setPharmacyAttendanceStatus(row, 'present');
+  }
+
+  markPharmacyLate(row: PharmacyShiftAttendanceRow): void {
+    this.setPharmacyAttendanceStatus(row, 'late');
+  }
+
+  markPharmacyJustified(row: PharmacyShiftAttendanceRow): void {
+    this.setPharmacyAttendanceStatus(row, 'justified');
+  }
+
+  markPharmacyMissing(row: PharmacyShiftAttendanceRow): void {
+    this.setPharmacyAttendanceStatus(row, 'missing');
+  }
+
+  markPharmacyAbsent(row: PharmacyShiftAttendanceRow): void {
+    this.setPharmacyAttendanceStatus(row, 'absent');
+  }
+
+  private schedulePharmacyAttendancePersist(): void {
+    if (this.pharmacyAttendancePersistTimer) {
+      clearTimeout(this.pharmacyAttendancePersistTimer);
+    }
+    this.pharmacyAttendancePersistTimer = setTimeout(() => {
+      this.pharmacyAttendancePersistTimer = null;
+      this.savePharmacyShiftAttendance();
+    }, 450);
   }
 
   savePharmacyShiftAttendance(): void {

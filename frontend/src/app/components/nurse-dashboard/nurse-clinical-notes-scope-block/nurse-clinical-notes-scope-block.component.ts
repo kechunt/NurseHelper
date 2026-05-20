@@ -143,7 +143,7 @@ export class NurseClinicalNotesScopeBlockComponent implements OnChanges {
   }
 
   expandAllLabel(count: number): string {
-    return $localize`:@@ncnsb.expandAll:Ver todas (${count}):n:)`;
+    return $localize`:@@ncnsb.expandAll:Ver todas (${count})`;
   }
 
   detailAuthorLabel(note: PatientClinicalNoteDto): string {

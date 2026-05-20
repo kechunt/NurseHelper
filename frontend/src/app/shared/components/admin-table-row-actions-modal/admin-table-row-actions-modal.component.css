@@ -248,8 +248,18 @@
   padding: 10px 16px;
   font-size: 0.9rem;
   font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  color: #4a5568;
+  background: #e0e5ec;
   box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
   transition: all 0.2s ease;
+}
+
+.admin-table-row-actions-buttons .btn-attendance:disabled,
+.admin-table-row-actions-buttons .neuro-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .admin-table-row-actions-buttons .neuro-btn:hover,
