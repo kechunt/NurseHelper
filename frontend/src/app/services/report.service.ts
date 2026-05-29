@@ -93,7 +93,7 @@ export class ReportService {
    */
   exportReport(
     type: 'medication' | 'compliance',
-    format: 'pdf' | 'excel' | 'csv',
+    format: 'pdf' | 'csv',
     startDate: Date,
     endDate: Date,
     patientId?: number,
@@ -123,7 +123,7 @@ export class ReportService {
    */
   downloadReport(
     type: 'medication' | 'compliance',
-    format: 'pdf' | 'excel' | 'csv',
+    format: 'pdf' | 'csv',
     startDate: Date,
     endDate: Date,
     patientId?: number,

@@ -322,11 +322,11 @@
 
     <div *ngIf="!loading" class="table-container">
       <div class="table-header-actions">
+        <button class="neuro-btn" (click)="exportToPdf()" i18n-title="@@adminPatients.exportPdfTitle" title="Exportar a PDF">
+          <app-bootstrap-icon name="file-pdf" /> <span i18n="@@adminPatients.exportPdf">Exportar PDF</span>
+        </button>
         <button class="neuro-btn" (click)="exportToCSV()" i18n-title="@@adminPatients.exportCsvTitle" title="Exportar a CSV">
           <app-bootstrap-icon name="document-arrow-down" /> <span i18n="@@adminPatients.exportCsv">Exportar CSV</span>
-        </button>
-        <button class="neuro-btn" (click)="exportToExcel()" i18n-title="@@adminPatients.exportExcelTitle" title="Exportar a Excel">
-          <app-bootstrap-icon name="chart-bar" /> <span i18n="@@adminPatients.exportExcel">Exportar Excel</span>
         </button>
       </div>
       <table class="neuro-table" role="table" i18n-aria-label="@@adminPatients.tableAria" aria-label="Tabla de pacientes">

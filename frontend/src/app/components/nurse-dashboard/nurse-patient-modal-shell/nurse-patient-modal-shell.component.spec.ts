@@ -60,12 +60,12 @@ describe('NursePatientModalShellComponent', () => {
     sub.unsubscribe();
   });
 
-  it('emite printRequested al pulsar Imprimir', () => {
+  it('emite pdfRequested al pulsar PDF ficha', () => {
     let n = 0;
-    const sub = fixture.componentInstance.printRequested.subscribe(() => n++);
-    const printBtn = fixture.nativeElement.querySelector('#nurse-patient-print-btn') as HTMLButtonElement;
-    expect(printBtn).toBeTruthy();
-    printBtn.click();
+    const sub = fixture.componentInstance.pdfRequested.subscribe(() => n++);
+    const pdfBtn = fixture.nativeElement.querySelector('#nurse-patient-export-pdf-btn') as HTMLButtonElement;
+    expect(pdfBtn).toBeTruthy();
+    pdfBtn.click();
     expect(n).toBe(1);
     sub.unsubscribe();
   });
@@ -75,35 +75,27 @@ describe('NursePatientModalShellComponent', () => {
     expect(fixture.nativeElement.querySelector('#nurse-patient-modal-close-btn')).toBeTruthy();
   });
 
-  it('muestra CSV y Excel en el footer y emite eventos con pestaña', () => {
+  it('muestra CSV en el footer y emite evento con pestaña', () => {
     fixture.componentRef.setInput('activeTab', 'history');
     fixture.detectChanges();
 
     const emittedCsv: any[] = [];
-    const emittedXls: any[] = [];
     const subC = fixture.componentInstance.exportCsvRequested.subscribe((v) => emittedCsv.push(v));
-    const subX = fixture.componentInstance.exportExcelRequested.subscribe((v) => emittedXls.push(v));
 
     const csvBtn = fixture.nativeElement.querySelector('#nurse-patient-export-csv-btn') as HTMLButtonElement;
-    const xlsBtn = fixture.nativeElement.querySelector('#nurse-patient-export-excel-btn') as HTMLButtonElement;
-    expect(csvBtn && xlsBtn).toBeTruthy();
+    expect(csvBtn).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('#nurse-patient-export-excel-btn')).toBeNull();
     expect(csvBtn.title.length).toBeGreaterThan(0);
-    expect(xlsBtn.title.length).toBeGreaterThan(0);
 
     csvBtn.click();
-    xlsBtn.click();
     expect(emittedCsv).toEqual([{ tab: 'history' }]);
-    expect(emittedXls).toEqual([{ tab: 'history' }]);
 
     fixture.componentRef.setInput('activeTab', 'medications');
     fixture.detectChanges();
     csvBtn.click();
-    xlsBtn.click();
     expect(emittedCsv[1]).toEqual({ tab: 'medications' });
-    expect(emittedXls[1]).toEqual({ tab: 'medications' });
 
     subC.unsubscribe();
-    subX.unsubscribe();
   });
 
   it('emite activeTabChange al cambiar de pestaña', () => {

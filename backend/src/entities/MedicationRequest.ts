@@ -10,6 +10,11 @@ import {
 } from 'typeorm';
 import { User } from './User';
 import { Medication } from './Medication';
+import {
+  encryptedNullableTextTransformer,
+  encryptedRequiredJsonTransformer,
+  encryptedRequiredTextTransformer,
+} from '../utils/typeorm-encrypted.transformers';
 
 export enum RequestStatus {
   PENDING = 'pending',
@@ -54,13 +59,13 @@ export class MedicationRequest {
   @JoinColumn({ name: 'medicationId' })
   medication: Medication;
 
-  @Column({ length: 100 })
+  @Column({ type: 'text', transformer: encryptedRequiredTextTransformer })
   dosage: string;
 
   @Column({ type: 'int' })
   quantity: number;
 
-  @Column({ type: 'json' })
+  @Column({ type: 'longtext', transformer: encryptedRequiredJsonTransformer })
   patientsInfo: any;
 
   @Column({
@@ -77,7 +82,7 @@ export class MedicationRequest {
   })
   priority: RequestPriority;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text', nullable: true, transformer: encryptedNullableTextTransformer })
   notes: string;
 
   @CreateDateColumn()

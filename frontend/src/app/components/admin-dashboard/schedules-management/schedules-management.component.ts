@@ -1084,46 +1084,42 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
     });
   }
 
+  private buildAttendanceHistoryExportRows(): Record<string, string>[] {
+    return this.attendanceHistory.map((row) => ({
+      Fecha: row.date || '-',
+      Turno: row.shiftName || '-',
+      Horario: row.shiftTime || '-',
+      Enfermera: row.nurseName || '-',
+      Estado: this.getAttendanceStatusLabel(row.status),
+      Entrada: this.formatDateTime(row.checkInAt),
+    }));
+  }
+
   exportAttendanceHistoryCsv(): void {
     if (!this.attendanceHistory.length) {
       this.toastService.warning(this.schedWarnHistoryEmpty);
       return;
     }
 
-    const rows = this.attendanceHistory.map((row) => ({
-      Fecha: row.date || '-',
-      Turno: row.shiftName || '-',
-      Horario: row.shiftTime || '-',
-      Enfermera: row.nurseName || '-',
-      Estado: this.getAttendanceStatusLabel(row.status),
-      Entrada: this.formatDateTime(row.checkInAt),
-    }));
-
+    const rows = this.buildAttendanceHistoryExportRows();
     this.exportService.exportToCSV(rows, {
       filename: `historial_turnos_${new Date().toISOString().split('T')[0]}.csv`,
       headers: ['Fecha', 'Turno', 'Horario', 'Enfermera', 'Estado', 'Entrada'],
     });
   }
 
-  exportAttendanceHistoryExcel(): void {
+  exportAttendanceHistoryPdf(): void {
     if (!this.attendanceHistory.length) {
       this.toastService.warning(this.schedWarnHistoryEmpty);
       return;
     }
 
-    const rows = this.attendanceHistory.map((row) => ({
-      Fecha: row.date || '-',
-      Turno: row.shiftName || '-',
-      Horario: row.shiftTime || '-',
-      Enfermera: row.nurseName || '-',
-      Estado: this.getAttendanceStatusLabel(row.status),
-      Entrada: this.formatDateTime(row.checkInAt),
-    }));
-
-    this.exportService.exportToExcel(rows, {
-      filename: `historial_turnos_${new Date().toISOString().split('T')[0]}.xlsx`,
-      sheetName: this.schedHistorySheetName,
+    const rows = this.buildAttendanceHistoryExportRows();
+    this.exportService.exportToPdf(rows, {
+      title: $localize`:@@schedMgmt.pdfAttendanceTitle:Historial de asistencia`,
+      filename: `historial_turnos_${new Date().toISOString().split('T')[0]}.pdf`,
       headers: ['Fecha', 'Turno', 'Horario', 'Enfermera', 'Estado', 'Entrada'],
+      orientation: 'landscape',
     });
   }
 

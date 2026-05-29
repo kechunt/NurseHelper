@@ -30,7 +30,7 @@
     [staffScopeSuffix]="staffQuickActionsReportsScopeSuffix"
     (dismissed)="qa.closeReports()"
     (csvDownload)="qa.downloadCsv($event)"
-    (excelDownload)="qa.downloadExcel($event)"
+    (pdfDownload)="qa.downloadPdf($event)"
     (staffNurseFilterChange)="qa.onReportNurseFilterChange($event)"
   />
 }

@@ -294,6 +294,32 @@ describe('ReportsController', () => {
       });
     });
 
+    it('PDF medication: cabeceras y send con buffer', async () => {
+      const buf = Buffer.from('%PDF');
+      mockedReport.exportReport.mockResolvedValueOnce(buf);
+      const { setHeader, send, res } = resChain();
+      ctrl.exportReport(
+        authReq({
+          query: {
+            type: 'medication',
+            format: 'pdf',
+            startDate: '2026-03-01',
+            endDate: '2026-03-02',
+          },
+        }),
+        res,
+        jest.fn()
+      );
+      await flushAsync();
+      expect(mockedReport.exportReport).toHaveBeenCalledWith(expect.anything(), 'pdf');
+      expect(setHeader).toHaveBeenCalledWith('Content-Type', 'application/pdf');
+      expect(setHeader).toHaveBeenCalledWith(
+        'Content-Disposition',
+        expect.stringMatching(/^attachment; filename="report-medication-\d{4}-\d{2}-\d{2}\.pdf"$/)
+      );
+      expect(send).toHaveBeenCalledWith(buf);
+    });
+
     it('CSV medication: cabeceras y send con buffer', async () => {
       const buf = Buffer.from('x');
       mockedReport.exportReport.mockResolvedValueOnce(buf);

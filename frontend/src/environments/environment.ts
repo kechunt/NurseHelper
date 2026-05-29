@@ -1,5 +1,6 @@
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:3000/api'
+  /** Ruta relativa: el dev server hace proxy a localhost:3000 (también vía ngrok en :4200). */
+  apiUrl: '/api'
 };
 

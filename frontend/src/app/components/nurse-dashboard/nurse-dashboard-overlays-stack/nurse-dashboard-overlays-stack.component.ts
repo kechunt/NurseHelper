@@ -70,9 +70,8 @@ export class NurseDashboardOverlaysStackComponent {
   @Output() readonly notCompletedConfirmed = new EventEmitter<{ reason: string }>();
 
   @Output() readonly patientModalClosed = new EventEmitter<void>();
-  @Output() readonly patientModalPrintRequested = new EventEmitter<void>();
+  @Output() readonly patientModalPdfRequested = new EventEmitter<void>();
   @Output() readonly patientExportCsvRequested = new EventEmitter<{ tab: string }>();
-  @Output() readonly patientExportExcelRequested = new EventEmitter<{ tab: string }>();
   @Output() readonly patientActiveTabChange = new EventEmitter<string>();
   @Output() readonly patientNewDiagnosisNoteChange = new EventEmitter<string>();
   @Output() readonly patientNewMedicalObservationNoteChange = new EventEmitter<string>();
@@ -129,8 +128,7 @@ export class NurseDashboardOverlaysStackComponent {
 
   @Output() readonly nurseReportsDismissed = new EventEmitter<void>();
   @Output() readonly nurseReportsCsvDownload = new EventEmitter<'compliance' | 'medication'>();
-  @Output() readonly nurseReportsExcelDownload = new EventEmitter<'compliance' | 'medication'>();
-
+  @Output() readonly nurseReportsPdfDownload = new EventEmitter<'compliance' | 'medication'>();
   @Output() readonly tasksQuickPatientFilterChange = new EventEmitter<string>();
   @Output() readonly tasksQuickHourFilterChange = new EventEmitter<string>();
   @Output() readonly tasksQuickClearFilters = new EventEmitter<void>();

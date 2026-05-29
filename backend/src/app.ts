@@ -58,10 +58,14 @@ const corsOptions: cors.CorsOptions = {
 
     /** Previews y producción en Vercel (*.vercel.app) */
     const vercelPattern = /^https:\/\/([a-z0-9-]+\.)*vercel\.app$/i;
+    /** Túneles ngrok (desarrollo remoto; p. ej. *.ngrok-free.dev) */
+    const ngrokPattern =
+      /^https:\/\/[a-z0-9-]+(?:-[a-z0-9-]+)*\.ngrok(?:-free)?\.(?:app|dev)$/i;
 
     const isAllowed =
       allAllowedOrigins.includes(origin) ||
-      vercelPattern.test(origin);
+      vercelPattern.test(origin) ||
+      ngrokPattern.test(origin);
 
     if (isAllowed) {
       callback(null, true);

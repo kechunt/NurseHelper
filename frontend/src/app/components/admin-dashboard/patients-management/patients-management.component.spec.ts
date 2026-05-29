@@ -46,7 +46,7 @@ describe('PatientsManagementComponent', () => {
           useValue: { success: jasmine.createSpy(), error: jasmine.createSpy(), warning: jasmine.createSpy(), info: jasmine.createSpy() },
         },
         { provide: ConfirmationService, useValue: { confirm: jasmine.createSpy().and.returnValue(Promise.resolve(false)) } },
-        { provide: ExportService, useValue: { exportToCSV: jasmine.createSpy(), exportToExcel: jasmine.createSpy() } },
+        { provide: ExportService, useValue: { exportToCSV: jasmine.createSpy() } },
       ],
     }).compileComponents();
   });

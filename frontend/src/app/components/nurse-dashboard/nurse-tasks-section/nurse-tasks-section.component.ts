@@ -40,6 +40,7 @@ export class NurseTasksSectionComponent {
   @Output() readonly openTaskDetail = new EventEmitter<TaskItem>();
   @Output() readonly dayHistoryDateChange = new EventEmitter<string>();
   @Output() readonly exportDayHistoryCsvClick = new EventEmitter<void>();
+  @Output() readonly exportDayHistoryPdfClick = new EventEmitter<void>();
 
   descriptionPreview(task: TaskItem): string {
     return pendingTaskDescriptionPreview(task);

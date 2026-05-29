@@ -39,6 +39,7 @@ describe('UsersManagementComponent', () => {
 
   const exportMock = {
     exportToCSV: jasmine.createSpy('exportToCSV'),
+    exportToPdf: jasmine.createSpy('exportToPdf'),
   };
 
   beforeEach(async () => {

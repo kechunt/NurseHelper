@@ -222,24 +222,13 @@
           <span i18n="@@nursePatientModalShell.footerExportCsv">CSV</span>
         </button>
         <button
-          id="nurse-patient-export-excel-btn"
-          type="button"
-          class="btn-secondary-neuro"
-          (click)="exportTabExcel()"
-          i18n-title="@@nursePatientModalShell.exportExcelTitle"
-          title="Descargar la pestaña actual como Excel"
-        >
-          <app-bootstrap-icon name="table-cells" />
-          <span i18n="@@nursePatientModalShell.footerExportExcel">Excel</span>
-        </button>
-        <button
-          id="nurse-patient-print-btn"
+          id="nurse-patient-export-pdf-btn"
           type="button"
           class="btn-primary-neuro"
-          (click)="printRequested.emit()"
-          i18n="@@nursePatientModalShell.footerPrint"
+          (click)="pdfRequested.emit()"
+          i18n="@@nursePatientModalShell.footerPdf"
         >
-          <app-bootstrap-icon name="printer" /> Imprimir
+          <app-bootstrap-icon name="file-pdf" /> PDF ficha
         </button>
       </div>
     </div>

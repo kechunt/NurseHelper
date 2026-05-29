@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { Area } from './Area';
 import { User } from './User';
+import { encryptedRequiredTextTransformer } from '../utils/typeorm-encrypted.transformers';
 
 @Entity('shift_handover_notes')
 @Index(['areaId', 'noteDate', 'shiftSlot'], { unique: true })
@@ -31,7 +32,7 @@ export class ShiftHandoverNote {
   @Column({ type: 'varchar', length: 16, name: 'shift_slot' })
   shiftSlot: string;
 
-  @Column({ type: 'text' })
+  @Column({ type: 'text', transformer: encryptedRequiredTextTransformer })
   body: string;
 
   @Column({ name: 'author_user_id' })

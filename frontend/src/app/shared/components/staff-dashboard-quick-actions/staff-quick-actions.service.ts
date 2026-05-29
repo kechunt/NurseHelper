@@ -29,9 +29,9 @@ export class StaffQuickActionsService {
   readonly staffQuickWarnCsvEmpty = $localize`:@@staffQuickActions.warnCsvEmpty:CSV vacío con los filtros actuales.`;
   readonly staffQuickToastCsvDownloaded = $localize`:@@staffQuickActions.toastCsvDownloaded:CSV descargado`;
   readonly staffQuickErrCsvDownload = $localize`:@@staffQuickActions.errCsvDownload:No se pudo descargar el CSV`;
-  readonly staffQuickWarnExcelEmpty = $localize`:@@staffQuickActions.warnExcelEmpty:Excel vacío con los filtros actuales.`;
-  readonly staffQuickToastExcelDownloaded = $localize`:@@staffQuickActions.toastExcelDownloaded:Excel descargado`;
-  readonly staffQuickErrExcelDownload = $localize`:@@staffQuickActions.errExcelDownload:No se pudo descargar el Excel`;
+  readonly staffQuickWarnPdfEmpty = $localize`:@@staffQuickActions.warnPdfEmpty:PDF vacío con los filtros actuales.`;
+  readonly staffQuickToastPdfDownloaded = $localize`:@@staffQuickActions.toastPdfDownloaded:PDF descargado`;
+  readonly staffQuickErrPdfDownload = $localize`:@@staffQuickActions.errPdfDownload:No se pudo descargar el PDF`;
   readonly staffQuickReportsPeriodSep = $localize`:@@staffQuickActions.reportsPeriodSep: → `;
 
   readonly showTeamHandover = signal(false);
@@ -348,7 +348,7 @@ export class StaffQuickActionsService {
     });
   }
 
-  downloadExcel(kind: 'compliance' | 'medication'): void {
+  downloadPdf(kind: 'compliance' | 'medication'): void {
     const start = this.reportsStart();
     const end = this.reportsEnd();
     if (!start || !end) {
@@ -357,26 +357,26 @@ export class StaffQuickActionsService {
     this.reportsExporting.set(true);
     const nurseId = this.reportNurseUserId();
     const slug = `${start.toISOString().slice(0, 10)}_${end.toISOString().slice(0, 10)}`;
-    this.reportService.exportReport(kind, 'excel', start, end, undefined, nurseId).subscribe({
+    this.reportService.exportReport(kind, 'pdf', start, end, undefined, nurseId).subscribe({
       next: (blob) => {
         this.reportsExporting.set(false);
         if (!blob?.size) {
-          this.toast.warning(this.staffQuickWarnExcelEmpty);
+          this.toast.warning(this.staffQuickWarnPdfEmpty);
           return;
         }
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `reporte-admin-${kind}-${slug}.xlsx`;
+        link.download = `reporte-admin-${kind}-${slug}.pdf`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
-        this.toast.success(this.staffQuickToastExcelDownloaded);
+        this.toast.success(this.staffQuickToastPdfDownloaded);
       },
       error: () => {
         this.reportsExporting.set(false);
-        this.toast.error(this.staffQuickErrExcelDownload);
+        this.toast.error(this.staffQuickErrPdfDownload);
       },
     });
   }

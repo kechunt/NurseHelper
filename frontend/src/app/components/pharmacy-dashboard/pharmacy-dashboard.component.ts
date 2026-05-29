@@ -13,8 +13,8 @@ import { ToastService } from '../../services/toast.service';
 import { ConfirmationService } from '../../services/confirmation.service';
 import { DashboardShellComponent } from '../../shared/components/dashboard-shell/dashboard-shell.component';
 import { AdminTableRowActionsModalComponent } from '../../shared/components/admin-table-row-actions-modal/admin-table-row-actions-modal.component';
+import { ExportService } from '../../shared/services/export.service';
 import { BootstrapIconComponent } from '../../shared/components/bootstrap-icon/bootstrap-icon.component';
-import { PharmacyShiftAttendanceSectionComponent } from '../pharmacy-shift-attendance-section/pharmacy-shift-attendance-section.component';
 
 interface MedicationRequest {
   id: number;
@@ -102,7 +102,6 @@ interface InventoryItem {
     DashboardShellComponent,
     AdminTableRowActionsModalComponent,
     BootstrapIconComponent,
-    PharmacyShiftAttendanceSectionComponent,
   ],
   templateUrl: './pharmacy-dashboard.component.html',
   styleUrls: [
@@ -203,9 +202,8 @@ export class PharmacyDashboardComponent implements OnInit {
   readonly pharmacyExportHistoryAria = $localize`:@@pharmacyModule.exportHistoryAria:Exportar historial`;
   readonly pharmacyExportHistoryTitle = $localize`:@@pharmacyModule.exportHistoryTitle:Exportar historial`;
   readonly pharmacyExportHistoryHint = $localize`:@@pharmacyModule.exportHistoryHint:Se exportan los registros visibles con el buscador actual. El nombre del archivo incluye la fecha y hora en que se genera.`;
-  readonly pharmacyExportPrint = $localize`:@@pharmacyModule.exportPrint:Imprimir`;
+  readonly pharmacyExportPdf = $localize`:@@pharmacyModule.exportPdf:PDF`;
   readonly pharmacyExportSaveCsv = $localize`:@@pharmacyModule.exportSaveCsv:Guardar CSV`;
-  readonly pharmacyExportSaveExcel = $localize`:@@pharmacyModule.exportSaveExcel:Guardar Excel`;
 
   readonly pharmacyExportInventoryAria = $localize`:@@pharmacyModule.exportInventoryAria:Exportar inventario de bodega`;
   readonly pharmacyExportInventoryTitle = $localize`:@@pharmacyModule.exportInventoryTitle:Exportar bodega / stock`;
@@ -324,7 +322,6 @@ export class PharmacyDashboardComponent implements OnInit {
 
   readonly pharmacyErrMedicationId = $localize`:@@pharmacyModule.errMedicationId:No se pudo identificar el medicamento`;
   readonly pharmacyErrKardexLoad = $localize`:@@pharmacyModule.errKardexLoad:No se pudo cargar el kardex`;
-  readonly pharmacyErrPrintWindow = $localize`:@@pharmacyModule.errPrintWindow:No se pudo abrir la vista de impresión.`;
   readonly pharmacyErrLoadInventory = $localize`:@@pharmacyModule.errLoadInventory:No se pudo cargar el inventario`;
   readonly pharmacyErrLoadRequests = $localize`:@@pharmacyModule.errLoadRequests:No se pudieron cargar las solicitudes`;
   readonly pharmacyErrLoadRequestsToast = $localize`:@@pharmacyModule.errLoadRequestsToast:Error al cargar las solicitudes. Por favor, recarga la página.`;
@@ -361,18 +358,14 @@ export class PharmacyDashboardComponent implements OnInit {
   readonly pharmacyStockOkHint = $localize`:@@pharmacyModule.stockOkHint:(ok)`;
   readonly pharmacyStockReviewHint = $localize`:@@pharmacyModule.stockReviewHint:(revisar)`;
 
-  readonly pharmacyWarnPrintEmpty = $localize`:@@pharmacyModule.warnPrintEmpty:No hay datos para imprimir con los filtros actuales.`;
-  readonly pharmacyPrintGeneratedPrefix = $localize`:@@pharmacyModule.printGeneratedPrefix:Generado:`;
+  readonly pharmacyWarnExportEmpty = $localize`:@@pharmacyModule.warnExportEmpty:No hay datos para exportar con los filtros actuales.`;
+  readonly pharmacyPdfGeneratedPrefix = $localize`:@@pharmacyModule.pdfGeneratedPrefix:Generado:`;
   readonly pharmacyWarnHistoryExportEmpty = $localize`:@@pharmacyModule.warnHistoryExportEmpty:No hay registros en el historial para exportar.`;
   readonly pharmacyWarnInventoryExportEmpty = $localize`:@@pharmacyModule.warnInventoryExportEmpty:No hay filas de inventario para exportar (revisa filtros).`;
   readonly pharmacyToastHistoryCsvOk = $localize`:@@pharmacyModule.toastHistoryCsvOk:Historial exportado a CSV`;
-  readonly pharmacyToastHistoryExcelOk = $localize`:@@pharmacyModule.toastHistoryExcelOk:Historial exportado a Excel`;
   readonly pharmacyToastInventoryCsvOk = $localize`:@@pharmacyModule.toastInventoryCsvOk:Inventario de bodega exportado a CSV`;
-  readonly pharmacyToastInventoryExcelOk = $localize`:@@pharmacyModule.toastInventoryExcelOk:Inventario de bodega exportado a Excel`;
-  readonly pharmacyPrintHistoryTitle = $localize`:@@pharmacyModule.printHistoryTitle:Historial de farmacia`;
-  readonly pharmacyPrintInventoryTitle = $localize`:@@pharmacyModule.printInventoryTitle:Inventario de farmacia`;
-  readonly pharmacyExcelSheetHistory = $localize`:@@pharmacyModule.excelSheetHistory:Historial`;
-  readonly pharmacyExcelSheetWarehouse = $localize`:@@pharmacyModule.excelSheetWarehouse:Bodega`;
+  readonly pharmacyPdfHistoryTitle = $localize`:@@pharmacyModule.pdfHistoryTitle:Historial de farmacia`;
+  readonly pharmacyPdfInventoryTitle = $localize`:@@pharmacyModule.pdfInventoryTitle:Inventario de farmacia`;
   readonly pharmacyExportKindDelivery = $localize`:@@pharmacyModule.exportKindDelivery:Entrega`;
   readonly pharmacyExportKindReject = $localize`:@@pharmacyModule.exportKindReject:Rechazo`;
 
@@ -502,6 +495,7 @@ export class PharmacyDashboardComponent implements OnInit {
     private pharmacyService: PharmacyService,
     private toastService: ToastService,
     private confirmationService: ConfirmationService,
+    private exportService: ExportService,
     private router: Router,
     private route: ActivatedRoute
   ) {}
@@ -1361,77 +1355,141 @@ export class PharmacyDashboardComponent implements OnInit {
     return `${base}_${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
   }
 
-  private triggerDownload(content: string, filename: string, mime: string): void {
-    const blob = new Blob(['\ufeff' + content], { type: `${mime};charset=utf-8;` });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.rel = 'noopener';
-    a.click();
-    URL.revokeObjectURL(url);
+  private getHistoryExportHeaders(): string[] {
+    return [
+      this.pharmacyExpColType,
+      this.pharmacyExpColId,
+      this.pharmacyExpColDate,
+      this.pharmacyExpColMedication,
+      this.pharmacyExpColDosage,
+      this.pharmacyExpColQuantity,
+      this.pharmacyExpColRequestedBy,
+      this.pharmacyExpColPatients,
+      this.pharmacyExpColDeliveredOrReason,
+      this.pharmacyExpColNotes,
+    ];
   }
 
-  private escapeCsvCell(value: string | number | null | undefined): string {
-    const s = String(value ?? '');
-    if (/[",\n\r]/.test(s)) {
-      return `"${s.replace(/"/g, '""')}"`;
-    }
-    return s;
+  private buildHistoryExportRows(): Record<string, string | number>[] {
+    return this.filteredHistory.map((item) => ({
+      [this.pharmacyExpColType]: this.historyExportKindLabel(item),
+      [this.pharmacyExpColId]: item.deliveryId || item.requestId || '',
+      [this.pharmacyExpColDate]: this.getHistoryDate(item),
+      [this.pharmacyExpColMedication]: item.medication,
+      [this.pharmacyExpColDosage]: item.dosage,
+      [this.pharmacyExpColQuantity]: item.quantity,
+      [this.pharmacyExpColRequestedBy]: item.requestedBy,
+      [this.pharmacyExpColPatients]: this.formatHistoryPatients(item),
+      [this.pharmacyExpColDeliveredOrReason]: this.historyDeliveredOrReason(item),
+      [this.pharmacyExpColNotes]: item.type === 'delivery' ? item.notes || '' : '',
+    }));
   }
 
-  private escapeHtml(value: string | number | null | undefined): string {
-    const s = String(value ?? '');
-    return s
-      .replaceAll('&', '&amp;')
-      .replaceAll('<', '&lt;')
-      .replaceAll('>', '&gt;')
-      .replaceAll('"', '&quot;')
-      .replaceAll("'", '&#39;');
+  private getInventoryExportHeaders(): string[] {
+    return [
+      this.pharmacyExpColMedication,
+      this.pharmacyExpColDosage,
+      this.pharmacyExpColDescription,
+      this.pharmacyExpColStockCurrent,
+      this.pharmacyExpColStockMin,
+      this.pharmacyExpColLocation,
+      this.pharmacyExpColExpiry,
+      this.pharmacyExpColStatus,
+      this.pharmacyExpColExpiryClass,
+      this.pharmacyExpColDaysToExpiry,
+    ];
   }
 
-  private printRowsAsTable(title: string, headers: string[], rows: Array<Array<string | number>>): void {
-    if (!rows.length) {
-      this.notifyWarning(this.pharmacyWarnPrintEmpty);
+  private buildInventoryExportRows(): Record<string, string | number>[] {
+    return this.filteredInventory.map((item) => {
+      const cad = item.expiryDateRaw ? String(item.expiryDateRaw).slice(0, 10) : '';
+      return {
+        [this.pharmacyExpColMedication]: item.medication,
+        [this.pharmacyExpColDosage]: item.dosage,
+        [this.pharmacyExpColDescription]: item.description || '',
+        [this.pharmacyExpColStockCurrent]: item.stock,
+        [this.pharmacyExpColStockMin]: item.minStock,
+        [this.pharmacyExpColLocation]: item.location,
+        [this.pharmacyExpColExpiry]: cad,
+        [this.pharmacyExpColStatus]: this.getInventoryStatusLabel(item),
+        [this.pharmacyExpColExpiryClass]: item.expiryClassification,
+        [this.pharmacyExpColDaysToExpiry]: item.daysToExpiry ?? '',
+      };
+    });
+  }
+
+  exportHistoryCsv(): void {
+    if (!this.filteredHistory.length) {
+      this.notifyWarning(this.pharmacyWarnHistoryExportEmpty);
       return;
     }
-    const now = new Date().toLocaleString('es-ES');
-    const thead = `<tr>${headers.map((h) => `<th>${this.escapeHtml(h)}</th>`).join('')}</tr>`;
-    const tbody = rows
-      .map((r) => `<tr>${r.map((c) => `<td>${this.escapeHtml(c)}</td>`).join('')}</tr>`)
-      .join('');
-    const html = `<!doctype html>
-<html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <title>${this.escapeHtml(title)}</title>
-    <style>
-      body { font-family: Arial, sans-serif; margin: 16px; color: #1a202c; }
-      h1 { margin: 0 0 6px; font-size: 18px; }
-      p { margin: 0 0 12px; color: #4a5568; font-size: 12px; }
-      table { width: 100%; border-collapse: collapse; font-size: 12px; }
-      th, td { border: 1px solid #cbd5e0; padding: 6px 8px; text-align: left; vertical-align: top; }
-      th { background: #edf2f7; font-weight: 700; }
-    </style>
-  </head>
-  <body>
-    <h1>${this.escapeHtml(title)}</h1>
-    <p>${this.escapeHtml(this.pharmacyPrintGeneratedPrefix)} ${this.escapeHtml(now)}</p>
-    <table>
-      <thead>${thead}</thead>
-      <tbody>${tbody}</tbody>
-    </table>
-    <script>window.onload = () => { window.print(); };</script>
-  </body>
-</html>`;
-    const w = window.open('', '_blank', 'noopener,noreferrer');
-    if (!w) {
-      this.notifyError(this.pharmacyErrPrintWindow);
+    try {
+      const data = this.buildHistoryExportRows();
+      this.exportService.exportToCSV(data, {
+        filename: `${this.buildExportFilename('historial_farmacia')}.csv`,
+        headers: this.getHistoryExportHeaders(),
+      });
+      this.notifySuccess(this.pharmacyToastHistoryCsvOk);
+    } catch (e: unknown) {
+      this.notifyError(String((e as Error)?.message || e));
+    }
+  }
+
+  exportHistoryPdf(): void {
+    if (!this.filteredHistory.length) {
+      this.notifyWarning(this.pharmacyWarnHistoryExportEmpty);
       return;
     }
-    w.document.open();
-    w.document.write(html);
-    w.document.close();
+    try {
+      const data = this.buildHistoryExportRows();
+      this.exportService.exportToPdf(data, {
+        title: this.pharmacyPdfHistoryTitle,
+        filename: `${this.buildExportFilename('historial_farmacia')}.pdf`,
+        headers: this.getHistoryExportHeaders(),
+        generatedAtLabel: this.pharmacyPdfGeneratedPrefix,
+        orientation: 'landscape',
+      });
+      this.notifySuccess($localize`:@@pharmacyModule.toastHistoryPdfOk:PDF de historial descargado`);
+    } catch (e: unknown) {
+      this.notifyError(String((e as Error)?.message || e));
+    }
+  }
+
+  exportInventoryCsv(): void {
+    if (!this.filteredInventory.length) {
+      this.notifyWarning(this.pharmacyWarnInventoryExportEmpty);
+      return;
+    }
+    try {
+      const data = this.buildInventoryExportRows();
+      this.exportService.exportToCSV(data, {
+        filename: `${this.buildExportFilename('bodega_inventario')}.csv`,
+        headers: this.getInventoryExportHeaders(),
+      });
+      this.notifySuccess(this.pharmacyToastInventoryCsvOk);
+    } catch (e: unknown) {
+      this.notifyError(String((e as Error)?.message || e));
+    }
+  }
+
+  exportInventoryPdf(): void {
+    if (!this.filteredInventory.length) {
+      this.notifyWarning(this.pharmacyWarnInventoryExportEmpty);
+      return;
+    }
+    try {
+      const data = this.buildInventoryExportRows();
+      this.exportService.exportToPdf(data, {
+        title: this.pharmacyPdfInventoryTitle,
+        filename: `${this.buildExportFilename('bodega_inventario')}.pdf`,
+        headers: this.getInventoryExportHeaders(),
+        generatedAtLabel: this.pharmacyPdfGeneratedPrefix,
+        orientation: 'landscape',
+      });
+      this.notifySuccess($localize`:@@pharmacyModule.toastInventoryPdfOk:PDF de inventario descargado`);
+    } catch (e: unknown) {
+      this.notifyError(String((e as Error)?.message || e));
+    }
   }
 
   private formatHistoryPatients(item: DeliveryHistoryItem): string {
@@ -1453,177 +1511,6 @@ export class PharmacyDashboardComponent implements OnInit {
 
   private historyExportKindLabel(item: CombinedHistoryItem | DeliveryHistoryItem): string {
     return item.type === 'delivery' ? this.pharmacyExportKindDelivery : this.pharmacyExportKindReject;
-  }
-
-  exportHistoryCsv(): void {
-    if (!this.filteredHistory.length) {
-      this.notifyWarning(this.pharmacyWarnHistoryExportEmpty);
-      return;
-    }
-    const headers = [
-      this.pharmacyExpColType,
-      this.pharmacyExpColId,
-      this.pharmacyExpColDate,
-      this.pharmacyExpColMedication,
-      this.pharmacyExpColDosage,
-      this.pharmacyExpColQuantity,
-      this.pharmacyExpColRequestedBy,
-      this.pharmacyExpColPatients,
-      this.pharmacyExpColDeliveredOrReason,
-      this.pharmacyExpColNotes,
-    ];
-    const lines = [headers.join(',')];
-    for (const item of this.filteredHistory) {
-      const tipo = this.historyExportKindLabel(item);
-      const id = item.deliveryId || item.requestId || '';
-      const row = [
-        this.escapeCsvCell(tipo),
-        this.escapeCsvCell(id),
-        this.escapeCsvCell(this.getHistoryDate(item)),
-        this.escapeCsvCell(item.medication),
-        this.escapeCsvCell(item.dosage),
-        this.escapeCsvCell(item.quantity),
-        this.escapeCsvCell(item.requestedBy),
-        this.escapeCsvCell(this.formatHistoryPatients(item)),
-        this.escapeCsvCell(this.historyDeliveredOrReason(item)),
-        this.escapeCsvCell(item.type === 'delivery' ? item.notes || '' : ''),
-      ];
-      lines.push(row.join(','));
-    }
-    this.triggerDownload(lines.join('\n'), `${this.buildExportFilename('historial_farmacia')}.csv`, 'text/csv');
-    this.notifySuccess(this.pharmacyToastHistoryCsvOk);
-  }
-
-  async exportHistoryExcel(): Promise<void> {
-    if (!this.filteredHistory.length) {
-      this.notifyWarning(this.pharmacyWarnHistoryExportEmpty);
-      return;
-    }
-    const rows = this.filteredHistory.map((item) => ({
-      [this.pharmacyExpColType]: this.historyExportKindLabel(item),
-      [this.pharmacyExpColId]: item.deliveryId || item.requestId || '',
-      [this.pharmacyExpColDate]: this.getHistoryDate(item),
-      [this.pharmacyExpColMedication]: item.medication,
-      [this.pharmacyExpColDosage]: item.dosage,
-      [this.pharmacyExpColQuantity]: item.quantity,
-      [this.pharmacyExpColRequestedBy]: item.requestedBy,
-      [this.pharmacyExpColPatients]: this.formatHistoryPatients(item),
-      [this.pharmacyExpColDeliveredOrReason]: this.historyDeliveredOrReason(item),
-      [this.pharmacyExpColNotes]: item.type === 'delivery' ? item.notes || '' : '',
-    }));
-    const XLSX = await import('xlsx');
-    const ws = XLSX.utils.json_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, this.pharmacyExcelSheetHistory);
-    XLSX.writeFile(wb, `${this.buildExportFilename('historial_farmacia')}.xlsx`);
-    this.notifySuccess(this.pharmacyToastHistoryExcelOk);
-  }
-
-  printHistory(): void {
-    const headers = [
-      this.pharmacyExpColType,
-      this.pharmacyExpColId,
-      this.pharmacyExpColDate,
-      this.pharmacyExpColMedication,
-      this.pharmacyExpColDosage,
-      this.pharmacyExpColQuantity,
-      this.pharmacyExpColRequestedBy,
-    ];
-    const rows = this.filteredHistory.map((item) => [
-      this.historyExportKindLabel(item),
-      item.deliveryId || item.requestId || '',
-      this.getHistoryDate(item),
-      item.medication,
-      item.dosage,
-      item.quantity,
-      item.requestedBy,
-    ]);
-    this.printRowsAsTable(this.pharmacyPrintHistoryTitle, headers, rows);
-  }
-
-  exportInventoryCsv(): void {
-    if (!this.filteredInventory.length) {
-      this.notifyWarning(this.pharmacyWarnInventoryExportEmpty);
-      return;
-    }
-    const headers = [
-      this.pharmacyExpColMedication,
-      this.pharmacyExpColDosage,
-      this.pharmacyExpColDescription,
-      this.pharmacyExpColStockCurrent,
-      this.pharmacyExpColStockMin,
-      this.pharmacyExpColLocation,
-      this.pharmacyExpColExpiry,
-      this.pharmacyExpColStatus,
-      this.pharmacyExpColExpiryClass,
-      this.pharmacyExpColDaysToExpiry,
-    ];
-    const lines = [headers.join(',')];
-    for (const item of this.filteredInventory) {
-      const cad = item.expiryDateRaw ? String(item.expiryDateRaw).slice(0, 10) : '';
-      const row = [
-        this.escapeCsvCell(item.medication),
-        this.escapeCsvCell(item.dosage),
-        this.escapeCsvCell(item.description || ''),
-        this.escapeCsvCell(item.stock),
-        this.escapeCsvCell(item.minStock),
-        this.escapeCsvCell(item.location),
-        this.escapeCsvCell(cad),
-        this.escapeCsvCell(this.getInventoryStatusLabel(item)),
-        this.escapeCsvCell(item.expiryClassification),
-        this.escapeCsvCell(item.daysToExpiry ?? ''),
-      ];
-      lines.push(row.join(','));
-    }
-    this.triggerDownload(lines.join('\n'), `${this.buildExportFilename('bodega_inventario')}.csv`, 'text/csv');
-    this.notifySuccess(this.pharmacyToastInventoryCsvOk);
-  }
-
-  async exportInventoryExcel(): Promise<void> {
-    if (!this.filteredInventory.length) {
-      this.notifyWarning(this.pharmacyWarnInventoryExportEmpty);
-      return;
-    }
-    const rows = this.filteredInventory.map((item) => ({
-      [this.pharmacyExpColMedication]: item.medication,
-      [this.pharmacyExpColDosage]: item.dosage,
-      [this.pharmacyExpColDescription]: item.description || '',
-      [this.pharmacyExpColStockCurrent]: item.stock,
-      [this.pharmacyExpColStockMin]: item.minStock,
-      [this.pharmacyExpColLocation]: item.location,
-      [this.pharmacyExpColExpiry]: item.expiryDateRaw ? String(item.expiryDateRaw).slice(0, 10) : '',
-      [this.pharmacyExpColStatus]: this.getInventoryStatusLabel(item),
-      [this.pharmacyExpColExpiryClass]: item.expiryClassification,
-      [this.pharmacyExpColDaysToExpiry]: item.daysToExpiry ?? '',
-    }));
-    const XLSX = await import('xlsx');
-    const ws = XLSX.utils.json_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, this.pharmacyExcelSheetWarehouse);
-    XLSX.writeFile(wb, `${this.buildExportFilename('bodega_inventario')}.xlsx`);
-    this.notifySuccess(this.pharmacyToastInventoryExcelOk);
-  }
-
-  printInventory(): void {
-    const headers = [
-      this.pharmacyExpColMedication,
-      this.pharmacyExpColDosage,
-      this.pharmacyExpColStockCurrent,
-      this.pharmacyExpColStockMin,
-      this.pharmacyExpColLocation,
-      this.pharmacyExpColExpiry,
-      this.pharmacyExpColStatus,
-    ];
-    const rows = this.filteredInventory.map((item) => [
-      item.medication,
-      item.dosage,
-      item.stock,
-      item.minStock,
-      item.location,
-      item.expiryDateRaw ? String(item.expiryDateRaw).slice(0, 10) : '',
-      this.getInventoryStatusLabel(item),
-    ]);
-    this.printRowsAsTable(this.pharmacyPrintInventoryTitle, headers, rows);
   }
 
   getStatusLabel(status: string): string {

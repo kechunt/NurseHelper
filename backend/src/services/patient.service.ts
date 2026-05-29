@@ -13,6 +13,7 @@ import { CreatePatientDto, UpdatePatientDto, SaveObservationDto } from '../dto/p
 import { cacheService } from './cache.service';
 import { In } from 'typeorm';
 import { logger } from '../utils/logger';
+import { buildPatientSearchFilter } from '../utils/field-encryption.util';
 import {
   insertPatientClinicalNote,
   observationScopeToCategory,
@@ -35,13 +36,11 @@ export class PatientService {
       .createQueryBuilder('patient')
       .leftJoinAndSelect('patient.bed', 'bed')
       .leftJoinAndSelect('bed.area', 'area')
-      .orderBy('patient.lastName', 'ASC');
+      .orderBy('patient.createdAt', 'DESC');
 
-    if (search) {
-      queryBuilder.where(
-        '(patient.firstName LIKE :search OR patient.lastName LIKE :search OR patient.identificationNumber LIKE :search)',
-        { search: `%${search}%` }
-      );
+    const searchFilter = buildPatientSearchFilter(search, 'patient');
+    if (searchFilter) {
+      queryBuilder.where(searchFilter.clause, searchFilter.params);
     }
 
     queryBuilder.skip(skip).take(limit);

@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { User } from './User';
 import { Shift } from './Shift';
+import { encryptedNullableTextTransformer } from '../utils/typeorm-encrypted.transformers';
 
 export enum DayOfWeek {
   MONDAY = 'monday',
@@ -50,7 +51,7 @@ export class NurseShift {
   @Column({ type: 'date' })
   weekStartDate: Date;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text', nullable: true, transformer: encryptedNullableTextTransformer })
   notes: string;
 
   @CreateDateColumn()

@@ -30,9 +30,8 @@
   [treatmentsSlots]="vm.treatmentsSlots"
   [historyRecords]="vm.historyRecords"
   (closed)="patientModalClosed.emit()"
-  (printRequested)="patientModalPrintRequested.emit()"
+  (pdfRequested)="patientModalPdfRequested.emit()"
   (exportCsvRequested)="patientExportCsvRequested.emit($event)"
-  (exportExcelRequested)="patientExportExcelRequested.emit($event)"
   (activeTabChange)="patientActiveTabChange.emit($event)"
   (newDiagnosisNoteChange)="patientNewDiagnosisNoteChange.emit($event)"
   (newMedicalObservationNoteChange)="patientNewMedicalObservationNoteChange.emit($event)"
@@ -111,7 +110,7 @@
   [exporting]="vm.nurseReportsExporting"
   (dismissed)="nurseReportsDismissed.emit()"
   (csvDownload)="nurseReportsCsvDownload.emit($event)"
-  (excelDownload)="nurseReportsExcelDownload.emit($event)"
+  (pdfDownload)="nurseReportsPdfDownload.emit($event)"
 />
 
 <app-nurse-tasks-quick-modal

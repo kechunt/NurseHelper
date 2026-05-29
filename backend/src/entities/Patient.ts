@@ -8,17 +8,25 @@ import {
   OneToMany,
   JoinColumn,
   Index,
+  BeforeInsert,
+  BeforeUpdate,
 } from 'typeorm';
 import { Bed } from './Bed';
 import { Area } from './Area';
 import { Schedule } from './Schedule';
 import { User } from './User';
 import { AdministrationHistory } from './AdministrationHistory';
+import {
+  encryptedNullableDateTransformer,
+  encryptedNullableJsonTransformer,
+  encryptedNullableTextTransformer,
+  encryptedRequiredTextTransformer,
+} from '../utils/typeorm-encrypted.transformers';
+import { buildPatientSearchTokenHashes, secureHash } from '../utils/field-encryption.util';
 
 @Entity('patients')
 @Index(['isActive'])
-@Index(['lastName'])
-@Index(['firstName', 'lastName'])
+@Index(['identificationNumberSearchHash'], { unique: true })
 // @Index(['bedId']) // Comentado temporalmente hasta que se ejecute la migración
 // @Index(['assignedToId']) // Comentado temporalmente hasta que se ejecute la migración
 // @Index(['areaId']) // Comentado temporalmente hasta que se ejecute la migración
@@ -26,59 +34,71 @@ export class Patient {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ length: 100 })
+  @Column({ type: 'text', transformer: encryptedRequiredTextTransformer })
   firstName: string;
 
-  @Column({ length: 100 })
+  @Column({ type: 'text', transformer: encryptedRequiredTextTransformer })
   lastName: string;
 
-  @Column({ type: 'varchar', length: 20, nullable: true, unique: true })
+  @Column({ type: 'text', nullable: true, transformer: encryptedNullableTextTransformer })
   identificationNumber: string | null;
 
-  @Column({ type: 'date', nullable: true })
+  @Column({ type: 'text', nullable: true, transformer: encryptedNullableDateTransformer })
   dateOfBirth: Date | null;
 
   @Column({ type: 'varchar', length: 10, nullable: true })
   gender: string | null;
 
-  @Column({ type: 'varchar', length: 20, nullable: true })
+  @Column({ type: 'text', nullable: true, transformer: encryptedNullableTextTransformer })
   phone: string | null;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text', nullable: true, transformer: encryptedNullableTextTransformer })
   address: string | null;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text', nullable: true, transformer: encryptedNullableTextTransformer })
   medicalHistory: string | null;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text', nullable: true, transformer: encryptedNullableTextTransformer })
   allergies: string | null;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text', nullable: true, transformer: encryptedNullableTextTransformer })
   emergencyContact: string | null;
 
-  @Column({ type: 'varchar', length: 20, nullable: true })
+  @Column({ type: 'text', nullable: true, transformer: encryptedNullableTextTransformer })
   emergencyPhone: string | null;
 
-  @Column({ type: 'varchar', length: 50, nullable: true })
+  @Column({ type: 'text', nullable: true, transformer: encryptedNullableTextTransformer })
   emergencyRelation: string | null;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text', nullable: true, transformer: encryptedNullableTextTransformer })
   medicalObservations: string | null;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text', nullable: true, transformer: encryptedNullableTextTransformer })
   specialNeeds: string | null;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text', nullable: true, transformer: encryptedNullableTextTransformer })
   generalObservations: string | null;
 
-  @Column({ type: 'json', nullable: true })
-  medications: string | null;
+  @Column({ type: 'longtext', nullable: true, transformer: encryptedNullableJsonTransformer })
+  medications: unknown | null;
 
-  @Column({ type: 'json', nullable: true })
-  treatmentHistory: string | null;
+  @Column({ type: 'longtext', nullable: true, transformer: encryptedNullableJsonTransformer })
+  treatmentHistory: unknown | null;
 
-  @Column({ type: 'json', nullable: true })
-  pendingTasks: string | null;
+  @Column({ type: 'longtext', nullable: true, transformer: encryptedNullableJsonTransformer })
+  pendingTasks: unknown | null;
+
+  @Column({ type: 'varchar', length: 64, nullable: true, select: false })
+  firstNameSearchHash: string | null;
+
+  @Column({ type: 'varchar', length: 64, nullable: true, select: false })
+  lastNameSearchHash: string | null;
+
+  @Column({ type: 'varchar', length: 64, nullable: true, select: false })
+  identificationNumberSearchHash: string | null;
+
+  @Column({ type: 'longtext', nullable: true, select: false })
+  patientSearchTokenHashes: string | null;
 
   @Column({ default: true })
   isActive: boolean;
@@ -122,5 +142,18 @@ export class Patient {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @BeforeInsert()
+  @BeforeUpdate()
+  refreshSecureSearchColumns(): void {
+    this.firstNameSearchHash = secureHash(this.firstName);
+    this.lastNameSearchHash = secureHash(this.lastName);
+    this.identificationNumberSearchHash = secureHash(this.identificationNumber);
+    this.patientSearchTokenHashes = buildPatientSearchTokenHashes({
+      firstName: this.firstName,
+      lastName: this.lastName,
+      identificationNumber: this.identificationNumber,
+    });
+  }
 }
 

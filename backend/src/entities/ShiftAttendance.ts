@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { User } from './User';
 import { Shift } from './Shift';
+import { encryptedNullableTextTransformer } from '../utils/typeorm-encrypted.transformers';
 
 export enum ShiftAttendanceStatus {
   PRESENT = 'present',
@@ -64,7 +65,7 @@ export class ShiftAttendance {
   @JoinColumn({ name: 'recordedBy' })
   recordedByUser: User | null;
 
-  @Column({ type: 'varchar', length: 500, nullable: true })
+  @Column({ type: 'text', nullable: true, transformer: encryptedNullableTextTransformer })
   notes: string | null;
 
   @CreateDateColumn()

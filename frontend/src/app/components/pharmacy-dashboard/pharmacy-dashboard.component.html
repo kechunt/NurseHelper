@@ -128,8 +128,6 @@
             </div>
           </div>
 
-          <app-pharmacy-shift-attendance-section />
-
     <div *ngIf="loadingRequests" class="module-feedback loading">{{ pharmacyRequestsLoading }}</div>
     <div *ngIf="!loadingRequests && requestsError" class="module-feedback error">{{ requestsError }}</div>
 
@@ -232,17 +230,13 @@
           {{ pharmacyExportHistoryHint }}
         </p>
         <div class="export-panel__actions">
-          <button type="button" class="export-btn export-btn--print" (click)="printHistory()">
-            <app-bootstrap-icon name="printer"></app-bootstrap-icon>
-            {{ pharmacyExportPrint }}
+          <button type="button" class="export-btn export-btn--pdf" (click)="exportHistoryPdf()">
+            <app-bootstrap-icon name="file-pdf"></app-bootstrap-icon>
+            {{ pharmacyExportPdf }}
           </button>
           <button type="button" class="export-btn export-btn--csv" (click)="exportHistoryCsv()">
             <app-bootstrap-icon name="document-text"></app-bootstrap-icon>
             {{ pharmacyExportSaveCsv }}
-          </button>
-          <button type="button" class="export-btn export-btn--excel" (click)="exportHistoryExcel()">
-            <app-bootstrap-icon name="table-cells"></app-bootstrap-icon>
-            {{ pharmacyExportSaveExcel }}
           </button>
         </div>
       </div>
@@ -376,17 +370,13 @@
           {{ pharmacyExportInventoryHint }}
         </p>
         <div class="export-panel__actions">
-          <button type="button" class="export-btn export-btn--print" (click)="printInventory()">
-            <app-bootstrap-icon name="printer"></app-bootstrap-icon>
-            {{ pharmacyExportPrint }}
+          <button type="button" class="export-btn export-btn--pdf" (click)="exportInventoryPdf()">
+            <app-bootstrap-icon name="file-pdf"></app-bootstrap-icon>
+            {{ pharmacyExportPdf }}
           </button>
           <button type="button" class="export-btn export-btn--csv" (click)="exportInventoryCsv()">
             <app-bootstrap-icon name="document-text"></app-bootstrap-icon>
             {{ pharmacyExportSaveCsv }}
-          </button>
-          <button type="button" class="export-btn export-btn--excel" (click)="exportInventoryExcel()">
-            <app-bootstrap-icon name="table-cells"></app-bootstrap-icon>
-            {{ pharmacyExportSaveExcel }}
           </button>
         </div>
       </div>

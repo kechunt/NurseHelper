@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { Patient } from './Patient';
 import { User } from './User';
+import { encryptedRequiredTextTransformer } from '../utils/typeorm-encrypted.transformers';
 
 export type PatientClinicalNoteCategory =
   | 'diagnosis'
@@ -33,7 +34,7 @@ export class PatientClinicalNote {
   @Column({ type: 'varchar', length: 32 })
   category: PatientClinicalNoteCategory;
 
-  @Column({ type: 'text' })
+  @Column({ type: 'text', transformer: encryptedRequiredTextTransformer })
   body: string;
 
   @Column()

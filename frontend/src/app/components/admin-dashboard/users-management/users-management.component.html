@@ -136,17 +136,13 @@
         <div class="export-panel__title">{{ usersMgmtExportTitle }}</div>
         <p class="export-panel__hint">{{ usersMgmtExportHint }}</p>
         <div class="export-panel__actions">
-          <button type="button" class="export-btn export-btn--print" (click)="printUsers()">
-            <app-bootstrap-icon name="printer" />
-            {{ usersMgmtExportPrint }}
+          <button type="button" class="export-btn export-btn--pdf" (click)="exportToPdf()">
+            <app-bootstrap-icon name="file-pdf" />
+            {{ usersMgmtExportPdf }}
           </button>
           <button type="button" class="export-btn export-btn--csv" (click)="exportToCSV()">
             <app-bootstrap-icon name="document-text" />
             {{ usersMgmtExportSaveCsv }}
-          </button>
-          <button type="button" class="export-btn export-btn--excel" (click)="exportToExcel()">
-            <app-bootstrap-icon name="table-cells" />
-            {{ usersMgmtExportSaveExcel }}
           </button>
         </div>
       </div>

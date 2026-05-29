@@ -94,7 +94,7 @@ router.get('/compliance', reportsController.generateComplianceStats);
  *         required: true
  *         schema:
  *           type: string
- *           enum: [pdf, excel, csv]
+ *           enum: [pdf, csv]
  *       - in: query
  *         name: startDate
  *         required: true

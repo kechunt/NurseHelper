@@ -4,6 +4,8 @@
 
 import { DataSource } from 'typeorm';
 import { AddAdditionalIndexes1733600000000 } from '../../migrations/1733600000000-AddAdditionalIndexes';
+import { EncryptSensitiveMedicalData1780900000000 } from '../../migrations/1780900000000-EncryptSensitiveMedicalData';
+import { isEncryptedValue } from '../../utils/field-encryption.util';
 
 describe('Migrations', () => {
   let dataSource: DataSource;
@@ -62,6 +64,84 @@ describe('Migrations', () => {
 
       // Verificar que se intentaron eliminar los índices
       expect(queryRunner.query).toHaveBeenCalled();
+    });
+  });
+
+  describe('EncryptSensitiveMedicalData1780900000000', () => {
+    const encryptedTables = new Set([
+      'patients',
+      'patient_clinical_notes',
+      'schedules',
+      'administration_history',
+      'medication_requests',
+      'delivery_history',
+      'shift_handover_notes',
+      'admin_handover_notes',
+      'nurse_shifts',
+      'shift_attendance',
+      'pharmacy_shift_attendance',
+    ]);
+
+    beforeEach(() => {
+      process.env.FIELD_ENCRYPTION_KEY = Buffer.alloc(32, 9).toString('base64');
+      queryRunner.addColumn = jest.fn().mockResolvedValue(undefined);
+      queryRunner.createIndex = jest.fn().mockResolvedValue(undefined);
+      queryRunner.getTable = jest.fn().mockImplementation(async (name: string) => {
+        if (!encryptedTables.has(name)) {
+          return null;
+        }
+        return {
+          name,
+          indices: [],
+          findColumnByName: jest.fn().mockReturnValue(true),
+        };
+      });
+      queryRunner.query = jest.fn().mockImplementation(async (sql: string) => {
+        if (sql.startsWith('SHOW INDEX')) {
+          return [{ Key_name: 'idx_patients_name_search' }];
+        }
+        if (sql.includes('FROM `patients`')) {
+          return [
+            {
+              id: 1,
+              firstName: 'Ana',
+              lastName: 'Pérez',
+              identificationNumber: 'ID-1',
+              dateOfBirth: '1980-02-03',
+              phone: '555',
+              address: 'Calle 1',
+              medicalHistory: 'Diagnóstico',
+              allergies: 'Penicilina',
+              emergencyContact: 'Luis',
+              emergencyPhone: '777',
+              emergencyRelation: 'Padre',
+              medicalObservations: 'Obs',
+              specialNeeds: 'Ninguna',
+              generalObservations: 'General',
+              medications: [{ name: 'A' }],
+              treatmentHistory: [],
+              pendingTasks: [],
+            },
+          ];
+        }
+        return [];
+      });
+    });
+
+    it('agrega índices auxiliares y cifra filas existentes sin texto claro', async () => {
+      const migration = new EncryptSensitiveMedicalData1780900000000();
+
+      await migration.up(queryRunner);
+
+      const updatePatientsCall = queryRunner.query.mock.calls.find((call: any[]) =>
+        String(call[0]).includes('UPDATE `patients`')
+      );
+      expect(queryRunner.createIndex).toHaveBeenCalled();
+      expect(updatePatientsCall).toBeTruthy();
+      expect(isEncryptedValue(updatePatientsCall[1][0])).toBe(true);
+      expect(updatePatientsCall[1][0]).not.toContain('Ana');
+      expect(updatePatientsCall[1][17]).toHaveLength(64);
+      expect(updatePatientsCall[1][20]).toContain('|');
     });
   });
 });

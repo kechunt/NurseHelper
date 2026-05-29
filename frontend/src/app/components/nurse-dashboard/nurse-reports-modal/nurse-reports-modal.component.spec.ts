@@ -64,39 +64,30 @@ describe('NurseReportsModalComponent', () => {
     sub.unsubscribe();
   });
 
-  it('emite csvDownload al pulsar botones CSV', () => {
-    const kinds: Array<'compliance' | 'medication'> = [];
-    const sub = fixture.componentInstance.csvDownload.subscribe((k) => kinds.push(k));
+  it('emite csvDownload y pdfDownload al pulsar botones de exportación', () => {
+    const csvKinds: Array<'compliance' | 'medication'> = [];
+    const pdfKinds: Array<'compliance' | 'medication'> = [];
+    const subCsv = fixture.componentInstance.csvDownload.subscribe((k) => csvKinds.push(k));
+    const subPdf = fixture.componentInstance.pdfDownload.subscribe((k) => pdfKinds.push(k));
     (fixture.nativeElement.querySelector('#nurse-reports-download-csv-compliance-btn') as HTMLButtonElement).click();
     (fixture.nativeElement.querySelector('#nurse-reports-download-csv-medication-btn') as HTMLButtonElement).click();
-    expect(kinds).toEqual(['compliance', 'medication']);
-    sub.unsubscribe();
+    (fixture.nativeElement.querySelector('#nurse-reports-download-pdf-compliance-btn') as HTMLButtonElement).click();
+    (fixture.nativeElement.querySelector('#nurse-reports-download-pdf-medication-btn') as HTMLButtonElement).click();
+    expect(csvKinds).toEqual(['compliance', 'medication']);
+    expect(pdfKinds).toEqual(['compliance', 'medication']);
+    subCsv.unsubscribe();
+    subPdf.unsubscribe();
   });
 
-  it('botones de exportación tienen tooltips localizables', () => {
+  it('botones de exportación CSV tienen tooltips localizables', () => {
     const csvCompliance = fixture.nativeElement.querySelector(
       '#nurse-reports-download-csv-compliance-btn'
     ) as HTMLButtonElement;
     const csvMed = fixture.nativeElement.querySelector('#nurse-reports-download-csv-medication-btn') as HTMLButtonElement;
-    const xlsCompliance = fixture.nativeElement.querySelector(
-      '#nurse-reports-download-excel-compliance-btn'
-    ) as HTMLButtonElement;
-    const xlsMed = fixture.nativeElement.querySelector(
-      '#nurse-reports-download-excel-medication-btn'
-    ) as HTMLButtonElement;
     expect(csvCompliance?.title.toLowerCase()).toContain('csv');
     expect(csvMed?.title.toLowerCase()).toContain('csv');
-    expect(xlsCompliance?.title.toLowerCase()).toContain('excel');
-    expect(xlsMed?.title.toLowerCase()).toContain('excel');
-  });
-
-  it('emite excelDownload al pulsar botones Excel', () => {
-    const kinds: Array<'compliance' | 'medication'> = [];
-    const sub = fixture.componentInstance.excelDownload.subscribe((k) => kinds.push(k));
-    (fixture.nativeElement.querySelector('#nurse-reports-download-excel-compliance-btn') as HTMLButtonElement).click();
-    (fixture.nativeElement.querySelector('#nurse-reports-download-excel-medication-btn') as HTMLButtonElement).click();
-    expect(kinds).toEqual(['compliance', 'medication']);
-    sub.unsubscribe();
+    expect(fixture.nativeElement.querySelector('#nurse-reports-download-excel-compliance-btn')).toBeNull();
+    expect(fixture.nativeElement.querySelector('#nurse-reports-download-excel-medication-btn')).toBeNull();
   });
 
   it('muestra estado de carga cuando loading es true', () => {

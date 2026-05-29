@@ -3,11 +3,22 @@
 # Script para hacer respaldo de la base de datos MySQL
 # Nombre del respaldo: bdresp1
 
-# Cargar variables de entorno desde .env
-if [ -f "../.env" ]; then
-    export $(cat ../.env | grep -v '^#' | xargs)
+# Cargar variables de entorno desde .env.local (desarrollo) o .env
+if [ -f "../.env.local" ]; then
+    set -a
+    # shellcheck disable=SC1091
+    source "../.env.local"
+    set +a
+elif [ -f "../.env" ]; then
+    set -a
+    # shellcheck disable=SC1091
+    source "../.env"
+    set +a
 elif [ -f ".env" ]; then
-    export $(cat .env | grep -v '^#' | xargs)
+    set -a
+    # shellcheck disable=SC1091
+    source ".env"
+    set +a
 fi
 
 # Valores por defecto si no están en .env

@@ -64,9 +64,8 @@ export class NursePatientModalShellComponent {
   @Input({ required: true }) historyRecords!: TreatmentRecord[];
 
   @Output() readonly closed = new EventEmitter<void>();
-  @Output() readonly printRequested = new EventEmitter<void>();
+  @Output() readonly pdfRequested = new EventEmitter<void>();
   @Output() readonly exportCsvRequested = new EventEmitter<{ tab: NursePatientModalTabId }>();
-  @Output() readonly exportExcelRequested = new EventEmitter<{ tab: NursePatientModalTabId }>();
   @Output() readonly activeTabChange = new EventEmitter<string>();
   @Output() readonly newDiagnosisNoteChange = new EventEmitter<string>();
   @Output() readonly newMedicalObservationNoteChange = new EventEmitter<string>();
@@ -143,10 +142,6 @@ export class NursePatientModalShellComponent {
 
   exportTabCsv(): void {
     this.exportCsvRequested.emit({ tab: this.activeTab as NursePatientModalTabId });
-  }
-
-  exportTabExcel(): void {
-    this.exportExcelRequested.emit({ tab: this.activeTab as NursePatientModalTabId });
   }
 }
 

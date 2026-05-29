@@ -22,14 +22,15 @@ export function nurseDashboardNurseReportsExportCsvErrorMessage(
   return readHttpErrorMessage(err, NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_CSV_HTTP_FALLBACK);
 }
 
-export const NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_EMPTY_EXCEL_WARNING = $localize`:@@nurseDashboard.reports.exportEmptyExcel:El archivo Excel está vacío.`;
-export const NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_SUCCESS_EXCEL_TOAST = $localize`:@@nurseDashboard.reports.exportExcelSuccess:Excel descargado`;
+export const NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_EMPTY_PDF_WARNING = $localize`:@@nurseDashboard.reports.exportEmptyPdf:El archivo PDF está vacío.`;
 
-export const NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_EXCEL_HTTP_FALLBACK = $localize`:@@nurseDashboard.reports.exportExcelHttpFallback:Error al generar el Excel`;
+export const NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_PDF_SUCCESS_TOAST = $localize`:@@nurseDashboard.reports.exportPdfSuccess:PDF descargado`;
 
-export function nurseDashboardNurseReportsExportExcelErrorMessage(
+export const NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_PDF_HTTP_FALLBACK = $localize`:@@nurseDashboard.reports.exportPdfHttpFallback:Error al generar el PDF`;
+
+export function nurseDashboardNurseReportsExportPdfErrorMessage(
   err: unknown,
   readHttpErrorMessage: (e: unknown, fallback: string) => string
 ): string {
-  return readHttpErrorMessage(err, NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_EXCEL_HTTP_FALLBACK);
+  return readHttpErrorMessage(err, NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_PDF_HTTP_FALLBACK);
 }

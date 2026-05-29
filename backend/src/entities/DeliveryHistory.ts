@@ -10,6 +10,11 @@ import {
 import { User } from './User';
 import { Medication } from './Medication';
 import { MedicationRequest } from './MedicationRequest';
+import {
+  encryptedNullableTextTransformer,
+  encryptedRequiredJsonTransformer,
+  encryptedRequiredTextTransformer,
+} from '../utils/typeorm-encrypted.transformers';
 
 @Entity('delivery_history')
 @Index(['deliveredAt'])
@@ -36,7 +41,7 @@ export class DeliveryHistory {
   @JoinColumn({ name: 'medicationId' })
   medication: Medication;
 
-  @Column({ length: 100 })
+  @Column({ type: 'text', transformer: encryptedRequiredTextTransformer })
   dosage: string;
 
   @Column({ type: 'int' })
@@ -56,10 +61,10 @@ export class DeliveryHistory {
   @JoinColumn({ name: 'deliveredById' })
   deliveredBy: User;
 
-  @Column({ type: 'json' })
+  @Column({ type: 'longtext', transformer: encryptedRequiredJsonTransformer })
   patients: any;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text', nullable: true, transformer: encryptedNullableTextTransformer })
   notes: string;
 
   @CreateDateColumn()

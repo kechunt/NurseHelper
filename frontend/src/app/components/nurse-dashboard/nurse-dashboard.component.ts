@@ -141,6 +141,7 @@ import {
   mapNurseDayHistoryItemsToCsvRows,
   tasksDayHistoryCsvFilename,
 } from './nurse-dashboard-day-history-csv.helpers';
+import { buildNursePatientSummaryPdfOptions } from './nurse-patient-summary-pdf.helpers';
 import {
   NURSE_DASHBOARD_DAY_HISTORY_EXPORT_EMPTY_WARNING,
   NURSE_DASHBOARD_DAY_HISTORY_EXPORT_SUCCESS_TOAST,
@@ -186,13 +187,13 @@ import {
 } from './nurse-dashboard-handover-messages.helpers';
 import {
   NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_EMPTY_CSV_WARNING,
-  NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_EMPTY_EXCEL_WARNING,
+  NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_EMPTY_PDF_WARNING,
   NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_NO_PERIOD_WARNING,
-  NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_SUCCESS_EXCEL_TOAST,
+  NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_PDF_SUCCESS_TOAST,
   NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_SUCCESS_TOAST,
   nurseDashboardNurseReportsExportCsvErrorMessage,
+  nurseDashboardNurseReportsExportPdfErrorMessage,
   nurseDashboardNurseReportsLoadErrorMessage,
-  nurseDashboardNurseReportsExportExcelErrorMessage,
 } from './nurse-dashboard-nurse-reports-messages.helpers';
 import {
   NURSE_DASHBOARD_MEDICATION_SLOT_DELETE_ONLY_PENDING_WARNING,
@@ -240,8 +241,7 @@ import {
 import {
   NURSE_DASHBOARD_EDIT_BED_NO_ID_WARNING_TOAST,
   NURSE_DASHBOARD_PATIENT_OR_MEDICATION_UNAVAILABLE_ERROR_TOAST,
-  NURSE_DASHBOARD_PRINT_NO_PATIENT_WARNING_TOAST,
-  NURSE_DASHBOARD_PRINT_POPUP_BLOCKED_WARNING_TOAST,
+  NURSE_DASHBOARD_PDF_NO_PATIENT_WARNING_TOAST,
 } from './nurse-dashboard-misc-guard-toasts.helpers';
 import {
   NURSE_DASHBOARD_ACTION_REASON_MIN_LENGTH_WARNING_TOAST,
@@ -923,7 +923,26 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
     }
   }
 
-  exportPatientHistory(kind: 'csv' | 'excel'): void {
+  exportTasksDayHistoryPdf(): void {
+    const rows = this.tasksDayHistoryItems || [];
+    if (rows.length === 0) {
+      this.toastService.warning(NURSE_DASHBOARD_DAY_HISTORY_EXPORT_EMPTY_WARNING);
+      return;
+    }
+    try {
+      const data = mapNurseDayHistoryItemsToCsvRows(this.tasksDayHistoryDate, rows);
+      this.exportService.exportToPdf(data, {
+        title: $localize`:@@nurseDashboard.dayHistory.pdfTitle:Historial del día`,
+        filename: tasksDayHistoryCsvFilename(this.tasksDayHistoryDate).replace(/\.csv$/, '.pdf'),
+        orientation: 'landscape',
+      });
+      this.toastService.success($localize`:@@nurseDashboard.dayHistory.exportPdfSuccess:PDF descargado.`);
+    } catch (e: unknown) {
+      this.toastService.error(nurseDashboardDayHistoryExportFailureMessage(e));
+    }
+  }
+
+  exportPatientHistory(): void {
     const patientName = (this.selectedPatient?.name || 'paciente').trim() || 'paciente';
     const safe = patientName
       .toLowerCase()
@@ -957,22 +976,17 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
     }));
 
     try {
-      if (kind === 'csv') {
-        this.exportService.exportToCSV(data, { filename: `${filenameBase}.csv` });
-        this.toastService.success('Historial exportado a CSV.');
-      } else {
-        this.exportService.exportToExcel(data, { filename: `${filenameBase}.xlsx`, sheetName: 'Historial' });
-        this.toastService.success('Historial exportado a Excel.');
-      }
+      this.exportService.exportToCSV(data, { filename: `${filenameBase}.csv` });
+      this.toastService.success('Historial exportado a CSV.');
     } catch (e: unknown) {
       this.toastService.error(`Error exportando historial: ${String((e as any)?.message || e)}`);
     }
   }
 
-  exportPatientTab(kind: 'csv' | 'excel', tab: string): void {
+  exportPatientTab(tab: string): void {
     const t = String(tab || '').trim();
     if (t === 'history') {
-      this.exportPatientHistory(kind);
+      this.exportPatientHistory();
       return;
     }
     if (!this.selectedPatient) {
@@ -1004,11 +1018,7 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
           this.toastService.warning('No hay medicamentos del día para exportar.');
           return;
         }
-        if (kind === 'csv') {
-          this.exportService.exportToCSV(data, { filename: `${filenameBase}.csv` });
-        } else {
-          this.exportService.exportToExcel(data, { filename: `${filenameBase}.xlsx`, sheetName: 'Medicamentos' });
-        }
+        this.exportService.exportToCSV(data, { filename: `${filenameBase}.csv` });
         this.toastService.success(`Exportación lista (${t}).`);
         return;
       }
@@ -1028,11 +1038,7 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
           this.toastService.warning('No hay tratamientos del día para exportar.');
           return;
         }
-        if (kind === 'csv') {
-          this.exportService.exportToCSV(data, { filename: `${filenameBase}.csv` });
-        } else {
-          this.exportService.exportToExcel(data, { filename: `${filenameBase}.xlsx`, sheetName: 'TratamientosDia' });
-        }
+        this.exportService.exportToCSV(data, { filename: `${filenameBase}.csv` });
         this.toastService.success(`Exportación lista (${t}).`);
         return;
       }
@@ -1050,11 +1056,7 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
             observaciones_generales: p.generalObservations || '',
           },
         ];
-        if (kind === 'csv') {
-          this.exportService.exportToCSV(data, { filename: `${filenameBase}.csv` });
-        } else {
-          this.exportService.exportToExcel(data, { filename: `${filenameBase}.xlsx`, sheetName: 'Observaciones' });
-        }
+        this.exportService.exportToCSV(data, { filename: `${filenameBase}.csv` });
         this.toastService.success(`Exportación lista (${t}).`);
         return;
       }
@@ -1363,7 +1365,7 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
     });
   }
 
-  downloadNurseReportExcel(kind: 'medication' | 'compliance'): void {
+  downloadNurseReportPdf(kind: 'medication' | 'compliance'): void {
     if (!this.nurseReportsStart || !this.nurseReportsEnd) {
       this.toastService.warning(NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_NO_PERIOD_WARNING);
       return;
@@ -1372,26 +1374,26 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
     const start = this.nurseReportsStart;
     const end = this.nurseReportsEnd;
     const slug = `${start.toISOString().slice(0, 10)}_${end.toISOString().slice(0, 10)}`;
-    this.reportService.exportReport(kind, 'excel', start, end).subscribe({
+    this.reportService.exportReport(kind, 'pdf', start, end).subscribe({
       next: (blob) => {
         this.nurseReportsExporting = false;
         if (!blob || blob.size === 0) {
-          this.toastService.warning(NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_EMPTY_EXCEL_WARNING);
+          this.toastService.warning(NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_EMPTY_PDF_WARNING);
           return;
         }
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `reporte-${kind}-${slug}.xlsx`;
+        link.download = `reporte-${kind}-${slug}.pdf`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
-        this.toastService.success(NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_SUCCESS_EXCEL_TOAST);
+        this.toastService.success(NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_PDF_SUCCESS_TOAST);
       },
       error: (err) => {
         this.nurseReportsExporting = false;
-        const msg = nurseDashboardNurseReportsExportExcelErrorMessage(err, readNurseDashboardHttpErrorMessage);
+        const msg = nurseDashboardNurseReportsExportPdfErrorMessage(err, readNurseDashboardHttpErrorMessage);
         this.toastService.error(msg);
       },
     });
@@ -2808,164 +2810,25 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
     setTimeout(() => this.loadNurseData(), 500);
   }
 
-  printPatientInfo(): void {
+  exportPatientPdf(): void {
     if (!this.selectedPatient) {
-      this.toastService.warning(NURSE_DASHBOARD_PRINT_NO_PATIENT_WARNING_TOAST);
+      this.toastService.warning(NURSE_DASHBOARD_PDF_NO_PATIENT_WARNING_TOAST);
       return;
     }
 
-    // Crear ventana de impresión con contenido formateado
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      this.toastService.warning(NURSE_DASHBOARD_PRINT_POPUP_BLOCKED_WARNING_TOAST);
-      return;
+    try {
+      const patientName = (this.selectedPatient.name || 'paciente').trim() || 'paciente';
+      const safe = patientName
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9\-áéíóúñü]/gi, '');
+      const date = new Date().toISOString().slice(0, 10);
+      const options = buildNursePatientSummaryPdfOptions(this.selectedPatient, `ficha-${safe}-${date}.pdf`);
+      this.exportService.exportMultiSectionPdf(options);
+      this.toastService.success($localize`:@@nurseDashboard.patientPdfSuccess:PDF de ficha descargado`);
+    } catch (e: unknown) {
+      this.toastService.error(`Error exportando PDF: ${String((e as any)?.message || e)}`);
     }
-
-    const printContent = this.generatePrintContent();
-    printWindow.document.write(printContent);
-    printWindow.document.close();
-    
-    // Esperar a que se cargue el contenido antes de imprimir
-    setTimeout(() => {
-      printWindow.print();
-    }, 250);
-  }
-
-  generatePrintContent(): string {
-    if (!this.selectedPatient) return '';
-
-    const patient = this.selectedPatient;
-    const today = new Date().toLocaleDateString('es-ES', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
-
-    return `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Información del Paciente - ${patient.name}</title>
-  <style>
-    @media print {
-      body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
-      .header { border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
-      .section { margin-bottom: 20px; page-break-inside: avoid; }
-      .section-title { font-size: 16px; font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
-      .info-row { margin: 5px 0; }
-      .label { font-weight: bold; display: inline-block; width: 150px; }
-      table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-      th, td { border: 1px solid #000; padding: 8px; text-align: left; }
-      th { background-color: #f0f0f0; font-weight: bold; }
-      .no-data { color: #666; font-style: italic; }
-    }
-    body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
-    .header { border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
-    .section { margin-bottom: 20px; }
-    .section-title { font-size: 16px; font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
-    .info-row { margin: 5px 0; }
-    .label { font-weight: bold; display: inline-block; width: 150px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { border: 1px solid #000; padding: 8px; text-align: left; }
-    th { background-color: #f0f0f0; font-weight: bold; }
-    .no-data { color: #666; font-style: italic; }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <h1>Información del Paciente</h1>
-    <p><strong>Fecha de impresión:</strong> ${today}</p>
-  </div>
-
-  <div class="section">
-    <div class="section-title">Datos Generales</div>
-    <div class="info-row"><span class="label">Nombre:</span> ${patient.name}</div>
-    <div class="info-row"><span class="label">ID:</span> ${patient.id}</div>
-    <div class="info-row"><span class="label">Cama:</span> ${patient.bedNumber}</div>
-    <div class="info-row"><span class="label">Edad:</span> ${patient.age} años</div>
-    <div class="info-row"><span class="label">Diagnóstico:</span> ${patient.diagnosis || 'No especificado'}</div>
-  </div>
-
-  <div class="section">
-    <div class="section-title">Observaciones Médicas</div>
-    <p>${patient.medicalObservations || 'Sin observaciones médicas registradas'}</p>
-  </div>
-
-  <div class="section">
-    <div class="section-title">Alergias</div>
-    <p>${patient.allergies || 'Ninguna conocida'}</p>
-  </div>
-
-  <div class="section">
-    <div class="section-title">Necesidades Especiales</div>
-    <p>${patient.specialNeeds || 'Ninguna'}</p>
-  </div>
-
-  <div class="section">
-    <div class="section-title">Medicamentos Activos</div>
-    ${patient.medicationsDetail && patient.medicationsDetail.length > 0 ? `
-    <table>
-      <thead>
-        <tr>
-          <th>Medicamento</th>
-          <th>Dosis</th>
-          <th>Frecuencia</th>
-          <th>Horarios</th>
-          <th>Notas</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${patient.medicationsDetail.map((med: any) => `
-        <tr>
-          <td>${med.name || '—'}</td>
-          <td>${med.dosage || '—'}</td>
-          <td>${med.frequency || '—'}</td>
-          <td>${med.schedules || '—'}</td>
-          <td>${med.notes || '—'}</td>
-        </tr>
-        `).join('')}
-      </tbody>
-    </table>
-    ` : '<p class="no-data">No hay medicamentos registrados</p>'}
-  </div>
-
-  <div class="section">
-    <div class="section-title">Tratamientos de Hoy</div>
-    ${patient.todaySchedule && patient.todaySchedule.length > 0 ? `
-    <table>
-      <thead>
-        <tr>
-          <th>Hora</th>
-          <th>Tipo</th>
-          <th>Descripción</th>
-          <th>Estado</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${patient.todaySchedule.map((item: any) => `
-        <tr>
-          <td>${item.time || '—'}</td>
-          <td>${item.type === 'medication' ? 'Medicamento' : 'Tratamiento'}</td>
-          <td>${item.description || '—'} ${item.dosage ? `(${item.dosage})` : ''}</td>
-          <td>${item.completed ? 'Completado' : item.notCompleted ? 'No realizado' : 'Pendiente'}</td>
-        </tr>
-        `).join('')}
-      </tbody>
-    </table>
-    ` : '<p class="no-data">No hay tratamientos programados para hoy</p>'}
-  </div>
-
-  ${patient.generalObservations ? `
-  <div class="section">
-    <div class="section-title">Observaciones Generales</div>
-    <div style="white-space: pre-wrap;">${patient.generalObservations}</div>
-  </div>
-  ` : ''}
-</body>
-</html>
-    `;
   }
 }
 

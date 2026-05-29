@@ -85,6 +85,7 @@
           (openTaskDetail)="openPendingTaskDetail($event)"
           (dayHistoryDateChange)="tasksDayHistoryDate = $event; loadTasksDayHistory()"
           (exportDayHistoryCsvClick)="exportTasksDayHistoryCsv()"
+          (exportDayHistoryPdfClick)="exportTasksDayHistoryPdf()"
         />
       </div>
     </div>
@@ -172,9 +173,8 @@
       (notCompletedDismissed)="closeNotCompletedModal()"
       (notCompletedConfirmed)="onNotCompletedTaskConfirmed($event)"
       (patientModalClosed)="closePatientModal()"
-      (patientModalPrintRequested)="printPatientInfo()"
-      (patientExportCsvRequested)="exportPatientTab('csv', $event.tab)"
-      (patientExportExcelRequested)="exportPatientTab('excel', $event.tab)"
+      (patientModalPdfRequested)="exportPatientPdf()"
+      (patientExportCsvRequested)="exportPatientTab($event.tab)"
       (patientActiveTabChange)="activeTab = $event"
       (patientNewDiagnosisNoteChange)="newDiagnosisNote = $event"
       (patientNewMedicalObservationNoteChange)="newMedicalObservationNote = $event"
@@ -226,7 +226,7 @@
       (handoverSaveRequested)="saveHandoverNote()"
       (nurseReportsDismissed)="closeNurseReportsModal()"
       (nurseReportsCsvDownload)="downloadNurseReportCsv($event)"
-      (nurseReportsExcelDownload)="downloadNurseReportExcel($event)"
+      (nurseReportsPdfDownload)="downloadNurseReportPdf($event)"
       (tasksQuickPatientFilterChange)="tasksPatientFilter = $event; applyTasksFilters()"
       (tasksQuickHourFilterChange)="tasksHourFilter = $event; applyTasksFilters()"
       (tasksQuickClearFilters)="clearTasksFilters()"

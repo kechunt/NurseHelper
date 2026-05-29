@@ -10,7 +10,6 @@ import { forkJoin } from 'rxjs';
 import { ToastService } from '../../../services/toast.service';
 import { ConfirmationService } from '../../../services/confirmation.service';
 import { ExportService } from '../../../shared/services/export.service';
-import { printTableDocument } from '../../../shared/utils/table-print-export.util';
 import { PaginationComponent, PaginationConfig } from '../../../shared/components/pagination/pagination.component';
 import { DebounceDirective } from '../../../shared/directives/debounce.directive';
 import { AdminTableRowActionsModalComponent } from '../../../shared/components/admin-table-row-actions-modal/admin-table-row-actions-modal.component';
@@ -81,13 +80,11 @@ export class UsersManagementComponent implements OnInit, OnDestroy {
   readonly usersMgmtExportPanelAria = $localize`:@@usersMgmt.exportPanelAria:Exportar listado de usuarios`;
   readonly usersMgmtExportTitle = $localize`:@@usersMgmt.exportTitle:Exportar usuarios`;
   readonly usersMgmtExportHint = $localize`:@@usersMgmt.exportHint:Se exportan los usuarios visibles con los filtros y la búsqueda actuales. El nombre del archivo incluye la fecha de generación.`;
-  readonly usersMgmtExportPrint = $localize`:@@usersMgmt.exportPrint:Imprimir`;
+  readonly usersMgmtExportPdf = $localize`:@@usersMgmt.exportPdf:PDF`;
   readonly usersMgmtExportSaveCsv = $localize`:@@usersMgmt.exportSaveCsv:Guardar CSV`;
-  readonly usersMgmtExportSaveExcel = $localize`:@@usersMgmt.exportSaveExcel:Guardar Excel`;
-  readonly usersMgmtPrintUsersTitle = $localize`:@@usersMgmt.printUsersTitle:Listado de usuarios`;
-  readonly usersMgmtPrintGeneratedPrefix = $localize`:@@usersMgmt.printGeneratedPrefix:Generado:`;
+  readonly usersMgmtPdfUsersTitle = $localize`:@@usersMgmt.pdfUsersTitle:Listado de usuarios`;
+  readonly usersMgmtPdfGeneratedPrefix = $localize`:@@usersMgmt.pdfGeneratedPrefix:Generado:`;
   readonly usersMgmtWarnExportEmpty = $localize`:@@usersMgmt.warnExportEmpty:No hay usuarios para exportar con los filtros actuales`;
-  readonly usersMgmtErrPrintWindow = $localize`:@@usersMgmt.errPrintWindow:No se pudo abrir la ventana de impresión. Permite ventanas emergentes para este sitio.`;
   readonly usersMgmtTableAria = $localize`:@@usersMgmt.tableAria:Tabla de usuarios`;
   readonly usersMgmtColId = $localize`:@@usersMgmt.colId:ID`;
   readonly usersMgmtColUsername = $localize`:@@usersMgmt.colUsername:Usuario`;
@@ -651,22 +648,34 @@ export class UsersManagementComponent implements OnInit, OnDestroy {
     return `usuarios-${new Date().toISOString().split('T')[0]}`;
   }
 
-  printUsers(): void {
-    const data = this.buildUsersExportData();
-    const headers = this.getUsersExportHeaders();
-    const rows = data.map((row) => headers.map((h) => row[h] ?? ''));
+  exportToPdf(): void {
+    try {
+      const data = this.buildUsersExportData();
+      if (!data.length) {
+        this.toastService.warning(this.usersMgmtWarnExportEmpty);
+        return;
+      }
 
-    printTableDocument({
-      title: this.usersMgmtPrintUsersTitle,
-      generatedAtLabel: this.usersMgmtPrintGeneratedPrefix,
-      headers,
-      rows,
-      emptyWarning: () => this.toastService.warning(this.usersMgmtWarnExportEmpty),
-      onPrintWindowBlocked: () => this.toastService.error(this.usersMgmtErrPrintWindow),
-    });
+      this.exportService.exportToPdf(data, {
+        title: this.usersMgmtPdfUsersTitle,
+        filename: `${this.exportFilenameBase()}.pdf`,
+        headers: this.getUsersExportHeaders(),
+        generatedAtLabel: this.usersMgmtPdfGeneratedPrefix,
+        orientation: 'landscape',
+      });
+
+      this.toastService.success(
+        $localize`:@@usersMgmt.exportPdfOk:Exportados ${data.length}:n: usuarios a PDF`
+      );
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error ?? '');
+      this.toastService.error(
+        $localize`:@@usersMgmt.exportPdfErr:Error al exportar PDF: ${msg}:msg:`
+      );
+    }
   }
 
-  /** Exporta los usuarios filtrados a CSV (misma lógica y columnas que Excel). */
+  /** Exporta los usuarios filtrados a CSV. */
   exportToCSV(): void {
     try {
       const data = this.buildUsersExportData();
@@ -686,31 +695,6 @@ export class UsersManagementComponent implements OnInit, OnDestroy {
       const msg = error instanceof Error ? error.message : String(error ?? '');
       this.toastService.error(
         $localize`:@@usersMgmt.exportCsvErr:Error al exportar: ${msg}:msg:`
-      );
-    }
-  }
-
-  /** Exporta los usuarios filtrados a Excel. */
-  exportToExcel(): void {
-    try {
-      const data = this.buildUsersExportData();
-      if (!data.length) {
-        this.toastService.warning(this.usersMgmtWarnExportEmpty);
-        return;
-      }
-
-      this.exportService.exportToExcel(data, {
-        filename: `${this.exportFilenameBase()}.xlsx`,
-        sheetName: 'Usuarios',
-      });
-
-      this.toastService.success(
-        $localize`:@@usersMgmt.exportExcelOk:Exportados ${data.length}:n: usuarios a Excel`
-      );
-    } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : String(error ?? '');
-      this.toastService.error(
-        $localize`:@@usersMgmt.exportExcelErr:Error al exportar: ${msg}:msg:`
       );
     }
   }

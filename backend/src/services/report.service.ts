@@ -9,6 +9,7 @@ import { Patient } from '../entities/Patient';
 import { User } from '../entities/User';
 import { Bed } from '../entities/Bed';
 import { Between, In } from 'typeorm';
+import PDFDocument from 'pdfkit';
 import { logger } from '../utils/logger';
 
 export interface MedicationReport {
@@ -318,12 +319,106 @@ export class ReportService {
     return '\uFEFF' + lines.join('\n');
   }
 
+  private buildPdfBuffer(build: (doc: PDFKit.PDFDocument) => void): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+      const doc = new PDFDocument({ margin: 40, size: 'A4', layout: 'landscape' });
+      const chunks: Buffer[] = [];
+      doc.on('data', (chunk) => chunks.push(chunk as Buffer));
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
+      doc.on('error', reject);
+      build(doc);
+      doc.end();
+    });
+  }
+
+  private drawPdfTable(
+    doc: PDFKit.PDFDocument,
+    startY: number,
+    headers: string[],
+    rows: Array<Array<string | number>>
+  ): number {
+    const left = 40;
+    const tableWidth = doc.page.width - 80;
+    const colWidth = tableWidth / headers.length;
+    let y = startY;
+
+    doc.font('Helvetica-Bold').fontSize(9);
+    headers.forEach((header, i) => {
+      doc.text(String(header), left + i * colWidth, y, { width: colWidth - 4, lineBreak: false });
+    });
+    y += 16;
+    doc.moveTo(left, y).lineTo(left + tableWidth, y).stroke();
+    y += 6;
+
+    doc.font('Helvetica').fontSize(8);
+    for (const row of rows) {
+      if (y > doc.page.height - 60) {
+        doc.addPage({ layout: 'landscape' });
+        y = 40;
+      }
+      row.forEach((cell, i) => {
+        doc.text(String(cell ?? ''), left + i * colWidth, y, { width: colWidth - 4 });
+      });
+      y += 14;
+    }
+    return y + 10;
+  }
+
+  private medicationReportToPdf(rows: MedicationReport[]): Promise<Buffer> {
+    const headers = ['Paciente', 'Medicamento', 'Dosis', 'Prog.', 'Adm.', 'No adm.', '%'];
+    const tableRows = rows.map((r) => [
+      r.patientName,
+      r.medication,
+      r.dosage,
+      r.scheduled,
+      r.administered,
+      r.missed,
+      `${Math.round(r.complianceRate * 100) / 100}%`,
+    ]);
+
+    return this.buildPdfBuffer((doc) => {
+      doc.font('Helvetica-Bold').fontSize(16).text('Reporte de medicación', { align: 'center' });
+      doc.moveDown(0.5);
+      doc.font('Helvetica').fontSize(9).text(`Generado: ${new Date().toLocaleString('es-ES')}`, { align: 'center' });
+      doc.moveDown(1);
+      this.drawPdfTable(doc, doc.y, headers, tableRows);
+    });
+  }
+
+  private complianceStatsToPdf(stats: ComplianceStats): Promise<Buffer> {
+    const summaryRows: Array<Array<string | number>> = [
+      ['Programados', stats.totalSchedules],
+      ['Administrados', stats.administered],
+      ['No realizados', stats.missed],
+      ['Cancelados', stats.cancelled],
+      ['Tasa global (%)', Math.round(stats.complianceRate * 100) / 100],
+    ];
+    const patientHeaders = ['Paciente', 'Cumplimiento (%)'];
+    const patientRows = stats.byPatient.map((row) => [
+      row.patientName,
+      Math.round(row.complianceRate * 100) / 100,
+    ]);
+
+    return this.buildPdfBuffer((doc) => {
+      doc.font('Helvetica-Bold').fontSize(16).text('Reporte de cumplimiento', { align: 'center' });
+      doc.moveDown(0.5);
+      doc.font('Helvetica').fontSize(9).text(`Generado: ${new Date().toLocaleString('es-ES')}`, { align: 'center' });
+      doc.moveDown(1);
+      doc.font('Helvetica-Bold').fontSize(12).text('Resumen');
+      doc.moveDown(0.5);
+      let y = this.drawPdfTable(doc, doc.y, ['Indicador', 'Valor'], summaryRows);
+      doc.font('Helvetica-Bold').fontSize(12).text('Por paciente', 40, y);
+      y += 18;
+      this.drawPdfTable(doc, y, patientHeaders, patientRows);
+    });
+  }
+
   /**
-   * Exportar reporte a formato específico (CSV implementado; PDF/Excel no).
+   * Exportar reporte a formato específico (CSV o PDF).
    */
   async exportReport(
     report: MedicationReport[] | ComplianceStats,
-    format: 'pdf' | 'excel' | 'csv'
+    format: 'pdf' | 'csv'
   ): Promise<Buffer | null> {
     logger.info('Report export requested', { format, reportType: Array.isArray(report) ? 'medication' : 'compliance' });
 
@@ -332,6 +427,12 @@ export class ReportService {
         ? this.medicationReportToCsv(report)
         : this.complianceStatsToCsv(report);
       return Buffer.from(text, 'utf8');
+    }
+
+    if (format === 'pdf') {
+      return Array.isArray(report)
+        ? this.medicationReportToPdf(report)
+        : this.complianceStatsToPdf(report);
     }
 
     return null;

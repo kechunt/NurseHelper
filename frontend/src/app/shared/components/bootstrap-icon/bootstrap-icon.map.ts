@@ -17,6 +17,7 @@ export const LEGACY_ICON_TO_BOOTSTRAP: Readonly<Record<string, string>> = {
   'cog-6-tooth': 'gear',
   'document-arrow-down': 'download',
   'document-text': 'file-text',
+  'file-pdf': 'file-earmark-pdf',
   'exclamation-circle': 'exclamation-circle',
   'exclamation-triangle': 'exclamation-triangle',
   eye: 'eye',

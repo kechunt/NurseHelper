@@ -198,6 +198,28 @@
         Cerrar
       </button>
       <button
+        id="nurse-reports-download-pdf-compliance-btn"
+        type="button"
+        class="btn-secondary-neuro"
+        (click)="pdfDownload.emit('compliance')"
+        [disabled]="loading || !!error || exporting"
+        title="Descargar PDF de cumplimiento"
+        i18n-title="@@nurseReportsModal.downloadPdfComplianceTitle"
+      >
+        <app-bootstrap-icon name="file-pdf"></app-bootstrap-icon> PDF cumplimiento
+      </button>
+      <button
+        id="nurse-reports-download-pdf-medication-btn"
+        type="button"
+        class="btn-secondary-neuro"
+        (click)="pdfDownload.emit('medication')"
+        [disabled]="loading || !!error || exporting"
+        title="Descargar PDF de medicación"
+        i18n-title="@@nurseReportsModal.downloadPdfMedicationTitle"
+      >
+        <app-bootstrap-icon name="file-pdf"></app-bootstrap-icon> PDF medicación
+      </button>
+      <button
         id="nurse-reports-download-csv-compliance-btn"
         type="button"
         class="btn-secondary-neuro"
@@ -218,28 +240,6 @@
         i18n-title="@@nurseReportsModal.downloadCsvMedicationTitle"
       >
         <app-bootstrap-icon name="document-text"></app-bootstrap-icon> CSV medicación
-      </button>
-      <button
-        id="nurse-reports-download-excel-compliance-btn"
-        type="button"
-        class="btn-secondary-neuro"
-        (click)="excelDownload.emit('compliance')"
-        [disabled]="loading || !!error || exporting"
-        title="Descargar Excel de cumplimiento"
-        i18n-title="@@nurseReportsModal.downloadExcelComplianceTitle"
-      >
-        <app-bootstrap-icon name="table-cells"></app-bootstrap-icon> Excel cumplimiento
-      </button>
-      <button
-        id="nurse-reports-download-excel-medication-btn"
-        type="button"
-        class="btn-secondary-neuro"
-        (click)="excelDownload.emit('medication')"
-        [disabled]="loading || !!error || exporting"
-        title="Descargar Excel de medicación"
-        i18n-title="@@nurseReportsModal.downloadExcelMedicationTitle"
-      >
-        <app-bootstrap-icon name="table-cells"></app-bootstrap-icon> Excel medicación
       </button>
     </div>
   </div>

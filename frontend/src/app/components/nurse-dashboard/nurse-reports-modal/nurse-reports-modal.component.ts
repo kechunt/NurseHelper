@@ -32,7 +32,7 @@ export class NurseReportsModalComponent {
 
   @Output() readonly dismissed = new EventEmitter<void>();
   @Output() readonly csvDownload = new EventEmitter<'compliance' | 'medication'>();
-  @Output() readonly excelDownload = new EventEmitter<'compliance' | 'medication'>();
+  @Output() readonly pdfDownload = new EventEmitter<'compliance' | 'medication'>();
   /** `null`: todas las enfermeras / todos los pacientes del centro */
   @Output() readonly staffNurseFilterChange = new EventEmitter<number | null>();
 

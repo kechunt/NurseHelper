@@ -9,6 +9,7 @@ import {
   Index,
 } from 'typeorm';
 import { User } from './User';
+import { encryptedRequiredTextTransformer } from '../utils/typeorm-encrypted.transformers';
 
 /** Nota compartida entre administradoras / supervisoras (sin área), por fecha y franja de turno. */
 @Entity('admin_handover_notes')
@@ -24,7 +25,7 @@ export class AdminHandoverNote {
   @Column({ type: 'varchar', length: 16, name: 'shift_slot' })
   shiftSlot: string;
 
-  @Column({ type: 'text' })
+  @Column({ type: 'text', transformer: encryptedRequiredTextTransformer })
   body: string;
 
   @Column({ name: 'author_user_id' })

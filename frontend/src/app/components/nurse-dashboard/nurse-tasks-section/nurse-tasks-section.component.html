@@ -180,6 +180,18 @@
       </div>
       <div class="nurse-day-history-toolbar-actions tasks-actions header-actions">
         <button
+          id="nurse-tasks-section-export-day-history-pdf-btn"
+          type="button"
+          class="neuro-btn neuro-btn-sm"
+          *ngIf="dayHistoryExpanded && tasksDayHistoryItems.length > 0 && !tasksDayHistoryLoading && !tasksDayHistoryError"
+          (click)="exportDayHistoryPdfClick.emit()"
+          title="Descargar PDF del día mostrado"
+          i18n-title="@@nurseTasksSection.exportDayHistoryPdfTitle"
+        >
+          <app-bootstrap-icon name="file-pdf" />
+          <span i18n="@@nurseTasksSection.btnExportDayHistoryPdf">Exportar PDF</span>
+        </button>
+        <button
           id="nurse-tasks-section-export-day-history-csv-btn"
           type="button"
           class="neuro-btn neuro-btn-sm"

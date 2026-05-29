@@ -10,6 +10,10 @@ import {
 import { Patient } from './Patient';
 import { User } from './User';
 import { Schedule } from './Schedule';
+import {
+  encryptedNullableTextTransformer,
+  encryptedRequiredTextTransformer,
+} from '../utils/typeorm-encrypted.transformers';
 
 export enum AdministrationStatus {
   ADMINISTERED = 'administered',
@@ -58,13 +62,13 @@ export class AdministrationHistory {
   @Column({ type: 'varchar', length: 50 })
   type: string; // 'medication' o 'treatment'
 
-  @Column({ type: 'text' })
+  @Column({ type: 'text', transformer: encryptedRequiredTextTransformer })
   description: string;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text', nullable: true, transformer: encryptedNullableTextTransformer })
   medication: string | null;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text', nullable: true, transformer: encryptedNullableTextTransformer })
   dosage: string | null;
 
   @Column({ type: 'datetime' })
@@ -73,10 +77,10 @@ export class AdministrationHistory {
   @Column({ type: 'datetime', nullable: true })
   administeredAt: Date | null;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text', nullable: true, transformer: encryptedNullableTextTransformer })
   notes: string | null;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text', nullable: true, transformer: encryptedNullableTextTransformer })
   reasonNotAdministered: string | null;
 
   @CreateDateColumn()

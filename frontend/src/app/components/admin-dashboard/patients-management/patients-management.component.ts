@@ -89,8 +89,8 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
   readonly adminPatientsTreatmentTypeDefault = $localize`:@@adminPatients.treatmentTypeDefault:Tratamiento`;
   readonly adminPatientsNewTaskTitle = $localize`:@@adminPatients.newTaskTitle:Nueva Tarea`;
   readonly adminPatientsExportColId = $localize`:@@adminPatients.exportColId:ID`;
-  readonly adminPatientsExportColFirstName = $localize`:@@adminPatients.exportColFirstName:Nombre`;
-  readonly adminPatientsExportColLastName = $localize`:@@adminPatients.exportColLastName:Apellido`;
+  readonly adminPatientsExportColFullName = $localize`:@@adminPatients.exportColFullName:Nombre Completo`;
+  readonly adminPatientsExportColNurse = $localize`:@@adminPatients.exportColNurse:Enfermera asignada`;
   readonly adminPatientsExportColIdNumber = $localize`:@@adminPatients.exportColIdNumber:Cédula`;
   readonly adminPatientsExportColDob = $localize`:@@adminPatients.exportColDob:Fecha de Nacimiento`;
   readonly adminPatientsExportColGender = $localize`:@@adminPatients.exportColGender:Género`;
@@ -490,6 +490,16 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
    * Exporta hasta 1000 filas con los mismos filtros que el listado (límite del API).
    */
   exportToCSV(): void {
+    this.fetchPatientsForExport((data, total) => this.writePatientsCsv(data, total));
+  }
+
+  exportToPdf(): void {
+    this.fetchPatientsForExport((data, total) => this.writePatientsPdf(data, total));
+  }
+
+  private fetchPatientsForExport(
+    onSuccess: (data: Record<string, string | number>[], total: number) => void
+  ): void {
     this.adminService
       .getPatientsPage({
         ...this.buildPatientListParams(),
@@ -500,34 +510,8 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
         next: (res) => {
           try {
             const rows = res.items.map((p) => this.enrichPatientRow(p));
-            const data = rows.map((p) => ({
-              [this.adminPatientsExportColId]: p.id,
-              [this.adminPatientsExportColFirstName]: p.firstName,
-              [this.adminPatientsExportColLastName]: p.lastName,
-              [this.adminPatientsExportColIdNumber]: p.identificationNumber || '',
-              [this.adminPatientsExportColDob]: p.dateOfBirth
-                ? new Date(p.dateOfBirth).toLocaleDateString('es-ES')
-                : '',
-              [this.adminPatientsExportColGender]: p.gender || '',
-              [this.adminPatientsExportColPhone]: p.phone || '',
-              [this.adminPatientsExportColArea]: p.areaName || this.adminPatientsNoArea,
-              [this.adminPatientsExportColBed]: p.bedNumber || this.adminPatientsNoBed,
-              [this.adminPatientsExportColStatus]: p.isActive ? this.adminPatientsStatusActive : this.adminPatientsStatusInactive,
-            }));
-
-            this.exportService.exportToCSV(data, {
-              filename: `pacientes-${new Date().toISOString().split('T')[0]}.csv`,
-            });
-
-            if (res.total > data.length) {
-              this.toastService.warning(
-                $localize`:@@adminPatients.exportTruncated:Exportadas ${data.length}:exported: filas de ${res.total}:total: (máximo 1000 por exportación).`
-              );
-            } else {
-              this.toastService.success(
-                $localize`:@@adminPatients.exportCsvOk:Exportados ${data.length}:n: pacientes a CSV`
-              );
-            }
+            const data = this.buildPatientsExportRows(rows);
+            onSuccess(data, res.total);
           } catch (error: any) {
             this.toastService.error(
               $localize`:@@adminPatients.exportCatch:Error al exportar: ${String(error?.message ?? '')}:msg:`
@@ -543,58 +527,55 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
       });
   }
 
-  exportToExcel(): void {
-    this.adminService
-      .getPatientsPage({
-        ...this.buildPatientListParams(),
-        page: 1,
-        limit: 1000,
-      })
-      .subscribe({
-        next: (res) => {
-          try {
-            const rows = res.items.map((p) => this.enrichPatientRow(p));
-            const data = rows.map((p) => ({
-              [this.adminPatientsExportColId]: p.id,
-              [this.adminPatientsExportColFirstName]: p.firstName,
-              [this.adminPatientsExportColLastName]: p.lastName,
-              [this.adminPatientsExportColIdNumber]: p.identificationNumber || '',
-              [this.adminPatientsExportColDob]: p.dateOfBirth
-                ? new Date(p.dateOfBirth).toLocaleDateString('es-ES')
-                : '',
-              [this.adminPatientsExportColGender]: p.gender || '',
-              [this.adminPatientsExportColPhone]: p.phone || '',
-              [this.adminPatientsExportColArea]: p.areaName || this.adminPatientsNoArea,
-              [this.adminPatientsExportColBed]: p.bedNumber || this.adminPatientsNoBed,
-              [this.adminPatientsExportColStatus]: p.isActive ? this.adminPatientsStatusActive : this.adminPatientsStatusInactive,
-            }));
+  private buildPatientsExportRows(rows: Patient[]): Record<string, string | number>[] {
+    return rows.map((p) => ({
+      [this.adminPatientsExportColId]: p.id ?? '',
+      [this.adminPatientsExportColFullName]: `${p.firstName || ''} ${p.lastName || ''}`.trim(),
+      [this.adminPatientsExportColNurse]: this.getAssignedNurseDisplay(p),
+      [this.adminPatientsExportColIdNumber]: p.identificationNumber || '',
+      [this.adminPatientsExportColDob]: p.dateOfBirth
+        ? new Date(p.dateOfBirth).toLocaleDateString('es-ES')
+        : '',
+      [this.adminPatientsExportColGender]: p.gender || '',
+      [this.adminPatientsExportColPhone]: p.phone || '',
+      [this.adminPatientsExportColArea]: p.areaName || this.adminPatientsNoArea,
+      [this.adminPatientsExportColBed]: p.bedNumber || this.adminPatientsNoBed,
+      [this.adminPatientsExportColStatus]: p.isActive ? this.adminPatientsStatusActive : this.adminPatientsStatusInactive,
+    }));
+  }
 
-            this.exportService.exportToExcel(data, {
-              filename: `pacientes-${new Date().toISOString().split('T')[0]}.xlsx`,
-            });
+  private writePatientsCsv(data: Record<string, string | number>[], total: number): void {
+    this.exportService.exportToCSV(data, {
+      filename: `pacientes-${new Date().toISOString().split('T')[0]}.csv`,
+    });
 
-            if (res.total > data.length) {
-              this.toastService.warning(
-                $localize`:@@adminPatients.exportTruncated:Exportadas ${data.length}:exported: filas de ${res.total}:total: (máximo 1000 por exportación).`
-              );
-            } else {
-              this.toastService.success(
-                $localize`:@@adminPatients.exportExcelOk:Exportados ${data.length}:n: pacientes a Excel`
-              );
-            }
-          } catch (error: any) {
-            this.toastService.error(
-              $localize`:@@adminPatients.exportCatch:Error al exportar: ${String(error?.message ?? '')}:msg:`
-            );
-          }
-        },
-        error: (error) => {
-          const errorMessage = error.error?.message || error.message || this.adminPatientsErrUnknown;
-          this.toastService.error(
-            $localize`:@@adminPatients.exportFailed:No se pudo exportar: ${errorMessage}:msg:`
-          );
-        },
-      });
+    if (total > data.length) {
+      this.toastService.warning(
+        $localize`:@@adminPatients.exportTruncated:Exportadas ${data.length}:exported: filas de ${total}:total: (máximo 1000 por exportación).`
+      );
+    } else {
+      this.toastService.success(
+        $localize`:@@adminPatients.exportCsvOk:Exportados ${data.length}:n: pacientes a CSV`
+      );
+    }
+  }
+
+  private writePatientsPdf(data: Record<string, string | number>[], total: number): void {
+    this.exportService.exportToPdf(data, {
+      title: $localize`:@@adminPatients.pdfTitle:Listado de pacientes`,
+      filename: `pacientes-${new Date().toISOString().split('T')[0]}.pdf`,
+      orientation: 'landscape',
+    });
+
+    if (total > data.length) {
+      this.toastService.warning(
+        $localize`:@@adminPatients.exportTruncated:Exportadas ${data.length}:exported: filas de ${total}:total: (máximo 1000 por exportación).`
+      );
+    } else {
+      this.toastService.success(
+        $localize`:@@adminPatients.exportPdfOk:Exportados ${data.length}:n: pacientes a PDF`
+      );
+    }
   }
 
   /**

@@ -1,5 +1,5 @@
 /**
- * Panel de exportación (imprimir / CSV / Excel) — mismo lenguaje que farmacia y enfermería.
+ * Panel de exportación (PDF / CSV) — mismo lenguaje que farmacia y enfermería.
  * Importar en componentes admin con tabla exportable.
  */
 
@@ -90,6 +90,14 @@
 .export-btn:focus-visible {
   outline: 2px solid #4299e1;
   outline-offset: 2px;
+}
+
+.export-btn--pdf {
+  color: #c53030;
+}
+
+.export-btn--csv {
+  color: #2f855a;
 }
 
 @media (max-width: 768px) {

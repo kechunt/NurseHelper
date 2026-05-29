@@ -131,7 +131,7 @@ export class ReportsController {
       });
     }
 
-    const buffer = await reportService.exportReport(report, format as 'pdf' | 'excel' | 'csv');
+    const buffer = await reportService.exportReport(report, format as 'pdf' | 'csv');
 
     if (buffer === null) {
       return res.status(415).json({
@@ -142,7 +142,6 @@ export class ReportsController {
 
     const contentType = {
       pdf: 'application/pdf',
-      excel: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       csv: 'text/csv; charset=utf-8',
     }[format as string] || 'application/octet-stream';
 

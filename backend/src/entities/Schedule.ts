@@ -12,6 +12,10 @@ import {
 import { Patient } from './Patient';
 import { User } from './User';
 import { AdministrationHistory } from './AdministrationHistory';
+import {
+  encryptedNullableTextTransformer,
+  encryptedRequiredTextTransformer,
+} from '../utils/typeorm-encrypted.transformers';
 
 export enum ScheduleType {
   MEDICATION = 'medication',
@@ -71,16 +75,16 @@ export class Schedule {
   @Column({ type: 'datetime' })
   scheduledTime: Date;
 
-  @Column({ type: 'text' })
+  @Column({ type: 'text', transformer: encryptedRequiredTextTransformer })
   description: string;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text', nullable: true, transformer: encryptedNullableTextTransformer })
   notes: string;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text', nullable: true, transformer: encryptedNullableTextTransformer })
   medication: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true, transformer: encryptedNullableTextTransformer })
   dosage: string;
 
   @OneToMany(() => AdministrationHistory, (history) => history.schedule)

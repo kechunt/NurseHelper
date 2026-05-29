@@ -76,12 +76,18 @@ describe('StaffQuickActionsService', () => {
     expect(toastMock.warning).toHaveBeenCalledWith(jasmine.stringMatching(/coordinaci/));
   });
 
-  it('no guarda handover vacío y avisa', () => {
+  it('downloadPdf descarga reporte PDF vía ReportService', () => {
     const svc = TestBed.inject(StaffQuickActionsService);
-    svc.handoverDate.set('2026-05-01');
-    svc.handoverBody.set('   ');
-    svc.saveTeamHandover();
-    expect(adminMock.putAdminHandoverNote).not.toHaveBeenCalled();
-    expect(toastMock.warning).toHaveBeenCalledWith(jasmine.stringMatching(/guardar|contenido/i));
+    svc.openReports();
+    svc.downloadPdf('compliance');
+    expect(reportMock.exportReport).toHaveBeenCalledWith(
+      'compliance',
+      'pdf',
+      jasmine.any(Date),
+      jasmine.any(Date),
+      undefined,
+      null
+    );
+    expect(toastMock.success).toHaveBeenCalled();
   });
 });

@@ -4,6 +4,4 @@ export const NURSE_DASHBOARD_PATIENT_OR_MEDICATION_UNAVAILABLE_ERROR_TOAST = $lo
 
 export const NURSE_DASHBOARD_EDIT_BED_NO_ID_WARNING_TOAST = $localize`:@@nurseDashboard.misc.editBedNoId:No se puede editar esta cama`;
 
-export const NURSE_DASHBOARD_PRINT_NO_PATIENT_WARNING_TOAST = $localize`:@@nurseDashboard.misc.printNoPatient:No hay información del paciente para imprimir`;
-
-export const NURSE_DASHBOARD_PRINT_POPUP_BLOCKED_WARNING_TOAST = $localize`:@@nurseDashboard.misc.printPopupBlocked:Permite ventanas emergentes en el navegador para imprimir`;
+export const NURSE_DASHBOARD_PDF_NO_PATIENT_WARNING_TOAST = $localize`:@@nurseDashboard.misc.pdfNoPatient:No hay información del paciente para exportar a PDF`;

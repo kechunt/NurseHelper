@@ -9,6 +9,7 @@ import { sendPaginatedResponse, sendErrorResponse, handleControllerError, parseI
 import { logger } from '../utils/logger';
 import { patientService } from '../services/patient.service';
 import { assertNurseCanAccessPatient } from '../services/nurse-patient-access.service';
+import { buildPatientSearchFilter } from '../utils/field-encryption.util';
 
 export class PatientsController {
   async getAll(req: Request, res: Response): Promise<void> {
@@ -28,18 +29,17 @@ export class PatientsController {
         .leftJoinAndSelect('patient.bed', 'bed')
         .leftJoinAndSelect('bed.area', 'area')
         .leftJoinAndSelect('patient.area', 'patientArea')
-        .orderBy('patient.lastName', 'ASC');
+        .orderBy('patient.createdAt', 'DESC');
 
-      if (search) {
-        queryBuilder.where(
-          '(patient.firstName LIKE :search OR patient.lastName LIKE :search OR patient.identificationNumber LIKE :search)',
-          { search: `%${search}%` }
-        );
+      const searchFilter = buildPatientSearchFilter(search, 'patient');
+      if (searchFilter) {
+        queryBuilder.where(searchFilter.clause, searchFilter.params);
       }
+      const hasSearchFilter = !!searchFilter;
 
       if (isActiveQ === 'true' || isActiveQ === 'false') {
         const active = isActiveQ === 'true';
-        if (search) {
+        if (hasSearchFilter) {
           queryBuilder.andWhere('patient.isActive = :isActive', { isActive: active });
         } else {
           queryBuilder.where('patient.isActive = :isActive', { isActive: active });
@@ -49,7 +49,7 @@ export class PatientsController {
       if (areaIdQ) {
         const aid = parseInt(areaIdQ, 10);
         if (!isNaN(aid)) {
-          if (search || isActiveQ === 'true' || isActiveQ === 'false') {
+          if (hasSearchFilter || isActiveQ === 'true' || isActiveQ === 'false') {
             queryBuilder.andWhere('(bed.areaId = :areaId OR patient.areaId = :areaId)', { areaId: aid });
           } else {
             queryBuilder.where('(bed.areaId = :areaId OR patient.areaId = :areaId)', { areaId: aid });
@@ -58,7 +58,7 @@ export class PatientsController {
       }
 
       const priorForBed =
-        !!search ||
+        hasSearchFilter ||
         isActiveQ === 'true' ||
         isActiveQ === 'false' ||
         !!(areaIdQ && !isNaN(parseInt(areaIdQ, 10)));
@@ -114,18 +114,16 @@ export class PatientsController {
           
           queryBuilder = patientRepository
             .createQueryBuilder('patient')
-            .orderBy('patient.lastName', 'ASC');
+            .orderBy('patient.createdAt', 'DESC');
 
-          if (search) {
-            queryBuilder.where(
-              '(patient.firstName LIKE :search OR patient.lastName LIKE :search OR patient.identificationNumber LIKE :search)',
-              { search: `%${search}%` }
-            );
+          const fallbackSearchFilter = buildPatientSearchFilter(search, 'patient');
+          if (fallbackSearchFilter) {
+            queryBuilder.where(fallbackSearchFilter.clause, fallbackSearchFilter.params);
           }
 
           if (isActiveQ === 'true' || isActiveQ === 'false') {
             const active = isActiveQ === 'true';
-            if (search) {
+            if (fallbackSearchFilter) {
               queryBuilder.andWhere('patient.isActive = :isActive', { isActive: active });
             } else {
               queryBuilder.where('patient.isActive = :isActive', { isActive: active });
@@ -133,7 +131,7 @@ export class PatientsController {
           }
 
           let fallbackHasWhere =
-            !!search || isActiveQ === 'true' || isActiveQ === 'false';
+            !!fallbackSearchFilter || isActiveQ === 'true' || isActiveQ === 'false';
 
           if (hasBedQ === 'true' || hasBedQ === 'false') {
             const withBed = hasBedQ === 'true';
@@ -161,7 +159,11 @@ export class PatientsController {
           [patients, total] = await queryBuilder.getManyAndCount();
           
           // Establecer bed y assignedTo como null para todos los pacientes
-          patients = patients.map(p => ({ ...p, bed: null as any, assignedTo: null as any }));
+          patients = patients.map((p) => {
+            (p as any).bed = null;
+            (p as any).assignedTo = null;
+            return p;
+          });
         } else {
           throw error;
         }

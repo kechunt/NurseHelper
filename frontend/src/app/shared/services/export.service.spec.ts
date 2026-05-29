@@ -92,12 +92,6 @@ describe('ExportService', () => {
     expect(prepared[0].birthDate).toContain('1990');
   });
 
-  it('debería exportar a Excel sin lanzar (xlsx o fallback CSV)', () => {
-    const data = [{ name: 'Test' }];
-
-    expect(() => service.exportToExcel(data)).not.toThrow();
-  });
-
   it('debería manejar valores nulos y undefined', () => {
     const data = [
       { name: 'Juan', age: null, city: undefined }
@@ -105,6 +99,25 @@ describe('ExportService', () => {
 
     expect(() => {
       service.exportToCSV(data);
+    }).not.toThrow();
+  });
+
+  it('debería lanzar error si no hay datos para exportar PDF', () => {
+    expect(() => {
+      service.exportToPdf([], { title: 'Test' });
+    }).toThrowError('No hay datos para exportar');
+  });
+
+  it('debería requerir título para exportar PDF', () => {
+    expect(() => {
+      service.exportToPdf([{ name: 'Juan' }], { title: '' });
+    }).toThrowError('Se requiere título para exportar PDF');
+  });
+
+  it('debería exportar datos a PDF sin lanzar error', () => {
+    const data = [{ name: 'Juan', age: 30 }];
+    expect(() => {
+      service.exportToPdf(data, { title: 'Listado', filename: 'test.pdf' });
     }).not.toThrow();
   });
 

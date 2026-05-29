@@ -61,6 +61,14 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": {
+            "proxyConfig": "proxy.conf.json",
+            "allowedHosts": [
+              ".ngrok-free.dev",
+              ".ngrok-free.app",
+              ".ngrok.app"
+            ]
+          },
           "configurations": {
             "production": {
               "buildTarget": "NurseHelper:build:production"

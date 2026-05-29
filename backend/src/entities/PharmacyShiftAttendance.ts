@@ -11,6 +11,7 @@ import {
 import { User } from './User';
 import { Shift } from './Shift';
 import { ShiftAttendanceStatus } from './ShiftAttendance';
+import { encryptedNullableTextTransformer } from '../utils/typeorm-encrypted.transformers';
 
 @Entity('pharmacy_shift_attendance')
 @Index(['date', 'shiftId', 'pharmacyUserId'], { unique: true })
@@ -56,7 +57,7 @@ export class PharmacyShiftAttendance {
   @JoinColumn({ name: 'recordedBy' })
   recordedByUser: User | null;
 
-  @Column({ type: 'varchar', length: 500, nullable: true })
+  @Column({ type: 'text', nullable: true, transformer: encryptedNullableTextTransformer })
   notes: string | null;
 
   @CreateDateColumn()
