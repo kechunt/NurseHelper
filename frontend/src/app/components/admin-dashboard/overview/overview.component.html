@@ -90,4 +90,33 @@
       </div>
     </div>
   </div>
+
+  <section class="overview-backups-card" aria-labelledby="overview-backups-heading">
+    <div class="overview-backups-header">
+      <h3 id="overview-backups-heading" class="overview-backups-title">{{ adminOverviewBackupTitle }}</h3>
+      <button
+        type="button"
+        class="overview-backup-btn"
+        (click)="createBackup()"
+        [disabled]="creatingBackup || loadingBackups"
+      >
+        {{ adminOverviewBackupCreate }}
+      </button>
+    </div>
+
+    <p *ngIf="loadingBackups" class="loading-state" i18n="@@adminOverview.backupLoading">Cargando respaldos...</p>
+
+    <ul *ngIf="!loadingBackups && backups.length > 0" class="overview-backups-list">
+      <li *ngFor="let backup of backups" class="overview-backup-item">
+        <span class="overview-backup-name">{{ backup.filename }}</span>
+        <span class="overview-backup-meta">
+          {{ formatBackupDate(backup.createdAt) }} · {{ formatBackupSize(backup.size) }}
+        </span>
+      </li>
+    </ul>
+
+    <p *ngIf="!loadingBackups && backups.length === 0" class="overview-backups-empty">
+      {{ adminOverviewBackupEmpty }}
+    </p>
+  </section>
 </div>

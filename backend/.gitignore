@@ -1,7 +1,10 @@
 node_modules/
 dist/
 .env
+.env.local
 *.log
 .DS_Store
 backups/*.json
+backups/*.sql
+backups/*.sql.gz
 

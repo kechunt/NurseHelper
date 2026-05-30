@@ -229,19 +229,19 @@
     <div class="modal-body">
         <div class="form-grid">
           <div class="input-group">
-            <label i18n="@@staffMgmtHtml.labelUsernameForm">Usuario *</label>
+            <label i18n="@@staffMgmtHtml.labelUsernameForm">Usuario</label>
             <input type="text" class="neuro-input" [(ngModel)]="editForm.username" />
           </div>
           <div class="input-group">
-            <label i18n="@@staffMgmtHtml.labelEmail">Email *</label>
+            <label i18n="@@staffMgmtHtml.labelEmail">Email</label>
             <input type="email" class="neuro-input" [(ngModel)]="editForm.email" />
           </div>
           <div class="input-group">
-            <label i18n="@@staffMgmtHtml.labelFirstName">Nombre *</label>
+            <label i18n="@@staffMgmtHtml.labelFirstName">Nombres</label>
             <input type="text" class="neuro-input" [(ngModel)]="editForm.firstName" />
           </div>
           <div class="input-group">
-            <label i18n="@@staffMgmtHtml.labelLastName">Apellido *</label>
+            <label i18n="@@staffMgmtHtml.labelLastName">Apellido</label>
             <input type="text" class="neuro-input" [(ngModel)]="editForm.lastName" />
           </div>
           <div class="input-group">
@@ -249,7 +249,7 @@
             <input type="tel" class="neuro-input" [(ngModel)]="editForm.phone" maxlength="30" i18n-placeholder="@@staffMgmtHtml.placeholderOptional" placeholder="Opcional" />
           </div>
           <div class="input-group">
-            <label i18n="@@staffMgmtHtml.labelRole">Rol *</label>
+            <label i18n="@@staffMgmtHtml.labelRole">Rol</label>
             <select class="neuro-select" [(ngModel)]="editForm.role">
               <option value="nurse" i18n="@@staffMgmtHtml.optNurse">Enfermera</option>
               <option value="supervisor" i18n="@@staffMgmtHtml.optSupervisor">Supervisor</option>
@@ -448,7 +448,7 @@
         </div>
 
         <div class="input-group">
-          <label for="assign-bed-to-patient" i18n="@@staffMgmtHtml.labelBedRequired">Cama *</label>
+          <label for="assign-bed-to-patient" i18n="@@staffMgmtHtml.labelBedRequired">Cama</label>
           <select id="assign-bed-to-patient" class="neuro-select" [(ngModel)]="selectedBedIdForAssign">
             <option [ngValue]="null" i18n="@@staffMgmtHtml.optionPickBed">Selecciona una cama</option>
             <option *ngFor="let bed of bedsForPendingAssign" [ngValue]="bed.id">

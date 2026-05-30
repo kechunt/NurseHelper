@@ -51,6 +51,8 @@ export interface NurseDashboardOverlaysStackVm {
   handoverCanAcknowledge: boolean;
   showNurseReportsModal: boolean;
   nurseReportsPeriodLabel: string;
+  nurseReportsStartDate: string;
+  nurseReportsEndDate: string;
   nurseReportsLoading: boolean;
   nurseReportsExporting: boolean;
   nurseReportsMedication: MedicationReport[] | null;
@@ -115,6 +117,8 @@ export function createEmptyNurseDashboardOverlaysStackVm(): NurseDashboardOverla
     handoverCanAcknowledge: false,
     showNurseReportsModal: false,
     nurseReportsPeriodLabel: '',
+    nurseReportsStartDate: '',
+    nurseReportsEndDate: '',
     nurseReportsLoading: false,
     nurseReportsExporting: false,
     nurseReportsMedication: null,

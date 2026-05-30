@@ -2,7 +2,7 @@ import { Routes } from '@angular/router';
 import { LoginComponent } from './components/login/login.component';
 import { RegisterComponent } from './components/register/register.component';
 import { VerifyEmailComponent } from './components/verify-email/verify-email.component';
-import { adminGuard, authGuard, supervisorGuard, pharmacyGuard } from './guards/auth.guard';
+import { adminGuard, supervisorGuard, pharmacyGuard, nurseGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/login', pathMatch: 'full' },
@@ -27,7 +27,7 @@ export const routes: Routes = [
     path: 'nurse-dashboard',
     loadComponent: () =>
       import('./components/nurse-dashboard/nurse-dashboard.component').then((m) => m.NurseDashboardComponent),
-    canActivate: [authGuard],
+    canActivate: [nurseGuard],
   },
   {
     path: 'pharmacy',
@@ -47,7 +47,7 @@ export const routes: Routes = [
     path: 'use-case-diagram',
     loadComponent: () =>
       import('./components/use-case-diagram/use-case-diagram.component').then((m) => m.UseCaseDiagramComponent),
-    canActivate: [authGuard],
+    canActivate: [adminGuard],
   },
   { path: 'dashboard', redirectTo: 'nurse-dashboard', pathMatch: 'full' },
 ];

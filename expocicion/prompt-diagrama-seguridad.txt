@@ -1,0 +1,65 @@
+================================================================================
+PROMPT: DIAGRAMA DE CAPAS DE SEGURIDAD
+Proyecto: NurseHelper
+================================================================================
+
+[INICIO PROMPT]
+
+Genera un diagrama de «defensa en profundidad» (security layers onion o flowchart)
+para NurseHelper, sistema clínico con datos sensibles.
+
+CAPAS A REPRESENTAR (de fuera hacia dentro o de arriba hacia abajo)
+
+1. PERÍMETRO HTTP
+   - HTTPS en producción
+   - Helmet (cabeceras seguras)
+   - CORS lista blanca (localhost, CORS_ORIGIN, *.vercel.app)
+   - Rate limiting global + estricto en /api/auth/login
+   - Body limit 1 MB
+
+2. AUTENTICACIÓN
+   - JWT Bearer (JWT_SECRET, expiración)
+   - bcrypt contraseñas
+   - Verificación email (registro)
+
+3. AUTORIZACIÓN
+   - RBAC: admin, nurse, supervisor, pharmacy
+   - role.middleware por endpoint
+   - Alcance por área (enfermera solo sus pacientes/área)
+   - reports-scope.helpers en reportes
+
+4. VALIDACIÓN Y SANITIZACIÓN
+   - DTOs + class-validator
+   - sanitizeMiddleware (DOMPurify anti-XSS)
+
+5. DATOS EN REPOSO
+   - FIELD_ENCRYPTION_KEY (AES-GCM en campos sensibles)
+   - MySQL con credenciales en env (no en código)
+
+6. CLIENTE (complementario, no sustituto)
+   - Route guards Angular
+   - authInterceptor + logout en 401
+   - Confirmaciones antes de borrado
+
+7. OPERACIONES
+   - Backup solo admin
+   - Auditoría login (audit.service)
+   - Health checks sin datos clínicos
+
+8. CALIDAD
+   - CI: tests + lint + migraciones en pipeline
+   - .env.example sin secretos reales
+
+ACTORES DE AMENAZA (opcional, caja lateral)
+- Acceso no autorizado, XSS, fuerza bruta login, fuga datos entre áreas
+
+REQUISITOS
+- Diagrama tipo cebolla (onion) o escudo multicapa
+- Mermaid o instrucciones para draw.io
+- ESPAÑOL
+- Colores: rojo amenazas, verde controles (si usas color, máx. 4)
+- Título: «Modelo de seguridad NurseHelper»
+
+[FIN PROMPT]
+
+================================================================================

@@ -1,0 +1,54 @@
+================================================================================
+PROMPT: DIAGRAMA DE ARQUITECTURA DEL SISTEMA (3 CAPAS)
+Proyecto: NurseHelper
+================================================================================
+
+[INICIO PROMPT]
+
+Genera un diagrama de arquitectura de software para el sistema "NurseHelper",
+un sistema de gestión clínica (enfermería, farmacia, administración).
+
+CONTEXTO TÉCNICO
+- Frontend: SPA Angular 20 (TypeScript), desplegada en Vercel, puerto dev 4200
+- Backend: API REST Express + TypeORM, Node.js 20, puerto 3000
+- Base de datos: MySQL 8 (utf8mb4), migraciones TypeORM (synchronize: false)
+- Autenticación: JWT Bearer entre cliente y API
+- Roles: admin, nurse, supervisor, pharmacy
+
+CAPAS A REPRESENTAR
+1. Cliente (navegador): rutas /admin, /supervisor, /nurse-dashboard, /pharmacy
+2. Frontend Angular: Guards por rol, HttpClient, interceptors (auth + loading)
+3. API Express: routers /api/auth, /api/nurse, /api/pharmacy, /api/patients, etc.
+4. Middleware: helmet, CORS, rate limit, auth JWT, RBAC por rol, validación DTO
+5. Servicios de negocio (capa service) y controladores
+6. MySQL con entidades: User, Area, Bed, Patient, Schedule, Medication, etc.
+
+ACTORES EXTERNOS (opcional en borde)
+- Usuario clínico (4 roles)
+- SMTP (email verificación, opcional)
+
+REQUISITOS DEL DIAGRAMA
+- Estilo: limpio, profesional, fondo blanco, apto para póster académico
+- Mostrar flujo principal: Usuario → Angular → HTTPS + JWT → Express → MySQL
+- Incluir leyenda breve
+- Idioma: etiquetas en ESPAÑOL
+- Formato de salida: código Mermaid (flowchart TB o C4Context si conoces C4)
+  Alternativa: descripción para draw.io si no puedes generar Mermaid
+
+NO inventes microservicios ni colas; es una arquitectura monolítica modular.
+
+[FIN PROMPT]
+
+================================================================================
+VARIANTE CORTA (si el modelo tiene límite de tokens)
+================================================================================
+
+[INICIO PROMPT CORTO]
+
+Diagrama Mermaid flowchart: NurseHelper = Angular 20 SPA + Express API + MySQL.
+JWT entre capas. Roles admin/nurse/supervisor/pharmacy. Middleware: auth, RBAC, helmet.
+Español, fondo blanco, 3 capas horizontales.
+
+[FIN PROMPT CORTO]
+
+================================================================================

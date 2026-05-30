@@ -35,7 +35,7 @@ describe('jwt utils', () => {
       expect(jwt.sign).toHaveBeenCalledWith(
         { userId: 1, role: 'admin' },
         'unit-test-secret',
-        { expiresIn: '7d' }
+        { expiresIn: '24h' }
       );
     });
 

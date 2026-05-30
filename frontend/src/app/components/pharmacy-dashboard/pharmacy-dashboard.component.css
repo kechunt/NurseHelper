@@ -1916,3 +1916,16 @@ table.kardex-table {
   background: transparent !important;
 }
 
+.queue-wait {
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.queue-wait--warning {
+  color: #c05621;
+}
+
+.queue-wait--critical {
+  color: #c53030;
+}
+

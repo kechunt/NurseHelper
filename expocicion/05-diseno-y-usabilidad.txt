@@ -1,0 +1,174 @@
+================================================================================
+NURSEHELPER — DISEÑO Y USABILIDAD
+Generado: 30 de mayo de 2026
+================================================================================
+
+1. LENGUAJE VISUAL: NEUMORFISMO (SOFT UI)
+================================================================================
+
+NurseHelper usa un diseño neumórfico consistente en toda la aplicación:
+
+  - Color de fondo base: #e0e5ec (gris azulado claro)
+  - Color de contraste en tablas: #d1d9e6
+  - Sombras duales: clara (#ffffff) y oscura (#bebebe) para efecto “extruido” o “hundido”
+  - Bordes redondeados generosos: 15px–30px en tarjetas y modales
+  - Sin bordes duros; profundidad comunicada solo con box-shadow
+
+Elementos “extruidos” (botones, tarjetas KPI):
+  box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff
+
+Elementos “hundidos” (inputs, contenedores de tabla):
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff
+
+
+2. ARCHIVOS DE ESTILO PRINCIPALES
+================================================================================
+
+Global:
+  - frontend/src/styles.css
+    Imports: table-actions-normalized.css, dashboard-layout.css, neuro-feedback.css
+    Normalización de tablas .neuro-table / .unified-tasks-table en dashboards
+
+Shared (frontend/src/app/shared/styles/):
+  - dashboard-layout.css      → Header, nav lateral, área de contenido
+  - neuro-feedback.css        → Variables CSS --nh-neuro-* (raised, inset, pressed)
+  - admin-panel-neomorphic.shared.css → Modales admin (.apm-backdrop, .apm-shell)
+  - admin-table-unified.css   → Tablas con cabecera uppercase y hover
+  - admin-assign-modal.shared.css → Modales de asignación
+  - admin-panel-responsive.css → Breakpoints móvil/tablet
+  - dashboard-overview-stats.css → Tarjetas KPI en overview
+  - auth-pages.css            → Login/registro (.auth-card neumórfica)
+  - table-actions-normalized.css → Botones de acción en filas
+
+Enfermería (modales):
+  - nurse-dashboard/nurse-neomorphic-modal.shared.css
+    Backdrop, .modal-content (radio 30px), .neuro-input, .btn-primary-neuro
+
+Farmacia / Admin importan admin-table-unified donde hay tablas densas.
+
+
+3. COMPONENTES DE UI RECURRENTES
+================================================================================
+
+  Clase / patrón           | Uso
+  -------------------------|------------------------------------------
+  .neuro-input             | Campos texto, fecha, hora, select
+  .btn-primary-neuro       | Acción principal (guardar, aplicar)
+  .btn-secondary-neuro     | Acción secundaria (cerrar, exportar)
+  .table-wrapper-neuro     | Contenedor hundido de tabla
+  .unified-tasks-table     | Tabla de tareas/reportes unificada
+  .close-btn               | Cierre circular en modales
+  .modal-backdrop          | Overlay semitransparente sin blur excesivo
+
+Iconografía: Bootstrap Icons vía BootstrapIconComponent (coherencia entre roles).
+
+
+4. USABILIDAD POR ROL
+================================================================================
+
+ADMIN / SUPERVISOR:
+  - Navegación por pestañas con estado recordado (DashboardTabStateService).
+  - Acciones rápidas en toolbar: Coordinación y Reportes sin cambiar de módulo.
+  - Tablas con paginación, búsqueda y modales de confirmación en borrados.
+  - Overview con accesos directos a tareas frecuentes (reportes, personal).
+
+ENFERMERÍA:
+  - Panel principal por secciones (Resumen, Tareas, Camas, Pacientes, Farmacia).
+  - Accesos rápidos en nav: Entrega y Reportes.
+  - Búsqueda global de pacientes en cabecera.
+  - Modales para acciones puntuales (no abandonar contexto del turno).
+  - KPIs de reportes clicables como filtros (cumplimiento).
+  - Vistas rápidas: tareas y farmacia en modales overlay.
+
+FARMACIA:
+  - Dashboard con pestañas: solicitudes, inventario, historial.
+  - Flujo claro: solicitud → preparación → entrega registrada.
+  - Export CSV/PDF de inventario y movimientos.
+
+TRANSVERSAL:
+  - Toasts para éxito/error sin bloquear pantalla.
+  - Confirmaciones antes de acciones destructivas.
+  - Spinner global durante peticiones HTTP (loadingInterceptor).
+  - Banner offline cuando no hay conexión.
+
+
+5. ACCESIBILIDAD (A11Y)
+================================================================================
+
+Implementaciones en el proyecto:
+
+  - ModalFocusTrapDirective: foco atrapado dentro de modales (teclado).
+  - KeyboardNavigationDirective: navegación mejorada en listas/nav.
+  - AriaLabelsDirective: etiquetas ARIA en controles clave.
+  - :focus-visible en styles.css (outline azul visible).
+  - Skip link (.skip-link) para saltar al contenido principal.
+  - prefers-reduced-motion: reduce animaciones de modales y KPIs.
+  - prefers-contrast: high — refuerzo de bordes en modo alto contraste.
+  - E2E nurse-dashboard-main-nav-keyboard.spec.ts: flechas en nav principal.
+  - aria-labelledby en diálogos, aria-label en botones de cierre y filtros.
+  - i18n ($localize): textos preparados para internacionalización Angular.
+
+Mejoras posibles (no bloqueantes para exposición):
+  - Auditoría WCAG completa con axe en CI.
+  - Contraste de texto en algunos labels secundarios (#718096).
+
+
+6. RESPONSIVE Y DISPOSITIVOS
+================================================================================
+
+  - dashboard-layout.css y admin-panel-responsive.css: breakpoints 768px, 576px.
+  - Modales: max-height con dvh, padding safe-area en móvil.
+  - Tablas: overflow-x auto en pantallas estrechas (min-width en tablas anchas).
+  - Botones táctiles: min-height 44px en media global (styles.css).
+
+Propósito: uso en tablet en pasillo y ocasionalmente en móvil del supervisor.
+
+
+7. FEEDBACK Y ESTADOS DE CARGA
+================================================================================
+
+  - ToastService: mensajes temporales (éxito, aviso, error).
+  - LoadingService + loadingInterceptor: barra/spinner global.
+  - LoadingDirective: estados locales en botones o secciones.
+  - empty-message: textos cuando no hay datos en tablas o reportes.
+  - Estados disabled en botones durante exportación o guardado.
+
+Usabilidad: el usuario siempre sabe si la app está trabajando o si no hay resultados.
+
+
+8. COHERENCIA ENTRE PANELES
+================================================================================
+
+Decisiones de diseño unificadas:
+
+  - Misma paleta en admin, nurse y pharmacy.
+  - Mismas tablas (.unified-tasks-table) en reportes, tareas y admin.
+  - Mismos botones neuro en modales de enfermería y pie de reportes.
+  - StaffDashboardShell y DashboardShell comparten lógica de layout (shared).
+  - NurseReportsModal reutilizado en admin (gestión) y enfermería (solo sus datos).
+
+Evita que cada rol parezca una aplicación distinta.
+
+
+9. EXPORTACIÓN Y DOCUMENTOS
+================================================================================
+
+  - Reportes: PDF y CSV desde NurseReportsModal (iconos file-pdf, document-text).
+  - Farmacia: helpers de export en pharmacy-export.helpers.ts.
+  - ExportService (shared): utilidades compartidas de exportación.
+
+Usabilidad: datos visibles en pantalla exportables sin copiar manualmente.
+
+
+10. PARA LA EXPOSICIÓN ORAL (1 MINUTO)
+================================================================================
+
+  - Define neumorfismo en una frase: “interfaz suave, táctil, para entornos de cuidado”.
+  - Muestra un input .neuro-input vs un input nativo sin estilo (contraste).
+  - Explica que el diseño no es decorativo: guía jerarquía (extruido = acción, hundido = dato).
+  - Menciona focus trap y teclado como inclusión real, no solo visual.
+  - Cierra con coherencia entre roles gracias a shared/styles.
+
+================================================================================
+Fin del documento 05
+================================================================================

@@ -25,7 +25,8 @@
     "test:endpoints": "jest --testPathPattern=__tests__/integration/endpoints-complete",
     "test:database": "jest --testPathPattern=__tests__/integration/database-connection",
     "test:notifications": "jest --runInBand src/__tests__/integration/user-notifications.integration.test.ts src/__tests__/unit/controllers/notifications.controller.test.ts",
-    "test:all": "jest --testPathPattern=__tests__/integration"
+    "test:all": "jest --testPathPattern=__tests__/integration",
+    "lint": "eslint src --max-warnings 9999"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -57,6 +58,8 @@
     "@types/supertest": "^6.0.2",
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
+    "@typescript-eslint/parser": "^8.60.0",
+    "eslint": "^9.39.4",
     "isomorphic-dompurify": "^2.9.0",
     "jest": "^29.7.0",
     "nodemon": "^3.0.2",

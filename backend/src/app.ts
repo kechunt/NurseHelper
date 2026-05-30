@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import { loadEnv } from './utils/env';
+import { loadEnv, validateEnv } from './utils/env';
 import { logger } from './utils/logger';
 import { AppDataSource } from './data-source';
 import { hookMysqlPoolSetNamesUtf8Mb4 } from './utils/mysql-utf8mb4-pool';
@@ -32,8 +32,12 @@ import { startInAppNotificationJobs } from './services/notification-jobs.service
 
 // Cargar variables de entorno al inicio
 loadEnv();
+if (process.env.NODE_ENV !== 'test') {
+  validateEnv();
+}
 
 const app = express();
+app.set('trust proxy', 1);
 const PORT = parseInt(process.env.PORT || '3000', 10);
 
 // Middlewares de seguridad
@@ -80,8 +84,8 @@ const corsOptions: cors.CorsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 /** JSON siempre declarado como UTF-8 (evita interpretaciones erróneas en proxies o clientes antiguos) */
 app.use((_req, res, next) => {
@@ -127,7 +131,9 @@ app.use('/api/handover', handoverRoutes);
 app.use('/api/webhooks', webhooksRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/backup', backupRoutes);
-app.use('/api/diagnostic', diagnosticRoutes);
+if (process.env.NODE_ENV !== 'production') {
+  app.use('/api/diagnostic', diagnosticRoutes);
+}
 app.use('/health', healthRoutes);
 logger.info('✅ Rutas registradas');
 
@@ -153,13 +159,17 @@ logger.info('✅ Rutas registradas');
  *       200:
  *         description: Servidor en ejecución
  */
-// Health check básico (mantener para compatibilidad)
+// Health check básico (deprecado; usar GET /health)
 app.get('/health-basic', (req, res) => {
-  res.json({ 
-    status: 'ok', 
-    message: 'NurseHelper API funcionando',
+  res.setHeader('Deprecation', 'true');
+  res.setHeader('Link', '</health>; rel="successor-version"');
+  res.json({
+    status: 'ok',
+    message: 'Deprecated: use GET /health instead',
+    deprecated: true,
+    successor: '/health',
     timestamp: new Date().toISOString(),
-    port: PORT
+    port: PORT,
   });
 });
 

@@ -162,7 +162,7 @@
       </div>
       <div class="apm-body">
         <div class="apm-section">
-          <label class="apm-field-label" for="edit-bed-number" i18n="@@bedsMgmtHtml.labelBedNumber">Número o nombre de cama *</label>
+          <label class="apm-field-label" for="edit-bed-number" i18n="@@bedsMgmtHtml.labelBedNumber">Número o nombre de cama</label>
           <input
             type="text"
             id="edit-bed-number"
@@ -278,7 +278,7 @@
           La cama quedará en el área indicada como disponible. Podrás asignar pacientes al editar la cama.
         </p>
         <div class="apm-section">
-          <label class="apm-field-label" for="create-bed-number" i18n="@@bedsMgmtHtml.labelBedNumberCreate">Número o nombre de cama *</label>
+          <label class="apm-field-label" for="create-bed-number" i18n="@@bedsMgmtHtml.labelBedNumberCreate">Número o nombre de cama</label>
           <input
             type="text"
             id="create-bed-number"
@@ -289,7 +289,7 @@
           />
         </div>
         <div class="apm-section">
-          <label class="apm-field-label" for="create-bed-area" i18n="@@bedsMgmtHtml.labelAreaRequired">Área *</label>
+          <label class="apm-field-label" for="create-bed-area" i18n="@@bedsMgmtHtml.labelAreaRequired">Área</label>
           <select id="create-bed-area" class="apm-select" [(ngModel)]="createBedForm.areaId">
             <option [ngValue]="null" i18n="@@bedsMgmtHtml.optionSelectArea">Selecciona un área</option>
             <option *ngFor="let area of areas" [ngValue]="area.id">

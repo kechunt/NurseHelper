@@ -24,7 +24,7 @@ import path from 'path';
 
 loadEnv();
 
-const password = process.env.DB_PASSWORD || 'Loktarogar';
+const password = process.env.DB_PASSWORD ?? '';
 const databaseName = process.env.DB_DATABASE || 'nursehelper';
 
 if (databaseName.toLowerCase().includes('raikway')) {

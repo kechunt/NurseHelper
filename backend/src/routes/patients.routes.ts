@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { PatientsController } from '../controllers/patients.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { requireAdminOrSupervisor } from '../middleware/role.middleware';
+import { validateDto } from '../middleware/validation.middleware';
+import { CreatePatientDto, UpdatePatientDto, SaveObservationDto } from '../dto/patient.dto';
 
 const router = Router();
 const patientsController = new PatientsController();
@@ -112,7 +114,7 @@ router.get('/:id', authMiddleware, patientsController.getById.bind(patientsContr
  *       201:
  *         description: Paciente creado exitosamente
  */
-router.post('/', authMiddleware, requireAdminOrSupervisor, patientsController.create.bind(patientsController));
+router.post('/', authMiddleware, requireAdminOrSupervisor, validateDto(CreatePatientDto), patientsController.create.bind(patientsController));
 
 /**
  * @swagger
@@ -155,7 +157,7 @@ router.post('/', authMiddleware, requireAdminOrSupervisor, patientsController.cr
  *         description: Paciente actualizado exitosamente
  */
 // Permitir que enfermeras también actualicen pacientes (solo campos específicos)
-router.patch('/:id', authMiddleware, patientsController.update.bind(patientsController));
+router.patch('/:id', authMiddleware, validateDto(UpdatePatientDto), patientsController.update.bind(patientsController));
 
 /**
  * @swagger
@@ -210,6 +212,6 @@ router.delete('/:id', authMiddleware, requireAdminOrSupervisor, patientsControll
  *       200:
  *         description: Observación guardada exitosamente
  */
-router.post('/:id/observations', authMiddleware, patientsController.saveObservation.bind(patientsController));
+router.post('/:id/observations', authMiddleware, validateDto(SaveObservationDto), patientsController.saveObservation.bind(patientsController));
 
 export default router;

@@ -16,20 +16,20 @@
         <h3><app-bootstrap-icon name="user-circle" /> <span i18n="@@adminPatients.personalData">Datos Personales</span></h3>
         <div class="form-grid-compact">
           <div class="input-group">
-            <label for="w-firstName" i18n="@@adminPatients.labelFirstName">Nombre *</label>
+            <label for="w-firstName" i18n="@@adminPatients.labelFirstName">Nombres</label>
             <input 
               type="text" 
               id="w-firstName" 
               class="neuro-input" 
               formControlName="firstName"
               [class.error]="wizardFormGroup.get('firstName')?.invalid && wizardFormGroup.get('firstName')?.touched"
-              i18n-placeholder="@@adminPatients.phFirstName" placeholder="Nombre"/>
+              i18n-placeholder="@@adminPatients.phFirstName" placeholder="Nombres"/>
             <small *ngIf="wizardFormGroup.get('firstName')?.invalid && wizardFormGroup.get('firstName')?.touched" class="error-message" i18n="@@adminPatients.errFirstName">
               El nombre es requerido (mínimo 2 caracteres)
             </small>
           </div>
           <div class="input-group">
-            <label for="w-lastName" i18n="@@adminPatients.labelLastName">Apellido *</label>
+            <label for="w-lastName" i18n="@@adminPatients.labelLastName">Apellido</label>
             <input 
               type="text" 
               id="w-lastName" 
@@ -42,7 +42,7 @@
             </small>
           </div>
           <div class="input-group">
-            <label for="w-identification" i18n="@@adminPatients.labelId">Cédula/ID *</label>
+            <label for="w-identification" i18n="@@adminPatients.labelId">Cédula/ID</label>
             <input 
               type="text" 
               id="w-identification" 
@@ -55,7 +55,7 @@
             </small>
           </div>
           <div class="input-group">
-            <label for="w-birthdate" i18n="@@adminPatients.labelDob">Fecha de Nacimiento *</label>
+            <label for="w-birthdate" i18n="@@adminPatients.labelDob">Fecha de Nacimiento</label>
             <input 
               type="date" 
               id="w-birthdate" 
@@ -87,7 +87,7 @@
         <h3><app-bootstrap-icon name="exclamation-triangle" /> <span i18n="@@adminPatients.emergencyHeading">Contacto de Emergencia</span></h3>
         <div class="form-grid-compact">
           <div class="input-group">
-            <label for="w-emergency-contact" i18n="@@adminPatients.labelEmergencyName">Nombre del Contacto *</label>
+            <label for="w-emergency-contact" i18n="@@adminPatients.labelEmergencyName">Nombre del Contacto</label>
             <input 
               type="text" 
               id="w-emergency-contact" 
@@ -100,7 +100,7 @@
             </small>
           </div>
           <div class="input-group">
-            <label for="w-emergency-phone" i18n="@@adminPatients.labelEmergencyPhone">Teléfono *</label>
+            <label for="w-emergency-phone" i18n="@@adminPatients.labelEmergencyPhone">Teléfono</label>
             <input 
               type="tel" 
               id="w-emergency-phone" 
@@ -132,7 +132,7 @@
         <h3><app-bootstrap-icon name="building-office-2" /> <span i18n="@@adminPatients.locationHeading">Asignación de Ubicación</span></h3>
         <div class="form-grid-compact">
           <div class="input-group">
-            <label for="w-area" i18n="@@adminPatients.labelArea">Área *</label>
+            <label for="w-area" i18n="@@adminPatients.labelArea">Área</label>
             <select 
               id="w-area" 
               class="neuro-select" 

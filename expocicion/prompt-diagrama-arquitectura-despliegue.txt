@@ -1,0 +1,46 @@
+================================================================================
+PROMPT: DIAGRAMA DE DESPLIEGUE E INFRAESTRUCTURA
+Proyecto: NurseHelper
+================================================================================
+
+[INICIO PROMPT]
+
+Genera un diagrama de despliegue (deployment diagram) para NurseHelper.
+
+ENTORNOS Y HOSTING
+- Producción frontend: Vercel (build Angular, vercel.json en frontend/)
+- Producción backend: Railway u host Node (Procfile, railway.json, puerto PORT)
+- Base de datos: MySQL 8 (instancia gestionada o servidor dedicado)
+- CI/CD: GitHub Actions (.github/workflows/ci-cd.yml)
+  - Trigger: push/PR a main y develop
+  - Job backend: MySQL 8 service container, Jest unit+integration
+  - Job frontend: lint, build, Karma, Playwright E2E (API mockeada)
+
+DESARROLLO LOCAL
+- npm run dev → frontend :4200 + backend :3000
+- proxy.conf.json: /api → localhost:3000
+- Opcional: scripts/tunnel.js (ngrok) para demo remota; CORS permite *.ngrok
+
+COMPONENTES A MOSTRAR
+- Usuario / Navegador
+- CDN / Vercel Edge (archivos estáticos Angular)
+- Servidor Node (Express API)
+- MySQL
+- GitHub (repositorio + Actions)
+- Variables de entorno (sin valores): JWT_SECRET, DB_*, CORS_ORIGIN, FIELD_ENCRYPTION_KEY
+
+CONEXIONES
+- HTTPS usuario → Vercel
+- HTTPS API (mismo dominio o subdominio / proxy) → Railway
+- TCP backend → MySQL
+- Flecha CI → deploy (opcional)
+
+REQUISITOS
+- Idioma ESPAÑOL
+- Mermaid flowchart o diagrama de despliegue UML
+- Fondo blanco, iconos simples o cajas
+- Nota al pie: "Health check: GET /health"
+
+[FIN PROMPT]
+
+================================================================================

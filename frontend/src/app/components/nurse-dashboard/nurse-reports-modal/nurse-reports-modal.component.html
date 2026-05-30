@@ -15,7 +15,7 @@
     <div class="modal-header nurse-reports-modal-header">
       <h3 id="nurse-reports-dialog-title" i18n="@@nurseReportsModal.title">
         <app-bootstrap-icon name="chart-bar"></app-bootstrap-icon>
-        Reportes (últimos 7 días)<span *ngIf="showStaffNurseFilter"> · gestión</span>
+        Reportes clínicos<span *ngIf="showStaffNurseFilter"> · gestión</span>
       </h3>
       <button
         id="nurse-reports-header-close-btn"
@@ -29,10 +29,39 @@
       </button>
     </div>
     <div class="modal-body nurse-reports-modal-body">
-      <p class="nurse-reports-period-line" *ngIf="periodLabel && !loading">
+      <div class="nurse-reports-toolbar nurse-reports-date-range">
+        <div class="nurse-reports-date-field">
+          <label for="nurse-reports-start" i18n="@@nurseReportsModal.startDateLabel">Desde</label>
+          <input
+            id="nurse-reports-start"
+            type="date"
+            class="neuro-input nurse-reports-date-input"
+            [(ngModel)]="draftStartDate"
+          />
+        </div>
+        <div class="nurse-reports-date-field">
+          <label for="nurse-reports-end" i18n="@@nurseReportsModal.endDateLabel">Hasta</label>
+          <input
+            id="nurse-reports-end"
+            type="date"
+            class="neuro-input nurse-reports-date-input"
+            [(ngModel)]="draftEndDate"
+          />
+        </div>
+        <button
+          type="button"
+          class="btn-primary-neuro nurse-reports-apply-btn"
+          [disabled]="loading || !draftStartDate || !draftEndDate || draftStartDate > draftEndDate"
+          (click)="applyPeriod()"
+          i18n="@@nurseReportsModal.applyPeriodButton"
+        >
+          Aplicar periodo
+        </button>
+      </div>
+      <p class="nurse-reports-period-info" *ngIf="periodLabel && !loading">
         <strong i18n="@@nurseReportsModal.periodPrefix">Periodo:</strong> {{ periodLabel }} · {{ resolveScopeLine() }}
       </p>
-      <div class="nurse-reports-period-line nurse-reports-staff-filter" *ngIf="showStaffNurseFilter && staffNurses.length">
+      <div class="nurse-reports-toolbar nurse-reports-staff-filter" *ngIf="showStaffNurseFilter && staffNurses.length">
         <label
           class="nurse-reports-staff-filter__label"
           for="staff-reports-nurse-select"
@@ -40,7 +69,7 @@
           >Enfermera</label>
         <select
           id="staff-reports-nurse-select"
-          class="nurse-reports-staff-filter__select"
+          class="neuro-input nurse-reports-staff-select"
           aria-label="Filtrar reportes por enfermera"
           i18n-aria-label="@@nurseReportsModal.staffNurseSelectAriaLabel"
           [value]="staffNurseUserId === null ? '' : staffNurseUserId"

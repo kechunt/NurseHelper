@@ -1,0 +1,77 @@
+================================================================================
+PROMPT: DIAGRAMA DE CASOS DE USO (UML)
+Proyecto: NurseHelper
+================================================================================
+
+[INICIO PROMPT]
+
+Genera un diagrama de casos de uso UML completo para el sistema NurseHelper
+(gestión clínica: enfermería, farmacia, administración).
+
+ACTORES (4)
+- Administrador
+- Enfermera
+- Supervisor
+- Farmacia (rol pharmacy)
+
+PAQUETES / MÓDULOS Y CASOS DE USO (basado en el sistema real)
+
+Autenticación:
+  - Iniciar sesión, Registrar usuario, Verificar email, Cerrar sesión
+  (Registro público solo crea rol enfermería)
+
+Gestión de usuarios (Admin, Supervisor):
+  - Gestionar usuarios → incluye Crear, Editar, Eliminar, Activar/Desactivar
+
+Gestión de áreas (Admin, Supervisor):
+  - Gestionar áreas → incluye Crear área, Editar área
+
+Gestión de camas (Admin, Supervisor; Enfermera edita en su ámbito):
+  - Gestionar camas → Crear, Editar, Eliminar cama
+
+Gestión de pacientes:
+  - Gestionar pacientes (Admin/Supervisor)
+  - Ver detalles, Ver historial (Enfermera en sus pacientes)
+
+Medicamentos y tareas:
+  - Agregar medicamento, Suspender medicamento, Ver medicamentos
+  - Marcar administrado
+  - Gestionar horarios → Crear tarea, Completar tarea, Ver tareas del día
+
+Turnos (Admin/Supervisor):
+  - Gestionar turnos, Asignar turno
+
+Módulo farmacia:
+  - Solicitar medicamentos (Enfermera)
+  - Ver solicitudes, Marcar preparación, Marcar entregada (Farmacia)
+
+Reportes (Admin, Supervisor, Enfermera con alcance limitado):
+  - Generar reportes de cumplimiento y medicación
+  - Exportar PDF/CSV
+
+Notificaciones:
+  - Enviar notificación (sistema/admin)
+  - Recibir notificaciones (todos los roles)
+
+Backup (solo Admin):
+  - Crear backup, Listar backups
+
+RELACIONES
+- Asociación actor → caso de uso según permisos arriba
+- «include» entre casos generales y específicos (ej. Gestionar usuarios include Crear)
+- No dibujes casos de uso para visitantes anónimos excepto login/registro
+
+REQUISITOS VISUALES
+- Notación UML estándar (elipses, stick figures o rectángulos actor)
+- Idioma ESPAÑOL
+- Salida: PlantUML (@startuml) O Mermaid no estándar con nota "aproximación UML"
+  Preferir PlantUML si conoces la sintaxis de use case
+- Agrupar por paquetes con rectángulos
+- Leyenda: línea sólida = asociación, flecha <<include>>
+
+[FIN PROMPT]
+
+================================================================================
+REFERENCIA: el proyecto incluye implementación canvas en
+frontend/src/app/components/use-case-diagram/ (ruta /use-case-diagram, solo admin)
+================================================================================

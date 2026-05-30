@@ -1,0 +1,72 @@
+================================================================================
+NURSEHELPER — ÍNDICE DE PROMPTS PARA DIAGRAMAS
+Generado: 30 de mayo de 2026
+================================================================================
+
+CÓMO USAR ESTOS ARCHIVOS
+================================================================================
+
+Cada archivo en expocicion/prompt-* contiene un PROMPT listo para copiar y pegar en:
+
+  - ChatGPT / Claude / Gemini (pide salida en Mermaid o PlantUML)
+  - Mermaid Live Editor (https://mermaid.live)
+  - draw.io / diagrams.net (asistente IA si está disponible)
+  - Lucidchart, Excalidraw, Whimsical
+  - Cursor / Copilot en el IDE (generar .md con bloque mermaid)
+
+RECOMENDACIONES
+================================================================================
+
+  1. Copia el bloque entre [INICIO PROMPT] y [FIN PROMPT].
+  2. Si la herramienta lo permite, adjunta también:
+     - expocicion/02-arquitectura.txt
+     - expocicion/04-componentes-backend.txt
+  3. Pide explícitamente: "Responde solo con código Mermaid válido" o "SVG/PNG descripción".
+  4. Para exposición impresa: fondo blanco, letra ≥ 11pt, pocos colores (máx. 4).
+  5. El proyecto ya tiene un diagrama interactivo en /use-case-diagram (solo admin);
+     estos prompts sirven para versiones estáticas de mejor calidad para póster o PDF.
+
+ARCHIVOS DE PROMPTS
+================================================================================
+
+  prompt-diagrama-arquitectura-sistema.txt
+    → Arquitectura de 3 capas: Angular, Express, MySQL + JWT
+
+  prompt-diagrama-arquitectura-despliegue.txt
+    → Vercel, Railway, GitHub Actions, MySQL, ngrok
+
+  prompt-diagrama-casos-de-uso.txt
+    → UML casos de uso: Admin, Enfermera, Supervisor, Farmacia
+
+  prompt-diagrama-flujo-autenticacion.txt
+    → Secuencia login, JWT, guards, logout 401
+
+  prompt-diagrama-flujo-medicacion-farmacia.txt
+    → Solicitud enfermería → farmacia → entrega
+
+  prompt-diagrama-flujo-tareas-reportes.txt
+    → Tareas del día, cumplimiento, export PDF/CSV
+
+  prompt-diagrama-modelo-datos-er.txt
+    → Entidad-relación TypeORM (19 entidades)
+
+  prompt-diagrama-componentes-frontend.txt
+    → Módulos Angular por rol y shared
+
+  prompt-diagrama-seguridad.txt
+    → Capas de seguridad: Helmet, CORS, RBAC, cifrado
+
+FORMATO DE SALIDA SUGERIDO PARA LA EXPOSICIÓN
+================================================================================
+
+  Diagrama              | Formato recomendado | Herramienta
+  ----------------------|---------------------|------------------
+  Arquitectura sistema  | PNG horizontal A4   | Mermaid → export
+  Casos de uso          | PNG o PDF UML       | PlantUML / draw.io
+  Flujos (secuencia)    | PNG vertical        | Mermaid sequenceDiagram
+  Modelo ER             | PNG landscape       | dbdiagram.io / Mermaid erDiagram
+  Despliegue            | PNG infra           | Mermaid C4 o flowchart
+
+================================================================================
+Fin del índice de prompts
+================================================================================

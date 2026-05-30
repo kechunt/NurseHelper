@@ -1,6 +1,9 @@
 import { Router } from 'express';
 import { authMiddleware } from '../middleware/auth.middleware';
-import { requireAdminOrSupervisorOrPharmacy } from '../middleware/role.middleware';
+import {
+  requireAdminOrSupervisorOrPharmacy,
+  requireNurseOrAdminOrSupervisorOrPharmacy,
+} from '../middleware/role.middleware';
 import {
   getPharmacyWorkShifts,
   getPharmacyShiftAttendanceSummary,
@@ -55,7 +58,7 @@ router.post('/shift-attendance', requireAdminOrSupervisorOrPharmacy, postPharmac
  *               items:
  *                 $ref: '#/components/schemas/MedicationRequest'
  */
-router.get('/requests', getMedicationRequests);
+router.get('/requests', requireAdminOrSupervisorOrPharmacy, getMedicationRequests);
 
 /**
  * @swagger
@@ -103,7 +106,7 @@ router.get('/requests', getMedicationRequests);
  *             schema:
  *               $ref: '#/components/schemas/MedicationRequest'
  */
-router.post('/requests', createMedicationRequest);
+router.post('/requests', requireNurseOrAdminOrSupervisorOrPharmacy, createMedicationRequest);
 
 /**
  * @swagger
@@ -135,7 +138,7 @@ router.post('/requests', createMedicationRequest);
  *       200:
  *         description: Estado actualizado exitosamente
  */
-router.put('/requests/:id/status', updateRequestStatus);
+router.put('/requests/:id/status', requireAdminOrSupervisorOrPharmacy, updateRequestStatus);
 
 /**
  * @swagger
@@ -164,7 +167,7 @@ router.put('/requests/:id/status', updateRequestStatus);
  *       200:
  *         description: Medicamento entregado exitosamente
  */
-router.post('/requests/:requestId/deliver', deliverMedication);
+router.post('/requests/:requestId/deliver', requireAdminOrSupervisorOrPharmacy, deliverMedication);
 
 /**
  * @swagger
@@ -221,7 +224,7 @@ router.post('/requests/:requestId/deliver', deliverMedication);
  *                     type: string
  *                     format: date-time
  */
-router.get('/deliveries', getDeliveryHistory);
+router.get('/deliveries', requireAdminOrSupervisorOrPharmacy, getDeliveryHistory);
 
 /**
  * @swagger
@@ -262,7 +265,7 @@ router.get('/deliveries', getDeliveryHistory);
  *                     type: string
  *                     enum: [available, low_stock, out_of_stock, expired]
  */
-router.get('/inventory', getInventory);
+router.get('/inventory', requireAdminOrSupervisorOrPharmacy, getInventory);
 
 /**
  * @swagger
@@ -287,7 +290,7 @@ router.get('/inventory', getInventory);
  *       200:
  *         description: Lista de movimientos
  */
-router.get('/inventory/movements', getInventoryMovements);
+router.get('/inventory/movements', requireAdminOrSupervisorOrPharmacy, getInventoryMovements);
 
 /**
  * @swagger
@@ -298,7 +301,7 @@ router.get('/inventory/movements', getInventoryMovements);
  *     security:
  *       - bearerAuth: []
  */
-router.post('/inventory/:id/movements', postInventoryMovement);
+router.post('/inventory/:id/movements', requireAdminOrSupervisorOrPharmacy, postInventoryMovement);
 
 /**
  * @swagger
@@ -329,7 +332,7 @@ router.post('/inventory/:id/movements', postInventoryMovement);
  *       200:
  *         description: Stock actualizado exitosamente
  */
-router.put('/inventory/:id/stock', updateMedicationStock);
+router.put('/inventory/:id/stock', requireAdminOrSupervisorOrPharmacy, updateMedicationStock);
 
 /**
  * @swagger
@@ -368,7 +371,7 @@ router.put('/inventory/:id/stock', updateMedicationStock);
  *       200:
  *         description: Medicamento creado exitosamente
  */
-router.post('/inventory', createMedication);
+router.post('/inventory', requireAdminOrSupervisorOrPharmacy, createMedication);
 
 /**
  * @swagger
@@ -388,6 +391,6 @@ router.post('/inventory', createMedication);
  *       200:
  *         description: Medicamento eliminado exitosamente
  */
-router.delete('/inventory/:id', deleteMedication);
+router.delete('/inventory/:id', requireAdminOrSupervisorOrPharmacy, deleteMedication);
 
 export default router;

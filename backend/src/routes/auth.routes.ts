@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { AuthController } from '../controllers/auth.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { authRateLimitMiddleware } from '../middleware/rate-limit.middleware';
+import { validateDto } from '../middleware/validation.middleware';
+import { LoginDto, RegisterDto, VerifyEmailDto } from '../dto/auth.dto';
 
 const router = Router();
 const authController = new AuthController();
@@ -50,7 +52,7 @@ const authController = new AuthController();
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/login', authRateLimitMiddleware(), authController.login.bind(authController));
+router.post('/login', authRateLimitMiddleware(), validateDto(LoginDto), authController.login.bind(authController));
 
 /**
  * @swagger
@@ -92,7 +94,7 @@ router.post('/login', authRateLimitMiddleware(), authController.login.bind(authC
  *       400:
  *         description: Error de validación
  */
-router.post('/register', authRateLimitMiddleware(), authController.register.bind(authController));
+router.post('/register', authRateLimitMiddleware(), validateDto(RegisterDto), authController.register.bind(authController));
 
 /**
  * @swagger
@@ -122,7 +124,7 @@ router.post('/register', authRateLimitMiddleware(), authController.register.bind
  *       400:
  *         description: Código inválido o expirado
  */
-router.post('/verify-email', authRateLimitMiddleware(), authController.verifyEmail.bind(authController));
+router.post('/verify-email', authRateLimitMiddleware(), validateDto(VerifyEmailDto), authController.verifyEmail.bind(authController));
 
 /**
  * @swagger

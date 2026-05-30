@@ -108,7 +108,7 @@ export class AreasManagementComponent implements OnInit {
   readonly areasThState = $localize`:@@areasMgmtHtml.thState:Estado`;
   readonly areasHtmlEmptyBedsInArea = $localize`:@@areasMgmtHtml.emptyBedsInArea:No hay camas registradas en esta área`;
   readonly areasHtmlEmptyPatientsInArea = $localize`:@@areasMgmtHtml.emptyPatientsInArea:No hay pacientes asignados a esta área`;
-  readonly areasHtmlLabelAreaName = $localize`:@@areasMgmtHtml.labelAreaName:Nombre del Área *`;
+  readonly areasHtmlLabelAreaName = $localize`:@@areasMgmtHtml.labelAreaName:Nombre del Área`;
   readonly areasHtmlLabelDescription = $localize`:@@areasMgmtHtml.labelDescription:Descripción`;
   readonly areasHtmlPlaceholderZero = $localize`:@@areasMgmtHtml.placeholderZero:0`;
   readonly areasHtmlHintBedsZero = $localize`:@@areasMgmtHtml.hintBedsZero:Deja en 0 si no deseas asignar camas ahora`;
@@ -121,9 +121,9 @@ export class AreasManagementComponent implements OnInit {
   readonly areasHtmlRemoveInputTitle = $localize`:@@areasMgmtHtml.removeInputTitle:Eliminar`;
   readonly areasHtmlAreaActive = $localize`:@@areasMgmtHtml.areaActive:Área Activa`;
   readonly areasModalTitleCreateBed = $localize`:@@areasMgmtHtml.modalTitleCreateBed:Agregar Nueva Cama`;
-  readonly areasHtmlLabelBedNumber = $localize`:@@areasMgmtHtml.labelBedNumber:Número/Nombre de Cama *`;
+  readonly areasHtmlLabelBedNumber = $localize`:@@areasMgmtHtml.labelBedNumber:Número/Nombre de Cama`;
   readonly areasHtmlPlaceholderBedExample = $localize`:@@areasMgmtHtml.placeholderBedExample:Ej: SAL-001, Cama-1, etc.`;
-  readonly areasHtmlLabelAreaRequired = $localize`:@@areasMgmtHtml.labelAreaRequired:Área *`;
+  readonly areasHtmlLabelAreaRequired = $localize`:@@areasMgmtHtml.labelAreaRequired:Área`;
   readonly areasHtmlSelectArea = $localize`:@@areasMgmtHtml.selectArea:Selecciona un área`;
   readonly areasHtmlLabelNotesOptional = $localize`:@@areasMgmtHtml.labelNotesOptional:Notas (opcional)`;
   readonly areasHtmlPlaceholderBedNotes = $localize`:@@areasMgmtHtml.placeholderBedNotes:Notas adicionales sobre la cama...`;
@@ -152,12 +152,12 @@ export class AreasManagementComponent implements OnInit {
   readonly areasHtmlStrongIdentification = $localize`:@@areasMgmtHtml.strongIdentification:Identificación:`;
   readonly areasHtmlStrongCurrentArea = $localize`:@@areasMgmtHtml.strongCurrentArea:Área actual:`;
   readonly areasHtmlStrongCurrentBed = $localize`:@@areasMgmtHtml.strongCurrentBed:Cama actual:`;
-  readonly areasHtmlLabelAssignArea = $localize`:@@areasMgmtHtml.labelAssignArea:Área *`;
-  readonly areasHtmlLabelAssignBed = $localize`:@@areasMgmtHtml.labelAssignBed:Cama *`;
+  readonly areasHtmlLabelAssignArea = $localize`:@@areasMgmtHtml.labelAssignArea:Área`;
+  readonly areasHtmlLabelAssignBed = $localize`:@@areasMgmtHtml.labelAssignBed:Cama`;
   readonly areasHtmlSelectBed = $localize`:@@areasMgmtHtml.selectBed:Selecciona una cama`;
   readonly areasHtmlBtnAssign = $localize`:@@areasMgmtHtml.btnAssign:Asignar`;
-  readonly areasHtmlLabelNewArea = $localize`:@@areasMgmtHtml.labelNewArea:Nueva área *`;
-  readonly areasHtmlLabelNewBed = $localize`:@@areasMgmtHtml.labelNewBed:Nueva cama *`;
+  readonly areasHtmlLabelNewArea = $localize`:@@areasMgmtHtml.labelNewArea:Nueva área`;
+  readonly areasHtmlLabelNewBed = $localize`:@@areasMgmtHtml.labelNewBed:Nueva cama`;
   readonly areasHtmlBtnChange = $localize`:@@areasMgmtHtml.btnChange:Cambiar`;
   readonly areasHtmlSheetEditChangeBed = $localize`:@@areasMgmtHtml.sheetEditChangeBed:Editar / cambiar cama o área`;
   readonly areasHtmlSheetReleaseBed = $localize`:@@areasMgmtHtml.sheetReleaseBed:Liberar cama`;

@@ -80,11 +80,15 @@ app.use('/api/notifications', notificationsRoutes);
 app.use('/api/backup', backupRoutes);
 app.use('/health', healthRoutes);
 
-// Health check básico (mantener para compatibilidad)
+// Health check básico (deprecado; usar GET /health)
 app.get('/health-basic', (req, res) => {
-  res.json({ 
-    status: 'ok', 
-    message: 'NurseHelper API funcionando',
+  res.setHeader('Deprecation', 'true');
+  res.setHeader('Link', '</health>; rel="successor-version"');
+  res.json({
+    status: 'ok',
+    message: 'Deprecated: use GET /health instead',
+    deprecated: true,
+    successor: '/health',
     timestamp: new Date().toISOString(),
   });
 });

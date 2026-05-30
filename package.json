@@ -17,6 +17,12 @@
     "build": "npm run build:backend && npm run build:frontend",
     "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
     "test:frontend": "cd frontend && npm test",
+    "test": "npm run test:backend && npm run test:frontend",
+    "test:backend": "cd backend && npm run test:unit",
+    "lint": "npm run lint:backend && npm run lint:frontend",
+    "lint:root": "eslint scripts --max-warnings 9999",
+    "lint:backend": "cd backend && npm run lint",
+    "lint:frontend": "cd frontend && npm run lint",
     "migration:run": "cd backend && npm run migration:run",
     "migration:run:prod": "cd backend && npm run migration:run:prod",
     "migration:generate": "cd backend && npm run migration:generate"

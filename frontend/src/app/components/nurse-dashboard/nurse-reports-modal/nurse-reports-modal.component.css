@@ -4,6 +4,12 @@
   padding-bottom: 1rem;
 }
 
+.nurse-reports-modal-header h3 {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .nurse-reports-modal-body {
   max-height: min(72vh, 38rem);
   overflow: auto;
@@ -13,46 +19,102 @@
   min-width: 0;
 }
 
-.nurse-reports-period-line {
+.nurse-reports-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem 1rem;
   margin: 0 0 1rem;
-  font-size: 0.9rem;
-  color: #4a5568;
-  padding: 0.65rem 0.85rem;
+  padding: 0.85rem 1rem;
   border-radius: 15px;
   background: #e0e5ec;
   border: none;
   box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
 }
 
-.nurse-reports-staff-filter {
+.nurse-reports-date-range {
+  align-items: flex-end;
+}
+
+.nurse-reports-date-field {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 1 1 9rem;
+  min-width: 9rem;
+  max-width: 12.5rem;
+}
+
+.nurse-reports-date-field label {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #718096;
+}
+
+.nurse-reports-date-input {
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  border-radius: 12px;
+  color-scheme: light;
+}
+
+.nurse-reports-date-input::-webkit-calendar-picker-indicator {
+  opacity: 0.65;
+  cursor: pointer;
+}
+
+.nurse-reports-apply-btn {
+  flex: 0 0 auto;
+  align-self: flex-end;
+  white-space: nowrap;
+}
+
+.nurse-reports-period-info {
+  margin: -0.35rem 0 1rem;
+  padding: 0.55rem 0.85rem;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: #4a5568;
+  border-radius: 12px;
+  background: rgba(209, 217, 230, 0.45);
+  box-shadow: inset 2px 2px 4px rgba(190, 190, 190, 0.35), inset -2px -2px 4px rgba(255, 255, 255, 0.6);
+}
+
+.nurse-reports-period-info strong {
+  color: #2d3748;
+  font-weight: 700;
+}
+
+.nurse-reports-staff-filter {
   align-items: center;
-  gap: 0.5rem 0.75rem;
 }
 
 .nurse-reports-staff-filter__label {
+  flex: 0 0 auto;
   font-weight: 700;
   font-size: 0.85rem;
   color: #4a5568;
   margin: 0;
 }
 
-.nurse-reports-staff-filter__select {
-  flex: 1 1 200px;
+.nurse-reports-staff-select {
+  flex: 1 1 220px;
   min-width: 200px;
   max-width: 100%;
   padding: 10px 14px;
-  background: #e0e5ec;
-  border: none;
-  border-radius: 12px;
-  color: #4a5568;
   font-size: 0.88rem;
   font-weight: 600;
   cursor: pointer;
-  box-shadow:
-    inset 3px 3px 6px #bebebe,
-    inset -3px -3px 6px #ffffff;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%234a5568' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.85rem center;
+  padding-right: 2.25rem;
 }
 
 .nurse-reports-layout {
@@ -173,16 +235,18 @@
   overflow: auto;
   padding: 0.65rem 0.75rem;
   box-sizing: border-box;
-  border-radius: 15px;
+}
+
+.nurse-reports-table-wrap .unified-tasks-table {
   background: #e0e5ec;
-  border: none;
-  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+  border-radius: 12px;
 }
 
 .nurse-reports-table-wrap .unified-tasks-table th,
 .nurse-reports-table-wrap .unified-tasks-table td {
   padding: 0.55rem 0.65rem;
   vertical-align: middle;
+  white-space: normal;
 }
 
 .nurse-reports-table-wrap .unified-tasks-table thead th {
@@ -192,6 +256,12 @@
 
 .nurse-reports-modal-footer {
   justify-content: flex-end;
+  gap: 0.65rem;
+}
+
+.nurse-reports-modal-footer .btn-secondary-neuro,
+.nurse-reports-modal-footer .btn-primary-neuro {
+  gap: 0.35rem;
 }
 
 .nurse-reports-modal-footer .btn-primary-neuro {
@@ -200,6 +270,47 @@
 
 .nurse-reports-error {
   color: #c53030;
+}
+
+.empty-message.nurse-reports-loading,
+.empty-message.nurse-reports-error {
+  padding: 0.65rem 0.85rem;
+  border-radius: 12px;
+  background: rgba(209, 217, 230, 0.35);
+}
+
+@media (max-width: 640px) {
+  .nurse-reports-date-range {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .nurse-reports-date-field {
+    max-width: none;
+  }
+
+  .nurse-reports-apply-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .nurse-reports-staff-filter {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .nurse-reports-staff-select {
+    min-width: 0;
+  }
+
+  .nurse-reports-modal-footer {
+    justify-content: stretch;
+  }
+
+  .nurse-reports-modal-footer .btn-secondary-neuro {
+    flex: 1 1 calc(50% - 0.35rem);
+    min-width: 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

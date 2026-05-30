@@ -1,0 +1,225 @@
+================================================================================
+NURSEHELPER — COMPONENTES FRONTEND (ANGULAR)
+Generado: 30 de mayo de 2026
+Ruta base: frontend/src/app/
+================================================================================
+
+1. ENTRADA Y CONFIGURACIÓN GLOBAL
+================================================================================
+
+  Archivo              | Para qué sirve
+  ---------------------|----------------------------------------------------------
+  app.routes.ts        | Define rutas, lazy loading y guards por rol
+  app.config.ts        | Registra interceptors HTTP y providers globales
+  styles.css           | Estilos globales, paleta #e0e5ec, tablas unificadas
+
+Interceptors (frontend/src/app/interceptors/):
+  - authInterceptor: Bearer token, timeout 15s, retry en red, logout en 401
+  - loadingInterceptor: Spinner global; omite /health y header X-Skip-Loading
+
+Guards (frontend/src/app/guards/auth.guard.ts):
+  - adminGuard, supervisorGuard, nurseGuard, pharmacyGuard
+  - Sin sesión → /login; rol incorrecto → dashboard por defecto del usuario
+
+
+2. AUTENTICACIÓN (COMPONENTES PÚBLICOS)
+================================================================================
+
+  Componente           | Ruta           | Propósito | Usabilidad / Seguridad
+  ---------------------|----------------|-----------|------------------------
+  LoginComponent       | /login         | Inicio de sesión | Formulario validado; redirección según rol
+  RegisterComponent    | /register      | Alta enfermería | Solo rol nurse vía API; términos legales
+  VerifyEmailComponent | /verify-email  | Confirmar email | Evita cuentas sin verificar
+
+Servicio: AuthService — token JWT, usuario actual (signals), defaultDashboardPath()
+
+
+3. PANEL DE ADMINISTRACIÓN (/admin)
+================================================================================
+
+Shell: AdminDashboardComponent (frontend/src/app/components/admin-dashboard/)
+Layout: StaffDashboardShellComponent + tabs internas
+
+  Componente / Tab          | Propósito
+  --------------------------|--------------------------------------------------
+  OverviewComponent         | KPIs y accesos rápidos (reportes, coordinación)
+  UsersManagementComponent  | CRUD usuarios, roles, activar/desactivar
+  StaffManagementComponent  | Personal, turnos semanales, asistencia
+  AreasManagementComponent  | Áreas hospitalarias, asignación de enfermeras
+  BedsManagementComponent   | Camas por área, estados, asignación paciente
+  PatientsManagementComponent | Alta/edición pacientes, datos clínicos básicos
+  SchedulesManagementComponent | Horarios, turnos, historial asistencia
+
+Acciones rápidas (shared):
+  - StaffDashboardQuickActions: Coordinación (handover) + Reportes clínicos
+  - AdminTeamHandoverModal: Nota entre turnos para supervisión
+  - NurseReportsModal (reutilizado): Reportes con filtro por enfermera
+
+Usabilidad: navegación por pestañas persistente (DashboardTabStateService).
+Seguridad: solo adminGuard; operaciones sensibles vía API con rol admin.
+
+
+4. PANEL DE SUPERVISOR (/supervisor)
+================================================================================
+
+  SupervisorDashboardComponent
+  - Reutiliza tabs y componentes del admin con alcance de supervisor.
+  - supervisorGuard limita acceso.
+
+Propósito: supervisión operativa sin configuración total del sistema (según permisos API).
+
+
+5. PANEL DE ENFERMERÍA (/nurse-dashboard)
+================================================================================
+
+Orquestador: NurseDashboardComponent
+  - Coordina secciones, búsqueda, modales y estado del turno.
+  - Delega cargas pesadas a facades/ (17 archivos en nurse-dashboard/facades/).
+
+Navegación y layout:
+  - NurseDashboardMainNavComponent: vistas Resumen, Tareas, Camas, Pacientes, Farmacia
+  - NurseDashboardHeaderSearchComponent: búsqueda global de pacientes
+  - NurseDashboardOverlaysStackComponent: pila centralizada de modales
+  - DashboardShellComponent (shared): cabecera, perfil, banner offline
+
+Secciones principales:
+  - NurseSummarySectionComponent: resumen del turno, acceso a reportes
+  - NurseTasksSectionComponent: tareas del día, filtros, historial por fecha
+  - NurseBedsSectionComponent: mapa de camas del área
+  - NursePatientsAssignedSectionComponent: pacientes asignados
+  - NursePharmacySectionComponent: solicitudes a farmacia, historial entregas
+
+Modal de paciente (NursePatientModalShellComponent + tabs):
+  - NursePatientMedicationsTabComponent: medicación activa
+  - NursePatientTreatmentsDayTabComponent: tratamientos del día
+  - NursePatientObservationsTabComponent: diagnóstico, alergias, notas
+  - NursePatientHistoryTabComponent: historial administración
+  - NurseClinicalNotesScopeBlockComponent: alcance de notas clínicas
+
+Modales de acción (selección representativa):
+  - NurseAddMedicationModal / NurseAddTreatmentModal: programar cuidados
+  - NursePostponeTaskModal / NurseTreatmentPostponeModal: reprogramar
+  - NurseSuspendMedicationModal / NurseReactivateMedicationModal: pausar meds
+  - NurseDeleteMedicationModal: baja de medicación
+  - NurseEditBedModal: editar datos de cama/paciente
+  - NurseHandoverModal: nota de entrega de turno
+  - NurseReportsModal: cumplimiento y medicación, export PDF/CSV
+  - NurseTasksQuickModal / NursePharmacyQuickModal: vistas rápidas
+  - NurseScheduleSlotsModal / NurseScheduleEditModal: franjas horarias
+  - NurseNotCompletedTaskModal / NursePendingTaskDetailModal: excepciones
+
+Estilos modales: nurse-neomorphic-modal.shared.css (coherencia visual).
+
+Servicios principales:
+  - NurseService: API /api/nurse/* (tareas, pacientes, camas, tratamientos)
+  - ReportService: reportes cumplimiento y medicación
+  - ShiftsService: contexto de turno
+
+Usabilidad: flujo optimizado para uso en tablet en planta; modales con focus trap.
+Seguridad: nurseGuard; datos filtrados en servidor por área/pacientes asignados.
+
+
+6. PANEL DE FARMACIA (/pharmacy y /asistencia)
+================================================================================
+
+  PharmacyDashboardComponent
+  - Solicitudes de medicación, entregas, inventario, movimientos de stock.
+  - Exportación CSV/PDF (pharmacy-export.helpers.ts).
+  - pharmacyGuard en rutas.
+
+  PharmacyAttendancePageComponent (/asistencia)
+  - Registro de asistencia de turno farmacia.
+
+  PharmacyShiftAttendanceSectionComponent (reutilizable en otros contextos)
+
+Servicio: PharmacyService → /api/pharmacy/*
+
+Usabilidad: pestañas internas, tablas con acciones normalizadas.
+Seguridad: rol pharmacy; endpoints de inventario y entregas acotados en backend.
+
+
+7. COMPONENTES COMPARTIDOS (shared/)
+================================================================================
+
+  Componente                          | Propósito
+  ------------------------------------|------------------------------------------
+  DashboardShellComponent             | Layout enfermería/farmacia
+  StaffDashboardShellComponent        | Layout admin/supervisor
+  StaffDashboardQuickActions*         | Toolbar + modales coordinación/reportes
+  DashboardUserProfileModalComponent  | Perfil y cambio de datos usuario
+  AdminNursePickModalHostComponent    | Selector de enfermera (asignaciones)
+  AdminTableRowActionsModalComponent  | Acciones en fila de tabla admin
+  PharmacyCoverageSummaryCardComponent| Resumen cobertura por fecha
+  InAppNotificationsBellComponent     | Campana de notificaciones
+  OfflineStatusBannerComponent        | Aviso sin conexión (PWA-like UX)
+  ModalShellComponent                 | Contenedor modal genérico
+  BootstrapIconComponent              | Iconos consistentes (Bootstrap Icons)
+  PaginationComponent                 | Paginación reutilizable
+  ConfirmationModal (vía servicio)    | Confirmaciones destructivas
+
+Directivas:
+  - ModalFocusTrapDirective: accesibilidad en modales (tab cicla dentro)
+  - DebounceDirective: reduce llamadas API en búsquedas
+  - KeyboardNavigationDirective, AriaLabelsDirective: a11y
+  - LoadingDirective: estados de carga locales
+
+Servicios shared:
+  - ExportService, ShiftRealtimeService, DashboardTabStateService
+  - StaffQuickActionsService: estado coordinación + reportes admin
+
+
+8. SERVICIOS DE APLICACIÓN (frontend/src/app/services/)
+================================================================================
+
+  Servicio                              | Uso principal
+  --------------------------------------|---------------------------------
+  AuthService                           | Sesión, JWT, rutas por rol
+  AdminService                          | CRUD admin (usuarios, áreas, camas...)
+  NurseService                          | Operación diaria enfermería
+  PharmacyService                       | Farmacia e inventario
+  ShiftsService                         | Turnos y asistencia
+  ReportService                         | Reportes medicación/cumplimiento
+  UserNotificationsService              | Notificaciones in-app
+  ToastService / ConfirmationService    | Feedback usuario
+  LoadingService                        | Contador peticiones HTTP activas
+  AdminNursePickModalService            | Flujo modal selección enfermera
+  AdminPatientBedAssignmentService      | Asignar paciente a cama
+  AdminShiftCoverageAlertNavigationService | Saltar a alertas de cobertura
+
+
+9. OTROS COMPONENTES
+================================================================================
+
+  - UseCaseDiagramComponent (/use-case-diagram): diagrama de casos de uso (admin)
+  - ToastComponent / ToastContainerComponent: mensajes globales
+  - LoadingSpinnerComponent: indicador de carga
+  - TermsModalComponent: términos en registro
+  - ConfirmationModalComponent / ConfirmationWrapperComponent
+
+
+10. PRUEBAS FRONTEND (E2E)
+================================================================================
+
+Carpeta: frontend/e2e/
+
+  - login.spec.ts: formulario y credenciales
+  - role-routes-guard.spec.ts: rutas protegidas sin sesión
+  - admin-dashboard-smoke.spec.ts, nurse-dashboard-smoke.spec.ts,
+    pharmacy-dashboard-smoke.spec.ts: smoke con API mockeada
+  - nurse-dashboard-main-nav-keyboard.spec.ts: navegación por teclado (a11y)
+
+Propósito: validar guards y primer render sin depender de BD en CI.
+
+
+11. PARA LA EXPOSICIÓN ORAL (1 MINUTO)
+================================================================================
+
+  - Organiza la demo por rol: admin configura, enfermera opera, farmacia entrega.
+  - Destaca NurseDashboard como núcleo operativo con modales y facades.
+  - Menciona componentes shared que evitan duplicar layout y reportes.
+  - Explica guards + interceptors como “seguridad en el cliente” (complemento al servidor).
+  - Cierra con Playwright E2E como garantía de que las rutas críticas no se rompen.
+
+================================================================================
+Fin del documento 03
+================================================================================

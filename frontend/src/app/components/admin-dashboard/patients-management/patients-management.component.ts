@@ -82,7 +82,7 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
   readonly adminPatientsAriaStatusInactive = $localize`:@@adminPatients.ariaStatusInactive:Paciente inactivo`;
   readonly adminPatientsRowActionsModalTitle = $localize`:@@adminPatients.rowActionsModalTitle:Paciente`;
   readonly adminPatientsFormIncomplete = $localize`:@@adminPatients.formIncomplete:Campos incompletos`;
-  readonly adminPatientsFormFieldRequired = $localize`:@@adminPatients.formFieldRequired:Revisa los campos obligatorios marcados con asterisco.`;
+  readonly adminPatientsFormFieldRequired = $localize`:@@adminPatients.formFieldRequired:Revisa los campos obligatorios.`;
   readonly adminPatientsConfirmDelete = $localize`:@@adminPatients.confirmDelete:Eliminar`;
   readonly adminPatientsConfirmCancel = $localize`:@@adminPatients.confirmCancel:Cancelar`;
   readonly adminPatientsPatientFallbackName = $localize`:@@adminPatients.patientFallbackName:Paciente`;
@@ -1228,9 +1228,28 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
     });
     
     if (confirmed) {
-      // Aquí iría la llamada al servicio para cambiar el estado
-      this.toastService.info(this.adminPatientsToggleActivePendingInfo);
-      this.loadPatientList(false);
+      if (!patient.id) {
+        this.toastService.error(this.adminPatientsDeletePatientInvalidId);
+        return;
+      }
+      const nextActive = patient.isActive !== true;
+      this.loading = true;
+      this.adminService.updatePatient(patient.id, { isActive: nextActive }).subscribe({
+        next: () => {
+          this.toastService.success(
+            nextActive
+              ? $localize`:@@adminPatients.toggleActiveOkActivated:Paciente ${patient.firstName}:fn: ${patient.lastName}:ln: activado`
+              : $localize`:@@adminPatients.toggleActiveOkDeactivated:Paciente ${patient.firstName}:fn: ${patient.lastName}:ln: desactivado`
+          );
+          this.loadPatientList(false);
+          this.loading = false;
+        },
+        error: (error) => {
+          const errorMessage = error.error?.message || error.message || this.adminPatientsErrSaveChanges;
+          this.toastService.error(errorMessage);
+          this.loading = false;
+        },
+      });
     }
   }
 

@@ -115,8 +115,10 @@ export class AuthController {
         firstName,
         lastName,
         phone: phoneRaw,
-        role = UserRole.NURSE,
       } = req.body;
+
+      /** Registro público: solo rol enfermería; otros roles los crea un admin. */
+      const role = UserRole.NURSE;
 
       if (!username || !email || !password || !firstName || !lastName) {
         res.status(400).json({
@@ -133,13 +135,6 @@ export class AuthController {
           return;
         }
         phoneNorm = p;
-      }
-
-      if (!Object.values(UserRole).includes(role)) {
-        res.status(400).json({
-          message: 'Rol inválido',
-        });
-        return;
       }
 
       const userRepository = AppDataSource.getRepository(User);

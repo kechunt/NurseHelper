@@ -151,17 +151,17 @@ export class UsersManagementComponent implements OnInit, OnDestroy {
   /** Plantilla: resultados, modales y hoja (`@@usersMgmtHtml.*`). */
   readonly usersMgmtHtmlTableDash = $localize`:@@usersMgmtHtml.tableDash:—`;
   readonly usersMgmtHtmlSaveChanges = $localize`:@@usersMgmtHtml.saveChanges:Guardar Cambios`;
-  readonly usersMgmtHtmlLabelUsername = $localize`:@@usersMgmtHtml.labelUsername:Usuario *`;
+  readonly usersMgmtHtmlLabelUsername = $localize`:@@usersMgmtHtml.labelUsername:Usuario`;
   readonly usersMgmtHtmlPhUsername = $localize`:@@usersMgmtHtml.phUsername:Ingrese el nombre de usuario`;
-  readonly usersMgmtHtmlLabelEmail = $localize`:@@usersMgmtHtml.labelEmail:Email *`;
+  readonly usersMgmtHtmlLabelEmail = $localize`:@@usersMgmtHtml.labelEmail:Email`;
   readonly usersMgmtHtmlPhEmail = $localize`:@@usersMgmtHtml.phEmail:usuario@ejemplo.com`;
-  readonly usersMgmtHtmlLabelFirstName = $localize`:@@usersMgmtHtml.labelFirstName:Nombre *`;
+  readonly usersMgmtHtmlLabelFirstName = $localize`:@@usersMgmtHtml.labelFirstName:Nombres`;
   readonly usersMgmtHtmlPhFirstName = $localize`:@@usersMgmtHtml.phFirstName:Ingrese el nombre`;
-  readonly usersMgmtHtmlLabelLastName = $localize`:@@usersMgmtHtml.labelLastName:Apellido *`;
+  readonly usersMgmtHtmlLabelLastName = $localize`:@@usersMgmtHtml.labelLastName:Apellido`;
   readonly usersMgmtHtmlPhLastName = $localize`:@@usersMgmtHtml.phLastName:Ingrese el apellido`;
   readonly usersMgmtHtmlLabelPhone = $localize`:@@usersMgmtHtml.labelPhone:Teléfono`;
   readonly usersMgmtHtmlPhPhoneOptional = $localize`:@@usersMgmtHtml.phPhoneOptional:Opcional`;
-  readonly usersMgmtHtmlLabelRole = $localize`:@@usersMgmtHtml.labelRole:Rol *`;
+  readonly usersMgmtHtmlLabelRole = $localize`:@@usersMgmtHtml.labelRole:Rol`;
   readonly usersMgmtHtmlOptNurse = $localize`:@@usersMgmtHtml.optNurse:Enfermera`;
   readonly usersMgmtHtmlOptSupervisorShort = $localize`:@@usersMgmtHtml.optSupervisorShort:Supervisor`;
   readonly usersMgmtHtmlOptAdmin = $localize`:@@usersMgmtHtml.optAdmin:Administrador`;

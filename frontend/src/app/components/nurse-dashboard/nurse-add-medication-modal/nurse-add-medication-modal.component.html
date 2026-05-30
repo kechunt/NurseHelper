@@ -29,7 +29,7 @@
       <form class="medication-form">
         <div class="form-row">
           <div class="form-group">
-            <label i18n="@@nurseAddMedicationModal.patientLabel">Paciente *</label>
+            <label i18n="@@nurseAddMedicationModal.patientLabel">Paciente</label>
             <select
               class="neuro-input"
               [(ngModel)]="selectedPatientId"
@@ -46,7 +46,7 @@
 
         <div class="form-row two-cols">
           <div class="form-group">
-            <label i18n="@@nurseAddMedicationModal.medicationLabel">Medicamento *</label>
+            <label i18n="@@nurseAddMedicationModal.medicationLabel">Medicamento</label>
             <input
               type="text"
               class="neuro-input"
@@ -58,7 +58,7 @@
             />
           </div>
           <div class="form-group">
-            <label i18n="@@nurseAddMedicationModal.dosageLabel">Dosis *</label>
+            <label i18n="@@nurseAddMedicationModal.dosageLabel">Dosis</label>
             <input
               type="text"
               class="neuro-input"
@@ -73,7 +73,7 @@
 
         <div class="form-row">
           <div class="form-group">
-            <label i18n="@@nurseAddMedicationModal.frequencyLabel">Frecuencia *</label>
+            <label i18n="@@nurseAddMedicationModal.frequencyLabel">Frecuencia</label>
             <select
               class="neuro-input"
               [(ngModel)]="newMedication.frequency"
@@ -97,7 +97,7 @@
         <div class="form-row">
           <div class="form-group">
             <label>
-              <span i18n="@@nurseAddMedicationModal.timesLabel">Horarios *</span>
+              <span i18n="@@nurseAddMedicationModal.timesLabel">Horarios</span>
               <span class="hint-text" i18n="@@nurseAddMedicationModal.timesSuggested"> (Sugeridos: {{ suggestedTimes }}) </span>
             </label>
             <div class="times-input-group">
@@ -124,7 +124,7 @@
 
         <div class="form-row">
           <div class="form-group">
-            <label i18n="@@nurseAddMedicationModal.adminDaysLabel">Días de administración *</label>
+            <label i18n="@@nurseAddMedicationModal.adminDaysLabel">Días de administración</label>
             <div class="days-selector">
               <label class="day-checkbox" *ngFor="let day of daysOfWeek">
                 <input type="checkbox" [checked]="isDaySelected(day.value)" (change)="toggleDay(day.value)" />
@@ -139,7 +139,7 @@
 
         <div class="form-row two-cols">
           <div class="form-group">
-            <label i18n="@@nurseAddMedicationModal.durationLabel">Duración *</label>
+            <label i18n="@@nurseAddMedicationModal.durationLabel">Duración</label>
             <input
               type="number"
               class="neuro-input"

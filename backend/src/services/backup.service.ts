@@ -13,6 +13,16 @@ import { alertService } from './alert.service';
 
 const execAsync = promisify(exec);
 
+function resolveDbConnection() {
+  return {
+    dbName: process.env.DB_DATABASE || process.env.DB_NAME || 'nursehelper',
+    dbUser: process.env.DB_USERNAME || process.env.DB_USER || 'root',
+    dbHost: process.env.DB_HOST || 'localhost',
+    dbPort: process.env.DB_PORT || '3306',
+    dbPassword: process.env.DB_PASSWORD || '',
+  };
+}
+
 export interface BackupConfig {
   enabled: boolean;
   schedule: 'hourly' | 'daily' | 'weekly';
@@ -49,10 +59,7 @@ export class BackupService {
 
     try {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const dbName = process.env.DB_NAME || 'nurse_helper';
-      const dbUser = process.env.DB_USER || 'root';
-      const dbHost = process.env.DB_HOST || 'localhost';
-      const dbPort = process.env.DB_PORT || '3306';
+      const { dbName, dbUser, dbHost, dbPort, dbPassword } = resolveDbConnection();
 
       const filename = `backup_${dbName}_${timestamp}.sql`;
       const filepath = path.join(this.config.backupPath, filename);
@@ -64,7 +71,7 @@ export class BackupService {
       }
 
       // Ejecutar mysqldump
-      const dumpCommand = `mysqldump -h ${dbHost} -P ${dbPort} -u ${dbUser} -p${process.env.DB_PASSWORD || ''} ${dbName} > ${filepath}`;
+      const dumpCommand = `mysqldump -h ${dbHost} -P ${dbPort} -u ${dbUser} -p${dbPassword} ${dbName} > ${filepath}`;
       
       logger.info(`Creating backup: ${filename}`);
       await execAsync(dumpCommand);
@@ -111,10 +118,7 @@ export class BackupService {
    */
   async restoreBackup(backupPath: string): Promise<void> {
     try {
-      const dbName = process.env.DB_NAME || 'nurse_helper';
-      const dbUser = process.env.DB_USER || 'root';
-      const dbHost = process.env.DB_HOST || 'localhost';
-      const dbPort = process.env.DB_PORT || '3306';
+      const { dbName, dbUser, dbHost, dbPort, dbPassword } = resolveDbConnection();
 
       // Descomprimir si es necesario
       let sqlPath = backupPath;
@@ -126,7 +130,7 @@ export class BackupService {
 
       // Restaurar
       logger.info(`Restoring backup: ${backupPath}`);
-      const restoreCommand = `mysql -h ${dbHost} -P ${dbPort} -u ${dbUser} -p${process.env.DB_PASSWORD || ''} ${dbName} < ${sqlPath}`;
+      const restoreCommand = `mysql -h ${dbHost} -P ${dbPort} -u ${dbUser} -p${dbPassword} ${dbName} < ${sqlPath}`;
       await execAsync(restoreCommand);
 
       logger.info('Backup restored successfully');
@@ -232,12 +236,10 @@ export class BackupService {
    */
   async testRestore(backupPath: string, testDbName: string): Promise<boolean> {
     try {
-      const dbUser = process.env.DB_USER || 'root';
-      const dbHost = process.env.DB_HOST || 'localhost';
-      const dbPort = process.env.DB_PORT || '3306';
+      const { dbUser, dbHost, dbPort, dbPassword } = resolveDbConnection();
 
       // Crear base de datos de prueba
-      await execAsync(`mysql -h ${dbHost} -P ${dbPort} -u ${dbUser} -p${process.env.DB_PASSWORD || ''} -e "CREATE DATABASE IF NOT EXISTS ${testDbName}"`);
+      await execAsync(`mysql -h ${dbHost} -P ${dbPort} -u ${dbUser} -p${dbPassword} -e "CREATE DATABASE IF NOT EXISTS ${testDbName}"`);
 
       // Restaurar en base de datos de prueba
       let sqlPath = backupPath;
@@ -246,13 +248,13 @@ export class BackupService {
         sqlPath = backupPath.replace('.gz', '');
       }
 
-      await execAsync(`mysql -h ${dbHost} -P ${dbPort} -u ${dbUser} -p${process.env.DB_PASSWORD || ''} ${testDbName} < ${sqlPath}`);
+      await execAsync(`mysql -h ${dbHost} -P ${dbPort} -u ${dbUser} -p${dbPassword} ${testDbName} < ${sqlPath}`);
 
       // Verificar que se restauró correctamente
-      const { stdout } = await execAsync(`mysql -h ${dbHost} -P ${dbPort} -u ${dbUser} -p${process.env.DB_PASSWORD || ''} ${testDbName} -e "SHOW TABLES"`);
+      const { stdout } = await execAsync(`mysql -h ${dbHost} -P ${dbPort} -u ${dbUser} -p${dbPassword} ${testDbName} -e "SHOW TABLES"`);
       
       // Limpiar base de datos de prueba
-      await execAsync(`mysql -h ${dbHost} -P ${dbPort} -u ${dbUser} -p${process.env.DB_PASSWORD || ''} -e "DROP DATABASE ${testDbName}"`);
+      await execAsync(`mysql -h ${dbHost} -P ${dbPort} -u ${dbUser} -p${dbPassword} -e "DROP DATABASE ${testDbName}"`);
 
       // Limpiar archivo temporal
       if (backupPath.endsWith('.gz') && fs.existsSync(sqlPath)) {

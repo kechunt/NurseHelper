@@ -127,6 +127,7 @@ export class NurseDashboardOverlaysStackComponent {
   @Output() readonly handoverSaveRequested = new EventEmitter<void>();
 
   @Output() readonly nurseReportsDismissed = new EventEmitter<void>();
+  @Output() readonly nurseReportsPeriodApply = new EventEmitter<{ start: string; end: string }>();
   @Output() readonly nurseReportsCsvDownload = new EventEmitter<'compliance' | 'medication'>();
   @Output() readonly nurseReportsPdfDownload = new EventEmitter<'compliance' | 'medication'>();
   @Output() readonly tasksQuickPatientFilterChange = new EventEmitter<string>();

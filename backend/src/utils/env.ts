@@ -82,3 +82,36 @@ export function loadEnv(): void {
   process.env.ENV_LOADED = 'true';
 }
 
+export interface EnvValidationOptions {
+  /** Si true, FIELD_ENCRYPTION_KEY es obligatoria (producción). */
+  requireEncryptionKey?: boolean;
+}
+
+/**
+ * Valida variables críticas al arranque. Lanza Error si falta configuración obligatoria.
+ */
+export function validateEnv(options: EnvValidationOptions = {}): void {
+  const isProd = process.env.NODE_ENV === 'production';
+  const requireEncryption = options.requireEncryptionKey ?? isProd;
+  const missing: string[] = [];
+
+  if (!process.env.JWT_SECRET?.trim()) {
+    missing.push('JWT_SECRET');
+  }
+  if (process.env.DB_PASSWORD === undefined) {
+    missing.push('DB_PASSWORD');
+  }
+  if (!process.env.DB_DATABASE?.trim()) {
+    missing.push('DB_DATABASE');
+  }
+  if (requireEncryption && !process.env.FIELD_ENCRYPTION_KEY?.trim()) {
+    missing.push('FIELD_ENCRYPTION_KEY');
+  }
+
+  if (missing.length > 0) {
+    throw new Error(
+      `Variables de entorno obligatorias faltantes: ${missing.join(', ')}`
+    );
+  }
+}
+

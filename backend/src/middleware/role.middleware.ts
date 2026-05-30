@@ -34,6 +34,14 @@ export const requireAdminOrSupervisorOrPharmacy = requireRole([
   UserRole.PHARMACY,
 ]);
 
+/** Enfermería puede crear solicitudes; farmacia/admin/supervisor gestionan inventario. */
+export const requireNurseOrAdminOrSupervisorOrPharmacy = requireRole([
+  UserRole.NURSE,
+  UserRole.ADMIN,
+  UserRole.SUPERVISOR,
+  UserRole.PHARMACY,
+]);
+
 /**
  * Permite a admin/supervisor hacer cualquier cosa, o a enfermeras solo si la cama está en su área asignada
  */

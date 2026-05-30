@@ -1,4 +1,5 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { Component, EventEmitter, Input, OnChanges, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ModalFocusTrapDirective } from '../../../shared/directives/modal-focus-trap.directive';
 import { ComplianceStats, MedicationReport } from '../../../services/report.service';
@@ -9,12 +10,18 @@ type ComplianceFilter = 'scheduled' | 'completed' | 'missed' | 'cancelled' | 'ra
 @Component({
   selector: 'app-nurse-reports-modal',
   standalone: true,
-  imports: [CommonModule, ModalFocusTrapDirective, BootstrapIconComponent],
+  imports: [CommonModule, ModalFocusTrapDirective, BootstrapIconComponent, FormsModule],
   templateUrl: './nurse-reports-modal.component.html',
-  styleUrls: ['../nurse-neomorphic-modal.shared.css', './nurse-reports-modal.component.css'],
+  styleUrls: [
+    '../nurse-neomorphic-modal.shared.css',
+    '../../../shared/styles/admin-table-unified.css',
+    './nurse-reports-modal.component.css',
+  ],
 })
-export class NurseReportsModalComponent {
+export class NurseReportsModalComponent implements OnChanges {
   @Input() periodLabel: string | null = null;
+  @Input() reportStartDate = '';
+  @Input() reportEndDate = '';
   @Input() loading = false;
   @Input() error: string | null = null;
   @Input() compliance: ComplianceStats | null = null;
@@ -31,6 +38,7 @@ export class NurseReportsModalComponent {
   @Input() staffScopeSuffix: string | null = null;
 
   @Output() readonly dismissed = new EventEmitter<void>();
+  @Output() readonly periodApply = new EventEmitter<{ start: string; end: string }>();
   @Output() readonly csvDownload = new EventEmitter<'compliance' | 'medication'>();
   @Output() readonly pdfDownload = new EventEmitter<'compliance' | 'medication'>();
   /** `null`: todas las enfermeras / todos los pacientes del centro */
@@ -47,6 +55,24 @@ export class NurseReportsModalComponent {
       return;
     }
     this.staffNurseFilterChange.emit(id);
+  }
+
+  draftStartDate = '';
+  draftEndDate = '';
+
+  ngOnChanges(): void {
+    this.draftStartDate = this.reportStartDate;
+    this.draftEndDate = this.reportEndDate;
+  }
+
+  applyPeriod(): void {
+    if (!this.draftStartDate || !this.draftEndDate) {
+      return;
+    }
+    if (this.draftStartDate > this.draftEndDate) {
+      return;
+    }
+    this.periodApply.emit({ start: this.draftStartDate, end: this.draftEndDate });
   }
   toggleComplianceFilter(filter: ComplianceFilter): void {
     this.selectedComplianceFilter = this.selectedComplianceFilter === filter ? null : filter;

@@ -103,12 +103,15 @@
 <app-nurse-reports-modal
   *ngIf="vm.showNurseReportsModal"
   [periodLabel]="vm.nurseReportsPeriodLabel"
+  [reportStartDate]="vm.nurseReportsStartDate"
+  [reportEndDate]="vm.nurseReportsEndDate"
   [loading]="vm.nurseReportsLoading"
   [error]="vm.nurseReportsError"
   [compliance]="vm.nurseReportsCompliance"
   [medication]="vm.nurseReportsMedication"
   [exporting]="vm.nurseReportsExporting"
   (dismissed)="nurseReportsDismissed.emit()"
+  (periodApply)="nurseReportsPeriodApply.emit($event)"
   (csvDownload)="nurseReportsCsvDownload.emit($event)"
   (pdfDownload)="nurseReportsPdfDownload.emit($event)"
 />

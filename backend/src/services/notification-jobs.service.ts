@@ -1,4 +1,4 @@
-import { Between, In, Repository } from 'typeorm';
+import { Between, In, LessThanOrEqual, Repository } from 'typeorm';
 import { AppDataSource } from '../data-source';
 import { Patient } from '../entities/Patient';
 import { Schedule, ScheduleStatus } from '../entities/Schedule';
@@ -12,6 +12,9 @@ import {
   upsertUserNotification,
 } from './user-notifications-persistence.service';
 import { UserNotification } from '../entities/UserNotification';
+import { Medication, MedicationStatus } from '../entities/Medication';
+import { Shift } from '../entities/Shift';
+import { ShiftHandoverNote } from '../entities/ShiftHandoverNote';
 import { logger } from '../utils/logger';
 
 async function getAreaIdsWithActiveOccupiedPatients(): Promise<Set<number>> {
@@ -232,6 +235,180 @@ async function dismissScheduleReminderKeysNotForLocalDay(
   }
 }
 
+async function syncPharmacyLowStockNotifications(): Promise<void> {
+  const medRepo = AppDataSource.getRepository(Medication);
+  const userRepo = AppDataSource.getRepository(User);
+  const lowStock = await medRepo.find({
+    where: [{ status: MedicationStatus.LOW_STOCK }, { status: MedicationStatus.OUT_OF_STOCK }],
+  });
+  if (lowStock.length === 0) return;
+
+  const recipients = await userRepo.find({
+    where: { role: In([UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.PHARMACY]), isActive: true },
+    select: ['id'],
+  });
+  const recipientIds = recipients.map((u) => u.id as number).filter((id) => id > 0);
+  if (recipientIds.length === 0) return;
+
+  for (const med of lowStock) {
+    const dedupeKey = `pharm-stock:${med.id}:${med.status}`;
+    const isOut = med.status === MedicationStatus.OUT_OF_STOCK;
+    for (const uid of recipientIds) {
+      await upsertUserNotification({
+        userId: uid,
+        type: isOut ? 'pharmacy_stock_out' : 'pharmacy_stock_low',
+        severity: isOut ? 'critical' : 'warning',
+        requiresAck: isOut,
+        title: isOut ? 'Medicamento agotado' : 'Stock bajo en farmacia',
+        body: isOut
+          ? `${med.name} (${med.dosage}) sin existencias (stock: ${med.stock}).`
+          : `${med.name} (${med.dosage}) por debajo del mínimo (${med.stock}/${med.minStock}).`,
+        payload: { medicationId: med.id, stock: med.stock, minStock: med.minStock, status: med.status },
+        dedupeKey,
+      });
+    }
+  }
+}
+
+function minutesUntilShiftEnd(shift: Shift): number | null {
+  const now = new Date();
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const [startH, startM] = String(shift.startTime || '00:00').split(':').map(Number);
+  const [endH, endM] = String(shift.endTime || '00:00').split(':').map(Number);
+  const start = startH * 60 + startM;
+  const end = endH * 60 + endM;
+
+  if (start < end) {
+    if (currentMinutes >= start && currentMinutes < end) {
+      return end - currentMinutes;
+    }
+    return null;
+  }
+
+  if (currentMinutes >= start) {
+    return 24 * 60 - currentMinutes + end;
+  }
+  if (currentMinutes < end) {
+    return end - currentMinutes;
+  }
+  return null;
+}
+
+async function syncHandoverReminderNotifications(): Promise<void> {
+  const coverage = await buildAreasShiftCoverage();
+  if (!coverage.hasActiveShift || coverage.shiftId == null) {
+    return;
+  }
+
+  const shiftRepo = AppDataSource.getRepository(Shift);
+  const shift = await shiftRepo.findOne({ where: { id: coverage.shiftId } });
+  if (!shift) return;
+
+  const minutesToEnd = minutesUntilShiftEnd(shift);
+  if (minutesToEnd == null || minutesToEnd > 60) {
+    return;
+  }
+
+  const handoverRepo = AppDataSource.getRepository(ShiftHandoverNote);
+  const date = coverage.date;
+  const shiftSlot = shift.type;
+  const shiftId = coverage.shiftId;
+
+  for (const row of coverage.areas) {
+    if (row.nurses.length === 0) continue;
+
+    const note = await handoverRepo.findOne({
+      where: {
+        areaId: row.areaId,
+        noteDate: new Date(`${date}T00:00:00`),
+        shiftSlot,
+      },
+    });
+
+    const dedupeKey = `handover:${date}:${shiftId}:a${row.areaId}`;
+    const hasNote = note != null && String(note.body ?? '').trim().length > 0;
+
+    if (hasNote) {
+      for (const nurse of row.nurses) {
+        await dismissUserDedupeKey(nurse.id, dedupeKey);
+      }
+      continue;
+    }
+
+    for (const nurse of row.nurses) {
+      await upsertUserNotification({
+        userId: nurse.id,
+        type: 'handover_missing',
+        severity: 'warning',
+        requiresAck: true,
+        title: 'Falta nota de entrega de turno',
+        body: `Registra la nota de entrega del área ${row.areaId} antes de finalizar «${coverage.shiftName ?? 'el turno'}» (quedan ~${Math.round(minutesToEnd)} min).`,
+        payload: {
+          areaId: row.areaId,
+          shiftId,
+          date,
+          shiftSlot,
+          deepLink: '/nurse-dashboard?view=handover',
+        },
+        dedupeKey,
+      });
+    }
+  }
+}
+
+async function syncPharmacyExpiryNotifications(): Promise<void> {
+  const medRepo = AppDataSource.getRepository(Medication);
+  const userRepo = AppDataSource.getRepository(User);
+  const now = new Date();
+  const in30Days = new Date(now);
+  in30Days.setDate(in30Days.getDate() + 30);
+
+  const expiring = await medRepo.find({
+    where: {
+      isActive: true,
+      expiryDate: LessThanOrEqual(in30Days),
+    },
+  });
+
+  const meds = expiring.filter((m) => m.stock > 0 && m.expiryDate != null);
+  if (meds.length === 0) return;
+
+  const recipients = await userRepo.find({
+    where: { role: In([UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.PHARMACY]), isActive: true },
+    select: ['id'],
+  });
+  const recipientIds = recipients.map((u) => u.id as number).filter((id) => id > 0);
+  if (recipientIds.length === 0) return;
+
+  for (const med of meds) {
+    const exp = med.expiryDate instanceof Date ? med.expiryDate : new Date(med.expiryDate!);
+    const daysLeft = Math.ceil((exp.getTime() - now.getTime()) / 86_400_000);
+    const isExpired = daysLeft <= 0 || med.status === MedicationStatus.EXPIRED;
+    const expKey = exp.toISOString().slice(0, 10);
+    const dedupeKey = `pharm-expiry:${med.id}:${expKey}`;
+
+    for (const uid of recipientIds) {
+      await upsertUserNotification({
+        userId: uid,
+        type: isExpired ? 'pharmacy_expired' : 'pharmacy_expiring_soon',
+        severity: isExpired ? 'critical' : 'warning',
+        requiresAck: isExpired,
+        title: isExpired ? 'Medicamento vencido' : 'Medicamento por caducar',
+        body: isExpired
+          ? `${med.name} (${med.dosage}) venció el ${exp.toLocaleDateString('es-MX')} (stock: ${med.stock}).`
+          : `${med.name} (${med.dosage}) caduca en ${Math.max(daysLeft, 0)} día(s) (${exp.toLocaleDateString('es-MX')}).`,
+        payload: {
+          medicationId: med.id,
+          expiryDate: expKey,
+          daysLeft,
+          stock: med.stock,
+        },
+        dedupeKey,
+      });
+    }
+  }
+}
+
 let intervalHandle: ReturnType<typeof setInterval> | null = null;
 
 export async function runInAppNotificationJobs(): Promise<void> {
@@ -244,6 +421,21 @@ export async function runInAppNotificationJobs(): Promise<void> {
     await syncScheduleReminderNotifications();
   } catch (e) {
     logger.error('Job recordatorios schedules', { error: String(e) });
+  }
+  try {
+    await syncPharmacyLowStockNotifications();
+  } catch (e) {
+    logger.error('Job alertas stock farmacia', { error: String(e) });
+  }
+  try {
+    await syncPharmacyExpiryNotifications();
+  } catch (e) {
+    logger.error('Job alertas caducidad farmacia', { error: String(e) });
+  }
+  try {
+    await syncHandoverReminderNotifications();
+  } catch (e) {
+    logger.error('Job recordatorio nota de entrega', { error: String(e) });
   }
 }
 

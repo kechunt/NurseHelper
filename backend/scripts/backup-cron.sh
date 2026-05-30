@@ -25,12 +25,12 @@ if [ -f "$PROJECT_DIR/.env" ]; then
     export $(cat "$PROJECT_DIR/.env" | grep -v '^#' | xargs)
 fi
 
-# Variables de base de datos
+# Variables de base de datos (preferir DB_DATABASE / DB_USERNAME del proyecto)
 DB_HOST="${DB_HOST:-localhost}"
 DB_PORT="${DB_PORT:-3306}"
-DB_USER="${DB_USER:-root}"
+DB_USER="${DB_USERNAME:-${DB_USER:-root}}"
 DB_PASSWORD="${DB_PASSWORD:-}"
-DB_NAME="${DB_NAME:-nurse_helper}"
+DB_NAME="${DB_DATABASE:-${DB_NAME:-nursehelper}}"
 
 # Nombre del archivo de backup
 TIMESTAMP=$(date '+%Y%m%d_%H%M%S')

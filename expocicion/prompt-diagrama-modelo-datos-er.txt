@@ -1,0 +1,91 @@
+================================================================================
+PROMPT: DIAGRAMA ENTIDAD-RELACIÓN (MODELO DE DATOS)
+Proyecto: NurseHelper
+================================================================================
+
+[INICIO PROMPT]
+
+Genera un diagrama Entidad-Relación (ER) para la base de datos MySQL de NurseHelper
+(TypeORM, 19 entidades).
+
+ENTIDADES Y ATRIBUTOS CLAVE (no listar todos los campos; solo PK y relaciones)
+
+User
+  - id, username, email, role (admin|nurse|supervisor|pharmacy), areaId, isActive
+
+Area
+  - id, name, ... 
+  - 1:N Bed, 1:N User (enfermeras asignadas)
+
+Bed
+  - id, areaId, patientId (opcional), status
+  - N:1 Area, N:1 Patient
+
+Patient
+  - id, bedId, datos clínicos básicos
+  - 1:N Medication, 1:N Schedule, 1:N PatientClinicalNote, 1:N AdministrationHistory
+
+Medication
+  - id, patientId, nombre, dosis, estado (activo/suspendido)
+
+Schedule
+  - id, patientId, tipo tarea/medicación, hora, fecha, estado (pendiente/completado/...)
+
+MedicationRequest
+  - id, patientId, solicitante, estado, ...
+  - Relación con farmacia
+
+DeliveryHistory
+  - registro de entregas farmacia
+
+MedicationInventoryMovement
+  - movimientos de stock farmacia
+
+Shift, ShiftAttendance, NurseShift, PharmacyShiftAttendance
+  - gestión de turnos y asistencia
+
+ShiftHandoverNote, AdminHandoverNote
+  - notas de entrega entre turnos
+
+UserNotification
+  - notificaciones in-app por usuario
+
+PendingRegistration
+  - registros pendientes de verificación email
+
+AdministrationHistory
+  - historial de administración de medicación
+
+RELACIONES PRINCIPALES A DIBUJAR
+- Area → Bed → Patient (jerarquía física del centro)
+- Patient → Schedule, Medication (cuidado diario)
+- User (nurse) → Area (asignación)
+- MedicationRequest → DeliveryHistory (circuito farmacia)
+- User → UserNotification
+
+CARDINALIDADES
+- Indicar 1:1, 1:N, N:M donde corresponda
+- Opcional: soft delete en User
+
+REQUISITOS SALIDA
+- Mermaid erDiagram (sintaxis erDiagram de Mermaid)
+  O sintaxis dbdiagram.io
+- Idioma ESPAÑOL en nombres de entidades (puedes mantener nombres técnicos en inglés entre paréntesis)
+- Agrupar visualmente: «Estructura centro», «Clínico», «Farmacia», «Turnos», «Sistema»
+- No incluir tablas de migraciones ni TypeORM metadata
+
+[FIN PROMPT]
+
+================================================================================
+VARIANTE PARA dbdiagram.io
+================================================================================
+
+[INICIO PROMPT DBDIAGRAM]
+
+Convierte el modelo ER de NurseHelper (entidades listadas arriba) a sintaxis
+DBDiagram.io con Table groups: Estructura, Clinico, Farmacia, Turnos, Sistema.
+MySQL 8, utf8mb4.
+
+[FIN PROMPT DBDIAGRAM]
+
+================================================================================

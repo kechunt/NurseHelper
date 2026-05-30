@@ -139,6 +139,7 @@
             <th>{{ pharmacyThNurse }}</th>
             <th>{{ pharmacyThQuantity }}</th>
             <th>{{ pharmacyThArea }}</th>
+            <th>{{ pharmacyThQueueTime }}</th>
           </tr>
         </thead>
         <tbody>
@@ -175,6 +176,11 @@
                   {{ pharmacyValueNotAvailable }}
                 </span>
               </div>
+            </td>
+            <td>
+              <span class="queue-wait" [ngClass]="requestQueueWaitClass(request)">
+                {{ formatQueueWait(request) }}
+              </span>
             </td>
           </tr>
         </tbody>

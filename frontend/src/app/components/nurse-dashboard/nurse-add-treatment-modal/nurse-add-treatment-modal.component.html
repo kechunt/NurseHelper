@@ -41,7 +41,7 @@
       <form class="medication-form" *ngIf="patients.length > 0 || isFromPatient">
         <div class="form-row" *ngIf="!isFromPatient">
           <div class="form-group">
-            <label i18n="@@nurseAddTreatmentModal.patientLabel">Paciente *</label>
+            <label i18n="@@nurseAddTreatmentModal.patientLabel">Paciente</label>
             <select class="neuro-input" [(ngModel)]="newTreatment.patientId" name="patientId" required>
               <option value="" i18n="@@nurseAddTreatmentModal.selectPatientPlaceholder">Seleccionar paciente...</option>
               <option *ngFor="let patient of patients" [value]="patient.id">
@@ -53,7 +53,7 @@
 
         <div class="form-row">
           <div class="form-group">
-            <label i18n="@@nurseAddTreatmentModal.descriptionLabel">Descripción del Tratamiento/Tarea *</label>
+            <label i18n="@@nurseAddTreatmentModal.descriptionLabel">Descripción del Tratamiento/Tarea</label>
             <input
               type="text"
               class="neuro-input"
@@ -68,7 +68,7 @@
 
         <div class="form-row">
           <div class="form-group">
-            <label i18n="@@nurseAddTreatmentModal.scheduleTypeLabel">Tipo de Programación *</label>
+            <label i18n="@@nurseAddTreatmentModal.scheduleTypeLabel">Tipo de Programación</label>
             <select
               class="neuro-input"
               [(ngModel)]="newTreatment.scheduleType"
@@ -84,18 +84,18 @@
 
         <div *ngIf="newTreatment.scheduleType === 'single'" class="form-row two-cols">
           <div class="form-group">
-            <label i18n="@@nurseAddTreatmentModal.dateLabel">Fecha *</label>
+            <label i18n="@@nurseAddTreatmentModal.dateLabel">Fecha</label>
             <input type="date" class="neuro-input" [(ngModel)]="newTreatment.date" name="date" [min]="getTodayDate()" required />
           </div>
           <div class="form-group">
-            <label i18n="@@nurseAddTreatmentModal.timeLabel">Hora *</label>
+            <label i18n="@@nurseAddTreatmentModal.timeLabel">Hora</label>
             <input type="time" class="neuro-input" [(ngModel)]="newTreatment.time" name="time" required />
           </div>
         </div>
 
         <div *ngIf="newTreatment.scheduleType === 'recurring'" class="form-row">
           <div class="form-group">
-            <label i18n="@@nurseAddTreatmentModal.timesLabel">Horarios *</label>
+            <label i18n="@@nurseAddTreatmentModal.timesLabel">Horarios</label>
             <div class="times-input-group">
               <div *ngFor="let time of newTreatment.times; let i = index" class="time-input-row">
                 <input type="time" class="neuro-input small" [(ngModel)]="newTreatment.times[i]" [name]="'treatmentTime' + i" />
@@ -120,7 +120,7 @@
 
         <div *ngIf="newTreatment.scheduleType === 'recurring'" class="form-row">
           <div class="form-group">
-            <label i18n="@@nurseAddTreatmentModal.applyDaysLabel">Días de aplicación *</label>
+            <label i18n="@@nurseAddTreatmentModal.applyDaysLabel">Días de aplicación</label>
             <div class="days-selector">
               <label class="day-checkbox" *ngFor="let day of daysOfWeek">
                 <input type="checkbox" [checked]="isTreatmentDaySelected(day.value)" (change)="toggleTreatmentDay(day.value)" />
@@ -135,7 +135,7 @@
 
         <div *ngIf="newTreatment.scheduleType === 'recurring'" class="form-row two-cols">
           <div class="form-group">
-            <label i18n="@@nurseAddTreatmentModal.durationLabel">Duración *</label>
+            <label i18n="@@nurseAddTreatmentModal.durationLabel">Duración</label>
             <input
               type="number"
               class="neuro-input"

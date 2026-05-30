@@ -258,11 +258,17 @@ describe('AuthController.register', () => {
     });
   });
 
-  it('responde 400 si el rol no es válido', async () => {
-    const { status, json, res } = resMocksShared();
-    await ctrl.register({ body: { ...validBody, role: 'not-a-role' } } as Request, res);
-    expect(status).toHaveBeenCalledWith(400);
-    expect(json).toHaveBeenCalledWith({ message: 'Rol inválido' });
+  it('ignora el rol del cliente y registra siempre como enfermería', async () => {
+    userRepoReg.findOne.mockResolvedValue(null);
+    pendingRepoReg.findOne.mockResolvedValue(null);
+    const json = jest.fn();
+    const status = jest.fn().mockReturnValue({ json });
+    const res = { status, json } as unknown as Response;
+    await ctrl.register({ body: { ...validBody, role: 'admin' } } as Request, res);
+    expect(status).toHaveBeenCalledWith(201);
+    expect(pendingRepoReg.save).toHaveBeenCalledWith(
+      expect.objectContaining({ role: UserRole.NURSE })
+    );
   });
 
   it('responde 400 si el nombre de usuario ya existe', async () => {

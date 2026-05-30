@@ -31,7 +31,17 @@ export class OverviewComponent implements OnInit, OnDestroy {
   liveDateTimeLabel = '';
   liveCurrentShiftLabel = '';
 
+  backups: { filename: string; size: number; createdAt: string }[] = [];
+  loadingBackups = false;
+  creatingBackup = false;
+
   readonly adminOverviewErrLoadStats = $localize`:@@adminOverview.errLoadStats:Error al cargar las estadísticas`;
+  readonly adminOverviewBackupTitle = $localize`:@@adminOverview.backupTitle:Respaldos de base de datos`;
+  readonly adminOverviewBackupCreate = $localize`:@@adminOverview.backupCreate:Crear respaldo`;
+  readonly adminOverviewBackupEmpty = $localize`:@@adminOverview.backupEmpty:No hay respaldos disponibles`;
+  readonly adminOverviewBackupCreated = $localize`:@@adminOverview.backupCreated:Respaldo creado correctamente`;
+  readonly adminOverviewBackupErrLoad = $localize`:@@adminOverview.backupErrLoad:Error al cargar respaldos`;
+  readonly adminOverviewBackupErrCreate = $localize`:@@adminOverview.backupErrCreate:Error al crear respaldo`;
   private shifts: Shift[] = [];
   private clockTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -51,6 +61,7 @@ export class OverviewComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadStats();
     this.loadShiftsForRealtimeCard();
+    this.loadBackups();
     this.startLiveClock();
   }
 
@@ -121,5 +132,57 @@ export class OverviewComponent implements OnInit, OnDestroy {
     this.liveDateTimeLabel = this.shiftRealtimeService.formatDateTimeLabel(now);
     const currentShift = this.shiftRealtimeService.resolveCurrentShift(this.shifts, now, false);
     this.liveCurrentShiftLabel = this.shiftRealtimeService.formatShiftLabel(currentShift);
+  }
+
+  loadBackups(): void {
+    this.loadingBackups = true;
+    this.adminService.listBackups().subscribe({
+      next: (backups) => {
+        this.backups = backups.map((b) => ({
+          filename: b.filename,
+          size: b.size,
+          createdAt:
+            typeof b.createdAt === 'string'
+              ? b.createdAt
+              : new Date(b.createdAt).toISOString(),
+        }));
+        this.loadingBackups = false;
+      },
+      error: () => {
+        this.toastService.error(this.adminOverviewBackupErrLoad);
+        this.backups = [];
+        this.loadingBackups = false;
+      },
+    });
+  }
+
+  createBackup(): void {
+    if (this.creatingBackup) return;
+    this.creatingBackup = true;
+    this.adminService.createBackup('full').subscribe({
+      next: () => {
+        this.toastService.success(this.adminOverviewBackupCreated);
+        this.creatingBackup = false;
+        this.loadBackups();
+      },
+      error: (error) => {
+        const msg = error.error?.message || error.message || this.adminOverviewBackupErrCreate;
+        this.toastService.error(msg);
+        this.creatingBackup = false;
+      },
+    });
+  }
+
+  formatBackupSize(bytes: number): string {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${Math.round((bytes / Math.pow(k, i)) * 100) / 100} ${sizes[i]}`;
+  }
+
+  formatBackupDate(iso: string): string {
+    const d = new Date(iso);
+    return Number.isNaN(d.getTime()) ? iso : d.toLocaleString('es-ES');
   }
 }

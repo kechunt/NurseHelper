@@ -141,3 +141,77 @@
     color: #718096;
   }
 }
+
+.overview-backups-card {
+  margin-top: 1.5rem;
+  padding: 1.2rem 1.4rem;
+  border-radius: 20px;
+  background: #e0e5ec;
+  box-shadow: 15px 15px 30px #bebebe, -15px -15px 30px #ffffff;
+}
+
+.overview-backups-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.overview-backups-title {
+  margin: 0;
+  color: #4a5568;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.overview-backup-btn {
+  border: none;
+  border-radius: 12px;
+  padding: 0.5rem 1rem;
+  background: #e0e5ec;
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+  color: #4a5568;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.overview-backup-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.overview-backups-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.overview-backup-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid rgba(113, 128, 150, 0.15);
+}
+
+.overview-backup-item:last-child {
+  border-bottom: none;
+}
+
+.overview-backup-name {
+  font-weight: 600;
+  color: #4a5568;
+  word-break: break-all;
+}
+
+.overview-backup-meta {
+  font-size: 0.85rem;
+  color: #718096;
+}
+
+.overview-backups-empty {
+  margin: 0;
+  color: #718096;
+  font-size: 0.9rem;
+}

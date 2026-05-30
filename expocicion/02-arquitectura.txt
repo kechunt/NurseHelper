@@ -1,0 +1,167 @@
+================================================================================
+NURSEHELPER — ARQUITECTURA DEL SISTEMA
+Generado: 30 de mayo de 2026
+================================================================================
+
+1. PATRÓN ARQUITECTÓNICO
+================================================================================
+
+NurseHelper sigue una arquitectura cliente-servidor de tres capas:
+
+  [ Navegador ]  →  [ API REST Express ]  →  [ MySQL ]
+
+El frontend es una SPA (Single Page Application): tras el login, la navegación
+ocurre en el cliente; los datos se obtienen vía HTTP JSON con autenticación JWT.
+
+No hay renderizado del lado del servidor (SSR); el backend solo expone API.
+
+
+2. DIAGRAMA DE FLUJO (TEXTO)
+================================================================================
+
+    +------------------+       HTTPS/HTTP + Bearer JWT        +------------------+
+    |  Angular 20 SPA  |  <----------------------------->    |  Express API     |
+    |  (Vercel/host)   |       /api/*  JSON                  |  (Railway/Node)  |
+    +------------------+                                     +--------+---------+
+           |                                                          |
+           |  Guards por rol (rutas)                                  | TypeORM
+           |  Interceptors (token, loading)                             v
+           |                                                  +------------------+
+           |                                                  |  MySQL 8         |
+           |                                                  |  (utf8mb4)       |
+           +--------------------------------------------------+------------------+
+
+
+3. FLUJO DE UNA PETICIÓN TÍPICA
+================================================================================
+
+Ejemplo: enfermera carga tareas del día
+
+  1. Usuario autenticado en /nurse-dashboard (nurseGuard validó rol).
+  2. NurseDashboardComponent llama NurseService.getTodayTasks().
+  3. HttpClient envía GET /api/nurse/tasks/today.
+  4. authInterceptor añade header Authorization: Bearer <JWT>.
+  5. loadingInterceptor muestra indicador global de carga.
+  6. Backend: nurses.routes → authMiddleware → nurses.controller.
+  7. Servicio nurse-today-tasks.service consulta Schedule, Patient, etc.
+  8. Respuesta JSON → componente actualiza vista (signals / bindings).
+  9. En 401: interceptor hace logout y redirige a /login.
+
+
+4. CAPAS DEL BACKEND
+================================================================================
+
+  Capa            | Responsabilidad
+  ----------------|----------------------------------------------------------
+  Routes          | Montaje de paths, rate limit por router, auth en bloque
+  Middleware      | JWT, RBAC (requireRole), validación DTO, paginación
+  Controllers     | HTTP: parseo req, códigos de estado, delegación a servicios
+  Services        | Reglas de negocio, transacciones, notificaciones, reportes
+  Entities        | Modelo relacional TypeORM (19 tablas principales)
+  Utils           | Cross-cutting: env, logger, JWT, cifrado, sanitización XSS
+
+Punto de entrada: backend/src/app.ts
+  - helmet, cors restrictivo, sanitizeMiddleware, rateLimitMiddleware global
+  - body JSON limitado (1 MB)
+  - trust proxy para despliegue detrás de reverse proxy
+  - Inicialización AppDataSource + jobs de notificaciones in-app
+
+
+5. CAPAS DEL FRONTEND
+================================================================================
+
+  Capa            | Responsabilidad
+  ----------------|----------------------------------------------------------
+  Routes + Guards | Lazy loading por dashboard; bloqueo por rol
+  Components      | UI por feature (tabs admin, secciones nurse, etc.)
+  Services        | Cliente HTTP hacia /api/*, estado con signals donde aplica
+  Shared          | Shells de layout, modales comunes, estilos unificados
+  Interceptors    | Token JWT, retry red, timeout, spinner global
+  Facades (nurse) | Orquestación de cargas complejas (reportes, farmacia, tareas)
+
+Configuración central: frontend/src/app/app.config.ts, app.routes.ts
+
+
+6. MODELO DE DATOS (RELACIONES CONCEPTUALES)
+================================================================================
+
+Entidades núcleo (backend/src/entities/):
+
+  User (roles: admin, nurse, supervisor, pharmacy)
+    └── Area (asignación de enfermeras / supervisión)
+
+  Area → Bed → Patient
+  Patient → Medication, Schedule, PatientClinicalNote, AdministrationHistory
+  MedicationRequest, DeliveryHistory (farmacia)
+  Shift, ShiftAttendance, NurseShift, PharmacyShiftAttendance (turnos)
+  AdminHandoverNote, ShiftHandoverNote (coordinación entre turnos)
+  UserNotification (alertas in-app)
+  PendingRegistration (registro con verificación email)
+
+Persistencia: migraciones en backend/src/migrations/ (synchronize: false).
+
+
+7. AUTENTICACIÓN Y AUTORIZACIÓN (ARQUITECTURA)
+================================================================================
+
+  - Login → POST /api/auth/login → JWT con userId y role.
+  - Frontend guarda token (AuthService) y lo envía en cada petición.
+  - Backend auth.middleware verifica JWT y carga User activo en req.user.
+  - role.middleware restringe endpoints por rol y a veces por área del usuario.
+  - Frontend guards impiden acceder a rutas de otro rol (redirección a dashboard propio).
+
+
+8. INTEGRACIONES Y SERVICIOS TRANSVERSALES
+================================================================================
+
+  - Email (SMTP): verificación de registro, opcional según .env
+  - Webhooks: registro de URLs para eventos (solo admin)
+  - Backup: creación/restauración de respaldos BD (solo admin)
+  - Swagger: documentación API en desarrollo (backend/src/config/swagger)
+  - Notificaciones: jobs periódicos (notification-jobs.service)
+  - Reportes: agregación cumplimiento + medicación (report.service)
+  - Export PDF/CSV: generación en frontend (jsPDF) + datos desde API
+
+
+9. CI/CD Y ENTORNOS
+================================================================================
+
+Workflow: .github/workflows/ci-cd.yml
+
+  Job Backend (MySQL 8 service en CI):
+    tsc --noEmit, lint, migraciones, test:unit, test:integration
+
+  Job Frontend:
+    lint, build producción, Karma headless, Playwright E2E
+
+  E2E: API mockeada con page.route() — no requiere BD real en pipeline.
+
+Entornos:
+  - development: .env.local, proxy Angular, CORS localhost:4200
+  - production: Vercel + Railway, CORS_ORIGIN y dominios *.vercel.app permitidos
+  - tunnel: ngrok para demos (patrón en CORS de app.ts)
+
+
+10. DECISIONES ARQUITECTÓNICAS DESTACABLES
+================================================================================
+
+  - Lazy loading de dashboards: reduce bundle inicial.
+  - Servicios de dominio en backend (no lógica pesada en controladores).
+  - Facades en nurse-dashboard: desacopla componente gigante de cargas API.
+  - DTOs + class-validator: contrato de entrada validado en servidor.
+  - Cifrado de campos sensibles en BD (FIELD_ENCRYPTION_KEY en producción).
+  - SPA + API desplegables por separado: escalado independiente frontend/backend.
+
+
+11. PARA LA EXPOSICIÓN ORAL (1 MINUTO)
+================================================================================
+
+  - Dibuja en pizarra: Angular → Express → MySQL con flecha JWT.
+  - Explica que cada rol tiene su SPA-route pero comparten la misma API.
+  - Menciona capas backend (routes/middleware/services) como separación de responsabilidades.
+  - Destaca migraciones y ausencia de synchronize como madurez para producción.
+  - Cierra con CI que prueba backend con MySQL real y frontend con E2E automatizado.
+
+================================================================================
+Fin del documento 02
+================================================================================

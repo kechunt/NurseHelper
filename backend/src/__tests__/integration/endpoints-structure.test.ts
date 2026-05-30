@@ -111,8 +111,8 @@ describe('Endpoints Structure Tests', () => {
     it('debería tener servicios principales', () => {
       expect(() => {
         require('../../services/patient.service');
-        require('../../services/nurse.service');
-        require('../../services/medication.service');
+        require('../../services/nurse-patient-access.service');
+        require('../../services/shift-handover-note.service');
         require('../../services/cache.service');
         require('../../services/audit.service');
         require('../../services/notification.service');

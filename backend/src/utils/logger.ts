@@ -80,6 +80,41 @@ export function logUserAction(
   });
 }
 
+const SENSITIVE_BODY_KEYS = new Set([
+  'password',
+  'currentPassword',
+  'newPassword',
+  'token',
+  'verificationCode',
+  'code',
+  'medicalHistory',
+  'allergies',
+  'medicalObservations',
+  'specialNeeds',
+  'generalObservations',
+  'observation',
+  'diagnosis',
+  'handoverBody',
+  'notes',
+]);
+
+function redactRequestBody(body: unknown): unknown {
+  if (body == null || typeof body !== 'object' || Array.isArray(body)) {
+    return body;
+  }
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(body as Record<string, unknown>)) {
+    if (SENSITIVE_BODY_KEYS.has(key)) {
+      out[key] = '[REDACTED]';
+    } else if (value != null && typeof value === 'object' && !Array.isArray(value)) {
+      out[key] = redactRequestBody(value);
+    } else {
+      out[key] = value;
+    }
+  }
+  return out;
+}
+
 /**
  * Loggear error de API
  */
@@ -94,7 +129,7 @@ export function logApiError(
     method: req.method,
     url: req.originalUrl,
     userId: req.userId || 'anonymous',
-    body: req.body,
+    body: redactRequestBody(req.body),
     ...additionalInfo,
     timestamp: new Date().toISOString(),
   });

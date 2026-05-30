@@ -1,4 +1,4 @@
-import { Component, DestroyRef, DoCheck, inject, LOCALE_ID, OnInit, ViewChild } from '@angular/core';
+import { Component, DestroyRef, inject, LOCALE_ID, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -23,10 +23,12 @@ import { ToastService } from '../../services/toast.service';
 import { ConfirmationService } from '../../services/confirmation.service';
 import { DashboardShellComponent } from '../../shared/components/dashboard-shell/dashboard-shell.component';
 import { InAppNotificationsBellComponent } from '../../shared/components/in-app-notifications-bell/in-app-notifications-bell.component';
+import { OfflineStatusBannerComponent } from '../../shared/components/offline-status-banner/offline-status-banner.component';
 import type { SuspendMedicationConfirmedPayload } from './nurse-suspend-medication-modal/nurse-suspend-medication-modal.component';
 import { type NurseAddTreatmentModalMode } from './nurse-add-treatment-modal/nurse-add-treatment-modal.component';
 import { NurseDashboardOverlaysStackComponent } from './nurse-dashboard-overlays-stack/nurse-dashboard-overlays-stack.component';
 import { createEmptyNurseDashboardOverlaysStackVm } from './nurse-dashboard-overlays-stack/nurse-dashboard-overlays-stack.vm';
+import { syncNurseDashboardOverlaysStackVm } from './nurse-dashboard-overlays-vm.sync';
 import type { TreatmentRecord } from './nurse-treatment-record.model';
 import type { MedicationTodaySlot } from './medication-today-slot.model';
 import type { TreatmentTodayItem } from './treatment-today-item.model';
@@ -328,6 +330,7 @@ import { NurseDashboardMedicationMutationFacade } from './facades/nurse-dashboar
     DashboardShellComponent,
     NurseDashboardHeaderSearchComponent,
     InAppNotificationsBellComponent,
+    OfflineStatusBannerComponent,
     NurseDashboardMainNavComponent,
     NurseDashboardOverlaysStackComponent,
     NursePatientsAssignedSectionComponent,
@@ -343,7 +346,7 @@ import { NurseDashboardMedicationMutationFacade } from './facades/nurse-dashboar
     './nurse-dashboard.component.css',
   ],
 })
-export class NurseDashboardComponent implements OnInit, DoCheck {
+export class NurseDashboardComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly localeId = inject(LOCALE_ID) as string;
   private readonly secondaryLoad = inject(NurseDashboardSecondaryLoadFacade);
@@ -365,8 +368,14 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
   @ViewChild(NurseDashboardOverlaysStackComponent)
   private nurseOverlaysStack?: NurseDashboardOverlaysStackComponent;
 
-  /** Referencia estable para `[vm]` del stack de overlays (campos sincronizados en `ngDoCheck`). */
-  readonly overlaysStackVm = createEmptyNurseDashboardOverlaysStackVm();
+  /** Referencia estable para `[vm]` del stack de overlays (sincronizado en cada lectura del getter). */
+  private readonly overlaysStackVmInternal = createEmptyNurseDashboardOverlaysStackVm();
+
+  /** VM del stack: se sincroniza al leerse en plantilla (sin `ngDoCheck`). */
+  get overlaysStackVm() {
+    syncNurseDashboardOverlaysStackVm(this.overlaysStackVmInternal, this);
+    return this.overlaysStackVmInternal;
+  }
 
   /** Textos del `app-dashboard-shell` (i18n / extracción `$localize`). */
   readonly nurseShellPanelTitle = $localize`:@@nurseDashboard.shellPanelTitle:Panel de Enfermera`;
@@ -636,76 +645,6 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
     if (nurseDashboardShouldLoadTasksDayHistory(this.nurseMainView)) {
       this.loadTasksDayHistory();
     }
-  }
-
-  ngDoCheck(): void {
-    this.syncOverlaysStackVmFromState();
-  }
-
-  /** Misma referencia `overlaysStackVm` para el stack: solo se actualizan propiedades (evita recrear el objeto en cada CD). */
-  private syncOverlaysStackVmFromState(): void {
-    const v = this.overlaysStackVm;
-    const patientName = this.selectedPatient?.name ?? null;
-    v.pharmacyPatientsModalMed = this.pharmacyPatientsModalMed;
-    v.selectedTaskForNotCompleted = this.selectedTaskForNotCompleted;
-    v.selectedPatientNameFallback = patientName;
-    v.showPatientModal = this.showPatientModal;
-    v.selectedPatient = this.selectedPatient;
-    v.activeTab = this.activeTab;
-    v.newDiagnosisNote = this.newDiagnosisNote;
-    v.newMedicalObservationNote = this.newMedicalObservationNote;
-    v.newAllergiesNote = this.newAllergiesNote;
-    v.newSpecialNeedsNote = this.newSpecialNeedsNote;
-    v.newGeneralObservationNote = this.newGeneralObservationNote;
-    v.isSavingObservation = this.isSavingObservation;
-    v.historyFilter = this.historyFilter;
-    v.historyOutcomeFilter = this.historyOutcomeFilter;
-    v.historyEditRecord = this.historyEditRecord;
-    v.scheduleEditContext = this.scheduleEditContext;
-    v.medicationsSlots = this.getMedicationsTodaySorted();
-    v.treatmentsSlots = this.getTreatmentsTodaySorted();
-    v.historyRecords = this.getFilteredHistoryFlatSorted();
-    v.historyDetailRecord = this.historyDetailRecord;
-    v.medicationDayDetailView = this.medicationDayDetailView;
-    v.pendingTaskDetailModalOpen = this.pendingTaskDetailModalOpen;
-    v.pendingTaskDetail = this.pendingTaskDetail;
-    v.showHandoverModal = this.showHandoverModal;
-    v.handoverDate = this.handoverDate;
-    v.handoverShift = this.handoverShift;
-    v.handoverBody = this.handoverBody;
-    v.handoverSaving = this.handoverSaving;
-    v.handoverCanAcknowledge = this.handoverCanAcknowledge;
-    v.showNurseReportsModal = this.showNurseReportsModal;
-    v.nurseReportsPeriodLabel = this.nurseReportsPeriodLabel;
-    v.nurseReportsLoading = this.nurseReportsLoading;
-    v.nurseReportsExporting = this.nurseReportsExporting;
-    v.nurseReportsMedication = this.nurseReportsMedication;
-    v.nurseReportsCompliance = this.nurseReportsCompliance;
-    v.nurseReportsError = this.nurseReportsError;
-    v.tasksQuickModalOpen = this.tasksQuickModalOpen;
-    v.patients = this.patients;
-    v.tasksPatientFilter = this.tasksPatientFilter;
-    v.tasksHourFilter = this.tasksHourFilter;
-    v.tasksGroupedByHour = this.tasksGroupedByHour;
-    v.medicationsForPharmacy = this.medicationsForPharmacy;
-    v.uniqueMedicationsCount = this.uniqueMedicationsCount;
-    v.totalDosesToday = this.totalDosesToday;
-    v.scheduleSlotsView = this.scheduleSlotsView;
-    v.addMedicationModalOpen = this.addMedicationModalOpen;
-    v.addMedicationLockPatientSelect = this.addMedicationLockPatientSelect;
-    v.addMedicationInitialPatientId = this.addMedicationInitialPatientId;
-    v.medicationToSuspend = this.medicationToSuspend;
-    v.medicationToDelete = this.medicationToDelete;
-    v.medicationToReactivate = this.medicationToReactivate;
-    v.selectedPatientNameForMedicationModals = patientName;
-    v.addTreatmentModalOpen = this.addTreatmentModalOpen;
-    v.addTreatmentMode = this.addTreatmentMode;
-    v.addTreatmentFromPatientContext = this.addTreatmentFromPatientContext;
-    v.addTreatmentInitialPatientId = this.addTreatmentInitialPatientId;
-    v.treatmentPostponeItem = this.treatmentPostponeItem;
-    v.taskToPostpone = this.taskToPostpone;
-    v.editBedModalBed = this.editBedModalBed;
-    v.myBeds = this.myBeds;
   }
 
   currentUser() {
@@ -1291,16 +1230,27 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
     return `${this.nurseReportsStart.toLocaleDateString('es-ES', o)} → ${this.nurseReportsEnd.toLocaleDateString('es-ES', o)}`;
   }
 
-  openNurseReportsModal(): void {
-    this.showNurseReportsModal = true;
+  get nurseReportsStartDate(): string {
+    return this.nurseReportsStart ? this.formatDateInputValue(this.nurseReportsStart) : '';
+  }
+
+  get nurseReportsEndDate(): string {
+    return this.nurseReportsEnd ? this.formatDateInputValue(this.nurseReportsEnd) : '';
+  }
+
+  private formatDateInputValue(d: Date): string {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  private loadNurseReportsForPeriod(start: Date, end: Date): void {
     this.nurseReportsLoading = true;
     this.nurseReportsExporting = false;
     this.nurseReportsMedication = null;
     this.nurseReportsCompliance = null;
     this.nurseReportsError = null;
-    const end = new Date();
-    const start = new Date();
-    start.setDate(start.getDate() - 7);
     this.nurseReportsStart = start;
     this.nurseReportsEnd = end;
     this.nurseReportsLoad.loadReportsBundle(start, end).subscribe({
@@ -1318,6 +1268,24 @@ export class NurseDashboardComponent implements OnInit, DoCheck {
         this.toastService.error(this.nurseReportsError);
       },
     });
+  }
+
+  applyNurseReportsPeriod(range: { start: string; end: string }): void {
+    const start = new Date(`${range.start}T00:00:00`);
+    const end = new Date(`${range.end}T23:59:59`);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start > end) {
+      this.toastService.warning(NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_NO_PERIOD_WARNING);
+      return;
+    }
+    this.loadNurseReportsForPeriod(start, end);
+  }
+
+  openNurseReportsModal(): void {
+    this.showNurseReportsModal = true;
+    const end = new Date();
+    const start = new Date();
+    start.setDate(start.getDate() - 7);
+    this.loadNurseReportsForPeriod(start, end);
   }
 
   closeNurseReportsModal(): void {

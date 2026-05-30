@@ -415,5 +415,22 @@ export class AdminService {
       body,
     });
   }
+
+  listBackups(): Observable<BackupListItem[]> {
+    return this.http
+      .get<{ backups: BackupListItem[] }>(`${environment.apiUrl}/backup`)
+      .pipe(map((r) => r.backups ?? []));
+  }
+
+  createBackup(type: 'full' | 'incremental' = 'full'): Observable<{ message: string; backup: BackupListItem }> {
+    return this.http.post<{ message: string; backup: BackupListItem }>(`${environment.apiUrl}/backup`, { type });
+  }
+}
+
+export interface BackupListItem {
+  filename: string;
+  size: number;
+  createdAt: string;
+  type?: 'full' | 'incremental';
 }
 

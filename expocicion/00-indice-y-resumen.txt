@@ -1,0 +1,118 @@
+================================================================================
+NURSEHELPER — ÍNDICE Y RESUMEN EJECUTIVO
+Documentación para exposición del proyecto
+Generado: 30 de mayo de 2026
+================================================================================
+
+1. QUÉ ES NURSEHELPER
+================================================================================
+
+NurseHelper es un sistema de gestión clínica orientado a centros de cuidado
+(residencias, clínicas, hospitales pequeños). Centraliza en una sola aplicación
+web las operaciones de:
+
+  - Administración (usuarios, áreas, camas, pacientes, horarios)
+  - Supervisión (coordinación de turnos, reportes globales)
+  - Enfermería (tareas del día, medicación, camas, notas clínicas, entrega)
+  - Farmacia (solicitudes, inventario, asistencia de turno)
+
+El proyecto es un monorepo con frontend SPA (Angular 20) y API REST (Express +
+TypeORM + MySQL 8).
+
+
+2. PROBLEMA QUE RESUELVE
+================================================================================
+
+  - Evita planillas dispersas y errores en la administración de medicación.
+  - Da visibilidad del cumplimiento de tareas y horarios por paciente y periodo.
+  - Separa responsabilidades por rol (cada usuario ve solo lo que le corresponde).
+  - Conecta enfermería con farmacia mediante solicitudes y entregas trazables.
+  - Permite coordinación entre turnos (notas de handover / coordinación).
+
+
+3. ROLES DE USUARIO Y RUTAS FRONTEND
+================================================================================
+
+  Rol          | Ruta principal        | Descripción breve
+  -------------|----------------------|------------------------------------------
+  admin        | /admin               | Configuración completa del centro
+  supervisor   | /supervisor          | Supervisión (reutiliza módulos admin)
+  nurse        | /nurse-dashboard     | Panel operativo diario de enfermería
+  pharmacy     | /pharmacy            | Gestión farmacéutica e inventario
+  pharmacy     | /asistencia          | Página de asistencia de turno farmacia
+
+Rutas públicas: /login, /register, /verify-email
+Ruta técnica (solo admin): /use-case-diagram
+Alias: /dashboard redirige a /nurse-dashboard
+
+El registro público crea usuarios solo con rol enfermería; admin asigna otros roles.
+
+
+4. STACK TECNOLÓGICO (RESUMEN)
+================================================================================
+
+  Capa          | Tecnología principal
+  --------------|--------------------------------------------------
+  Frontend      | Angular 20, TypeScript 5.9, RxJS, Zone.js
+  UI            | CSS neumórfico propio, Bootstrap Icons
+  Backend       | Node.js 20+, Express 4, TypeScript 5.3
+  Base de datos | MySQL 8, TypeORM 0.3 (migraciones, sin sync auto)
+  Auth          | JWT (Bearer), bcrypt en contraseñas
+  Tests FE      | Karma/Jasmine (unit), Playwright (E2E)
+  Tests BE      | Jest (unit + integration con Supertest)
+  CI            | GitHub Actions (.github/workflows/ci-cd.yml)
+  Despliegue    | Vercel (frontend), Railway u host Node (backend)
+
+
+5. CÓMO ARRANCAR EL PROYECTO (DESARROLLO)
+================================================================================
+
+  1. npm run install:all
+  2. cp backend/.env.example backend/.env.local  (editar MySQL y JWT_SECRET)
+  3. npm run migration:run
+  4. npm run dev
+
+URLs locales:
+  - Frontend: http://localhost:4200
+  - API:      http://localhost:3000
+  - Health:   http://localhost:3000/health
+
+Scripts útiles en la raíz: build, test, lint, tunnel (ngrok para demos remotas).
+
+
+6. ÍNDICE DE DOCUMENTOS EN ESTA CARPETA
+================================================================================
+
+  00-indice-y-resumen.txt      → Este archivo (visión general)
+  01-estructura-del-proyecto.txt → Carpetas, scripts, dependencias, puertos
+  02-arquitectura.txt          → Flujo cliente-servidor, capas, despliegue
+  03-componentes-frontend.txt  → Angular: dashboards, servicios, guards
+  04-componentes-backend.txt   → API: rutas, controladores, entidades
+  05-diseno-y-usabilidad.txt   → Estilo neumórfico, UX, accesibilidad
+  06-seguridad-calidad-y-mejoras.txt → Seguridad, pruebas, CI, evolución
+
+PROMPTS PARA GENERAR DIAGRAMAS (IA / Mermaid / draw.io):
+  prompts-diagramas-indice.txt     → Cómo usar los prompts
+  prompt-diagrama-arquitectura-sistema.txt
+  prompt-diagrama-arquitectura-despliegue.txt
+  prompt-diagrama-casos-de-uso.txt
+  prompt-diagrama-flujo-autenticacion.txt
+  prompt-diagrama-flujo-medicacion-farmacia.txt
+  prompt-diagrama-flujo-tareas-reportes.txt
+  prompt-diagrama-modelo-datos-er.txt
+  prompt-diagrama-componentes-frontend.txt
+  prompt-diagrama-seguridad.txt
+
+
+7. PARA LA EXPOSICIÓN ORAL (1 MINUTO)
+================================================================================
+
+  - Presenta NurseHelper como plataforma clínica multi-rol, no solo un CRUD.
+  - Destaca la separación enfermería / farmacia / administración con un solo backend.
+  - Menciona Angular 20 + Express + MySQL y despliegue real (Vercel + Railway).
+  - Indica que hay guards por rol, reportes de cumplimiento y trazabilidad de medicación.
+  - Señala la carpeta expocicion/ como guía para profundizar en cada tema.
+
+================================================================================
+Fin del documento 00
+================================================================================

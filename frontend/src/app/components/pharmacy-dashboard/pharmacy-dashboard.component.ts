@@ -15,6 +15,10 @@ import { DashboardShellComponent } from '../../shared/components/dashboard-shell
 import { AdminTableRowActionsModalComponent } from '../../shared/components/admin-table-row-actions-modal/admin-table-row-actions-modal.component';
 import { ExportService } from '../../shared/services/export.service';
 import { BootstrapIconComponent } from '../../shared/components/bootstrap-icon/bootstrap-icon.component';
+import {
+  buildPharmacyHistoryExportRows,
+  buildPharmacyInventoryExportRows,
+} from './pharmacy-export.helpers';
 
 interface MedicationRequest {
   id: number;
@@ -170,6 +174,7 @@ export class PharmacyDashboardComponent implements OnInit {
   readonly pharmacyThNurse = $localize`:@@pharmacyModule.thNurse:Enfermera`;
   readonly pharmacyThQuantity = $localize`:@@pharmacyModule.thQuantity:Cantidad`;
   readonly pharmacyThArea = $localize`:@@pharmacyModule.thArea:Área`;
+  readonly pharmacyThQueueTime = $localize`:@@pharmacyModule.thQueueTime:Tiempo en cola`;
   readonly pharmacyRequestFilterOptions: ReadonlyArray<{ value: string; label: string }> = [
     { value: 'all', label: $localize`:@@pharmacyModule.filterAll:Todas` },
     { value: 'pending', label: $localize`:@@pharmacyModule.filterPending:Pendientes` },
@@ -273,15 +278,15 @@ export class PharmacyDashboardComponent implements OnInit {
   readonly pharmacyDeliveryConfirmBtn = $localize`:@@pharmacyModule.deliveryConfirmBtn:Confirmar Entrega`;
 
   readonly pharmacyRejectTitle = $localize`:@@pharmacyModule.rejectTitle:Rechazar Solicitud`;
-  readonly pharmacyRejectReasonLabel = $localize`:@@pharmacyModule.rejectReasonLabel:Razón del Rechazo *`;
+  readonly pharmacyRejectReasonLabel = $localize`:@@pharmacyModule.rejectReasonLabel:Razón del Rechazo`;
   readonly pharmacyRejectReasonPlaceholder = $localize`:@@pharmacyModule.rejectReasonPlaceholder:Ej: Medicamento no disponible en inventario, requiere autorización especial, etc.`;
   readonly pharmacyRejectReasonHint = $localize`:@@pharmacyModule.rejectReasonHint:Es obligatorio proporcionar una razón para rechazar la solicitud`;
   readonly pharmacyRejectConfirmBtn = $localize`:@@pharmacyModule.rejectConfirmBtn:Confirmar Rechazo`;
 
   readonly pharmacyAddMedModalTitle = $localize`:@@pharmacyModule.addMedModalTitle:Agregar Medicamento al Inventario`;
-  readonly pharmacyAddMedNameLabel = $localize`:@@pharmacyModule.addMedNameLabel:Nombre del Medicamento *`;
+  readonly pharmacyAddMedNameLabel = $localize`:@@pharmacyModule.addMedNameLabel:Nombre del Medicamento`;
   readonly pharmacyAddMedNamePlaceholder = $localize`:@@pharmacyModule.addMedNamePlaceholder:Ej: Paracetamol, Ibuprofeno, etc.`;
-  readonly pharmacyAddMedDosageLabel = $localize`:@@pharmacyModule.addMedDosageLabel:Dosis *`;
+  readonly pharmacyAddMedDosageLabel = $localize`:@@pharmacyModule.addMedDosageLabel:Dosis`;
   readonly pharmacyAddMedDosagePlaceholder = $localize`:@@pharmacyModule.addMedDosagePlaceholder:Ej: 500mg, 10ml, etc.`;
   readonly pharmacyAddMedDescLabel = $localize`:@@pharmacyModule.addMedDescLabel:Descripción`;
   readonly pharmacyAddMedDescPlaceholder = $localize`:@@pharmacyModule.addMedDescPlaceholder:Descripción del medicamento...`;
@@ -767,16 +772,60 @@ export class PharmacyDashboardComponent implements OnInit {
   }
 
   filterRequests(): void {
-    this.filteredRequests = this.medicationRequests.filter(req => {
-      const matchesSearch = !this.searchTerm ||
-        req.medication.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        req.requestedBy.toLowerCase().includes(this.searchTerm.toLowerCase());
+    const priorityOrder: Record<MedicationRequest['priority'], number> = {
+      urgent: 0,
+      high: 1,
+      normal: 2,
+      low: 3,
+    };
 
-      const matchesStatus = this.requestFilter === 'all' || req.status === this.requestFilter;
+    this.filteredRequests = this.medicationRequests
+      .filter((req) => {
+        const matchesSearch =
+          !this.searchTerm ||
+          req.medication.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+          req.requestedBy.toLowerCase().includes(this.searchTerm.toLowerCase());
 
-      return matchesSearch && matchesStatus;
-    });
+        const matchesStatus = this.requestFilter === 'all' || req.status === this.requestFilter;
+
+        return matchesSearch && matchesStatus;
+      })
+      .sort((a, b) => {
+        const pa = priorityOrder[a.priority] ?? 2;
+        const pb = priorityOrder[b.priority] ?? 2;
+        if (pa !== pb) return pa - pb;
+
+        const ta = a.requestedAtRaw ? new Date(a.requestedAtRaw).getTime() : 0;
+        const tb = b.requestedAtRaw ? new Date(b.requestedAtRaw).getTime() : 0;
+        return ta - tb;
+      });
     this.persistUiState();
+  }
+
+  getRequestQueueMinutes(request: MedicationRequest): number | null {
+    const raw =
+      request.status === 'pending'
+        ? request.requestedAtRaw
+        : request.statusUpdatedAtRaw ?? request.requestedAtRaw;
+    if (!raw) return null;
+    return Math.max(0, Math.floor((Date.now() - new Date(raw).getTime()) / 60_000));
+  }
+
+  formatQueueWait(request: MedicationRequest): string {
+    const mins = this.getRequestQueueMinutes(request);
+    if (mins == null) return '—';
+    if (mins < 60) return `${mins} min`;
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return m > 0 ? `${h} h ${m} min` : `${h} h`;
+  }
+
+  requestQueueWaitClass(request: MedicationRequest): string {
+    const mins = this.getRequestQueueMinutes(request);
+    if (mins == null) return '';
+    if (mins >= 60) return 'queue-wait--critical';
+    if (mins >= 30) return 'queue-wait--warning';
+    return '';
   }
 
   filterHistory(): void {
@@ -1371,18 +1420,30 @@ export class PharmacyDashboardComponent implements OnInit {
   }
 
   private buildHistoryExportRows(): Record<string, string | number>[] {
-    return this.filteredHistory.map((item) => ({
-      [this.pharmacyExpColType]: this.historyExportKindLabel(item),
-      [this.pharmacyExpColId]: item.deliveryId || item.requestId || '',
-      [this.pharmacyExpColDate]: this.getHistoryDate(item),
-      [this.pharmacyExpColMedication]: item.medication,
-      [this.pharmacyExpColDosage]: item.dosage,
-      [this.pharmacyExpColQuantity]: item.quantity,
-      [this.pharmacyExpColRequestedBy]: item.requestedBy,
-      [this.pharmacyExpColPatients]: this.formatHistoryPatients(item),
-      [this.pharmacyExpColDeliveredOrReason]: this.historyDeliveredOrReason(item),
-      [this.pharmacyExpColNotes]: item.type === 'delivery' ? item.notes || '' : '',
+    const rows = this.filteredHistory.map((item) => ({
+      type: this.historyExportKindLabel(item),
+      id: item.deliveryId || item.requestId || '',
+      date: this.getHistoryDate(item),
+      medication: item.medication,
+      dosage: item.dosage,
+      quantity: item.quantity,
+      requestedBy: item.requestedBy,
+      patients: this.formatHistoryPatients(item),
+      deliveredOrReason: this.historyDeliveredOrReason(item),
+      notes: item.type === 'delivery' ? item.notes || '' : '',
     }));
+    return buildPharmacyHistoryExportRows(rows, {
+      colType: this.pharmacyExpColType,
+      colId: this.pharmacyExpColId,
+      colDate: this.pharmacyExpColDate,
+      colMedication: this.pharmacyExpColMedication,
+      colDosage: this.pharmacyExpColDosage,
+      colQuantity: this.pharmacyExpColQuantity,
+      colRequestedBy: this.pharmacyExpColRequestedBy,
+      colPatients: this.pharmacyExpColPatients,
+      colDeliveredOrReason: this.pharmacyExpColDeliveredOrReason,
+      colNotes: this.pharmacyExpColNotes,
+    });
   }
 
   private getInventoryExportHeaders(): string[] {
@@ -1401,20 +1462,29 @@ export class PharmacyDashboardComponent implements OnInit {
   }
 
   private buildInventoryExportRows(): Record<string, string | number>[] {
-    return this.filteredInventory.map((item) => {
-      const cad = item.expiryDateRaw ? String(item.expiryDateRaw).slice(0, 10) : '';
-      return {
-        [this.pharmacyExpColMedication]: item.medication,
-        [this.pharmacyExpColDosage]: item.dosage,
-        [this.pharmacyExpColDescription]: item.description || '',
-        [this.pharmacyExpColStockCurrent]: item.stock,
-        [this.pharmacyExpColStockMin]: item.minStock,
-        [this.pharmacyExpColLocation]: item.location,
-        [this.pharmacyExpColExpiry]: cad,
-        [this.pharmacyExpColStatus]: this.getInventoryStatusLabel(item),
-        [this.pharmacyExpColExpiryClass]: item.expiryClassification,
-        [this.pharmacyExpColDaysToExpiry]: item.daysToExpiry ?? '',
-      };
+    const rows = this.filteredInventory.map((item) => ({
+      medication: item.medication,
+      dosage: item.dosage,
+      description: item.description || '',
+      stock: item.stock,
+      minStock: item.minStock,
+      location: item.location,
+      expiry: item.expiryDateRaw ? String(item.expiryDateRaw).slice(0, 10) : '',
+      statusLabel: this.getInventoryStatusLabel(item),
+      expiryClassification: item.expiryClassification,
+      daysToExpiry: item.daysToExpiry ?? '',
+    }));
+    return buildPharmacyInventoryExportRows(rows, {
+      colMedication: this.pharmacyExpColMedication,
+      colDosage: this.pharmacyExpColDosage,
+      colDescription: this.pharmacyExpColDescription,
+      colStockCurrent: this.pharmacyExpColStockCurrent,
+      colStockMin: this.pharmacyExpColStockMin,
+      colLocation: this.pharmacyExpColLocation,
+      colExpiry: this.pharmacyExpColExpiry,
+      colStatus: this.pharmacyExpColStatus,
+      colExpiryClass: this.pharmacyExpColExpiryClass,
+      colDaysToExpiry: this.pharmacyExpColDaysToExpiry,
     });
   }
 

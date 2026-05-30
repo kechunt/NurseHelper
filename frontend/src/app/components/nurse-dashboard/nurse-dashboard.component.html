@@ -14,6 +14,7 @@
   (logoutClick)="logout()"
 >
   <div id="nurse-dashboard-shell-header-actions" appDashboardHeaderActions class="nurse-header-actions">
+    <app-offline-status-banner />
     <app-in-app-notifications-bell dashboardKind="nurse" />
     <app-nurse-dashboard-header-search (debounced)="onHeaderPatientSearch($event)" />
   </div>
@@ -225,6 +226,7 @@
       (handoverAcknowledgeRequested)="acknowledgeHandoverRead()"
       (handoverSaveRequested)="saveHandoverNote()"
       (nurseReportsDismissed)="closeNurseReportsModal()"
+      (nurseReportsPeriodApply)="applyNurseReportsPeriod($event)"
       (nurseReportsCsvDownload)="downloadNurseReportCsv($event)"
       (nurseReportsPdfDownload)="downloadNurseReportPdf($event)"
       (tasksQuickPatientFilterChange)="tasksPatientFilter = $event; applyTasksFilters()"

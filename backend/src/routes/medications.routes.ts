@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import { authMiddleware } from '../middleware/auth.middleware';
+import { validateDto } from '../middleware/validation.middleware';
+import { AddMedicationDto, SuspendMedicationDto, DeleteMedicationDto } from '../dto/medication.dto';
 import {
   addMedication,
   suspendMedication,
@@ -94,7 +96,7 @@ router.get('/patient/:patientId', getPatientMedications);
  *       201:
  *         description: Medicamento agregado exitosamente
  */
-router.post('/', addMedication);
+router.post('/', validateDto(AddMedicationDto), addMedication);
 
 /**
  * @swagger
@@ -136,7 +138,7 @@ router.post('/', addMedication);
  *       200:
  *         description: Medicamento suspendido exitosamente
  */
-router.put('/patient/:patientId/:medication/suspend', suspendMedication);
+router.put('/patient/:patientId/:medication/suspend', validateDto(SuspendMedicationDto), suspendMedication);
 
 /**
  * @swagger
@@ -199,6 +201,6 @@ router.put('/patient/:patientId/:medication/reactivate', reactivateMedication);
  *       200:
  *         description: Medicamento eliminado exitosamente
  */
-router.delete('/patient/:patientId/:medication', deleteMedication);
+router.delete('/patient/:patientId/:medication', validateDto(DeleteMedicationDto), deleteMedication);
 
 export default router;
