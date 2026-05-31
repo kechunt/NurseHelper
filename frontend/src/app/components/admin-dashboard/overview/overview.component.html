@@ -94,15 +94,38 @@
   <section class="overview-backups-card" aria-labelledby="overview-backups-heading">
     <div class="overview-backups-header">
       <h3 id="overview-backups-heading" class="overview-backups-title">{{ adminOverviewBackupTitle }}</h3>
-      <button
-        type="button"
-        class="overview-backup-btn"
-        (click)="createBackup()"
-        [disabled]="creatingBackup || loadingBackups"
-      >
-        {{ adminOverviewBackupCreate }}
-      </button>
     </div>
+
+    <p class="overview-backups-note">{{ adminOverviewBackupProductionNote }}</p>
+
+    <div class="overview-backup-form">
+      <label class="overview-backup-label" for="overview-backup-name">{{ adminOverviewBackupNameLabel }}</label>
+      <div class="overview-backup-form-row">
+        <input
+          id="overview-backup-name"
+          type="text"
+          class="overview-backup-input"
+          [(ngModel)]="backupName"
+          [disabled]="creatingBackup || loadingBackups"
+          maxlength="48"
+          placeholder="prod_mayo"
+          autocomplete="off"
+        />
+        <button
+          type="button"
+          class="overview-backup-btn"
+          (click)="createBackup()"
+          [disabled]="creatingBackup || loadingBackups"
+        >
+          {{ creatingBackup ? 'Creando…' : adminOverviewBackupCreate }}
+        </button>
+      </div>
+      <p class="overview-backup-hint">{{ adminOverviewBackupNameHint }}</p>
+    </div>
+
+    <p *ngIf="lastBackupFilename && !loadingBackups" class="overview-backup-last">
+      <strong>{{ adminOverviewBackupLast }}:</strong> {{ lastBackupFilename }}
+    </p>
 
     <p *ngIf="loadingBackups" class="loading-state" i18n="@@adminOverview.backupLoading">Cargando respaldos...</p>
 

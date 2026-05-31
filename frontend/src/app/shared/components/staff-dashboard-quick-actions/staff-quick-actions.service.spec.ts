@@ -28,7 +28,9 @@ describe('StaffQuickActionsService', () => {
   const reportMock = {
     generateMedicationReport: jasmine.createSpy('generateMedicationReport').and.returnValue(of({ report: [] })),
     generateComplianceStats: jasmine.createSpy('generateComplianceStats').and.returnValue(of({ stats: null })),
-    exportReport: jasmine.createSpy('exportReport').and.returnValue(of(new Blob(['x']))),
+    exportReport: jasmine
+      .createSpy('exportReport')
+      .and.returnValue(of({ blob: new Blob(['x']), filename: 'reporte-test.csv' })),
   };
   const toastMock = {
     warning: jasmine.createSpy('warning'),
@@ -76,18 +78,31 @@ describe('StaffQuickActionsService', () => {
     expect(toastMock.warning).toHaveBeenCalledWith(jasmine.stringMatching(/coordinaci/));
   });
 
-  it('downloadPdf descarga reporte PDF vía ReportService', () => {
+  it('downloadPdf descarga reporte PDF vía ReportService con filtro KPI', () => {
     const svc = TestBed.inject(StaffQuickActionsService);
     svc.openReports();
-    svc.downloadPdf('compliance');
+    svc.downloadPdf({ kind: 'compliance', complianceFilter: 'missed' });
     expect(reportMock.exportReport).toHaveBeenCalledWith(
       'compliance',
       'pdf',
       jasmine.any(Date),
       jasmine.any(Date),
       undefined,
-      null
+      null,
+      'missed',
     );
     expect(toastMock.success).toHaveBeenCalled();
+  });
+
+  it('applyReportsPeriod recarga datos con fechas normalizadas', () => {
+    const svc = TestBed.inject(StaffQuickActionsService);
+    svc.openReports();
+    reportMock.generateMedicationReport.calls.reset();
+    reportMock.generateComplianceStats.calls.reset();
+    svc.applyReportsPeriod({ start: '2026-05-01', end: '2026-05-15' });
+    expect(svc.reportsStartIso()).toBe('2026-05-01');
+    expect(svc.reportsEndIso()).toBe('2026-05-15');
+    expect(reportMock.generateMedicationReport).toHaveBeenCalled();
+    expect(reportMock.generateComplianceStats).toHaveBeenCalled();
   });
 });

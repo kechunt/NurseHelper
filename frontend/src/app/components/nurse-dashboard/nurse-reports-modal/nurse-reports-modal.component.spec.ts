@@ -64,17 +64,17 @@ describe('NurseReportsModalComponent', () => {
     sub.unsubscribe();
   });
 
-  it('emite csvDownload y pdfDownload al pulsar botones de exportación', () => {
-    const csvKinds: Array<'compliance' | 'medication'> = [];
-    const pdfKinds: Array<'compliance' | 'medication'> = [];
-    const subCsv = fixture.componentInstance.csvDownload.subscribe((k) => csvKinds.push(k));
-    const subPdf = fixture.componentInstance.pdfDownload.subscribe((k) => pdfKinds.push(k));
+  it('emite csvDownload y pdfDownload con filtro KPI activo', () => {
+    const csvRequests: Array<{ kind: string; complianceFilter: string | null }> = [];
+    const pdfRequests: Array<{ kind: string; complianceFilter: string | null }> = [];
+    const subCsv = fixture.componentInstance.csvDownload.subscribe((r) => csvRequests.push(r));
+    const subPdf = fixture.componentInstance.pdfDownload.subscribe((r) => pdfRequests.push(r));
+    (fixture.nativeElement.querySelector('#nurse-reports-kpi-completed-btn') as HTMLButtonElement).click();
+    fixture.detectChanges();
     (fixture.nativeElement.querySelector('#nurse-reports-download-csv-compliance-btn') as HTMLButtonElement).click();
-    (fixture.nativeElement.querySelector('#nurse-reports-download-csv-medication-btn') as HTMLButtonElement).click();
-    (fixture.nativeElement.querySelector('#nurse-reports-download-pdf-compliance-btn') as HTMLButtonElement).click();
     (fixture.nativeElement.querySelector('#nurse-reports-download-pdf-medication-btn') as HTMLButtonElement).click();
-    expect(csvKinds).toEqual(['compliance', 'medication']);
-    expect(pdfKinds).toEqual(['compliance', 'medication']);
+    expect(csvRequests).toEqual([{ kind: 'compliance', complianceFilter: 'completed' }]);
+    expect(pdfRequests).toEqual([{ kind: 'medication', complianceFilter: 'completed' }]);
     subCsv.unsubscribe();
     subPdf.unsubscribe();
   });
@@ -104,7 +104,7 @@ describe('NurseReportsModalComponent', () => {
   });
 
   it('línea de periodo muestra prefijo Periodo localizable', () => {
-    const p = fixture.nativeElement.querySelector('.nurse-reports-period-line') as HTMLElement;
+    const p = fixture.nativeElement.querySelector('.nurse-reports-period-info') as HTMLElement;
     expect(p?.textContent).toContain('Periodo');
     expect(p?.textContent).toContain('2026-01-01');
   });

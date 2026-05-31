@@ -13,6 +13,7 @@ import type { TreatmentTodayItem } from '../treatment-today-item.model';
 import type { HistoryOutcomeFilter, HistoryPeriodFilter } from '../nurse-patient-history.helpers';
 import { NurseHandoverModalComponent } from '../nurse-handover-modal/nurse-handover-modal.component';
 import { NurseReportsModalComponent } from '../nurse-reports-modal/nurse-reports-modal.component';
+import type { ReportDownloadRequest } from '../../../services/report.service';
 import { NurseTasksQuickModalComponent } from '../nurse-tasks-quick-modal/nurse-tasks-quick-modal.component';
 import { NursePendingTaskDetailModalComponent } from '../nurse-pending-task-detail-modal/nurse-pending-task-detail-modal.component';
 import { NursePharmacyPatientsModalComponent } from '../nurse-pharmacy-patients-modal/nurse-pharmacy-patients-modal.component';
@@ -128,8 +129,8 @@ export class NurseDashboardOverlaysStackComponent {
 
   @Output() readonly nurseReportsDismissed = new EventEmitter<void>();
   @Output() readonly nurseReportsPeriodApply = new EventEmitter<{ start: string; end: string }>();
-  @Output() readonly nurseReportsCsvDownload = new EventEmitter<'compliance' | 'medication'>();
-  @Output() readonly nurseReportsPdfDownload = new EventEmitter<'compliance' | 'medication'>();
+  @Output() readonly nurseReportsCsvDownload = new EventEmitter<ReportDownloadRequest>();
+  @Output() readonly nurseReportsPdfDownload = new EventEmitter<ReportDownloadRequest>();
   @Output() readonly tasksQuickPatientFilterChange = new EventEmitter<string>();
   @Output() readonly tasksQuickHourFilterChange = new EventEmitter<string>();
   @Output() readonly tasksQuickClearFilters = new EventEmitter<void>();

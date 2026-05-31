@@ -217,6 +217,9 @@
       </div>
     </div>
     <div class="modal-footer nurse-reports-modal-footer">
+      <p class="nurse-reports-export-note" i18n="@@nurseReportsModal.exportNote">
+        La exportación PDF/CSV incluirá el ámbito «{{ resolveScopeLine() }}», el filtro KPI «{{ activeKpiFilterLabel() }}» y el periodo seleccionado.
+      </p>
       <button
         id="nurse-reports-footer-close-btn"
         type="button"
@@ -230,7 +233,7 @@
         id="nurse-reports-download-pdf-compliance-btn"
         type="button"
         class="btn-secondary-neuro"
-        (click)="pdfDownload.emit('compliance')"
+        (click)="emitPdfDownload('compliance')"
         [disabled]="loading || !!error || exporting"
         title="Descargar PDF de cumplimiento"
         i18n-title="@@nurseReportsModal.downloadPdfComplianceTitle"
@@ -241,7 +244,7 @@
         id="nurse-reports-download-pdf-medication-btn"
         type="button"
         class="btn-secondary-neuro"
-        (click)="pdfDownload.emit('medication')"
+        (click)="emitPdfDownload('medication')"
         [disabled]="loading || !!error || exporting"
         title="Descargar PDF de medicación"
         i18n-title="@@nurseReportsModal.downloadPdfMedicationTitle"
@@ -252,7 +255,7 @@
         id="nurse-reports-download-csv-compliance-btn"
         type="button"
         class="btn-secondary-neuro"
-        (click)="csvDownload.emit('compliance')"
+        (click)="emitCsvDownload('compliance')"
         [disabled]="loading || !!error || exporting"
         title="Descargar CSV de cumplimiento"
         i18n-title="@@nurseReportsModal.downloadCsvComplianceTitle"
@@ -263,7 +266,7 @@
         id="nurse-reports-download-csv-medication-btn"
         type="button"
         class="btn-secondary-neuro"
-        (click)="csvDownload.emit('medication')"
+        (click)="emitCsvDownload('medication')"
         [disabled]="loading || !!error || exporting"
         title="Descargar CSV de medicación"
         i18n-title="@@nurseReportsModal.downloadCsvMedicationTitle"

@@ -1,7 +1,7 @@
 import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { AuthService } from '../services/auth.service';
-import { catchError, timeout, retry, throwError, timer } from 'rxjs';
+import { catchError, timeout, retry, throwError, timer, defer } from 'rxjs';
 
 // Timeout por defecto: 15 segundos
 const DEFAULT_TIMEOUT = 15000;
@@ -31,7 +31,16 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     req = req.clone({ headers });
   }
 
-  return next(req).pipe(
+  let attempt = 0;
+
+  return defer(() => {
+    const outgoing =
+      attempt > 0 && !req.headers.has('X-Skip-Loading')
+        ? req.clone({ setHeaders: { 'X-Skip-Loading': 'true' } })
+        : req;
+    attempt += 1;
+    return next(outgoing);
+  }).pipe(
     // Aplicar timeout
     timeout(timeoutValue),
     // Reintentar solo para errores de red (status 0)
@@ -45,22 +54,29 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
           return timer(delayMs);
         }
         return throwError(() => error);
-      }
+      },
     }),
     catchError((error: HttpErrorResponse | any) => {
       // Manejo de errores mejorado
       // Verificar si es error de timeout o conexión
-      const isTimeoutError = error.name === 'TimeoutError' || (error instanceof Error && error.name === 'TimeoutError');
+      const isTimeoutError =
+        error.name === 'TimeoutError' || (error instanceof Error && error.name === 'TimeoutError');
       const isConnectionError = error.status === 0 || isTimeoutError;
-      
+
       if (isConnectionError) {
-        console.error(' Error de conexión:', 'No se puede conectar al servidor. Verifica que el backend esté funcionando.');
+        console.error(
+          ' Error de conexión:',
+          'No se puede conectar al servidor. Verifica que el backend esté funcionando.'
+        );
         // Crear un error más descriptivo
         const connectionError = new HttpErrorResponse({
-          error: { message: 'No se puede establecer conexión con el servidor. Verifica que el backend esté corriendo en http://localhost:3000' },
+          error: {
+            message:
+              'No se puede establecer conexión con el servidor. Verifica que el backend esté corriendo en http://localhost:3000',
+          },
           status: 0,
           statusText: 'Connection Error',
-          url: req.url
+          url: req.url,
         });
         return throwError(() => connectionError);
       } else if (error.status === 401) {
@@ -74,9 +90,8 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       } else if (error.status >= 500) {
         console.error(' Error del servidor:', error.message);
       }
-      
+
       return throwError(() => error);
     })
   );
 };
-

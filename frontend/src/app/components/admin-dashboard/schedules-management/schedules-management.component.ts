@@ -133,6 +133,15 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
   /** Sustituye `prompt()` al elegir día de descanso en asignación semanal / rápida. */
   showDayOffPickerModal = false;
   private dayOffPickerResolve: ((value: string | null) => void) | null = null;
+
+  /** Modal: asignar una o más enfermeras a un área sin cobertura (desde aviso en toma de lista). */
+  showAssignAreaCoverageModal = false;
+  assignCoverageAreaId: number | null = null;
+  assignCoverageSelectedNurseIds = new Set<number>();
+  /** Enfermeras sugeridas por área/turno (historial o asignación actual). */
+  assignCoverageDefaultNurseIds = new Set<number>();
+  assignCoverageSaving = false;
+  assignCoverageLoadingDefaults = false;
   
   days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
   dayNames: { [key: string]: string } = {
@@ -157,6 +166,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
 
   readonly schedMgmtWarnAreaNotExists = $localize`:@@schedMgmt.warnAreaNotExists:El área indicada no existe.`;
   readonly schedToastAttendanceAreaHint = $localize`:@@schedMgmt.toastAttendanceAreaHint:Toma de lista filtrada por esta área. Marca «Presente» o «Tarde» a quien cubra el turno.`;
+  readonly schedToastAreaCoverageAssigned = $localize`:@@schedMgmt.toastAreaCoverageAssigned:Enfermeras asignadas al área. Márcalas presentes en la toma de lista si aún no lo están.`;
   readonly schedErrLoadWeekly = $localize`:@@schedMgmt.errLoadWeekly:Error al cargar los turnos. Revisa la consola para más detalles.`;
   readonly schedToastNurseSummaryOk = $localize`:@@schedMgmt.toastNurseSummaryOk:Área y turno base actualizados para la enfermera`;
   readonly schedMgmtErrUnknown = $localize`:@@schedMgmt.errUnknown:Error desconocido`;
@@ -185,6 +195,8 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
   readonly schedHtmlModalListFallback = $localize`:@@schedMgmtHtml.modalListFallback:Toma de lista`;
   readonly schedHtmlHistoryModalTitle = $localize`:@@schedMgmtHtml.historyModalTitle:Historial de turnos y asistencia`;
   readonly schedHtmlDayOffModalTitle = $localize`:@@schedMgmtHtml.dayOffModalTitle:Día de descanso`;
+  readonly schedHtmlSaving = $localize`:@@schedMgmtHtml.savingLabel:Guardando…`;
+  readonly schedHtmlSaveCoverageAssign = $localize`:@@schedMgmtHtml.saveCoverageAssign:Asignar al área`;
 
   constructor(
     private adminService: AdminService,
@@ -1020,7 +1032,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
     return items;
   }
 
-  get uncoveredAreasInCurrentShift(): string[] {
+  get uncoveredAreasInCurrentShift(): Array<{ id: number; name: string }> {
     const activeStatuses = new Set<ShiftAttendanceStatus>(['present', 'late']);
     const activeAreaIds = new Set<number>();
 
@@ -1033,12 +1045,167 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
     return (this.areas || [])
       .filter((area) => area?.isActive !== false)
       .filter((area) => area?.id != null && !activeAreaIds.has(area.id))
-      .map((area) => area.name)
-      .sort((a, b) => String(a).localeCompare(String(b), 'es', { sensitivity: 'base' }));
+      .map((area) => ({ id: area.id as number, name: String(area.name) }))
+      .sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }));
   }
 
   get uncoveredAreasLabel(): string {
-    return this.uncoveredAreasInCurrentShift.join(', ');
+    return this.uncoveredAreasInCurrentShift.map((a) => a.name).join(', ');
+  }
+
+  openAssignAreaCoverageModal(areaId: number): void {
+    const parsed = parseInt(String(areaId), 10);
+    if (!Number.isFinite(parsed)) {
+      return;
+    }
+    this.assignCoverageAreaId = parsed;
+    this.assignCoverageSelectedNurseIds = new Set();
+    this.assignCoverageDefaultNurseIds = new Set();
+    this.assignCoverageSaving = false;
+    this.assignCoverageLoadingDefaults = true;
+    this.showAssignAreaCoverageModal = true;
+
+    const shiftId = this.selectedShiftAttendanceId;
+    const from = new Date();
+    from.setDate(from.getDate() - 90);
+    const dateFrom = from.toISOString().split('T')[0];
+
+    this.shiftsService
+      .getShiftAttendanceHistory({
+        dateFrom,
+        shiftId: shiftId ?? undefined,
+        limit: 400,
+      })
+      .subscribe({
+        next: (history) => this.applyCoverageModalDefaults(parsed, history || []),
+        error: () => this.applyCoverageModalDefaults(parsed, []),
+      });
+  }
+
+  private applyCoverageModalDefaults(areaId: number, history: ShiftAttendanceHistoryItem[]): void {
+    const defaults = this.resolveDefaultNurseIdsForArea(areaId, history);
+    this.assignCoverageDefaultNurseIds = new Set(defaults);
+    this.assignCoverageSelectedNurseIds = new Set(defaults);
+    this.assignCoverageLoadingDefaults = false;
+  }
+
+  private resolveDefaultNurseIdsForArea(
+    areaId: number,
+    history: ShiftAttendanceHistoryItem[],
+  ): number[] {
+    const ids = new Set<number>();
+    const activeStatuses = new Set<ShiftAttendanceStatus>(['present', 'late']);
+    const shiftId = this.selectedShiftAttendanceId;
+
+    for (const nurse of this.nurses) {
+      if (nurse.id != null && nurse.assignedAreaId === areaId) {
+        ids.add(nurse.id as number);
+      }
+    }
+
+    if (shiftId && history.length) {
+      for (const row of history) {
+        if (row.shiftId !== shiftId || !activeStatuses.has(row.status)) {
+          continue;
+        }
+        const nurseArea =
+          row.assignedAreaId ?? this.nurses.find((n) => n.id === row.nurseId)?.assignedAreaId ?? null;
+        if (nurseArea === areaId) {
+          ids.add(row.nurseId);
+        }
+      }
+
+      if (ids.size === 0) {
+        const sorted = [...history]
+          .filter((row) => row.shiftId === shiftId && activeStatuses.has(row.status))
+          .sort((a, b) => String(b.date).localeCompare(String(a.date)));
+        for (const row of sorted) {
+          const nurseArea =
+            row.assignedAreaId ?? this.nurses.find((n) => n.id === row.nurseId)?.assignedAreaId ?? null;
+          if (nurseArea === areaId) {
+            ids.add(row.nurseId);
+            break;
+          }
+        }
+      }
+    }
+
+    return [...ids];
+  }
+
+  closeAssignAreaCoverageModal(): void {
+    this.showAssignAreaCoverageModal = false;
+    this.assignCoverageAreaId = null;
+    this.assignCoverageSelectedNurseIds = new Set();
+    this.assignCoverageDefaultNurseIds = new Set();
+    this.assignCoverageSaving = false;
+    this.assignCoverageLoadingDefaults = false;
+  }
+
+  getAssignAreaCoverageModalTitle(): string {
+    const areaName = this.getAreaName(this.assignCoverageAreaId);
+    const shiftLabel = this.getResolvedShiftLabelForDisplay();
+    return $localize`:@@schedMgmtHtml.assignAreaCoverageTitle:Asignar enfermeras · ${areaName}:area: · ${shiftLabel}:shift:`;
+  }
+
+  getCoverageAreaAssignAria(areaName: string): string {
+    return $localize`:@@schedMgmtHtml.coverageAreaAssignAria:Asignar enfermeras al área ${areaName}:area:`;
+  }
+
+  getCoverageAssignNurseLabel(nurse: User): string {
+    const name = `${nurse.firstName || ''} ${nurse.lastName || ''}`.trim() || nurse.username || `#${nurse.id}`;
+    const area = nurse.assignedAreaId ? this.getAreaName(nurse.assignedAreaId) : this.schedNoArea;
+    return `${name} · ${area}`;
+  }
+
+  isCoverageNurseSelected(nurseId: number | undefined | null): boolean {
+    return nurseId != null && this.assignCoverageSelectedNurseIds.has(nurseId);
+  }
+
+  isCoverageDefaultNurse(nurseId: number | undefined | null): boolean {
+    return nurseId != null && this.assignCoverageDefaultNurseIds.has(nurseId);
+  }
+
+  toggleCoverageNurse(nurseId: number | undefined | null, checked: boolean): void {
+    if (nurseId == null) {
+      return;
+    }
+    const next = new Set(this.assignCoverageSelectedNurseIds);
+    if (checked) {
+      next.add(nurseId);
+    } else {
+      next.delete(nurseId);
+    }
+    this.assignCoverageSelectedNurseIds = next;
+  }
+
+  saveAssignAreaCoverageModal(): void {
+    const areaId = this.assignCoverageAreaId;
+    if (areaId == null || this.assignCoverageSelectedNurseIds.size === 0) {
+      this.toastService.warning(this.schedWarnSelectNurses);
+      return;
+    }
+
+    this.assignCoverageSaving = true;
+    const updates = [...this.assignCoverageSelectedNurseIds].map((nurseId) =>
+      this.adminService.updateUser(nurseId, { assignedAreaId: areaId }),
+    );
+
+    forkJoin(updates).subscribe({
+      next: () => {
+        this.assignCoverageSaving = false;
+        this.toastService.success(this.schedToastAreaCoverageAssigned);
+        this.closeAssignAreaCoverageModal();
+        this.loadNurses();
+      },
+      error: (error) => {
+        this.assignCoverageSaving = false;
+        const detail = error?.error?.message || error?.message || this.schedMgmtErrUnknown;
+        this.toastService.error(
+          $localize`:@@schedMgmt.errAssignAreaCoverage:Error al asignar enfermeras al área: ${detail}:msg:`,
+        );
+      },
+    });
   }
 
   formatDateTime(value?: string | null): string {

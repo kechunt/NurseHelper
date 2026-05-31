@@ -2,10 +2,12 @@ import { FormsModule } from '@angular/forms';
 import { Component, EventEmitter, Input, OnChanges, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ModalFocusTrapDirective } from '../../../shared/directives/modal-focus-trap.directive';
-import { ComplianceStats, MedicationReport } from '../../../services/report.service';
+import { ComplianceStats, MedicationReport, ReportDownloadRequest } from '../../../services/report.service';
 import { BootstrapIconComponent } from '../../../shared/components/bootstrap-icon/bootstrap-icon.component';
 
 type ComplianceFilter = 'scheduled' | 'completed' | 'missed' | 'cancelled' | 'rate' | null;
+
+export type { ReportDownloadRequest };
 
 @Component({
   selector: 'app-nurse-reports-modal',
@@ -39,8 +41,8 @@ export class NurseReportsModalComponent implements OnChanges {
 
   @Output() readonly dismissed = new EventEmitter<void>();
   @Output() readonly periodApply = new EventEmitter<{ start: string; end: string }>();
-  @Output() readonly csvDownload = new EventEmitter<'compliance' | 'medication'>();
-  @Output() readonly pdfDownload = new EventEmitter<'compliance' | 'medication'>();
+  @Output() readonly csvDownload = new EventEmitter<ReportDownloadRequest>();
+  @Output() readonly pdfDownload = new EventEmitter<ReportDownloadRequest>();
   /** `null`: todas las enfermeras / todos los pacientes del centro */
   @Output() readonly staffNurseFilterChange = new EventEmitter<number | null>();
 
@@ -114,8 +116,47 @@ export class NurseReportsModalComponent implements OnChanges {
     return this.selectedComplianceFilter === 'cancelled' && (!this.filteredComplianceRows.length || !this.filteredMedicationRows.length);
   }
   resolveScopeLine(): string {
-    return this.staffScopeSuffix?.trim()
-      ? this.staffScopeSuffix!.trim()
-      : 'Solo tus pacientes / área.';
+    if (this.showStaffNurseFilter) {
+      if (this.staffNurseUserId != null) {
+        const nurse = this.staffNurses.find((n) => n.id === this.staffNurseUserId);
+        return nurse?.name
+          ? `Datos de: ${nurse.name}`
+          : `Datos de: enfermera ID ${this.staffNurseUserId}`;
+      }
+      return 'Datos de: todas las enfermeras';
+    }
+    return 'Datos de: tu desempeño (tus pacientes / área)';
+  }
+
+  activeKpiFilterLabel(): string {
+    switch (this.selectedComplianceFilter) {
+      case 'completed':
+        return 'Completados';
+      case 'missed':
+        return 'No realizados';
+      case 'cancelled':
+        return 'Cancelados';
+      case 'scheduled':
+        return 'Programados';
+      case 'rate':
+        return 'Tasa global';
+      default:
+        return 'Todos los registros';
+    }
+  }
+
+  private buildDownloadRequest(kind: 'compliance' | 'medication'): ReportDownloadRequest {
+    return {
+      kind,
+      complianceFilter: this.selectedComplianceFilter,
+    };
+  }
+
+  emitCsvDownload(kind: 'compliance' | 'medication'): void {
+    this.csvDownload.emit(this.buildDownloadRequest(kind));
+  }
+
+  emitPdfDownload(kind: 'compliance' | 'medication'): void {
+    this.pdfDownload.emit(this.buildDownloadRequest(kind));
   }
 }

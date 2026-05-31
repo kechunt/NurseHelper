@@ -27,7 +27,7 @@ const colors = {
   magenta: '\x1b[35m',
 };
 
-const { freePorts, killProcessTree, isWindows, nukeDevEnvironment } = require('./port-utils');
+const { freePorts, freePort, killProcessTree, isWindows, nukeDevEnvironment, killStaleNgrok, readNgrokApiKey, stopRemoteNgrokSessions } = require('./port-utils');
 
 const REPO_ROOT = path.join(__dirname, '..');
 const START_DEV = path.join(__dirname, 'start-dev.js');
@@ -205,11 +205,14 @@ function isDevWarnLine(line) {
 }
 
 /** Muestra solo errores/advertencias del arranque (backend/frontend). */
-function attachQuietDevLogs(proc) {
+function attachQuietDevLogs(proc, onFatalError) {
   const handleChunk = (chunk) => {
     for (const line of chunk.toString().split(/\r?\n/)) {
       if (isDevErrorLine(line)) {
         log(`  ${line.trim()}`, 'red');
+        if (/port \d+ is already|EADDRINUSE|fallaron las migraciones|migration failed/i.test(line)) {
+          onFatalError?.(line.trim());
+        }
       } else if (isDevWarnLine(line)) {
         log(`  ${line.trim()}`, 'yellow');
       }
@@ -219,45 +222,104 @@ function attachQuietDevLogs(proc) {
   proc.stderr?.on('data', handleChunk);
 }
 
+async function ensurePortsNotServing(ports, logFn) {
+  for (const port of ports) {
+    if (await isHttpUp(port)) {
+      logFn(`⚠️  :${port} responde HTTP — forzando liberación...`, 'yellow');
+      freePort(port, logFn);
+      await sleep(2500);
+    }
+  }
+}
+
 function printServicesReady() {
   log('');
   log(`${colors.bold}  ✓ Backend y frontend listos — abriendo túnel...${colors.reset}`, 'green');
   log('');
 }
 
-async function waitForServices(timeoutMs) {
+const READY_STREAK_REQUIRED = 2;
+const PROGRESS_INTERVAL_MS = 15_000;
+
+function formatElapsed(ms) {
+  const totalSec = Math.floor(ms / 1000);
+  const min = Math.floor(totalSec / 60);
+  const sec = totalSec % 60;
+  return min > 0 ? `${min}m ${sec}s` : `${sec}s`;
+}
+
+async function waitForServices(timeoutMs, devStartedAt = Date.now(), getFatalError = () => null) {
   const checks = [
-    { label: 'Backend', port: BACKEND_PORT, ready: isBackendReady },
-    { label: 'Frontend', port: FRONTEND_PORT, ready: isFrontendReady },
+    { label: 'Backend', port: BACKEND_PORT, ready: isBackendReady, streak: 0 },
+    { label: 'Frontend', port: FRONTEND_PORT, ready: isFrontendReady, streak: 0 },
   ];
   const pending = new Set(checks.map((c) => c.label));
   const started = Date.now();
+  let lastProgressAt = started;
 
   log('');
-  log('  ⏳  Esperando servicios...', 'yellow');
+  log('  ⏳  Esperando servicios (primera vez: ~1–2 min)...', 'yellow');
   for (const c of checks) {
     printRow(c.label, `puerto ${c.port}`, 'dim', 'dim');
   }
   log('');
+  log('  💡  Compilando Angular + backend — no cierres esta ventana', 'dim');
+  log('');
 
   while (Date.now() - started < timeoutMs && pending.size > 0) {
+    const fatal = getFatalError();
+    if (fatal) {
+      log(`  ❌  ${fatal}`, 'red');
+      return false;
+    }
+
     for (const check of checks) {
       if (!pending.has(check.label)) continue;
       if (await check.ready()) {
-        pending.delete(check.label);
-        printRow(check.label, `listo · :${check.port}`, 'green', 'green');
+        check.streak += 1;
+        if (check.streak >= READY_STREAK_REQUIRED) {
+          pending.delete(check.label);
+          printRow(check.label, `listo · :${check.port}`, 'green', 'green');
+        }
+      } else {
+        check.streak = 0;
       }
     }
+
+    const elapsed = Date.now() - started;
+    if (pending.size > 0 && Date.now() - lastProgressAt >= PROGRESS_INTERVAL_MS) {
+      lastProgressAt = Date.now();
+      const waiting = [...pending].join(', ');
+      printRow('Esperando', `${formatElapsed(elapsed)} · ${waiting}`, 'yellow', 'dim');
+    }
+
     if (pending.size > 0) {
       await sleep(2000);
     }
   }
 
-  if (pending.size === 0) {
-    printServicesReady();
-    return true;
+  if (pending.size > 0) {
+    return false;
   }
-  return false;
+
+  await sleep(1500);
+  const backendOk = await isBackendReady();
+  const frontendOk = await isFrontendReady();
+  if (!backendOk || !frontendOk) {
+    log('  ⚠️  Un servicio dejó de responder tras el arranque', 'red');
+    return false;
+  }
+
+  if (Date.now() - devStartedAt < 8000) {
+    log('  ⚠️  Respuesta demasiado rápida — puede ser un proceso anterior en el puerto', 'yellow');
+    await sleep(4000);
+    if (!(await isBackendReady()) || !(await isFrontendReady())) {
+      return false;
+    }
+  }
+
+  printServicesReady();
+  return true;
 }
 
 function fetchNgrokTunnels() {
@@ -283,6 +345,45 @@ function fetchNgrokTunnels() {
   });
 }
 
+function ngrokApiRequest(method, urlPath) {
+  return new Promise((resolve, reject) => {
+    const req = http.request(
+      { hostname: '127.0.0.1', port: 4040, path: urlPath, method, timeout: 3000 },
+      (res) => {
+        let body = '';
+        res.on('data', (chunk) => {
+          body += chunk;
+        });
+        res.on('end', () => resolve({ status: res.statusCode, body }));
+      },
+    );
+    req.on('error', reject);
+    req.on('timeout', () => {
+      req.destroy();
+      reject(new Error('timeout'));
+    });
+    req.end();
+  });
+}
+
+async function stopLocalNgrokApiTunnels(logFn) {
+  try {
+    const data = await fetchNgrokTunnels();
+    for (const tunnel of data.tunnels || []) {
+      if (!tunnel.name) continue;
+      await ngrokApiRequest('DELETE', `/api/tunnels/${encodeURIComponent(tunnel.name)}`);
+      logFn(`  Túnel local cerrado (${tunnel.name})`, 'dim');
+    }
+  } catch {
+    /* sin agente local en :4040 */
+  }
+}
+
+function forwardsToPort(endpoints, port) {
+  const addr = String(endpoints?.forwardsTo || '');
+  return addr.includes(`:${port}`) || addr === String(port) || addr.endsWith(`localhost:${port}`);
+}
+
 function parseNgrokEndpoints(data) {
   const tunnels = data?.tunnels || [];
   const https = tunnels.find((t) => t.public_url?.startsWith('https://'));
@@ -296,6 +397,48 @@ function parseNgrokEndpoints(data) {
     tunnelName: primary?.name || '—',
     region: data?.region || null,
   };
+}
+
+async function waitForNgrokOrConflict(proc, timeoutMs = 25_000) {
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    if (proc.sawEndpointConflict?.()) {
+      return { conflict: true, endpoints: null };
+    }
+    if (proc.exitCode !== null && proc.exitCode !== 0) {
+      return { conflict: proc.sawEndpointConflict?.() ?? true, endpoints: null };
+    }
+
+    try {
+      const data = await fetchNgrokTunnels();
+      const endpoints = parseNgrokEndpoints(data);
+      if (endpoints.primaryUrl) {
+        return { conflict: false, endpoints };
+      }
+    } catch {
+      /* API aún no disponible */
+    }
+
+    await sleep(600);
+  }
+
+  if (proc.sawEndpointConflict?.()) {
+    return { conflict: true, endpoints: null };
+  }
+
+  return { conflict: false, endpoints: null };
+}
+
+async function releaseNgrokEndpoint(logFn) {
+  killStaleNgrok(logFn);
+  await stopLocalNgrokApiTunnels(logFn);
+  const stoppedRemote = await stopRemoteNgrokSessions(logFn);
+  if (stoppedRemote > 0) {
+    logFn('  Esperando liberación del dominio en ngrok...', 'dim');
+    await sleep(5000);
+  } else {
+    await sleep(2500);
+  }
 }
 
 async function waitForNgrokEndpoints(timeoutMs = 30_000) {
@@ -405,7 +548,7 @@ function printTunnelStarting() {
   log('');
 }
 
-function startDev() {
+function startDev(onFatalError) {
   log('  🚀  Iniciando backend + frontend...', 'cyan');
   log('');
 
@@ -420,7 +563,7 @@ function startDev() {
     },
   });
 
-  attachQuietDevLogs(devProcess);
+  attachQuietDevLogs(devProcess, onFatalError);
 
   devProcess.on('error', (err) => {
     log(`❌ No se pudo iniciar start-dev.js: ${err.message}`, 'red');
@@ -430,17 +573,46 @@ function startDev() {
   return devProcess;
 }
 
-function startNgrok(port) {
-  const ngrokProcess = spawn('ngrok', ['http', String(port), '--log=stdout'], {
+function resolveNgrokBin() {
+  try {
+    if (isWindows) {
+      const out = execSync('where ngrok', {
+        encoding: 'utf8',
+        stdio: ['pipe', 'pipe', 'pipe'],
+      }).trim();
+      return out.split(/\r?\n/)[0].trim();
+    }
+    return execSync('command -v ngrok', { encoding: 'utf8', shell: true }).trim();
+  } catch {
+    return 'ngrok';
+  }
+}
+
+function startNgrok(port, { poolingEnabled = false } = {}) {
+  const args = ['http', String(port), '--log=stdout'];
+  if (poolingEnabled) {
+    args.push('--pooling-enabled');
+  }
+
+  const ngrokBin = resolveNgrokBin();
+  const ngrokProcess = spawn(ngrokBin, args, {
     stdio: ['ignore', 'pipe', 'pipe'],
-    shell: isWindows,
+    shell: false,
   });
+
+  let sawEndpointConflict = false;
 
   ngrokProcess.stdout?.on('data', () => {});
   ngrokProcess.stderr?.on('data', (chunk) => {
-    const line = chunk.toString().trim();
-    if (line && !line.startsWith('{') && !line.includes('msg=')) {
-      log(`  [ngrok] ${line}`, 'yellow');
+    const text = chunk.toString();
+    if (/ERR_NGROK_334|already online/i.test(text)) {
+      sawEndpointConflict = true;
+    }
+    for (const line of text.split(/\r?\n/)) {
+      const trimmed = line.trim();
+      if (trimmed && !trimmed.startsWith('{') && !trimmed.includes('msg=')) {
+        log(`  [ngrok] ${trimmed}`, sawEndpointConflict ? 'red' : 'yellow');
+      }
     }
   });
 
@@ -449,7 +621,62 @@ function startNgrok(port) {
     process.exit(1);
   });
 
+  ngrokProcess.sawEndpointConflict = () => sawEndpointConflict;
   return ngrokProcess;
+}
+
+async function openNgrokTunnel(port) {
+  const logFn = (msg, color) => log(`  ${msg}`, color);
+  await releaseNgrokEndpoint(logFn);
+
+  let existing = await waitForNgrokEndpoints(3000);
+  if (existing?.primaryUrl && forwardsToPort(existing, port)) {
+    log('  ♻️  Reutilizando túnel ngrok ya activo', 'green');
+    return { process: null, endpoints: existing, reused: true, conflict: false };
+  }
+
+  const strategies = [
+    { poolingEnabled: true, label: 'con --pooling-enabled' },
+    { poolingEnabled: false, label: 'estándar' },
+  ];
+
+  let sawConflict = false;
+
+  for (let i = 0; i < strategies.length; i += 1) {
+    const { poolingEnabled, label } = strategies[i];
+    if (i > 0) {
+      await releaseNgrokEndpoint(logFn);
+      log(`  🔁  Reintentando ngrok (${label})...`, 'yellow');
+    }
+
+    const proc = startNgrok(port, { poolingEnabled });
+    const result = await waitForNgrokOrConflict(proc, 25_000);
+
+    if (result.endpoints?.primaryUrl) {
+      return { process: proc, endpoints: result.endpoints, reused: false, conflict: false };
+    }
+
+    if (result.conflict) sawConflict = true;
+    killProcessTree(proc);
+    await sleep(1200);
+  }
+
+  if (sawConflict) {
+    await releaseNgrokEndpoint(logFn);
+    const proc = startNgrok(port, { poolingEnabled: true });
+    const result = await waitForNgrokOrConflict(proc, 20_000);
+    if (result.endpoints?.primaryUrl) {
+      return { process: proc, endpoints: result.endpoints, reused: false, conflict: false };
+    }
+    killProcessTree(proc);
+  }
+
+  existing = await waitForNgrokEndpoints(3000);
+  if (existing?.primaryUrl) {
+    return { process: null, endpoints: existing, reused: true, conflict: false };
+  }
+
+  return { process: null, endpoints: null, reused: false, conflict: sawConflict };
 }
 
 async function main() {
@@ -500,6 +727,7 @@ async function main() {
   process.on('SIGTERM', shutdown);
 
   log('  🔍  Cerrando sesiones dev previas y liberando puertos...', 'blue');
+  killStaleNgrok((msg, color) => log(`  ${msg}`, color));
   const portsOk = nukeDevEnvironment(
     [BACKEND_PORT, FRONTEND_PORT],
     REPO_ROOT,
@@ -515,12 +743,28 @@ async function main() {
   }
   log('');
 
+  await ensurePortsNotServing([BACKEND_PORT, FRONTEND_PORT], (msg, color) => log(`  ${msg}`, color));
+  log('');
+
+  let devStartedAt = Date.now();
+  let devFatalError = null;
+
   if (!onlyTunnel) {
-    devProcess = startDev();
+    devProcess = startDev((msg) => {
+      devFatalError = msg;
+    });
+    devStartedAt = Date.now();
     devProcess.on('exit', (code) => {
       if (shuttingDown) return;
       if (ngrokProcess && !ngrokProcess.killed) {
         ngrokProcess.kill('SIGTERM');
+      }
+      if (code && code !== 0) {
+        log('');
+        printBox('La aplicación se detuvo antes de abrir el túnel', [
+          { text: 'Revisa MySQL activo, migraciones y puertos 3000/4200', color: 'red' },
+          { text: 'Prueba: npm run dev (sin túnel) para ver el error completo', color: 'yellow' },
+        ], 'red');
       }
       process.exit(code ?? 0);
     });
@@ -532,48 +776,82 @@ async function main() {
     process.exit(1);
   }
 
-  const ready = await waitForServices(WAIT_TIMEOUT_MS);
+  const ready = await waitForServices(WAIT_TIMEOUT_MS, devStartedAt, () => devFatalError);
   if (!ready) {
     printBox('Tiempo de espera agotado', [
-      { text: 'Backend o frontend no arrancaron a tiempo', color: 'red' },
-      { text: `Revisa MySQL y los puertos ${BACKEND_PORT} / ${FRONTEND_PORT}`, color: 'yellow' },
+      { text: 'Backend o frontend no arrancaron a tiempo (~3 min)', color: 'red' },
+      { text: `Revisa MySQL activo y puertos ${BACKEND_PORT} / ${FRONTEND_PORT}`, color: 'yellow' },
+      { text: 'Diagnóstico: npm run dev  (sin túnel, muestra todos los logs)', color: 'dim' },
     ], 'red');
     shutdown();
     process.exit(1);
   }
 
   printTunnelStarting();
-  ngrokProcess = startNgrok(FRONTEND_PORT);
 
   let summaryPrinted = false;
-  urlPollTimer = setInterval(async () => {
-    if (summaryPrinted || shuttingDown) return;
-    const endpoints = await waitForNgrokEndpoints(2500);
-    if (endpoints?.primaryUrl) {
-      summaryPrinted = true;
-      clearInterval(urlPollTimer);
-      printConnectionSummary(endpoints);
-    }
-  }, 1500);
 
-  setTimeout(() => {
-    if (!summaryPrinted && !shuttingDown) {
-      printBox('No se leyó la URL del túnel', [
-        { text: 'Abre el inspector: http://127.0.0.1:4040', color: 'yellow' },
-        { text: 'Ahí verás la URL pública (Forwarding)', color: 'dim' },
-      ], 'yellow');
-    }
-  }, 35_000);
+  const tunnelResult = await openNgrokTunnel(FRONTEND_PORT);
+  ngrokProcess = tunnelResult.process;
 
-  ngrokProcess.on('exit', (code) => {
-    if (urlPollTimer) clearInterval(urlPollTimer);
-    if (!shuttingDown) {
-      log('');
-      log('  🛑  Túnel ngrok cerrado.', 'yellow');
-      shutdown();
-    }
-    setTimeout(() => process.exit(code ?? 0), 500);
-  });
+  if (tunnelResult.endpoints?.primaryUrl) {
+    summaryPrinted = true;
+    printConnectionSummary(tunnelResult.endpoints);
+  } else {
+    const hasApiKey = Boolean(readNgrokApiKey());
+    printBox('No se pudo abrir ngrok', [
+      { text: 'ERR_NGROK_334: tu dominio dev ya está en uso en la nube', color: 'red' },
+      { text: 'Panel: https://dashboard.ngrok.com/tunnels/agents', color: 'cyan' },
+      { text: 'Cierra la sesión activa y vuelve a ejecutar npm run tunnel', color: 'yellow' },
+      ...(hasApiKey
+        ? [{ text: 'Con api_key configurada el script cierra sesiones remotas solo', color: 'dim' }]
+        : [
+            { text: 'Opcional: añade api_key en ngrok.yml (https://dashboard.ngrok.com/api)', color: 'dim' },
+            { text: '  o exporta NGROK_API_KEY para cierre automático', color: 'dim' },
+          ]),
+      { text: 'Windows local: taskkill /IM ngrok.exe /F', color: 'dim' },
+      { text: 'La app local sigue en http://localhost:4200', color: 'green' },
+      { text: 'Reintenta solo túnel: npm run tunnel -- --only', color: 'dim' },
+    ], 'red');
+  }
+
+  if (ngrokProcess) {
+    urlPollTimer = setInterval(async () => {
+      if (summaryPrinted || shuttingDown) return;
+      const endpoints = await waitForNgrokEndpoints(2500);
+      if (endpoints?.primaryUrl) {
+        summaryPrinted = true;
+        clearInterval(urlPollTimer);
+        printConnectionSummary(endpoints);
+      }
+    }, 1500);
+
+    setTimeout(() => {
+      if (!summaryPrinted && !shuttingDown) {
+        printBox('No se leyó la URL del túnel', [
+          { text: 'Abre el inspector: http://127.0.0.1:4040', color: 'yellow' },
+          { text: 'Ahí verás la URL pública (Forwarding)', color: 'dim' },
+        ], 'yellow');
+      }
+    }, 35_000);
+
+    ngrokProcess.on('exit', (code) => {
+      if (urlPollTimer) clearInterval(urlPollTimer);
+      if (shuttingDown || summaryPrinted) return;
+
+      waitForNgrokEndpoints(3000).then((endpoints) => {
+        if (endpoints?.primaryUrl) {
+          summaryPrinted = true;
+          printConnectionSummary(endpoints);
+          return;
+        }
+        log('');
+        log('  ⚠️  ngrok se cerró; la app local sigue en http://localhost:4200', 'yellow');
+        log('  💡  Reintenta: npm run tunnel -- --only', 'dim');
+        log('');
+      });
+    });
+  }
 }
 
 main().catch((err) => {

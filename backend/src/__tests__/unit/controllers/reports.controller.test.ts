@@ -1,11 +1,23 @@
 import type { Response } from 'express';
 
-jest.mock('../../../services/report.service', () => ({
-  reportService: {
-    getPatientIdsVisibleToNurse: jest.fn(),
-    generateMedicationReport: jest.fn(),
-    generateComplianceStats: jest.fn(),
-    exportReport: jest.fn(),
+jest.mock('../../../services/report.service', () => {
+  const actual = jest.requireActual('../../../services/report.service');
+  return {
+    ...actual,
+    reportService: {
+      getPatientIdsVisibleToNurse: jest.fn(),
+      generateMedicationReport: jest.fn(),
+      generateComplianceStats: jest.fn(),
+      exportReport: jest.fn(),
+    },
+  };
+});
+
+jest.mock('../../../data-source', () => ({
+  AppDataSource: {
+    getRepository: jest.fn(() => ({
+      findOne: jest.fn().mockResolvedValue(null),
+    })),
   },
 }));
 
@@ -289,7 +301,7 @@ describe('ReportsController', () => {
       await flushAsync();
       expect(status).toHaveBeenCalledWith(415);
       expect(json).toHaveBeenCalledWith({
-        message: 'Solo está implementada la exportación en CSV. Use format=csv.',
+        message: 'Formato de exportación no soportado',
         code: 'UNSUPPORTED_EXPORT_FORMAT',
       });
     });
@@ -311,11 +323,20 @@ describe('ReportsController', () => {
         jest.fn()
       );
       await flushAsync();
-      expect(mockedReport.exportReport).toHaveBeenCalledWith(expect.anything(), 'pdf');
+      expect(mockedReport.exportReport).toHaveBeenCalledWith(
+        expect.anything(),
+        'pdf',
+        expect.objectContaining({
+          scopeLabel: expect.any(String),
+          kpiFilterLabel: expect.any(String),
+          reportType: 'medication',
+        }),
+        null,
+      );
       expect(setHeader).toHaveBeenCalledWith('Content-Type', 'application/pdf');
       expect(setHeader).toHaveBeenCalledWith(
         'Content-Disposition',
-        expect.stringMatching(/^attachment; filename="report-medication-\d{4}-\d{2}-\d{2}\.pdf"$/)
+        expect.stringMatching(/^attachment; filename="reporte-medication-.*\.pdf"$/)
       );
       expect(send).toHaveBeenCalledWith(buf);
     });
@@ -338,16 +359,21 @@ describe('ReportsController', () => {
       );
       await flushAsync();
       expect(mockedReport.generateMedicationReport).toHaveBeenCalled();
-      expect(mockedReport.exportReport).toHaveBeenCalledWith(expect.anything(), 'csv');
+      expect(mockedReport.exportReport).toHaveBeenCalledWith(
+        expect.anything(),
+        'csv',
+        expect.objectContaining({ reportType: 'medication' }),
+        null,
+      );
       expect(setHeader).toHaveBeenCalledWith('Content-Type', 'text/csv; charset=utf-8');
       expect(setHeader).toHaveBeenCalledWith(
         'Content-Disposition',
-        expect.stringMatching(/^attachment; filename="report-medication-\d{4}-\d{2}-\d{2}\.csv"$/)
+        expect.stringMatching(/^attachment; filename="reporte-medication-.*\.csv"$/)
       );
       expect(send).toHaveBeenCalledWith(buf);
     });
 
-    it('compliance: usa generateComplianceStats antes de export', async () => {
+    it('compliance: usa generateComplianceStats y pasa complianceFilter al export', async () => {
       const buf = Buffer.from('c');
       mockedReport.exportReport.mockResolvedValueOnce(buf);
       const { send, res } = resChain();
@@ -358,6 +384,7 @@ describe('ReportsController', () => {
             format: 'csv',
             startDate: '2026-04-01',
             endDate: '2026-04-30',
+            complianceFilter: 'completed',
           },
         }),
         res,
@@ -366,6 +393,15 @@ describe('ReportsController', () => {
       await flushAsync();
       expect(mockedReport.generateComplianceStats).toHaveBeenCalled();
       expect(mockedReport.generateMedicationReport).not.toHaveBeenCalled();
+      expect(mockedReport.exportReport).toHaveBeenCalledWith(
+        expect.anything(),
+        'csv',
+        expect.objectContaining({
+          reportType: 'compliance',
+          kpiFilterLabel: expect.stringContaining('completados'),
+        }),
+        'completed',
+      );
       expect(send).toHaveBeenCalledWith(buf);
     });
 

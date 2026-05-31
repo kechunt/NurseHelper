@@ -61,23 +61,42 @@ describe('BackupController', () => {
     const res = { json } as unknown as Response;
     await ctrl.createBackup({ ...authReq(), body: {} } as AuthRequest, res, jest.fn());
     await flush();
-    expect(backupService.createBackup).toHaveBeenCalledWith('full');
+    expect(backupService.createBackup).toHaveBeenCalledWith('full', { name: undefined, manual: true });
     expect(json).toHaveBeenCalledWith({
       message: 'Backup creado exitosamente',
       backup: {
         filename: 'out.sql.gz',
         size: 512,
         createdAt: new Date('2026-04-01'),
+        type: 'full',
       },
     });
   });
 
-  it('createBackup pasa type incremental si viene en body', async () => {
+  it('createBackup pasa type incremental y name si vienen en body', async () => {
     const json = jest.fn();
     const res = { json } as unknown as Response;
-    await ctrl.createBackup({ ...authReq(), body: { type: 'incremental' } } as AuthRequest, res, jest.fn());
+    await ctrl.createBackup(
+      { ...authReq(), body: { type: 'incremental', name: 'prod_mayo' } } as AuthRequest,
+      res,
+      jest.fn(),
+    );
     await flush();
-    expect(backupService.createBackup).toHaveBeenCalledWith('incremental');
+    expect(backupService.createBackup).toHaveBeenCalledWith('incremental', {
+      name: 'prod_mayo',
+      manual: true,
+    });
+  });
+
+  it('createBackup responde 503 si el servicio devuelve null', async () => {
+    (backupService.createBackup as jest.Mock).mockResolvedValueOnce(null);
+    const { json, status, res } = mockRes();
+    await ctrl.createBackup({ ...authReq(), body: {} } as AuthRequest, res, jest.fn());
+    await flush();
+    expect(status).toHaveBeenCalledWith(503);
+    expect(json).toHaveBeenCalledWith(
+      expect.objectContaining({ code: 'BACKUP_FAILED' }),
+    );
   });
 
   it('listBackups devuelve lista del servicio', async () => {
@@ -86,7 +105,15 @@ describe('BackupController', () => {
     await ctrl.listBackups(authReq(), res, jest.fn());
     await flush();
     expect(backupService.listBackups).toHaveBeenCalled();
-    expect(json).toHaveBeenCalledWith({ backups: [backupRow] });
+    expect(json).toHaveBeenCalledWith({
+      backups: [backupRow],
+      lastBackup: {
+        filename: backupRow.filename,
+        size: backupRow.size,
+        createdAt: backupRow.createdAt,
+        type: backupRow.type,
+      },
+    });
   });
 
   it('restoreBackup responde 400 sin filename', async () => {
@@ -164,6 +191,7 @@ describe('BackupController', () => {
         filename: 'snap.sql.gz',
         size: 2048,
         createdAt: new Date('2026-03-01'),
+        type: 'full',
       },
     });
   });

@@ -6,24 +6,43 @@ import { Response } from 'express';
 import { asyncHandler } from '../utils/error-handler';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { backupService } from '../services/backup.service';
-import { roleMiddleware } from '../middleware/role.middleware';
-import { UserRole } from '../entities/User';
+
+function serializeBackup(backup: {
+  filename: string;
+  size: number;
+  createdAt: Date;
+  type?: string;
+}) {
+  return {
+    filename: backup.filename,
+    size: backup.size,
+    createdAt: backup.createdAt,
+    type: backup.type,
+  };
+}
 
 export class BackupController {
   /**
    * Crear backup manual
    */
   createBackup = asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { type } = req.body;
-    const backup = await backupService.createBackup(type || 'full');
-    
+    const { type, name } = req.body as { type?: 'full' | 'incremental'; name?: string };
+
+    const backup = await backupService.createBackup(type || 'full', {
+      name,
+      manual: true,
+    });
+
+    if (!backup) {
+      return res.status(503).json({
+        message: 'No se pudo crear el respaldo. Verifique MySQL y mysqldump.',
+        code: 'BACKUP_FAILED',
+      });
+    }
+
     res.json({
       message: 'Backup creado exitosamente',
-      backup: {
-        filename: backup.filename,
-        size: backup.size,
-        createdAt: backup.createdAt,
-      },
+      backup: serializeBackup(backup),
     });
   });
 
@@ -32,7 +51,9 @@ export class BackupController {
    */
   listBackups = asyncHandler(async (req: AuthRequest, res: Response) => {
     const backups = await backupService.listBackups();
-    res.json({ backups });
+    const lastBackup = backups[0] ? serializeBackup(backups[0]) : null;
+
+    res.json({ backups, lastBackup });
   });
 
   /**
@@ -40,7 +61,7 @@ export class BackupController {
    */
   restoreBackup = asyncHandler(async (req: AuthRequest, res: Response) => {
     const { filename } = req.body;
-    
+
     if (!filename) {
       return res.status(400).json({
         message: 'filename es requerido',
@@ -59,7 +80,7 @@ export class BackupController {
     }
 
     await backupService.restoreBackup(backup.path);
-    
+
     res.json({
       message: 'Backup restaurado exitosamente',
     });
@@ -70,7 +91,7 @@ export class BackupController {
    */
   verifyBackup = asyncHandler(async (req: AuthRequest, res: Response) => {
     const { filename } = req.query;
-    
+
     if (!filename) {
       return res.status(400).json({
         message: 'filename es requerido',
@@ -89,14 +110,10 @@ export class BackupController {
     }
 
     const isValid = await backupService.verifyBackup(backup.path);
-    
+
     res.json({
       valid: isValid,
-      backup: {
-        filename: backup.filename,
-        size: backup.size,
-        createdAt: backup.createdAt,
-      },
+      backup: serializeBackup(backup),
     });
   });
 
@@ -105,7 +122,7 @@ export class BackupController {
    */
   testRestore = asyncHandler(async (req: AuthRequest, res: Response) => {
     const { filename } = req.body;
-    
+
     if (!filename) {
       return res.status(400).json({
         message: 'filename es requerido',
@@ -125,7 +142,7 @@ export class BackupController {
 
     const testDbName = `test_restore_${Date.now()}`;
     const success = await backupService.testRestore(backup.path, testDbName);
-    
+
     res.json({
       success,
       message: success ? 'Restauración de prueba exitosa' : 'Error en restauración de prueba',

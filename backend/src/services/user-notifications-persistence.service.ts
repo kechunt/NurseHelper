@@ -33,7 +33,7 @@ function toDto(n: UserNotification): UserNotificationDto {
   };
 }
 
-export async function listActiveNotificationsForUser(userId: number, limit = 100): Promise<UserNotificationDto[]> {
+export async function listActiveNotificationsForUser(userId: number, limit = 250): Promise<UserNotificationDto[]> {
   const repo = AppDataSource.getRepository(UserNotification);
   const rows = await repo.find({
     where: { userId, dismissedAt: IsNull() },
@@ -115,6 +115,38 @@ export async function deleteNotificationForUser(userId: number, id: number): Pro
   const repo = AppDataSource.getRepository(UserNotification);
   const res = await repo.delete({ id, userId });
   return (res.affected ?? 0) > 0;
+}
+
+export async function bulkDeleteNotificationsForUser(userId: number, ids: number[]): Promise<number> {
+  const unique = [...new Set(ids.filter((id) => Number.isFinite(id) && id > 0))];
+  if (unique.length === 0) {
+    return 0;
+  }
+  const repo = AppDataSource.getRepository(UserNotification);
+  const res = await repo.delete({ userId, id: In(unique) });
+  return res.affected ?? 0;
+}
+
+export async function deleteAllNotificationsForUser(userId: number): Promise<number> {
+  const repo = AppDataSource.getRepository(UserNotification);
+  const res = await repo.delete({ userId });
+  return res.affected ?? 0;
+}
+
+export async function dismissScheduleNotificationsExceptUser(
+  scheduleId: number,
+  keepUserId: number,
+): Promise<void> {
+  const repo = AppDataSource.getRepository(UserNotification);
+  const prefix = `sch:${scheduleId}:`;
+  await repo
+    .createQueryBuilder()
+    .update(UserNotification)
+    .set({ dismissedAt: new Date() })
+    .where('dedupeKey LIKE :p', { p: `${prefix}%` })
+    .andWhere('userId != :uid', { uid: keepUserId })
+    .andWhere('dismissedAt IS NULL')
+    .execute();
 }
 
 export async function dismissByDedupePrefix(userId: number, dedupePrefix: string): Promise<void> {

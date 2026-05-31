@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, OnChanges, SimpleChanges, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -40,7 +40,9 @@ interface NurseWithPatients extends User {
   templateUrl: './staff-management.component.html',
   styleUrl: './staff-management.component.css',
 })
-export class StaffManagementComponent implements OnInit, OnDestroy {
+export class StaffManagementComponent implements OnInit, OnDestroy, OnChanges {
+  @Input() tabActive = false;
+
   nurses: NurseWithPatients[] = [];
   areas: Area[] = [];
   beds: Bed[] = [];
@@ -201,16 +203,25 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
     });
     this.captureAssignAreaRouteIntent();
     this.loadData();
-    this.startOperationalStatusPolling();
+    if (this.tabActive) {
+      this.startOperationalStatusPolling();
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if ('tabActive' in changes) {
+      if (this.tabActive) {
+        this.startOperationalStatusPolling();
+      } else {
+        this.stopOperationalStatusPolling();
+      }
+    }
   }
 
   ngOnDestroy(): void {
     this.assignAreaRouteSub?.unsubscribe();
     this.assignAreaRouteSub = undefined;
-    if (this.operationalStatusTimer) {
-      clearInterval(this.operationalStatusTimer);
-      this.operationalStatusTimer = null;
-    }
+    this.stopOperationalStatusPolling();
   }
 
   private captureAssignAreaRouteIntent(): void {
@@ -498,7 +509,7 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
         }
 
         const today = new Date().toISOString().split('T')[0];
-        this.shiftsService.getShiftAttendance(today, currentShiftId).subscribe({
+        this.shiftsService.getShiftAttendance(today, currentShiftId, { background: true }).subscribe({
           next: (rows) => {
             const statusByNurse = new Map<number, string>();
             (rows || []).forEach((row: any) => {
@@ -558,9 +569,17 @@ export class StaffManagementComponent implements OnInit, OnDestroy {
     return null;
   }
 
-  private startOperationalStatusPolling(): void {
+  private stopOperationalStatusPolling(): void {
     if (this.operationalStatusTimer) {
       clearInterval(this.operationalStatusTimer);
+      this.operationalStatusTimer = null;
+    }
+  }
+
+  private startOperationalStatusPolling(): void {
+    this.stopOperationalStatusPolling();
+    if (!this.tabActive) {
+      return;
     }
     this.operationalStatusTimer = setInterval(() => {
       if (!this.loading && this.nurses.length > 0) {

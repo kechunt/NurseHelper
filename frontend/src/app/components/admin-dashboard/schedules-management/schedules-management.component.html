@@ -34,10 +34,18 @@
         Áreas sin enfermeras en turno (<strong>presente</strong>/<strong>tarde</strong>):
       </p>
       <div class="coverage-alert-tags-neuro">
-        <span class="coverage-alert-tag-neuro" *ngFor="let areaName of uncoveredAreasInCurrentShift">{{ areaName }}</span>
+        <button
+          type="button"
+          class="coverage-alert-tag-neuro coverage-alert-tag-neuro--clickable"
+          *ngFor="let area of uncoveredAreasInCurrentShift"
+          [attr.aria-label]="getCoverageAreaAssignAria(area.name)"
+          (click)="openAssignAreaCoverageModal(area.id)"
+        >
+          {{ area.name }}
+        </button>
       </div>
-      <p class="coverage-alert-help-neuro" i18n="@@schedMgmtHtml.coverageAlertHelp">
-        Asigna área a una o más enfermeras desde Gestión de Enfermeras para habilitar la asignación automática de pacientes.
+      <p class="coverage-alert-help-neuro" i18n="@@schedMgmtHtml.coverageAlertHelpClick">
+        Haz clic en un área para asignar una o más enfermeras. Se preseleccionan quienes ya cubren esa zona o estuvieron en ella en este turno.
       </p>
     </div>
 
@@ -339,6 +347,51 @@
           </table>
         </div>
       </div>
+  </app-modal-shell>
+
+  <app-modal-shell
+    *ngIf="showAssignAreaCoverageModal"
+    titleIcon="building-office"
+    [title]="getAssignAreaCoverageModalTitle()"
+    (dismiss)="closeAssignAreaCoverageModal()"
+  >
+    <div class="modal-body">
+      <p class="coverage-assign-intro" i18n="@@schedMgmtHtml.coverageAssignIntro">
+        Elige una o más enfermeras para cubrir esta área en el turno actual. Las marcadas como
+        <strong>sugeridas</strong> ya tienen el área asignada o estuvieron presentes en este turno con anterioridad.
+        Después, márcalas <strong>presentes</strong> en la toma de lista si aún no aparecen.
+      </p>
+      <p class="coverage-assign-loading" *ngIf="assignCoverageLoadingDefaults" i18n="@@schedMgmtHtml.coverageAssignLoading">
+        Cargando sugerencias del turno…
+      </p>
+      <ul class="coverage-assign-nurse-list" *ngIf="!assignCoverageLoadingDefaults">
+        <li *ngFor="let nurse of nurses" class="coverage-assign-nurse-row">
+          <label class="coverage-assign-nurse-label">
+            <input
+              type="checkbox"
+              [checked]="isCoverageNurseSelected(nurse.id)"
+              (change)="toggleCoverageNurse(nurse.id, $any($event.target).checked)"
+            />
+            <span class="coverage-assign-nurse-name">{{ getCoverageAssignNurseLabel(nurse) }}</span>
+            <span class="coverage-assign-nurse-badge" *ngIf="isCoverageDefaultNurse(nurse.id)" i18n="@@schedMgmtHtml.coverageDefaultBadge">
+              Sugerida
+            </span>
+          </label>
+        </li>
+      </ul>
+    </div>
+    <div class="modal-footer-neuro">
+      <button type="button" class="btn-cancel-neuro" (click)="closeAssignAreaCoverageModal()" i18n="@@schedMgmtHtml.btnCancel">Cancelar</button>
+      <button
+        type="button"
+        class="btn-save-neuro"
+        (click)="saveAssignAreaCoverageModal()"
+        [disabled]="assignCoverageSaving || assignCoverageLoadingDefaults || assignCoverageSelectedNurseIds.size === 0"
+      >
+        <app-bootstrap-icon [name]="assignCoverageSaving ? 'clock' : 'clipboard-document'" />
+        {{ assignCoverageSaving ? schedHtmlSaving : schedHtmlSaveCoverageAssign }}
+      </button>
+    </div>
   </app-modal-shell>
 
   <app-modal-shell

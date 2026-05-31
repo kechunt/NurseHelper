@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
 export interface MedicationReport {
@@ -25,6 +26,24 @@ export interface ComplianceStats {
     patientName: string;
     complianceRate: number;
   }>;
+}
+
+export type ComplianceExportFilter =
+  | 'scheduled'
+  | 'completed'
+  | 'missed'
+  | 'cancelled'
+  | 'rate'
+  | null;
+
+export interface ReportDownloadRequest {
+  kind: 'medication' | 'compliance';
+  complianceFilter: ComplianceExportFilter;
+}
+
+export interface ReportExportResult {
+  blob: Blob;
+  filename: string;
 }
 
 @Injectable({
@@ -97,8 +116,9 @@ export class ReportService {
     startDate: Date,
     endDate: Date,
     patientId?: number,
-    nurseUserId?: number | null
-  ): Observable<Blob> {
+    nurseUserId?: number | null,
+    complianceFilter?: ComplianceExportFilter,
+  ): Observable<ReportExportResult> {
     let params = new HttpParams()
       .set('type', type)
       .set('format', format)
@@ -111,11 +131,35 @@ export class ReportService {
     if (nurseUserId != null && !Number.isNaN(Number(nurseUserId))) {
       params = params.set('nurseUserId', String(nurseUserId));
     }
+    if (complianceFilter) {
+      params = params.set('complianceFilter', complianceFilter);
+    }
 
-    return this.http.get(`${this.apiUrl}/export`, {
-      params,
-      responseType: 'blob',
-    });
+    return this.http
+      .get(`${this.apiUrl}/export`, {
+        params,
+        responseType: 'blob',
+        observe: 'response',
+      })
+      .pipe(
+        map((response: HttpResponse<Blob>) => {
+          const blob = response.body ?? new Blob();
+          const fallback = `reporte-${type}-${startDate.toISOString().slice(0, 10)}_${endDate.toISOString().slice(0, 10)}.${format}`;
+          const filename = this.parseFilenameFromDisposition(
+            response.headers.get('Content-Disposition'),
+            fallback,
+          );
+          return { blob, filename };
+        }),
+      );
+  }
+
+  private parseFilenameFromDisposition(header: string | null, fallback: string): string {
+    if (!header) {
+      return fallback;
+    }
+    const match = /filename="([^"]+)"/i.exec(header);
+    return match?.[1] ?? fallback;
   }
 
   /**
@@ -127,14 +171,15 @@ export class ReportService {
     startDate: Date,
     endDate: Date,
     patientId?: number,
-    nurseUserId?: number | null
+    nurseUserId?: number | null,
+    complianceFilter?: ComplianceExportFilter,
   ): void {
-    this.exportReport(type, format, startDate, endDate, patientId, nurseUserId).subscribe({
-      next: (blob) => {
+    this.exportReport(type, format, startDate, endDate, patientId, nurseUserId, complianceFilter).subscribe({
+      next: ({ blob, filename }) => {
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `report-${type}-${new Date().toISOString().split('T')[0]}.${format}`;
+        link.download = filename;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);

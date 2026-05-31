@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { shareReplay, tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
@@ -45,6 +45,7 @@ export interface ShiftAttendanceHistoryItem {
   shiftTime: string;
   nurseId: number;
   nurseName: string;
+  assignedAreaId?: number | null;
   status: ShiftAttendanceStatus;
   checkInAt?: string | null;
   checkOutAt?: string | null;
@@ -115,12 +116,20 @@ export class ShiftsService {
     return this.http.post(`${this.apiUrl}/weekly`, { schedules, weekStartDate });
   }
 
-  getShiftAttendance(date: string, shiftId: number): Observable<ShiftAttendanceItem[]> {
+  getShiftAttendance(
+    date: string,
+    shiftId: number,
+    options?: { background?: boolean },
+  ): Observable<ShiftAttendanceItem[]> {
+    const httpOptions = options?.background
+      ? { headers: new HttpHeaders({ 'X-Skip-Loading': 'true' }) }
+      : {};
     return this.http.get<ShiftAttendanceItem[]>(`${this.apiUrl}/attendance`, {
       params: {
         date,
         shiftId: String(shiftId),
       },
+      ...httpOptions,
     });
   }
 

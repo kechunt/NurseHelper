@@ -470,6 +470,10 @@ export const saveShiftAttendance = async (req: Request, res: Response) => {
       });
     }
 
+    void import('../services/notification-jobs.service').then(({ runInAppNotificationJobs }) =>
+      runInAppNotificationJobs(),
+    );
+
     res.json(response);
   } catch (error) {
     logger.error('Error al guardar asistencia del turno:', error);
@@ -585,6 +589,7 @@ export const getShiftAttendanceHistory = async (req: Request, res: Response) => 
       shiftTime: row.shift ? `${row.shift.startTime} - ${row.shift.endTime}` : '',
       nurseId: row.nurseId,
       nurseName: row.nurse ? `${row.nurse.firstName} ${row.nurse.lastName}` : `Enfermera #${row.nurseId}`,
+      assignedAreaId: row.nurse?.assignedAreaId ?? null,
       status: row.status,
       checkInAt: row.checkInAt,
       checkOutAt: row.checkOutAt,

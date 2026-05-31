@@ -19,6 +19,9 @@
 @if (qa.showReports()) {
   <app-nurse-reports-modal
     [periodLabel]="qa.reportsPeriodLabel()"
+    [reportStartDate]="qa.reportsStartIso()"
+    [reportEndDate]="qa.reportsEndIso()"
+    (periodApply)="qa.applyReportsPeriod($event)"
     [loading]="qa.reportsLoading()"
     [error]="qa.reportsError()"
     [compliance]="qa.reportsCompliance()"

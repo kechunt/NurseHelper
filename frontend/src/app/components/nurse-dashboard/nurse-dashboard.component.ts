@@ -41,7 +41,12 @@ import { sortTreatmentsTodaySlots, treatmentSlotPending } from './nurse-treatmen
 import { NurseDashboardHeaderSearchComponent } from './nurse-dashboard-header-search/nurse-dashboard-header-search.component';
 import { NurseDashboardMainNavComponent } from './nurse-dashboard-main-nav/nurse-dashboard-main-nav.component';
 import { ExportService } from '../../shared/services/export.service';
-import { ReportService, MedicationReport, ComplianceStats } from '../../services/report.service';
+import {
+  ReportService,
+  MedicationReport,
+  ComplianceStats,
+  ReportDownloadRequest,
+} from '../../services/report.service';
 import {
   type BedDisplay,
   type Medication,
@@ -1299,7 +1304,7 @@ export class NurseDashboardComponent implements OnInit {
     this.nurseReportsEnd = null;
   }
 
-  downloadNurseReportCsv(kind: 'medication' | 'compliance'): void {
+  downloadNurseReportCsv(request: ReportDownloadRequest): void {
     if (!this.nurseReportsStart || !this.nurseReportsEnd) {
       this.toastService.warning(NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_NO_PERIOD_WARNING);
       return;
@@ -1307,33 +1312,27 @@ export class NurseDashboardComponent implements OnInit {
     this.nurseReportsExporting = true;
     const start = this.nurseReportsStart;
     const end = this.nurseReportsEnd;
-    const slug = `${start.toISOString().slice(0, 10)}_${end.toISOString().slice(0, 10)}`;
-    this.reportService.exportReport(kind, 'csv', start, end).subscribe({
-      next: (blob) => {
-        this.nurseReportsExporting = false;
-        if (!blob || blob.size === 0) {
-          this.toastService.warning(NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_EMPTY_CSV_WARNING);
-          return;
-        }
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `reporte-${kind}-${slug}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-        this.toastService.success(NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_SUCCESS_TOAST);
-      },
-      error: (err) => {
-        this.nurseReportsExporting = false;
-        const msg = nurseDashboardNurseReportsExportCsvErrorMessage(err, readNurseDashboardHttpErrorMessage);
-        this.toastService.error(msg);
-      },
-    });
+    this.reportService
+      .exportReport(request.kind, 'csv', start, end, undefined, undefined, request.complianceFilter)
+      .subscribe({
+        next: ({ blob, filename }) => {
+          this.nurseReportsExporting = false;
+          if (!blob || blob.size === 0) {
+            this.toastService.warning(NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_EMPTY_CSV_WARNING);
+            return;
+          }
+          this.triggerNurseReportDownload(blob, filename);
+          this.toastService.success(NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_SUCCESS_TOAST);
+        },
+        error: (err) => {
+          this.nurseReportsExporting = false;
+          const msg = nurseDashboardNurseReportsExportCsvErrorMessage(err, readNurseDashboardHttpErrorMessage);
+          this.toastService.error(msg);
+        },
+      });
   }
 
-  downloadNurseReportPdf(kind: 'medication' | 'compliance'): void {
+  downloadNurseReportPdf(request: ReportDownloadRequest): void {
     if (!this.nurseReportsStart || !this.nurseReportsEnd) {
       this.toastService.warning(NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_NO_PERIOD_WARNING);
       return;
@@ -1341,30 +1340,35 @@ export class NurseDashboardComponent implements OnInit {
     this.nurseReportsExporting = true;
     const start = this.nurseReportsStart;
     const end = this.nurseReportsEnd;
-    const slug = `${start.toISOString().slice(0, 10)}_${end.toISOString().slice(0, 10)}`;
-    this.reportService.exportReport(kind, 'pdf', start, end).subscribe({
-      next: (blob) => {
-        this.nurseReportsExporting = false;
-        if (!blob || blob.size === 0) {
-          this.toastService.warning(NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_EMPTY_PDF_WARNING);
-          return;
-        }
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `reporte-${kind}-${slug}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-        this.toastService.success(NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_PDF_SUCCESS_TOAST);
-      },
-      error: (err) => {
-        this.nurseReportsExporting = false;
-        const msg = nurseDashboardNurseReportsExportPdfErrorMessage(err, readNurseDashboardHttpErrorMessage);
-        this.toastService.error(msg);
-      },
-    });
+    this.reportService
+      .exportReport(request.kind, 'pdf', start, end, undefined, undefined, request.complianceFilter)
+      .subscribe({
+        next: ({ blob, filename }) => {
+          this.nurseReportsExporting = false;
+          if (!blob || blob.size === 0) {
+            this.toastService.warning(NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_EMPTY_PDF_WARNING);
+            return;
+          }
+          this.triggerNurseReportDownload(blob, filename);
+          this.toastService.success(NURSE_DASHBOARD_NURSE_REPORTS_EXPORT_PDF_SUCCESS_TOAST);
+        },
+        error: (err) => {
+          this.nurseReportsExporting = false;
+          const msg = nurseDashboardNurseReportsExportPdfErrorMessage(err, readNurseDashboardHttpErrorMessage);
+          this.toastService.error(msg);
+        },
+      });
+  }
+
+  private triggerNurseReportDownload(blob: Blob, filename: string): void {
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
   }
 
   private inferHandoverShiftFromContext(): HandoverShiftSlot {

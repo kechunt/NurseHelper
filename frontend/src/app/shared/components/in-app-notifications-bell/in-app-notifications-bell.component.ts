@@ -66,6 +66,10 @@ export class InAppNotificationsBellComponent implements OnInit {
   items: UserNotificationDto[] = [];
   panelOpen = false;
   loading = false;
+  expandedView = false;
+  selectionMode = false;
+  selectedIds = new Set<number>();
+  bulkDeleting = false;
 
   ngOnInit(): void {
     this.loadOnce();
@@ -89,15 +93,56 @@ export class InAppNotificationsBellComponent implements OnInit {
       queueMicrotask(() => this.syncMobilePanelTop());
     } else {
       this.clearMobilePanelTop();
+      this.selectionMode = false;
+      this.selectedIds = new Set();
     }
   }
 
   closePanel(): void {
     this.panelOpen = false;
     this.clearMobilePanelTop();
+    this.selectionMode = false;
+    this.selectedIds = new Set();
   }
 
-  /** En móvil, coloca el panel bajo la cabecera real (enfermería tiene dos filas). */
+  toggleExpandedView(ev: Event): void {
+    ev.stopPropagation();
+    this.expandedView = !this.expandedView;
+  }
+
+  toggleSelectionMode(ev: Event): void {
+    ev.stopPropagation();
+    this.selectionMode = !this.selectionMode;
+    if (!this.selectionMode) {
+      this.selectedIds = new Set();
+    }
+  }
+
+  isSelected(id: number): boolean {
+    return this.selectedIds.has(id);
+  }
+
+  toggleSelected(id: number, ev: Event): void {
+    ev.stopPropagation();
+    const next = new Set(this.selectedIds);
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
+    this.selectedIds = next;
+  }
+
+  selectAll(ev: Event): void {
+    ev.stopPropagation();
+    this.selectedIds = new Set(this.items.map((n) => n.id));
+  }
+
+  clearSelection(ev: Event): void {
+    ev.stopPropagation();
+    this.selectedIds = new Set();
+  }
+
   private syncMobilePanelTop(): void {
     if (typeof window === 'undefined' || !window.matchMedia('(max-width: 768px)').matches) {
       this.clearMobilePanelTop();
@@ -134,7 +179,22 @@ export class InAppNotificationsBellComponent implements OnInit {
       )
       .subscribe((list) => {
         this.items = list;
+        const valid = new Set(list.map((n) => n.id));
+        this.selectedIds = new Set([...this.selectedIds].filter((id) => valid.has(id)));
       });
+  }
+
+  formatCreatedAt(iso: string): string {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) {
+      return '';
+    }
+    return d.toLocaleString('es-MX', {
+      day: '2-digit',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   }
 
   unreadCount(): number {
@@ -182,12 +242,70 @@ export class InAppNotificationsBellComponent implements OnInit {
     this.notificationsApi.delete(n.id).subscribe({
       next: () => {
         this.items = this.items.filter((x) => x.id !== n.id);
+        this.selectedIds.delete(n.id);
       },
       error: () => this.toast.error('No se pudo eliminar'),
     });
   }
 
+  deleteSelected(ev: Event): void {
+    ev.stopPropagation();
+    const ids = [...this.selectedIds];
+    if (ids.length === 0) {
+      return;
+    }
+    this.bulkDeleting = true;
+    this.notificationsApi.bulkDelete(ids).subscribe({
+      next: (res) => {
+        this.bulkDeleting = false;
+        const removed = new Set(ids);
+        this.items = this.items.filter((n) => !removed.has(n.id));
+        this.selectedIds = new Set();
+        this.selectionMode = false;
+        this.toast.success(`${res.affected} notificación(es) eliminada(s)`);
+      },
+      error: () => {
+        this.bulkDeleting = false;
+        this.toast.error('No se pudieron eliminar las seleccionadas');
+      },
+    });
+  }
+
+  deleteAll(ev: Event): void {
+    ev.stopPropagation();
+    if (this.items.length === 0) {
+      return;
+    }
+    if (!window.confirm('¿Eliminar todas las notificaciones visibles? Esta acción no se puede deshacer.')) {
+      return;
+    }
+    this.bulkDeleting = true;
+    this.notificationsApi.bulkDeleteAll().subscribe({
+      next: (res) => {
+        this.bulkDeleting = false;
+        this.items = [];
+        this.selectedIds = new Set();
+        this.selectionMode = false;
+        this.toast.success(`${res.affected} notificación(es) eliminada(s)`);
+      },
+      error: () => {
+        this.bulkDeleting = false;
+        this.toast.error('No se pudieron eliminar todas');
+      },
+    });
+  }
+
   onRowClick(n: UserNotificationDto): void {
+    if (this.selectionMode) {
+      const next = new Set(this.selectedIds);
+      if (next.has(n.id)) {
+        next.delete(n.id);
+      } else {
+        next.add(n.id);
+      }
+      this.selectedIds = next;
+      return;
+    }
     if (!n.readAt) {
       this.notificationsApi.markRead(n.id).subscribe({
         next: () => this.patchLocal(n.id, { readAt: new Date().toISOString() }),

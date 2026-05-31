@@ -2,7 +2,12 @@ import { Injectable, inject, signal, computed, DestroyRef, LOCALE_ID } from '@an
 import { forkJoin } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AdminService } from '../../../services/admin.service';
-import { ReportService, ComplianceStats, MedicationReport } from '../../../services/report.service';
+import {
+  ReportService,
+  ComplianceStats,
+  MedicationReport,
+  ReportDownloadRequest,
+} from '../../../services/report.service';
 import { ToastService } from '../../../services/toast.service';
 import { HandoverShiftSlot } from '../../../services/nurse.service';
 
@@ -288,6 +293,35 @@ export class StaffQuickActionsService {
     this.loadReportsData();
   }
 
+  reportsStartIso(): string {
+    const start = this.reportsStart();
+    return start ? this.formatDateInputValue(start) : '';
+  }
+
+  reportsEndIso(): string {
+    const end = this.reportsEnd();
+    return end ? this.formatDateInputValue(end) : '';
+  }
+
+  applyReportsPeriod(range: { start: string; end: string }): void {
+    const start = new Date(`${range.start}T00:00:00`);
+    const end = new Date(`${range.end}T23:59:59`);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start > end) {
+      this.toast.warning(this.staffQuickErrReportsLoad);
+      return;
+    }
+    this.reportsStart.set(start);
+    this.reportsEnd.set(end);
+    this.loadReportsData();
+  }
+
+  private formatDateInputValue(d: Date): string {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
   private loadReportsData(): void {
     const start = this.reportsStart();
     const end = this.reportsEnd();
@@ -315,7 +349,7 @@ export class StaffQuickActionsService {
     });
   }
 
-  downloadCsv(kind: 'compliance' | 'medication'): void {
+  downloadCsv(request: ReportDownloadRequest): void {
     const start = this.reportsStart();
     const end = this.reportsEnd();
     if (!start || !end) {
@@ -323,32 +357,34 @@ export class StaffQuickActionsService {
     }
     this.reportsExporting.set(true);
     const nurseId = this.reportNurseUserId();
-    const slug = `${start.toISOString().slice(0, 10)}_${end.toISOString().slice(0, 10)}`;
-    this.reportService.exportReport(kind, 'csv', start, end, undefined, nurseId).subscribe({
-      next: (blob) => {
-        this.reportsExporting.set(false);
-        if (!blob?.size) {
-          this.toast.warning(this.staffQuickWarnCsvEmpty);
-          return;
-        }
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `reporte-admin-${kind}-${slug}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-        this.toast.success(this.staffQuickToastCsvDownloaded);
-      },
-      error: () => {
-        this.reportsExporting.set(false);
-        this.toast.error(this.staffQuickErrCsvDownload);
-      },
-    });
+    this.reportService
+      .exportReport(
+        request.kind,
+        'csv',
+        start,
+        end,
+        undefined,
+        nurseId,
+        request.complianceFilter,
+      )
+      .subscribe({
+        next: ({ blob, filename }) => {
+          this.reportsExporting.set(false);
+          if (!blob?.size) {
+            this.toast.warning(this.staffQuickWarnCsvEmpty);
+            return;
+          }
+          this.triggerDownload(blob, filename);
+          this.toast.success(this.staffQuickToastCsvDownloaded);
+        },
+        error: () => {
+          this.reportsExporting.set(false);
+          this.toast.error(this.staffQuickErrCsvDownload);
+        },
+      });
   }
 
-  downloadPdf(kind: 'compliance' | 'medication'): void {
+  downloadPdf(request: ReportDownloadRequest): void {
     const start = this.reportsStart();
     const end = this.reportsEnd();
     if (!start || !end) {
@@ -356,28 +392,41 @@ export class StaffQuickActionsService {
     }
     this.reportsExporting.set(true);
     const nurseId = this.reportNurseUserId();
-    const slug = `${start.toISOString().slice(0, 10)}_${end.toISOString().slice(0, 10)}`;
-    this.reportService.exportReport(kind, 'pdf', start, end, undefined, nurseId).subscribe({
-      next: (blob) => {
-        this.reportsExporting.set(false);
-        if (!blob?.size) {
-          this.toast.warning(this.staffQuickWarnPdfEmpty);
-          return;
-        }
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `reporte-admin-${kind}-${slug}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-        this.toast.success(this.staffQuickToastPdfDownloaded);
-      },
-      error: () => {
-        this.reportsExporting.set(false);
-        this.toast.error(this.staffQuickErrPdfDownload);
-      },
-    });
+    this.reportService
+      .exportReport(
+        request.kind,
+        'pdf',
+        start,
+        end,
+        undefined,
+        nurseId,
+        request.complianceFilter,
+      )
+      .subscribe({
+        next: ({ blob, filename }) => {
+          this.reportsExporting.set(false);
+          if (!blob?.size) {
+            this.toast.warning(this.staffQuickWarnPdfEmpty);
+            return;
+          }
+          this.triggerDownload(blob, filename);
+          this.toast.success(this.staffQuickToastPdfDownloaded);
+        },
+        error: () => {
+          this.reportsExporting.set(false);
+          this.toast.error(this.staffQuickErrPdfDownload);
+        },
+      });
+  }
+
+  private triggerDownload(blob: Blob, filename: string): void {
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
   }
 }

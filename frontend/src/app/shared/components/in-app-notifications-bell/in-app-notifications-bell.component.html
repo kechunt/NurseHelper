@@ -16,14 +16,18 @@
   <div
     *ngIf="panelOpen"
     class="notif-panel nh-neuro-surface-raised"
+    [class.notif-panel--expanded]="expandedView"
     [attr.id]="notificationBellPanelId"
     (click)="$event.stopPropagation()"
     role="dialog"
     aria-label="Lista de notificaciones"
   >
     <div class="notif-panel-head">
-      <span>Notificaciones</span>
+      <span>Notificaciones <span class="notif-count-hint" *ngIf="items.length">({{ items.length }})</span></span>
       <div class="notif-head-actions">
+        <button type="button" class="nh-neuro-link" (click)="toggleExpandedView($event)">
+          {{ expandedView ? 'Vista compacta' : 'Ver todas' }}
+        </button>
         <button
           type="button"
           class="nh-neuro-link"
@@ -42,6 +46,33 @@
         </button>
       </div>
     </div>
+
+    <div class="notif-toolbar" *ngIf="items.length > 0">
+      <button type="button" class="nh-neuro-link" (click)="toggleSelectionMode($event)">
+        {{ selectionMode ? 'Cancelar selección' : 'Seleccionar' }}
+      </button>
+      <ng-container *ngIf="selectionMode">
+        <button type="button" class="nh-neuro-link" (click)="selectAll($event)">Todas</button>
+        <button type="button" class="nh-neuro-link" (click)="clearSelection($event)">Ninguna</button>
+        <button
+          type="button"
+          class="nh-neuro-link nh-neuro-link--danger"
+          [disabled]="selectedIds.size === 0 || bulkDeleting"
+          (click)="deleteSelected($event)"
+        >
+          Eliminar ({{ selectedIds.size }})
+        </button>
+      </ng-container>
+      <button
+        type="button"
+        class="nh-neuro-link nh-neuro-link--danger"
+        [disabled]="bulkDeleting"
+        (click)="deleteAll($event)"
+      >
+        Eliminar todas
+      </button>
+    </div>
+
     <div *ngIf="loading" [attr.id]="notificationBellLoadingId" class="notif-muted">Cargando…</div>
     <ul *ngIf="!loading" class="notif-list">
       <li *ngIf="items.length === 0" [attr.id]="notificationBellEmptyId" class="notif-muted">
@@ -54,17 +85,22 @@
         [class.sev-warning]="n.severity === 'warning'"
         [class.sev-critical]="n.severity === 'critical'"
         [class.unread]="!n.readAt"
+        [class.selected]="selectionMode && isSelected(n.id)"
       >
+        <label *ngIf="selectionMode" class="notif-row-select">
+          <input type="checkbox" [checked]="isSelected(n.id)" (change)="toggleSelected(n.id, $event)" />
+        </label>
         <button
           type="button"
           class="notif-row-main"
           [attr.id]="notificationBellRowOpenBtnId(n)"
           (click)="onRowClick(n)"
         >
+          <span class="notif-meta">{{ formatCreatedAt(n.createdAt) }}</span>
           <span class="notif-title">{{ n.title }}</span>
           <span class="notif-body">{{ n.body }}</span>
         </button>
-        <div class="notif-row-actions">
+        <div class="notif-row-actions" *ngIf="!selectionMode">
           <button
             *ngIf="!n.readAt"
             type="button"

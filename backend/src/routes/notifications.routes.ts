@@ -36,6 +36,15 @@ router.patch('/read-all', notificationsController.markAllAsRead);
 
 /**
  * @swagger
+ * /api/notifications/bulk-delete:
+ *   post:
+ *     summary: Eliminar varias notificaciones o todas
+ *     tags: [Notifications]
+ */
+router.post('/bulk-delete', notificationsController.bulkDelete);
+
+/**
+ * @swagger
  * /api/notifications/{id}/read:
  *   patch:
  *     summary: Marcar una notificación como leída

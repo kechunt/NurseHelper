@@ -3,10 +3,11 @@ import { AppDataSource } from '../data-source';
 import { Patient } from '../entities/Patient';
 import { Schedule, ScheduleStatus } from '../entities/Schedule';
 import { User, UserRole } from '../entities/User';
-import { buildAreasShiftCoverage } from './area-shift-coverage.service';
+import { buildAreasShiftCoverage, type AreasShiftCoveragePayload } from './area-shift-coverage.service';
 import {
   bulkDismissDedupesForUsers,
   dismissScheduleNotificationGroup,
+  dismissScheduleNotificationsExceptUser,
   dismissScheduleNotificationsForNonPendingSchedules,
   dismissUserDedupeKey,
   upsertUserNotification,
@@ -101,17 +102,113 @@ async function syncAreaCoverageNotifications(): Promise<void> {
   }
 }
 
-/**
- * Destinatario: `assignedToId` del schedule o enfermera asignada al paciente si viene null.
- */
-async function resolveNurseIdForSchedule(s: Schedule): Promise<number | null> {
-  if (s.assignedToId != null) return s.assignedToId;
+type ScheduleRoutingContext = {
+  coverage: AreasShiftCoveragePayload;
+  presentNursesByArea: Map<number, Set<number>>;
+  patientsById: Map<number, { areaId: number | null; assignedToId: number | null }>;
+};
+
+async function buildScheduleRoutingContext(): Promise<ScheduleRoutingContext> {
+  const coverage = await buildAreasShiftCoverage();
+  const presentNursesByArea = new Map<number, Set<number>>();
+  for (const row of coverage.areas) {
+    presentNursesByArea.set(row.areaId, new Set(row.nurses.map((n) => n.id)));
+  }
+
   const patientRepo = AppDataSource.getRepository(Patient);
-  const p = await patientRepo.findOne({
-    where: { id: s.patientId },
-    select: ['assignedToId'],
+  const patients = await patientRepo.find({
+    where: { isActive: true },
+    relations: ['bed'],
   });
-  return p?.assignedToId ?? null;
+
+  const patientsById = new Map<number, { areaId: number | null; assignedToId: number | null }>();
+  for (const p of patients) {
+    const fromBed = p.bed?.areaId;
+    const areaId =
+      p.areaId != null
+        ? Number(p.areaId)
+        : fromBed != null
+          ? Number(fromBed)
+          : null;
+    patientsById.set(p.id, {
+      areaId: Number.isFinite(areaId as number) ? (areaId as number) : null,
+      assignedToId: p.assignedToId ?? null,
+    });
+  }
+
+  return { coverage, presentNursesByArea, patientsById };
+}
+
+/**
+ * Enfermera responsable en el turno actual: presente/tarde en el área del paciente.
+ * Prioridad: assignedTo del schedule → assignedTo del paciente → primera presente en el área.
+ */
+export function resolveOnDutyNurseForSchedule(
+  sch: Schedule,
+  ctx: ScheduleRoutingContext,
+): { nurseId: number | null; areaId: number | null } {
+  if (!ctx.coverage.hasActiveShift || ctx.coverage.shiftId == null) {
+    return { nurseId: null, areaId: null };
+  }
+
+  const patient = ctx.patientsById.get(sch.patientId);
+  const areaId = patient?.areaId ?? null;
+  if (areaId == null) {
+    return { nurseId: null, areaId: null };
+  }
+
+  const present = ctx.presentNursesByArea.get(areaId);
+  if (!present || present.size === 0) {
+    return { nurseId: null, areaId };
+  }
+
+  if (sch.assignedToId != null && present.has(sch.assignedToId)) {
+    return { nurseId: sch.assignedToId, areaId };
+  }
+
+  if (patient?.assignedToId != null && present.has(patient.assignedToId)) {
+    return { nurseId: patient.assignedToId, areaId };
+  }
+
+  const fallback = [...present].sort((a, b) => a - b)[0] ?? null;
+  return { nurseId: fallback, areaId };
+}
+
+async function upsertScheduleReminder(params: {
+  userId: number;
+  sch: Schedule;
+  st: Date;
+  ctx: ScheduleRoutingContext;
+  areaId: number | null;
+  type: string;
+  severity: 'info' | 'warning' | 'critical';
+  requiresAck: boolean;
+  title: string;
+  body: string;
+  kind: string;
+  dedupeKey: string;
+}): Promise<void> {
+  const { coverage } = params.ctx;
+  await upsertUserNotification({
+    userId: params.userId,
+    type: params.type,
+    severity: params.severity,
+    requiresAck: params.requiresAck,
+    title: params.title,
+    body: params.body,
+    payload: {
+      scheduleId: params.sch.id,
+      patientId: params.sch.patientId,
+      areaId: params.areaId,
+      shiftId: coverage.shiftId,
+      date: coverage.date,
+      shiftName: coverage.shiftName,
+      view: 'tasks',
+      deepLink: `/nurse-dashboard?view=tasks&highlightSchedule=${params.sch.id}`,
+      kind: params.kind,
+    },
+    dedupeKey: params.dedupeKey,
+  });
 }
 
 function localDayBounds(d: Date): { start: Date; end: Date } {
@@ -131,33 +228,38 @@ async function syncScheduleReminderNotifications(): Promise<void> {
     },
   });
 
+  const ctx = await buildScheduleRoutingContext();
+
   for (const sch of schedules) {
     const st = sch.scheduledTime instanceof Date ? sch.scheduledTime : new Date(sch.scheduledTime);
     const minutesUntil = (st.getTime() - now.getTime()) / 60_000;
-    const nurseId = await resolveNurseIdForSchedule(sch);
-    if (nurseId == null) continue;
-
-    const basePayload = {
-      scheduleId: sch.id,
-      patientId: sch.patientId,
-      view: 'tasks',
-      deepLink: `/nurse-dashboard?view=tasks&highlightSchedule=${sch.id}`,
-    };
+    const { nurseId, areaId } = resolveOnDutyNurseForSchedule(sch, ctx);
 
     const key60 = `sch:${sch.id}:t60`;
     const key10 = `sch:${sch.id}:t10`;
     const keyOver = `sch:${sch.id}:overdue`;
 
+    if (nurseId == null) {
+      await dismissScheduleNotificationGroup(sch.id);
+      continue;
+    }
+
+    await dismissScheduleNotificationsExceptUser(sch.id, nurseId);
+
     // T-65 .. T-55 (recordatorio ~1 h)
     if (minutesUntil >= 55 && minutesUntil <= 65) {
-      await upsertUserNotification({
+      await upsertScheduleReminder({
         userId: nurseId,
+        sch,
+        st,
+        ctx,
+        areaId,
         type: 'schedule_reminder_60',
         severity: 'info',
         requiresAck: false,
         title: 'Recordatorio: tarea en ~1 h',
         body: `«${sch.description?.slice(0, 120) || 'Tarea'}» programada a las ${st.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}.`,
-        payload: { ...basePayload, kind: 't60' },
+        kind: 't60',
         dedupeKey: key60,
       });
     } else {
@@ -166,14 +268,18 @@ async function syncScheduleReminderNotifications(): Promise<void> {
 
     // T-12 .. T-8
     if (minutesUntil >= 8 && minutesUntil <= 12) {
-      await upsertUserNotification({
+      await upsertScheduleReminder({
         userId: nurseId,
+        sch,
+        st,
+        ctx,
+        areaId,
         type: 'schedule_reminder_10',
         severity: 'warning',
         requiresAck: false,
         title: 'Alerta: tarea en ~10 min',
         body: `«${sch.description?.slice(0, 120) || 'Tarea'}» a las ${st.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}.`,
-        payload: { ...basePayload, kind: 't10' },
+        kind: 't10',
         dedupeKey: key10,
       });
     } else {
@@ -181,14 +287,18 @@ async function syncScheduleReminderNotifications(): Promise<void> {
     }
 
     if (minutesUntil < 0) {
-      await upsertUserNotification({
+      await upsertScheduleReminder({
         userId: nurseId,
+        sch,
+        st,
+        ctx,
+        areaId,
         type: 'schedule_overdue',
         severity: 'critical',
         requiresAck: true,
         title: 'Tarea pendiente vencida',
         body: `«${sch.description?.slice(0, 120) || 'Tarea'}» debía realizarse a las ${st.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })} y sigue pendiente.`,
-        payload: { ...basePayload, kind: 'overdue' },
+        kind: 'overdue',
         dedupeKey: keyOver,
       });
     } else {

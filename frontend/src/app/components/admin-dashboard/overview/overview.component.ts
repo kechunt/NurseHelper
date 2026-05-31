@@ -1,5 +1,6 @@
 import { Component, OnDestroy, OnInit, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../services/admin.service';
 import { ToastService } from '../../../services/toast.service';
 import { ShiftsService, Shift } from '../../../services/shifts.service';
@@ -9,7 +10,7 @@ import { forkJoin } from 'rxjs';
 @Component({
   selector: 'app-overview',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './overview.component.html',
   styleUrl: './overview.component.css',
 })
@@ -34,14 +35,21 @@ export class OverviewComponent implements OnInit, OnDestroy {
   backups: { filename: string; size: number; createdAt: string }[] = [];
   loadingBackups = false;
   creatingBackup = false;
+  backupName = '';
+  lastBackupFilename: string | null = null;
 
-  readonly adminOverviewErrLoadStats = $localize`:@@adminOverview.errLoadStats:Error al cargar las estadísticas`;
   readonly adminOverviewBackupTitle = $localize`:@@adminOverview.backupTitle:Respaldos de base de datos`;
   readonly adminOverviewBackupCreate = $localize`:@@adminOverview.backupCreate:Crear respaldo`;
+  readonly adminOverviewBackupNameLabel = $localize`:@@adminOverview.backupNameLabel:Nombre del respaldo (opcional)`;
+  readonly adminOverviewBackupNameHint = $localize`:@@adminOverview.backupNameHint:Ej: prod_mayo, bdresp1. Si lo dejas vacío se genera automáticamente.`;
+  readonly adminOverviewBackupProductionNote = $localize`:@@adminOverview.backupProductionNote:Recomendado antes de despliegues o cambios en producción. Guarda una copia del estado actual de la base de datos en el servidor.`;
+  readonly adminOverviewBackupLast = $localize`:@@adminOverview.backupLast:Último respaldo`;
   readonly adminOverviewBackupEmpty = $localize`:@@adminOverview.backupEmpty:No hay respaldos disponibles`;
   readonly adminOverviewBackupCreated = $localize`:@@adminOverview.backupCreated:Respaldo creado correctamente`;
+  readonly adminOverviewBackupCreatedAs = $localize`:@@adminOverview.backupCreatedAs:Archivo generado`;
   readonly adminOverviewBackupErrLoad = $localize`:@@adminOverview.backupErrLoad:Error al cargar respaldos`;
   readonly adminOverviewBackupErrCreate = $localize`:@@adminOverview.backupErrCreate:Error al crear respaldo`;
+  readonly adminOverviewErrLoadStats = $localize`:@@adminOverview.errLoadStats:Error al cargar las estadísticas`;
   private shifts: Shift[] = [];
   private clockTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -137,7 +145,7 @@ export class OverviewComponent implements OnInit, OnDestroy {
   loadBackups(): void {
     this.loadingBackups = true;
     this.adminService.listBackups().subscribe({
-      next: (backups) => {
+      next: ({ backups, lastBackup }) => {
         this.backups = backups.map((b) => ({
           filename: b.filename,
           size: b.size,
@@ -146,6 +154,7 @@ export class OverviewComponent implements OnInit, OnDestroy {
               ? b.createdAt
               : new Date(b.createdAt).toISOString(),
         }));
+        this.lastBackupFilename = lastBackup?.filename ?? this.backups[0]?.filename ?? null;
         this.loadingBackups = false;
       },
       error: () => {
@@ -159,9 +168,12 @@ export class OverviewComponent implements OnInit, OnDestroy {
   createBackup(): void {
     if (this.creatingBackup) return;
     this.creatingBackup = true;
-    this.adminService.createBackup('full').subscribe({
-      next: () => {
-        this.toastService.success(this.adminOverviewBackupCreated);
+    this.adminService.createBackup('full', this.backupName).subscribe({
+      next: (response) => {
+        const filename = response.backup?.filename;
+        this.lastBackupFilename = filename ?? this.lastBackupFilename;
+        const detail = filename ? `${this.adminOverviewBackupCreatedAs}: ${filename}` : this.adminOverviewBackupCreated;
+        this.toastService.success(detail);
         this.creatingBackup = false;
         this.loadBackups();
       },

@@ -7,7 +7,8 @@ function shouldSkipLoading(url: string): boolean {
   return (
     url.includes('/health') ||
     url.includes('/health-basic') ||
-    url.includes('/api-docs')
+    url.includes('/api-docs') ||
+    url.includes('/notifications')
   );
 }
 

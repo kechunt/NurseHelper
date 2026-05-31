@@ -76,7 +76,7 @@
       id="admin-panel-staff"
       aria-labelledby="admin-tab-staff"
     >
-      <app-staff-management></app-staff-management>
+      <app-staff-management [tabActive]="tabState.activeTab() === 'staff'"></app-staff-management>
     </div>
 
     <div

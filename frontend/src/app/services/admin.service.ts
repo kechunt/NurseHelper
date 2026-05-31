@@ -416,14 +416,27 @@ export class AdminService {
     });
   }
 
-  listBackups(): Observable<BackupListItem[]> {
+  listBackups(): Observable<{ backups: BackupListItem[]; lastBackup: BackupListItem | null }> {
     return this.http
-      .get<{ backups: BackupListItem[] }>(`${environment.apiUrl}/backup`)
-      .pipe(map((r) => r.backups ?? []));
+      .get<{ backups: BackupListItem[]; lastBackup: BackupListItem | null }>(`${environment.apiUrl}/backup`)
+      .pipe(
+        map((r) => ({
+          backups: r.backups ?? [],
+          lastBackup: r.lastBackup ?? (r.backups?.[0] ?? null),
+        })),
+      );
   }
 
-  createBackup(type: 'full' | 'incremental' = 'full'): Observable<{ message: string; backup: BackupListItem }> {
-    return this.http.post<{ message: string; backup: BackupListItem }>(`${environment.apiUrl}/backup`, { type });
+  createBackup(
+    type: 'full' | 'incremental' = 'full',
+    name?: string,
+  ): Observable<{ message: string; backup: BackupListItem }> {
+    const body: { type: 'full' | 'incremental'; name?: string } = { type };
+    const trimmed = name?.trim();
+    if (trimmed) {
+      body.name = trimmed;
+    }
+    return this.http.post<{ message: string; backup: BackupListItem }>(`${environment.apiUrl}/backup`, body);
   }
 }
 

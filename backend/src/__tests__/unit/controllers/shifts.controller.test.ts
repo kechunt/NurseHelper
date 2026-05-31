@@ -879,6 +879,7 @@ describe(
           shiftTime: '08:00 - 16:00',
           nurseId: 5,
           nurseName: 'Ana Ruiz',
+          assignedAreaId: null,
           status: ShiftAttendanceStatus.LATE,
           checkInAt: null,
           checkOutAt: null,

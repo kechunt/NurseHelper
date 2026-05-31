@@ -150,8 +150,8 @@ describe('PharmacyDashboardComponent', () => {
     const c = fixture.componentInstance;
     expect(c.pharmacyExpColType).toContain('Tipo');
     expect(c.pharmacyExportKindDelivery).toContain('Entreg');
-    expect(c.pharmacyPrintGeneratedPrefix).toContain('Generado');
-    expect(c.pharmacyPrintInventoryTitle).toContain('Inventario');
+    expect(c.pharmacyPdfGeneratedPrefix).toContain('Generado');
+    expect(c.pharmacyExportInventoryTitle).toContain('Inventario');
   });
 
   it('onPharmacyTabKeydown con ArrowRight cambia de módulo', () => {

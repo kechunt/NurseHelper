@@ -3,12 +3,12 @@
  * Gestiona backups regulares y estrategia de recuperación
  */
 
-import { exec } from 'child_process';
+import { exec, spawn } from 'child_process';
 import { promisify } from 'util';
 import * as fs from 'fs';
 import * as path from 'path';
+import { gzipSync, gunzipSync } from 'zlib';
 import { logger } from '../utils/logger';
-import { emailService } from './email.service';
 import { alertService } from './alert.service';
 
 const execAsync = promisify(exec);
@@ -21,6 +21,74 @@ function resolveDbConnection() {
     dbPort: process.env.DB_PORT || '3306',
     dbPassword: process.env.DB_PASSWORD || '',
   };
+}
+
+function resolveBackupPath(): string {
+  const configured = process.env.BACKUP_PATH?.trim();
+  if (configured) {
+    return path.isAbsolute(configured)
+      ? configured
+      : path.join(process.cwd(), configured);
+  }
+  return path.join(__dirname, '../../backups');
+}
+
+function resolveMysqlBin(tool: 'mysql' | 'mysqldump'): string {
+  const envDir = process.env.MYSQL_BIN_DIR?.trim();
+  if (envDir) {
+    const candidate = path.join(envDir, process.platform === 'win32' ? `${tool}.exe` : tool);
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+
+  if (process.platform === 'win32') {
+    const versions = ['8.4', '8.0', '5.7'];
+    for (const version of versions) {
+      const candidate = `C:\\Program Files\\MySQL\\MySQL Server ${version}\\bin\\${tool}.exe`;
+      if (fs.existsSync(candidate)) {
+        return candidate;
+      }
+    }
+  }
+
+  return tool;
+}
+
+export function sanitizeBackupBaseName(raw: unknown): string {
+  if (typeof raw !== 'string' || !raw.trim()) {
+    return '';
+  }
+  return raw
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9._-]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '')
+    .slice(0, 48);
+}
+
+function formatBackupTimestamp(date = new Date()): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return (
+    `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}_` +
+    `${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`
+  );
+}
+
+function buildBackupFilename(dbName: string, baseName: string | undefined, compress: boolean): string {
+  const stamp = formatBackupTimestamp();
+  const safeBase = sanitizeBackupBaseName(baseName);
+  const stem = safeBase ? `${safeBase}_${stamp}` : `backup_${dbName}_${stamp}`;
+  return compress ? `${stem}.sql.gz` : `${stem}.sql`;
+}
+
+function isBackupFile(name: string): boolean {
+  if (!name.endsWith('.sql') && !name.endsWith('.sql.gz')) {
+    return false;
+  }
+  return !name.includes('_latest');
 }
 
 export interface BackupConfig {
@@ -39,48 +107,100 @@ export interface BackupInfo {
   type: 'full' | 'incremental';
 }
 
+export interface CreateBackupOptions {
+  name?: string;
+  /** Respaldos disparados desde el panel admin ignoran BACKUP_ENABLED=false */
+  manual?: boolean;
+}
+
+async function runMysqldumpToFile(filepath: string): Promise<void> {
+  const { dbName, dbUser, dbHost, dbPort, dbPassword } = resolveDbConnection();
+  const mysqldump = resolveMysqlBin('mysqldump');
+  const args = [
+    '-h',
+    dbHost,
+    '-P',
+    String(dbPort),
+    '-u',
+    dbUser,
+    `-p${dbPassword}`,
+    '--single-transaction',
+    '--routines',
+    '--triggers',
+    '--default-character-set=utf8mb4',
+    dbName,
+  ];
+
+  await new Promise<void>((resolve, reject) => {
+    const proc = spawn(mysqldump, args, { stdio: ['ignore', 'pipe', 'pipe'], shell: false });
+    const out = fs.createWriteStream(filepath);
+    let stderr = '';
+
+    proc.stdout.pipe(out);
+    proc.stderr.on('data', (chunk) => {
+      stderr += chunk.toString();
+    });
+
+    proc.on('error', (err) => {
+      out.destroy();
+      reject(err);
+    });
+
+    proc.on('close', (code) => {
+      out.end(() => {
+        if (code === 0 && fs.existsSync(filepath) && fs.statSync(filepath).size > 0) {
+          resolve();
+          return;
+        }
+        if (fs.existsSync(filepath)) {
+          fs.unlinkSync(filepath);
+        }
+        reject(new Error(stderr.trim() || `mysqldump terminó con código ${code ?? 'desconocido'}`));
+      });
+    });
+  });
+}
+
 export class BackupService {
   private config: BackupConfig = {
     enabled: process.env.BACKUP_ENABLED === 'true',
-    schedule: (process.env.BACKUP_SCHEDULE as any) || 'daily',
-    retentionDays: parseInt(process.env.BACKUP_RETENTION_DAYS || '7'),
+    schedule: (process.env.BACKUP_SCHEDULE as BackupConfig['schedule']) || 'daily',
+    retentionDays: parseInt(process.env.BACKUP_RETENTION_DAYS || '7', 10),
     compress: process.env.BACKUP_COMPRESS !== 'false',
-    backupPath: process.env.BACKUP_PATH || path.join(__dirname, '../../backups'),
+    backupPath: resolveBackupPath(),
   };
 
   /**
    * Ejecutar backup completo
    */
-  async createBackup(type: 'full' | 'incremental' = 'full'): Promise<BackupInfo> {
-    if (!this.config.enabled) {
-      logger.info('Backups are disabled');
-      return null as any;
+  async createBackup(
+    type: 'full' | 'incremental' = 'full',
+    options: CreateBackupOptions = {},
+  ): Promise<BackupInfo | null> {
+    const manual = options.manual === true;
+    if (!manual && !this.config.enabled) {
+      logger.info('Backups automáticos deshabilitados (BACKUP_ENABLED != true)');
+      return null;
     }
 
+    const sqlPath = path.join(
+      this.config.backupPath,
+      buildBackupFilename(resolveDbConnection().dbName, options.name, false),
+    );
+    const finalPath = this.config.compress ? `${sqlPath}.gz` : sqlPath;
+
     try {
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const { dbName, dbUser, dbHost, dbPort, dbPassword } = resolveDbConnection();
-
-      const filename = `backup_${dbName}_${timestamp}.sql`;
-      const filepath = path.join(this.config.backupPath, filename);
-      const compressedPath = `${filepath}.gz`;
-
-      // Crear directorio si no existe
       if (!fs.existsSync(this.config.backupPath)) {
         fs.mkdirSync(this.config.backupPath, { recursive: true });
       }
 
-      // Ejecutar mysqldump
-      const dumpCommand = `mysqldump -h ${dbHost} -P ${dbPort} -u ${dbUser} -p${dbPassword} ${dbName} > ${filepath}`;
-      
-      logger.info(`Creating backup: ${filename}`);
-      await execAsync(dumpCommand);
+      logger.info(`Creating backup: ${path.basename(finalPath)}`);
+      await runMysqldumpToFile(sqlPath);
 
-      // Comprimir si está habilitado
-      let finalPath = filepath;
       if (this.config.compress) {
-        await execAsync(`gzip ${filepath}`);
-        finalPath = compressedPath;
+        const sqlBuffer = fs.readFileSync(sqlPath);
+        fs.writeFileSync(finalPath, gzipSync(sqlBuffer));
+        fs.unlinkSync(sqlPath);
       }
 
       const stats = fs.statSync(finalPath);
@@ -88,20 +208,27 @@ export class BackupService {
         filename: path.basename(finalPath),
         path: finalPath,
         size: stats.size,
-        createdAt: new Date(),
+        createdAt: stats.mtime,
         type,
       };
 
       logger.info(`Backup created successfully: ${backupInfo.filename} (${this.formatSize(backupInfo.size)})`);
 
-      // Limpiar backups antiguos
-      await this.cleanupOldBackups();
+      if (this.config.enabled) {
+        await this.cleanupOldBackups();
+      }
 
       return backupInfo;
     } catch (error) {
+      if (fs.existsSync(sqlPath)) {
+        fs.unlinkSync(sqlPath);
+      }
+      if (fs.existsSync(finalPath)) {
+        fs.unlinkSync(finalPath);
+      }
+
       logger.error('Error creating backup', error);
-      
-      // Enviar alerta
+
       await alertService.sendAlert({
         type: 'error',
         severity: 'high',
@@ -119,29 +246,31 @@ export class BackupService {
   async restoreBackup(backupPath: string): Promise<void> {
     try {
       const { dbName, dbUser, dbHost, dbPort, dbPassword } = resolveDbConnection();
+      const mysql = resolveMysqlBin('mysql');
 
-      // Descomprimir si es necesario
       let sqlPath = backupPath;
       if (backupPath.endsWith('.gz')) {
         logger.info('Decompressing backup...');
-        await execAsync(`gunzip -c ${backupPath} > ${backupPath.replace('.gz', '')}`);
-        sqlPath = backupPath.replace('.gz', '');
+        const decompressed = backupPath.replace(/\.gz$/, '');
+        fs.writeFileSync(decompressed, gunzipSync(fs.readFileSync(backupPath)));
+        sqlPath = decompressed;
       }
 
-      // Restaurar
       logger.info(`Restoring backup: ${backupPath}`);
-      const restoreCommand = `mysql -h ${dbHost} -P ${dbPort} -u ${dbUser} -p${dbPassword} ${dbName} < ${sqlPath}`;
+      const restoreCommand =
+        process.platform === 'win32'
+          ? `cmd /c "type \\"${sqlPath.replace(/"/g, '\\"')}\\" | \\"${mysql}\\" -h ${dbHost} -P ${dbPort} -u ${dbUser} -p${dbPassword} --default-character-set=utf8mb4 ${dbName}"`
+          : `"${mysql}" -h ${dbHost} -P ${dbPort} -u ${dbUser} -p${dbPassword} --default-character-set=utf8mb4 ${dbName} < "${sqlPath}"`;
       await execAsync(restoreCommand);
 
       logger.info('Backup restored successfully');
 
-      // Limpiar archivo temporal si se descomprimió
       if (backupPath.endsWith('.gz') && fs.existsSync(sqlPath)) {
         fs.unlinkSync(sqlPath);
       }
     } catch (error) {
       logger.error('Error restoring backup', error);
-      
+
       await alertService.sendAlert({
         type: 'error',
         severity: 'critical',
@@ -161,23 +290,27 @@ export class BackupService {
       return [];
     }
 
-    const files = fs.readdirSync(this.config.backupPath)
-      .filter((f) => f.startsWith('backup_') && (f.endsWith('.sql') || f.endsWith('.sql.gz')));
+    const files = fs
+      .readdirSync(this.config.backupPath)
+      .filter((f) => isBackupFile(f));
 
-    const backups: BackupInfo[] = files.map((file) => {
-      const filepath = path.join(this.config.backupPath, file);
-      const stats = fs.statSync(filepath);
-      
-      return {
-        filename: file,
-        path: filepath,
-        size: stats.size,
-        createdAt: stats.birthtime,
-        type: file.includes('incremental') ? 'incremental' : 'full',
-      };
-    });
+    const backups: BackupInfo[] = files
+      .map((file) => {
+        const filepath = path.join(this.config.backupPath, file);
+        const stats = fs.statSync(filepath);
+        if (stats.size < 64) {
+          return null;
+        }
+        return {
+          filename: file,
+          path: filepath,
+          size: stats.size,
+          createdAt: stats.mtime,
+          type: file.includes('incremental') ? ('incremental' as const) : ('full' as const),
+        };
+      })
+      .filter((item): item is BackupInfo => item !== null);
 
-    // Ordenar por fecha (más reciente primero)
     backups.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
     return backups;
@@ -208,7 +341,6 @@ export class BackupService {
    */
   async verifyBackup(backupPath: string): Promise<boolean> {
     try {
-      // Verificar que el archivo existe y tiene contenido
       if (!fs.existsSync(backupPath)) {
         return false;
       }
@@ -218,13 +350,13 @@ export class BackupService {
         return false;
       }
 
-      // Verificar que contiene SQL válido (básico)
-      const content = fs.readFileSync(backupPath, 'utf8');
-      if (!content.includes('CREATE TABLE') && !content.includes('INSERT INTO')) {
-        return false;
+      if (backupPath.endsWith('.gz')) {
+        const sample = gunzipSync(fs.readFileSync(backupPath)).toString('utf8', 0, 4096);
+        return sample.includes('CREATE TABLE') || sample.includes('INSERT INTO');
       }
 
-      return true;
+      const content = fs.readFileSync(backupPath, 'utf8');
+      return content.includes('CREATE TABLE') || content.includes('INSERT INTO');
     } catch (error) {
       logger.error('Error verifying backup', error);
       return false;
@@ -237,26 +369,32 @@ export class BackupService {
   async testRestore(backupPath: string, testDbName: string): Promise<boolean> {
     try {
       const { dbUser, dbHost, dbPort, dbPassword } = resolveDbConnection();
+      const mysql = resolveMysqlBin('mysql');
 
-      // Crear base de datos de prueba
-      await execAsync(`mysql -h ${dbHost} -P ${dbPort} -u ${dbUser} -p${dbPassword} -e "CREATE DATABASE IF NOT EXISTS ${testDbName}"`);
+      await execAsync(
+        `"${mysql}" -h ${dbHost} -P ${dbPort} -u ${dbUser} -p${dbPassword} -e "CREATE DATABASE IF NOT EXISTS ${testDbName}"`,
+      );
 
-      // Restaurar en base de datos de prueba
       let sqlPath = backupPath;
       if (backupPath.endsWith('.gz')) {
-        await execAsync(`gunzip -c ${backupPath} > ${backupPath.replace('.gz', '')}`);
-        sqlPath = backupPath.replace('.gz', '');
+        sqlPath = backupPath.replace(/\.gz$/, '');
+        fs.writeFileSync(sqlPath, gunzipSync(fs.readFileSync(backupPath)));
       }
 
-      await execAsync(`mysql -h ${dbHost} -P ${dbPort} -u ${dbUser} -p${dbPassword} ${testDbName} < ${sqlPath}`);
+      const restoreCommand =
+        process.platform === 'win32'
+          ? `cmd /c "type \\"${sqlPath.replace(/"/g, '\\"')}\\" | \\"${mysql}\\" -h ${dbHost} -P ${dbPort} -u ${dbUser} -p${dbPassword} ${testDbName}"`
+          : `"${mysql}" -h ${dbHost} -P ${dbPort} -u ${dbUser} -p${dbPassword} ${testDbName} < "${sqlPath}"`;
+      await execAsync(restoreCommand);
 
-      // Verificar que se restauró correctamente
-      const { stdout } = await execAsync(`mysql -h ${dbHost} -P ${dbPort} -u ${dbUser} -p${dbPassword} ${testDbName} -e "SHOW TABLES"`);
-      
-      // Limpiar base de datos de prueba
-      await execAsync(`mysql -h ${dbHost} -P ${dbPort} -u ${dbUser} -p${dbPassword} -e "DROP DATABASE ${testDbName}"`);
+      const { stdout } = await execAsync(
+        `"${mysql}" -h ${dbHost} -P ${dbPort} -u ${dbUser} -p${dbPassword} ${testDbName} -e "SHOW TABLES"`,
+      );
 
-      // Limpiar archivo temporal
+      await execAsync(
+        `"${mysql}" -h ${dbHost} -P ${dbPort} -u ${dbUser} -p${dbPassword} -e "DROP DATABASE ${testDbName}"`,
+      );
+
       if (backupPath.endsWith('.gz') && fs.existsSync(sqlPath)) {
         fs.unlinkSync(sqlPath);
       }
@@ -276,7 +414,7 @@ export class BackupService {
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+    return `${Math.round((bytes / k ** i) * 100) / 100} ${sizes[i]}`;
   }
 
   /**
@@ -285,11 +423,11 @@ export class BackupService {
   getCronSchedule(): string {
     switch (this.config.schedule) {
       case 'hourly':
-        return '0 * * * *'; // Cada hora
+        return '0 * * * *';
       case 'daily':
-        return '0 2 * * *'; // Cada día a las 2 AM
+        return '0 2 * * *';
       case 'weekly':
-        return '0 2 * * 0'; // Cada domingo a las 2 AM
+        return '0 2 * * 0';
       default:
         return '0 2 * * *';
     }

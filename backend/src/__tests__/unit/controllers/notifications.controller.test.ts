@@ -5,6 +5,8 @@ const markNotificationRead = jest.fn();
 const markNotificationAcknowledged = jest.fn();
 const markAllNotificationsRead = jest.fn();
 const deleteNotificationForUser = jest.fn();
+const bulkDeleteNotificationsForUser = jest.fn();
+const deleteAllNotificationsForUser = jest.fn();
 
 jest.mock('../../../services/user-notifications-persistence.service', () => ({
   listActiveNotificationsForUser: (...a: unknown[]) => listActiveNotificationsForUser(...a),
@@ -12,6 +14,8 @@ jest.mock('../../../services/user-notifications-persistence.service', () => ({
   markNotificationAcknowledged: (...a: unknown[]) => markNotificationAcknowledged(...a),
   markAllNotificationsRead: (...a: unknown[]) => markAllNotificationsRead(...a),
   deleteNotificationForUser: (...a: unknown[]) => deleteNotificationForUser(...a),
+  bulkDeleteNotificationsForUser: (...a: unknown[]) => bulkDeleteNotificationsForUser(...a),
+  deleteAllNotificationsForUser: (...a: unknown[]) => deleteAllNotificationsForUser(...a),
 }));
 
 import type { AuthRequest } from '../../../middleware/auth.middleware';
@@ -74,5 +78,31 @@ describe('NotificationsController', () => {
     await ctrl.delete({ ...authReq(), params: { id: '99' } } as unknown as AuthRequest, res, jest.fn());
     expect(deleteNotificationForUser).toHaveBeenCalledWith(7, 99);
     expect(json).toHaveBeenCalledWith({ message: 'Notificación eliminada' });
+  });
+
+  it('bulkDelete con ids elimina seleccionadas', async () => {
+    bulkDeleteNotificationsForUser.mockResolvedValueOnce(2);
+    const json = jest.fn();
+    const res = { json } as unknown as Response;
+    await ctrl.bulkDelete(
+      { ...authReq(), body: { ids: [1, 2] } } as unknown as AuthRequest,
+      res,
+      jest.fn(),
+    );
+    expect(bulkDeleteNotificationsForUser).toHaveBeenCalledWith(7, [1, 2]);
+    expect(json).toHaveBeenCalledWith({ message: 'Notificaciones eliminadas', affected: 2 });
+  });
+
+  it('bulkDelete con all elimina todas', async () => {
+    deleteAllNotificationsForUser.mockResolvedValueOnce(5);
+    const json = jest.fn();
+    const res = { json } as unknown as Response;
+    await ctrl.bulkDelete(
+      { ...authReq(), body: { all: true } } as unknown as AuthRequest,
+      res,
+      jest.fn(),
+    );
+    expect(deleteAllNotificationsForUser).toHaveBeenCalledWith(7);
+    expect(json).toHaveBeenCalledWith({ message: 'Notificaciones eliminadas', affected: 5 });
   });
 });
