@@ -1,6 +1,7 @@
 @import '../../../shared/styles/admin-table-unified.css';
 @import '../../../shared/styles/admin-panel-responsive.css';
 @import '../../../shared/styles/admin-table-export-panel.shared.css';
+@import '../../../shared/styles/admin-panel-neomorphic.shared.css';
 
 .users-management {
   width: 100%;
@@ -91,7 +92,7 @@
   border-radius: 15px;
   color: #718096;
   font-size: 0.9rem;
-  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+  box-shadow: 8px 8px 16px #bebebe, -8px -8px 16px #ffffff;
 }
 
 .results-info p {
@@ -101,12 +102,13 @@
 
 .no-results {
   text-align: center;
-  padding: 3rem;
+  padding: 2.5rem 1.5rem;
   color: #718096;
   background: #e0e5ec;
   border-radius: 20px;
-  margin-top: 1rem;
-  box-shadow: inset 6px 6px 12px #bebebe, inset -6px -6px 12px #ffffff;
+  margin-top: 0.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 10px 10px 20px #bebebe, -10px -10px 20px #ffffff;
 }
 
 .no-results p {
@@ -751,99 +753,224 @@
   }
 }
 
-.role-section {
-  background: #e0e5ec;
-  border-radius: 20px;
-  padding: 1.5rem;
-  margin-bottom: 2rem;
-  box-shadow: 10px 10px 20px #bebebe, -10px -10px 20px #ffffff;
+.users-mgmt-section {
+  margin-bottom: 2.5rem;
 }
 
-.role-section-title {
+.users-mgmt-section-title {
   color: #4a5568;
-  font-size: 1.5rem;
+  font-size: 1.35rem;
   font-weight: 400;
-  margin: 0 0 1.5rem 0;
+  margin: 0 0 1.25rem;
   text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8),
     -1px -1px 2px rgba(174, 174, 192, 0.4);
 }
 
-.role-cards-container {
+.users-mgmt-grid.beds-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.25rem;
 }
 
-.role-card {
-  background: #e0e5ec;
-  border-radius: 15px;
-  padding: 1.5rem;
-  box-shadow: inset 5px 5px 10px #bebebe, inset -5px -5px 10px #ffffff;
-  transition: all 0.3s ease;
+.users-mgmt-grid app-admin-empty-state,
+.users-mgmt-grid .no-role-users {
+  grid-column: 1 / -1;
 }
 
-.role-card:hover {
-  box-shadow: 8px 8px 16px #bebebe, -8px -8px 16px #ffffff;
-  transform: translateY(-2px);
-}
-
-.role-card-content {
+.users-mgmt-card.apm-area-card {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-height: 0;
+}
+
+.users-mgmt-card--clickable {
+  cursor: pointer;
+  text-align: left;
+  border: none;
+  font: inherit;
+  color: inherit;
+  box-sizing: border-box;
+}
+
+.users-mgmt-card--clickable:focus-visible {
+  outline: 2px solid rgba(43, 108, 176, 0.55);
+  outline-offset: 3px;
+}
+
+.users-mgmt-user-panel.apm-bed-patient-panel {
+  border-left-color: #805ad5;
+  padding: 0.85rem 1rem;
   align-items: flex-start;
-  gap: 1rem;
 }
 
-.role-card-info {
-  flex: 1;
+.users-mgmt-user-panel .apm-bed-patient-details {
+  min-width: 0;
+  overflow: hidden;
 }
 
-.role-card-info h4 {
-  margin: 0 0 0.5rem 0;
-  color: #4a5568;
-  font-size: 1.1rem;
-  font-weight: 500;
+.users-mgmt-user-panel .apm-bed-patient-name,
+.users-mgmt-email.apm-bed-patient-meta {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  line-height: 1.35;
 }
 
-.role-card-username {
-  margin: 0 0 0.25rem 0;
+.users-mgmt-meta-row {
+  margin-top: 0.15rem;
+}
+
+.users-mgmt-meta-row .users-mgmt-meta-chip::before {
+  content: none;
+}
+
+.users-mgmt-meta-row .users-mgmt-meta-chip {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.users-mgmt-id-chip {
   color: #718096;
-  font-size: 0.9rem;
 }
 
-.role-card-email {
-  margin: 0 0 0.75rem 0;
+.users-mgmt-shift-chip--on {
+  color: #276749;
+  background: rgba(72, 187, 120, 0.14);
+}
+
+.users-mgmt-shift-chip--off {
   color: #718096;
-  font-size: 0.85rem;
 }
 
-.role-card-phone {
-  margin: -0.35rem 0 0.75rem 0;
+.users-mgmt-role-chip.users-mgmt-role-pill--admin {
+  color: #667eea;
+}
+
+.users-mgmt-role-chip.users-mgmt-role-pill--supervisor {
+  color: #f5576c;
+}
+
+.users-mgmt-role-chip.users-mgmt-role-pill--nurse {
+  color: #48bb78;
+}
+
+.users-mgmt-role-chip.users-mgmt-role-pill--pharmacy {
+  color: #9f7aea;
+}
+
+.apm-status-pill.users-mgmt-role-pill--admin {
+  color: #667eea;
+}
+
+.apm-status-pill.users-mgmt-role-pill--supervisor {
+  color: #f5576c;
+}
+
+.apm-status-pill.users-mgmt-role-pill--nurse {
+  color: #48bb78;
+}
+
+.apm-status-pill.users-mgmt-role-pill--pharmacy {
+  color: #9f7aea;
+}
+
+.users-mgmt-card-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.15rem;
+}
+
+.users-mgmt-card-footer .users-mgmt-meta-chip::before {
+  content: none;
+}
+
+.users-mgmt-card-footer .users-mgmt-action-chip {
+  margin-left: auto;
+  border: none;
+  background: #e0e5ec;
+  cursor: pointer;
+  font-family: inherit;
   color: #2d3748;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.users-mgmt-card-footer .users-mgmt-action-chip:hover {
+  transform: translateY(-1px);
+}
+
+.users-mgmt-card-footer .users-mgmt-action-chip:focus-visible {
+  outline: 2px solid rgba(43, 108, 176, 0.55);
+  outline-offset: 2px;
+}
+
+.users-mgmt-list {
+  margin-bottom: 2rem;
+}
+
+.users-mgmt-export-block {
+  margin-bottom: 1.5rem;
+}
+
+.users-mgmt-results-block.apm-shift-block .apm-shift-block__head {
+  margin-bottom: 0.75rem;
+}
+
+.users-mgmt-results-head.apm-shift-block__head {
+  margin-bottom: 0;
+}
+
+.users-mgmt-results-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.5rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(174, 174, 192, 0.22);
+}
+
+.users-mgmt-results-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  flex: 1;
+  min-width: min(100%, 220px);
+}
+
+.users-mgmt-results-filter label {
+  color: #4a5568;
   font-size: 0.85rem;
   font-weight: 600;
 }
 
-.role-card-actions {
-  display: flex;
-  gap: 0.5rem;
+.users-mgmt-results-select {
+  width: 100%;
+  padding: 10px 14px;
+  padding-right: 2.5rem;
+  font-size: 0.9rem;
 }
 
-.no-role-users {
-  padding: 2rem;
-  text-align: center;
+.users-mgmt-shift-hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.8rem;
   color: #718096;
-  font-style: italic;
-  grid-column: 1 / -1;
+  line-height: 1.35;
+}
+
+.users-mgmt-results-line {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #718096;
+  line-height: 1.45;
 }
 
 @media (max-width: 768px) {
-  .role-cards-container {
-    grid-template-columns: 1fr;
+  .users-mgmt-section-title {
+    font-size: 1.2rem;
   }
-  
-  .role-section-title {
-    font-size: 1.25rem;
+
+  .users-mgmt-grid.beds-grid {
+    grid-template-columns: 1fr;
   }
 }
 

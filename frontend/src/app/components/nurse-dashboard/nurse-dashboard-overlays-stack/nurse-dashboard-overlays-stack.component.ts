@@ -71,6 +71,7 @@ export class NurseDashboardOverlaysStackComponent {
   @Output() readonly notCompletedConfirmed = new EventEmitter<{ reason: string }>();
 
   @Output() readonly patientModalClosed = new EventEmitter<void>();
+  @Output() readonly patientClinicalNotesListScopeHandled = new EventEmitter<void>();
   @Output() readonly patientModalPdfRequested = new EventEmitter<void>();
   @Output() readonly patientExportCsvRequested = new EventEmitter<{ tab: string }>();
   @Output() readonly patientActiveTabChange = new EventEmitter<string>();

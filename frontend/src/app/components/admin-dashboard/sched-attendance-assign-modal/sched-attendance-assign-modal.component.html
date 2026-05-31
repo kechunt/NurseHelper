@@ -1,0 +1,106 @@
+<div
+  class="modal-backdrop modal-confirmation sched-attendance-assign-backdrop"
+  role="presentation"
+  (click)="onBackdropClick()"
+>
+  <div
+    class="modal-content modal-small"
+    appModalFocusTrap
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="sched-attendance-assign-dialog-title"
+    (click)="$event.stopPropagation()"
+  >
+    <div class="modal-header">
+      <h3 id="sched-attendance-assign-dialog-title">
+        <app-bootstrap-icon name="clipboard-document-check" /> {{ modalTitle() }}
+      </h3>
+      <button
+        type="button"
+        class="close-btn"
+        aria-label="Cerrar"
+        i18n-aria-label="@@schedAttendanceModal.closeAriaLabel"
+        (click)="dismissed.emit()"
+      >
+        ✕
+      </button>
+    </div>
+
+    <div class="modal-body sched-attendance-assign-body">
+      <p class="sched-attendance-intro">{{ intro }}</p>
+
+      <div class="task-info-summary">
+        <p><strong>{{ personRoleLabel }}</strong> {{ personName }}</p>
+        <p><strong>{{ summaryShiftLabel }}</strong> {{ shiftLabel }}</p>
+        <p *ngIf="currentStatusLabel">
+          <strong>{{ summaryStatusLabel }}</strong> {{ currentStatusLabel }}
+        </p>
+        <p *ngIf="checkInDisplay">
+          <strong>{{ summaryCheckInLabel }}</strong> {{ checkInDisplay }}
+        </p>
+      </div>
+
+      <p class="sched-attendance-loading" *ngIf="loading">{{ loadingLabel }}</p>
+
+      <ng-container *ngIf="!loading">
+        <div class="task-info-summary sched-attendance-area-summary" *ngIf="showAreaSection">
+          <div class="input-group sched-attendance-area-field">
+            <label for="sched-attendance-area-select">{{ areaLabel }}</label>
+            <select
+              id="sched-attendance-area-select"
+              class="neuro-select"
+              [ngModel]="areaId"
+              (ngModelChange)="onAreaChange($event)"
+              [disabled]="actionsDisabled"
+            >
+              <option [ngValue]="null">{{ noAreaOptionLabel }}</option>
+              <option *ngFor="let area of areas" [ngValue]="area.id">{{ area.name }}</option>
+            </select>
+          </div>
+          <p class="sched-attendance-suggested-hint" *ngIf="showSuggestedHint">{{ suggestedHint }}</p>
+        </div>
+
+        <div class="task-info-summary sched-attendance-status-summary">
+          <p class="sched-attendance-status-heading">{{ statusSectionLabel }}</p>
+          <div class="sched-attendance-status-grid">
+            <button
+              *ngFor="let action of resolvedStatusActions"
+              type="button"
+              class="sched-attendance-status-btn"
+              [class]="'sched-attendance-status-btn sched-attendance-status-btn--' + action.modifier"
+              [disabled]="actionsDisabled"
+              (click)="markAttendance.emit(action.status)"
+            >
+              {{ action.label }}
+            </button>
+          </div>
+        </div>
+      </ng-container>
+    </div>
+
+    <div
+      class="modal-footer sched-attendance-assign-footer"
+      [class.sched-attendance-assign-footer--single]="footerSingleAction"
+    >
+      <button
+        type="button"
+        class="btn-secondary-neuro"
+        (click)="dismissed.emit()"
+        [disabled]="saving"
+        i18n="@@schedMgmtHtml.btnCancel"
+      >
+        Cancelar
+      </button>
+      <button
+        *ngIf="showSaveAreaOnlyAction"
+        type="button"
+        class="btn-primary-neuro"
+        (click)="saveAreaOnly.emit()"
+        [disabled]="saving || loading || actionsDisabled"
+      >
+        <app-bootstrap-icon [name]="saving ? 'clock' : 'building-office'" />
+        {{ saving ? savingLabel : saveAreaOnlyLabel }}
+      </button>
+    </div>
+  </div>
+</div>

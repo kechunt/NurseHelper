@@ -1,14 +1,18 @@
 import {
   Component,
   Input,
+  Output,
+  EventEmitter,
   OnChanges,
   SimpleChanges,
   inject,
   LOCALE_ID,
+  ElementRef,
+  Inject,
+  ChangeDetectorRef,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DOCUMENT } from '@angular/common';
 import type { PatientClinicalNoteDto } from '../../../services/nurse.service';
-import { splitObservationLines } from '../nurse-patient-observations.helpers';
 import { BootstrapIconComponent } from '../../../shared/components/bootstrap-icon/bootstrap-icon.component';
 import {
   clinicalNoteDisplayBody,
@@ -19,6 +23,7 @@ import {
   stableKeyForClinicalNote,
   toggleClinicalPin,
 } from '../nurse-clinical-notes-pin.helpers';
+import { buildEffectiveClinicalNotes } from '../../../shared/utils/clinical-notes-display.helpers';
 import { nurseUiEmDash } from '../nurse-dashboard-ui-i18n.helpers';
 
 @Component({
@@ -26,10 +31,17 @@ import { nurseUiEmDash } from '../nurse-dashboard-ui-i18n.helpers';
   standalone: true,
   imports: [CommonModule, BootstrapIconComponent],
   templateUrl: './nurse-clinical-notes-scope-block.component.html',
-  styleUrls: ['./nurse-clinical-notes-scope-block.component.css'],
+  styleUrls: [
+    '../nurse-neomorphic-modal.shared.css',
+    './nurse-clinical-notes-scope-block.component.css',
+  ],
 })
 export class NurseClinicalNotesScopeBlockComponent implements OnChanges {
   private readonly localeId = inject(LOCALE_ID);
+  private readonly host = inject(ElementRef<HTMLElement>);
+  private readonly cdr = inject(ChangeDetectorRef);
+
+  constructor(@Inject(DOCUMENT) private readonly document: Document) {}
 
   readonly ncnsbEmptyDefault = $localize`:@@ncnsb.emptyDefault:Sin datos`;
   readonly ncnsbPreviewAria = $localize`:@@ncnsb.previewAria:Vista previa de notas`;
@@ -52,9 +64,11 @@ export class NurseClinicalNotesScopeBlockComponent implements OnChanges {
   /** Subtítulo opcional (camas / tabla compacta). */
   @Input() blockLabel = '';
   @Input() compact = false;
-  /** Celda de tabla del panel enfermería: texto denso, sin cajas neumórficas en la vista previa. */
-  @Input() tableCell = false;
   @Input() emptyLabel = '';
+
+  /** Oculta el botón interno «Ver todas»; el padre maneja expand (p. ej. mis camas). */
+  @Input() externalExpand = false;
+  @Output() readonly expandRequest = new EventEmitter<void>();
 
   listModalOpen = false;
   detailNote: PatientClinicalNoteDto | null = null;
@@ -71,16 +85,7 @@ export class NurseClinicalNotesScopeBlockComponent implements OnChanges {
   }
 
   effectiveNotes(): PatientClinicalNoteDto[] {
-    if (this.notesFromApi?.length > 0) {
-      return this.notesFromApi;
-    }
-    return splitObservationLines(this.legacySingleFieldText).map((line) => ({
-      id: null,
-      body: line.trim(),
-      authorName: null,
-      createdAt: null,
-      legacy: true,
-    }));
+    return buildEffectiveClinicalNotes(this.notesFromApi, this.legacySingleFieldText);
   }
 
   pinnedKeys(): string[] {
@@ -111,6 +116,7 @@ export class NurseClinicalNotesScopeBlockComponent implements OnChanges {
   onTogglePin(event: MouseEvent, note: PatientClinicalNoteDto): void {
     event.stopPropagation();
     toggleClinicalPin(this.patientId, this.scope, this.noteKey(note));
+    this.cdr.detectChanges();
   }
 
   onPreviewStripClick(event: MouseEvent): void {
@@ -124,10 +130,26 @@ export class NurseClinicalNotesScopeBlockComponent implements OnChanges {
   }
 
   openList(): void {
-    if (this.effectiveNotes().length === 0) {
+    this.listModalOpen = true;
+    this.cdr.detectChanges();
+    queueMicrotask(() => this.teleportOverlay('.ncnsb-notes-list-backdrop'));
+  }
+
+  onExpandClick(event: MouseEvent): void {
+    event.stopPropagation();
+    event.preventDefault();
+    if (this.externalExpand) {
+      this.expandRequest.emit();
       return;
     }
-    this.listModalOpen = true;
+    this.openList();
+  }
+
+  private teleportOverlay(selector: string): void {
+    const overlay = this.host.nativeElement.querySelector(selector) as HTMLElement | null;
+    if (overlay?.parentElement && overlay.parentElement !== this.document.body) {
+      this.document.body.appendChild(overlay);
+    }
   }
 
   closeList(): void {
@@ -136,6 +158,8 @@ export class NurseClinicalNotesScopeBlockComponent implements OnChanges {
 
   openDetail(note: PatientClinicalNoteDto): void {
     this.detailNote = note;
+    this.cdr.detectChanges();
+    queueMicrotask(() => this.teleportOverlay('.ncnsb-notes-detail-backdrop'));
   }
 
   closeDetail(): void {

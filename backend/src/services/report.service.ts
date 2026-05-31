@@ -23,17 +23,23 @@ export interface MedicationReport {
   complianceRate: number;
 }
 
+export interface CompliancePatientStats {
+  patientId: number;
+  patientName: string;
+  totalSchedules: number;
+  administered: number;
+  missed: number;
+  cancelled: number;
+  complianceRate: number;
+}
+
 export interface ComplianceStats {
   totalSchedules: number;
   administered: number;
   missed: number;
   cancelled: number;
   complianceRate: number;
-  byPatient: Array<{
-    patientId: number;
-    patientName: string;
-    complianceRate: number;
-  }>;
+  byPatient: CompliancePatientStats[];
 }
 
 export type ComplianceExportFilter =
@@ -52,22 +58,46 @@ export interface ReportExportMeta {
   generatedAt: string;
   reportType: 'medication' | 'compliance';
   generatedByRole: string;
+  reportTitle?: string;
+}
+
+export const COMPLIANCE_FORMULA_NOTE =
+  '% cumplimiento = completados ÷ programados × 100';
+
+export function reportTitleForType(type: 'medication' | 'compliance'): string {
+  if (type === 'medication') {
+    return 'Reporte de medicación';
+  }
+  return 'Reporte de cumplimiento (tareas y horarios)';
+}
+
+export function formatGeneratedByRole(role: string): string {
+  switch (role) {
+    case 'admin':
+      return 'Administrador';
+    case 'nurse':
+      return 'Enfermera';
+    case 'supervisor':
+      return 'Supervisor';
+    default:
+      return role;
+  }
 }
 
 export function complianceFilterLabel(filter: ComplianceExportFilter): string {
   switch (filter) {
-    case 'completed':
-      return 'Solo completados (100% cumplimiento / dosis administradas)';
-    case 'missed':
-      return 'Con incumplimientos (cumplimiento < 100% / dosis no administradas)';
-    case 'cancelled':
-      return 'Cancelados (sin filas tabulares; ver resumen)';
     case 'scheduled':
-      return 'Todos los programados del periodo';
+      return 'Filtro activo: Programados';
+    case 'completed':
+      return 'Filtro activo: Completados';
+    case 'missed':
+      return 'Filtro activo: No realizados';
+    case 'cancelled':
+      return 'Filtro activo: Cancelados';
     case 'rate':
-      return 'Todos los registros (vista tasa global)';
+      return 'Filtro activo: Tasa global';
     default:
-      return 'Todos los registros del periodo';
+      return 'Sin filtro KPI (todos los registros)';
   }
 }
 
@@ -129,6 +159,85 @@ export function formatReportDateEs(date: Date): string {
     month: '2-digit',
     day: '2-digit',
   });
+}
+
+export function escapeCsvCell(value: string | number): string {
+  const s = String(value ?? '');
+  if (/[",\n\r]/.test(s)) {
+    return `"${s.replace(/"/g, '""')}"`;
+  }
+  return s;
+}
+
+export function roundReportPct(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+export function buildReportContextCsvLines(meta: ReportExportMeta): string[] {
+  const title = meta.reportTitle ?? reportTitleForType(meta.reportType);
+  const period = `${meta.periodStart} — ${meta.periodEnd}`;
+  return [
+    'Campo,Valor',
+    `Reporte,${escapeCsvCell(title)}`,
+    `Periodo analizado,${escapeCsvCell(period)}`,
+    `Datos de,${escapeCsvCell(meta.scopeLabel)}`,
+    `Filtro KPI,${escapeCsvCell(meta.kpiFilterLabel)}`,
+    `Generado,${escapeCsvCell(meta.generatedAt)}`,
+    `Generado por,${escapeCsvCell(formatGeneratedByRole(meta.generatedByRole))}`,
+    '',
+  ];
+}
+
+export function medicationReportToCsvExport(rows: MedicationReport[], meta: ReportExportMeta): string {
+  const lines = [
+    ...buildReportContextCsvLines(meta),
+    'Paciente,Medicamento,Dosis,Horarios programados,Administrados,No administrados,% cumplimiento',
+    ...rows.map((r) =>
+      [
+        r.patientName,
+        r.medication,
+        r.dosage,
+        r.scheduled,
+        r.administered,
+        r.missed,
+        roundReportPct(r.complianceRate),
+      ]
+        .map((c) => escapeCsvCell(c))
+        .join(','),
+    ),
+    '',
+    COMPLIANCE_FORMULA_NOTE,
+  ];
+  return '\uFEFF' + lines.join('\n');
+}
+
+export function complianceStatsToCsvExport(stats: ComplianceStats, meta: ReportExportMeta): string {
+  const lines = [
+    ...buildReportContextCsvLines(meta),
+    'Indicador,Cantidad',
+    `Horarios programados,${stats.totalSchedules}`,
+    `Completados,${stats.administered}`,
+    `No realizados,${stats.missed}`,
+    `Cancelados,${stats.cancelled}`,
+    `Tasa global de cumplimiento (%),${roundReportPct(stats.complianceRate)}`,
+    '',
+    'Paciente,Horarios programados,Completados,No realizados,Cancelados,% cumplimiento',
+    ...stats.byPatient.map((row) =>
+      [
+        row.patientName,
+        row.totalSchedules,
+        row.administered,
+        row.missed,
+        row.cancelled,
+        roundReportPct(row.complianceRate),
+      ]
+        .map((c) => escapeCsvCell(c))
+        .join(','),
+    ),
+    '',
+    COMPLIANCE_FORMULA_NOTE,
+  ];
+  return '\uFEFF' + lines.join('\n');
 }
 
 export class ReportService {
@@ -194,7 +303,7 @@ export class ReportService {
     startDate: Date,
     endDate: Date,
     patientId?: number,
-    restrictToPatientIds?: number[]
+    restrictToPatientIds?: number[],
   ): Promise<MedicationReport[]> {
     const scheduleRepository = AppDataSource.getRepository(Schedule);
 
@@ -202,7 +311,6 @@ export class ReportService {
       return [];
     }
 
-    // Obtener schedules de medicamentos en el rango de fechas
     const whereClause: any = {
       type: ScheduleType.MEDICATION,
       scheduledTime: Between(startDate, endDate),
@@ -219,7 +327,6 @@ export class ReportService {
       relations: ['patient'],
     });
 
-    // Agrupar por paciente y medicamento
     const reportMap = new Map<string, MedicationReport>();
 
     schedules.forEach((schedule) => {
@@ -249,16 +356,11 @@ export class ReportService {
       }
     });
 
-    // Calcular tasas de cumplimiento
-    const reports = Array.from(reportMap.values()).map((report) => {
+    return Array.from(reportMap.values()).map((report) => {
       report.complianceRate =
-        report.scheduled > 0
-          ? (report.administered / report.scheduled) * 100
-          : 0;
+        report.scheduled > 0 ? (report.administered / report.scheduled) * 100 : 0;
       return report;
     });
-
-    return reports;
   }
 
   /**
@@ -268,7 +370,7 @@ export class ReportService {
     startDate: Date,
     endDate: Date,
     patientId?: number,
-    restrictToPatientIds?: number[]
+    restrictToPatientIds?: number[],
   ): Promise<ComplianceStats> {
     const scheduleRepository = AppDataSource.getRepository(Schedule);
 
@@ -299,21 +401,16 @@ export class ReportService {
     });
 
     const totalSchedules = schedules.length;
-    const administered = schedules.filter(
-      (s) => s.status === ScheduleStatus.COMPLETED
-    ).length;
-    const missed = schedules.filter(
-      (s) => s.status === ScheduleStatus.MISSED
-    ).length;
-    const cancelled = schedules.filter(
-      (s) => s.status === ScheduleStatus.CANCELLED
-    ).length;
+    const administered = schedules.filter((s) => s.status === ScheduleStatus.COMPLETED).length;
+    const missed = schedules.filter((s) => s.status === ScheduleStatus.MISSED).length;
+    const cancelled = schedules.filter((s) => s.status === ScheduleStatus.CANCELLED).length;
 
-    const complianceRate =
-      totalSchedules > 0 ? (administered / totalSchedules) * 100 : 0;
+    const complianceRate = totalSchedules > 0 ? (administered / totalSchedules) * 100 : 0;
 
-    // Estadísticas por paciente
-    const patientMap = new Map<number, { name: string; total: number; administered: number }>();
+    const patientMap = new Map<
+      number,
+      { name: string; total: number; administered: number; missed: number; cancelled: number }
+    >();
 
     schedules.forEach((schedule) => {
       if (!patientMap.has(schedule.patientId)) {
@@ -323,6 +420,8 @@ export class ReportService {
             : 'Desconocido',
           total: 0,
           administered: 0,
+          missed: 0,
+          cancelled: 0,
         });
       }
 
@@ -330,12 +429,20 @@ export class ReportService {
       stats.total++;
       if (schedule.status === ScheduleStatus.COMPLETED) {
         stats.administered++;
+      } else if (schedule.status === ScheduleStatus.MISSED) {
+        stats.missed++;
+      } else if (schedule.status === ScheduleStatus.CANCELLED) {
+        stats.cancelled++;
       }
     });
 
-    const byPatient = Array.from(patientMap.entries()).map(([patientId, stats]) => ({
-      patientId,
+    const byPatient = Array.from(patientMap.entries()).map(([pid, stats]) => ({
+      patientId: pid,
       patientName: stats.name,
+      totalSchedules: stats.total,
+      administered: stats.administered,
+      missed: stats.missed,
+      cancelled: stats.cancelled,
       complianceRate: stats.total > 0 ? (stats.administered / stats.total) * 100 : 0,
     }));
 
@@ -349,95 +456,23 @@ export class ReportService {
     };
   }
 
-  private escapeCsvCell(value: string | number): string {
-    const s = String(value ?? '');
-    if (/[",\n\r]/.test(s)) {
-      return `"${s.replace(/"/g, '""')}"`;
-    }
-    return s;
-  }
-
-  private metaCsvLines(meta: ReportExportMeta): string[] {
-    return [
-      'Seccion,Clave,Valor',
-      `Meta,tipoReporte,${this.escapeCsvCell(meta.reportType)}`,
-      `Meta,periodoDesde,${this.escapeCsvCell(meta.periodStart)}`,
-      `Meta,periodoHasta,${this.escapeCsvCell(meta.periodEnd)}`,
-      `Meta,ambito,${this.escapeCsvCell(meta.scopeLabel)}`,
-      `Meta,filtroKpi,${this.escapeCsvCell(meta.kpiFilterLabel)}`,
-      `Meta,generado,${this.escapeCsvCell(meta.generatedAt)}`,
-      `Meta,rolGenerador,${this.escapeCsvCell(meta.generatedByRole)}`,
-      '',
-    ];
-  }
-
-  private drawPdfMetaBlock(doc: PDFKit.PDFDocument, meta: ReportExportMeta, title: string): void {
+  private drawPdfMetaBlock(doc: PDFKit.PDFDocument, meta: ReportExportMeta): void {
+    const title = meta.reportTitle ?? reportTitleForType(meta.reportType);
     doc.font('Helvetica-Bold').fontSize(16).text(title, { align: 'center' });
     doc.moveDown(0.5);
     doc.font('Helvetica').fontSize(9);
-    doc.text(`Periodo: ${meta.periodStart} — ${meta.periodEnd}`, { align: 'center' });
-    doc.text(`Ámbito: ${meta.scopeLabel}`, { align: 'center' });
+    doc.text(`Periodo analizado: ${meta.periodStart} — ${meta.periodEnd}`, { align: 'center' });
+    doc.text(`Datos de: ${meta.scopeLabel}`, { align: 'center' });
     doc.text(`Filtro KPI: ${meta.kpiFilterLabel}`, { align: 'center' });
-    doc.text(`Generado: ${meta.generatedAt} (${meta.generatedByRole})`, { align: 'center' });
+    doc.text(
+      `Generado: ${meta.generatedAt} · ${formatGeneratedByRole(meta.generatedByRole)}`,
+      { align: 'center' },
+    );
     doc.moveDown(1);
   }
 
-  private medicationReportToCsv(rows: MedicationReport[], meta?: ReportExportMeta): string {
-    const header = [
-      'PacienteId',
-      'Paciente',
-      'Medicamento',
-      'Dosis',
-      'Programados',
-      'Administrados',
-      'NoAdministrados',
-      'PctCumplimiento',
-    ];
-    const lines = meta ? this.metaCsvLines(meta) : [];
-    lines.push(header.join(','));
-    lines.push(
-      ...rows.map((r) =>
-        [
-          r.patientId,
-          r.patientName,
-          r.medication,
-          r.dosage,
-          r.scheduled,
-          r.administered,
-          r.missed,
-          Math.round(r.complianceRate * 100) / 100,
-        ]
-          .map((c) => this.escapeCsvCell(c))
-          .join(',')
-      ),
-    );
-    return '\uFEFF' + lines.join('\n');
-  }
-
-  private complianceStatsToCsv(stats: ComplianceStats, meta?: ReportExportMeta): string {
-    const lines: string[] = meta ? this.metaCsvLines(meta) : ['Seccion,Clave,Valor'];
-    lines.push(
-      `Resumen,totalSchedules,${stats.totalSchedules}`,
-      `Resumen,administered,${stats.administered}`,
-      `Resumen,missed,${stats.missed}`,
-      `Resumen,cancelled,${stats.cancelled}`,
-      `Resumen,complianceRatePct,${Math.round(stats.complianceRate * 100) / 100}`,
-      '',
-      'PorPaciente,PacienteId,PacienteNombre,PctCumplimiento',
-    );
-    for (const row of stats.byPatient) {
-      lines.push(
-        [
-          'PorPaciente',
-          row.patientId,
-          row.patientName,
-          Math.round(row.complianceRate * 100) / 100,
-        ]
-          .map((c) => this.escapeCsvCell(c))
-          .join(',')
-      );
-    }
-    return '\uFEFF' + lines.join('\n');
+  private drawPdfFormulaNote(doc: PDFKit.PDFDocument, y: number): void {
+    doc.font('Helvetica-Oblique').fontSize(8).text(COMPLIANCE_FORMULA_NOTE, 40, y);
   }
 
   private buildPdfBuffer(build: (doc: PDFKit.PDFDocument) => void): Promise<Buffer> {
@@ -456,7 +491,7 @@ export class ReportService {
     doc: PDFKit.PDFDocument,
     startY: number,
     headers: string[],
-    rows: Array<Array<string | number>>
+    rows: Array<Array<string | number>>,
   ): number {
     const left = 40;
     const tableWidth = doc.page.width - 80;
@@ -486,7 +521,15 @@ export class ReportService {
   }
 
   private medicationReportToPdf(rows: MedicationReport[], meta: ReportExportMeta): Promise<Buffer> {
-    const headers = ['Paciente', 'Medicamento', 'Dosis', 'Prog.', 'Adm.', 'No adm.', '%'];
+    const headers = [
+      'Paciente',
+      'Medicamento',
+      'Dosis',
+      'Horarios programados',
+      'Administrados',
+      'No administrados',
+      '% cumplimiento',
+    ];
     const tableRows = rows.map((r) => [
       r.patientName,
       r.medication,
@@ -494,39 +537,55 @@ export class ReportService {
       r.scheduled,
       r.administered,
       r.missed,
-      `${Math.round(r.complianceRate * 100) / 100}%`,
+      `${roundReportPct(r.complianceRate)}%`,
     ]);
 
     return this.buildPdfBuffer((doc) => {
-      this.drawPdfMetaBlock(doc, meta, 'Reporte de medicación');
+      this.drawPdfMetaBlock(doc, meta);
       if (tableRows.length === 0) {
         doc.font('Helvetica').fontSize(10).text('Sin filas para el filtro KPI seleccionado.');
         return;
       }
-      this.drawPdfTable(doc, doc.y, headers, tableRows);
+      doc.font('Helvetica-Bold').fontSize(12).text('Detalle de medicación');
+      doc.moveDown(0.5);
+      let y = this.drawPdfTable(doc, doc.y, headers, tableRows);
+      this.drawPdfFormulaNote(doc, y);
     });
   }
 
   private complianceStatsToPdf(stats: ComplianceStats, meta: ReportExportMeta): Promise<Buffer> {
     const summaryRows: Array<Array<string | number>> = [
-      ['Programados', stats.totalSchedules],
-      ['Administrados', stats.administered],
+      ['Horarios programados', stats.totalSchedules],
+      ['Completados', stats.administered],
       ['No realizados', stats.missed],
       ['Cancelados', stats.cancelled],
-      ['Tasa global (%)', Math.round(stats.complianceRate * 100) / 100],
+      ['Tasa global de cumplimiento (%)', roundReportPct(stats.complianceRate)],
     ];
-    const patientHeaders = ['Paciente', 'Cumplimiento (%)'];
+    const patientHeaders = [
+      'Paciente',
+      'Horarios programados',
+      'Completados',
+      'No realizados',
+      'Cancelados',
+      '% cumplimiento',
+    ];
     const patientRows = stats.byPatient.map((row) => [
       row.patientName,
-      Math.round(row.complianceRate * 100) / 100,
+      row.totalSchedules,
+      row.administered,
+      row.missed,
+      row.cancelled,
+      `${roundReportPct(row.complianceRate)}%`,
     ]);
 
     return this.buildPdfBuffer((doc) => {
-      this.drawPdfMetaBlock(doc, meta, 'Reporte de cumplimiento');
-      doc.font('Helvetica-Bold').fontSize(12).text('Resumen');
+      this.drawPdfMetaBlock(doc, meta);
+      doc.font('Helvetica-Bold').fontSize(12).text('Resumen de cumplimiento');
       doc.moveDown(0.5);
-      let y = this.drawPdfTable(doc, doc.y, ['Indicador', 'Valor'], summaryRows);
-      doc.font('Helvetica-Bold').fontSize(12).text('Por paciente', 40, y);
+      let y = this.drawPdfTable(doc, doc.y, ['Indicador', 'Cantidad'], summaryRows);
+      this.drawPdfFormulaNote(doc, y);
+      y += 16;
+      doc.font('Helvetica-Bold').fontSize(12).text('Detalle por paciente', 40, y);
       y += 18;
       if (patientRows.length === 0) {
         doc.font('Helvetica').fontSize(10).text('Sin filas para el filtro KPI seleccionado.', 40, y);
@@ -558,8 +617,8 @@ export class ReportService {
 
     if (format === 'csv') {
       const text = Array.isArray(filtered)
-        ? this.medicationReportToCsv(filtered, meta)
-        : this.complianceStatsToCsv(filtered, meta);
+        ? medicationReportToCsvExport(filtered, meta)
+        : complianceStatsToCsvExport(filtered, meta);
       return Buffer.from(text, 'utf8');
     }
 

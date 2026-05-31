@@ -10,6 +10,8 @@ import { forkJoin } from 'rxjs';
 import { ToastService } from '../../../services/toast.service';
 import { ConfirmationService } from '../../../services/confirmation.service';
 import { ExportService } from '../../../shared/services/export.service';
+import { ShiftsService } from '../../../services/shifts.service';
+import { ShiftRealtimeService } from '../../../shared/services/shift-realtime.service';
 import { PaginationComponent, PaginationConfig } from '../../../shared/components/pagination/pagination.component';
 import { DebounceDirective } from '../../../shared/directives/debounce.directive';
 import { AdminTableRowActionsModalComponent } from '../../../shared/components/admin-table-row-actions-modal/admin-table-row-actions-modal.component';
@@ -51,7 +53,10 @@ export class UsersManagementComponent implements OnInit, OnDestroy {
   
   // Filtros
   selectedRole: 'all' | 'admin' | 'nurse' | 'supervisor' | 'pharmacy' = 'all';
+  selectedShiftPresence: 'all' | 'onShift' | 'offShift' = 'all';
   searchQuery: string = '';
+  liveShiftLabel = '';
+  private userShiftPresence = new Map<number, boolean>();
   
   // Información de paginación (si el backend la devuelve)
   totalUsers: number = 0;
@@ -72,6 +77,7 @@ export class UsersManagementComponent implements OnInit, OnDestroy {
   readonly usersMgmtLoadingPharmacy = $localize`:@@usersMgmt.loadingPharmacy:Cargando encargado de farmacia...`;
   readonly usersMgmtEmptyPharmacy = $localize`:@@usersMgmt.emptyPharmacy:No hay encargado de farmacia asignado`;
   readonly usersMgmtFilterRoleLabel = $localize`:@@usersMgmt.filterRole:Filtrar por Rol:`;
+  readonly usersMgmtFilterShiftLabel = $localize`:@@usersMgmt.filterShift:Presencia en turno:`;
   readonly usersMgmtSearchLabel = $localize`:@@usersMgmt.searchLabel:Buscar Usuario:`;
   readonly usersMgmtSearchPlaceholder = $localize`:@@usersMgmt.searchPlaceholder:Buscar por nombre, usuario, email o teléfono...`;
   readonly usersMgmtSearchAria = $localize`:@@usersMgmt.searchAria:Buscar usuario por nombre, usuario, email o teléfono`;
@@ -94,6 +100,7 @@ export class UsersManagementComponent implements OnInit, OnDestroy {
   readonly usersMgmtColRole = $localize`:@@usersMgmt.colRole:Rol`;
   readonly usersMgmtColStatus = $localize`:@@usersMgmt.colStatus:Estado`;
   readonly usersMgmtNoResults = $localize`:@@usersMgmt.noResults:No se encontraron usuarios que coincidan con los filtros seleccionados.`;
+  readonly usersMgmtResultsHeading = $localize`:@@usersMgmt.resultsHeading:Resultados del listado`;
   readonly usersMgmtStatusActive = $localize`:@@usersMgmt.statusActive:Activo`;
   readonly usersMgmtStatusInactive = $localize`:@@usersMgmt.statusInactive:Inactivo`;
   readonly usersMgmtSheetTitle = $localize`:@@usersMgmt.sheetTitle:Usuario`;
@@ -110,6 +117,18 @@ export class UsersManagementComponent implements OnInit, OnDestroy {
     { value: 'supervisor', label: $localize`:@@usersMgmt.roleSupervisor:Supervisor` },
     { value: 'pharmacy', label: $localize`:@@usersMgmt.rolePharmacy:Farmacia` },
   ];
+
+  readonly usersMgmtShiftFilterOptions: ReadonlyArray<{
+    value: 'all' | 'onShift' | 'offShift';
+    label: string;
+  }> = [
+    { value: 'all', label: $localize`:@@usersMgmt.shiftAll:Todos` },
+    { value: 'onShift', label: $localize`:@@usersMgmt.shiftOn:Presentes en turno actual` },
+    { value: 'offShift', label: $localize`:@@usersMgmt.shiftOff:Fuera del turno actual` },
+  ];
+
+  readonly usersMgmtShiftPresent = $localize`:@@usersMgmt.shiftPresentBadge:En turno`;
+  readonly usersMgmtShiftAbsent = $localize`:@@usersMgmt.shiftAbsentBadge:Fuera de turno`;
 
   readonly usersMgmtWarnCompleteRequired = $localize`:@@usersMgmt.warnCompleteRequired:Por favor completa todos los campos requeridos`;
   readonly usersMgmtWarnInvalidEmail = $localize`:@@usersMgmt.warnInvalidEmail:Por favor ingresa un email válido`;
@@ -176,6 +195,8 @@ export class UsersManagementComponent implements OnInit, OnDestroy {
     private toastService: ToastService,
     private confirmationService: ConfirmationService,
     private exportService: ExportService,
+    private shiftsService: ShiftsService,
+    private shiftRealtime: ShiftRealtimeService,
     private cdr: ChangeDetectorRef
   ) {
     this.setupSearchDebounce();
@@ -203,9 +224,14 @@ export class UsersManagementComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.refreshAll();
+  }
+
+  refreshAll(): void {
     this.loadUsers();
     this.loadSupervisors();
     this.loadPharmacyUsers();
+    this.loadShiftPresence();
   }
 
   ngOnDestroy(): void {
@@ -234,9 +260,8 @@ export class UsersManagementComponent implements OnInit, OnDestroy {
       next: (response) => {
         if (response && response.users) {
           this.users = response.users;
-          this.filteredUsers = response.users;
           this.totalUsers = response.total || response.users.length;
-          this.updatePagination();
+          this.applyDisplayFilters();
           this.cdr.markForCheck();
         } else {
           this.users = [];
@@ -286,6 +311,82 @@ export class UsersManagementComponent implements OnInit, OnDestroy {
     this.loadUsers();
   }
 
+  onShiftPresenceFilterChange(): void {
+    this.applyDisplayFilters();
+  }
+
+  hasActiveListFilters(): boolean {
+    return this.selectedRole !== 'all' || this.selectedShiftPresence !== 'all' || !!this.searchQuery.trim();
+  }
+
+  private loadShiftPresence(): void {
+    this.shiftsService.getAllShifts().subscribe({
+      next: (shifts) => {
+        const currentShift = this.shiftRealtime.resolveCurrentShift(shifts || [], new Date());
+        this.liveShiftLabel = this.shiftRealtime.formatShiftLabel(currentShift);
+        if (!currentShift?.id) {
+          this.userShiftPresence.clear();
+          this.applyDisplayFilters();
+          this.cdr.markForCheck();
+          return;
+        }
+
+        const today = new Date().toISOString().split('T')[0];
+        this.shiftsService.getShiftAttendance(today, currentShift.id, { background: true }).subscribe({
+          next: (rows) => {
+            this.userShiftPresence.clear();
+            for (const row of rows || []) {
+              const present = row.status === 'present' || row.status === 'late';
+              this.userShiftPresence.set(row.nurseId, present);
+            }
+            this.applyDisplayFilters();
+            this.cdr.markForCheck();
+          },
+          error: () => {
+            this.userShiftPresence.clear();
+            this.applyDisplayFilters();
+            this.cdr.markForCheck();
+          },
+        });
+      },
+      error: () => {
+        this.liveShiftLabel = '';
+        this.userShiftPresence.clear();
+        this.applyDisplayFilters();
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  isUserOnCurrentShift(user: User): boolean {
+    if (user.role !== 'nurse' || !user.id) {
+      return false;
+    }
+    return this.userShiftPresence.get(user.id) === true;
+  }
+
+  getShiftPresenceLabel(user: User): string {
+    return this.isUserOnCurrentShift(user) ? this.usersMgmtShiftPresent : this.usersMgmtShiftAbsent;
+  }
+
+  private applyDisplayFilters(): void {
+    let list = [...this.users];
+
+    if (this.selectedShiftPresence === 'onShift') {
+      list = list.filter((user) => this.isUserOnCurrentShift(user));
+    } else if (this.selectedShiftPresence === 'offShift') {
+      list = list.filter((user) => !this.isUserOnCurrentShift(user));
+    }
+
+    this.filteredUsers = list;
+    this.paginationConfig = {
+      ...this.paginationConfig,
+      currentPage: 1,
+    };
+    this.updatePagination();
+    this.cdr.markForCheck();
+  }
+
   /**
    * Maneja el cambio en la búsqueda (sin debounce, se llama desde el debounce)
    */
@@ -298,8 +399,9 @@ export class UsersManagementComponent implements OnInit, OnDestroy {
    */
   clearFilters(): void {
     this.selectedRole = 'all';
+    this.selectedShiftPresence = 'all';
     this.searchQuery = '';
-    this.searchSubject.next(''); // Limpiar también el debounce
+    this.searchSubject.next('');
     this.loadUsers();
     this.cdr.markForCheck();
   }
@@ -316,6 +418,12 @@ export class UsersManagementComponent implements OnInit, OnDestroy {
 
   getUsersResultsRolePart(): string {
     return $localize`:@@usersMgmtHtml.resultsRolePart:(Rol: ${this.getRoleLabel(this.selectedRole)}:role:)`;
+  }
+
+  getUsersResultsShiftPart(): string {
+    const opt = this.usersMgmtShiftFilterOptions.find((o) => o.value === this.selectedShiftPresence);
+    const label = opt?.label ?? this.selectedShiftPresence;
+    return $localize`:@@usersMgmtHtml.resultsShiftPart:(Turno: ${label}:shift:)`;
   }
 
   getUsersResultsSearchPart(): string {
@@ -702,6 +810,28 @@ export class UsersManagementComponent implements OnInit, OnDestroy {
   getRoleLabel(role: string): string {
     const opt = this.usersMgmtRoleFilterOptions.find((o) => o.value === role);
     return opt?.label ?? role;
+  }
+
+  getUserInitials(user: User): string {
+    const first = String(user.firstName ?? '').trim();
+    const last = String(user.lastName ?? '').trim();
+    if (first && last) {
+      return (first[0] + last[0]).toUpperCase();
+    }
+    if (first) {
+      return first.slice(0, 2).toUpperCase();
+    }
+    const username = String(user.username ?? '').trim();
+    return username.slice(0, 2).toUpperCase() || '?';
+  }
+
+  getRolePillClass(role: string): Record<string, boolean> {
+    return {
+      'users-mgmt-role-pill--admin': role === 'admin',
+      'users-mgmt-role-pill--supervisor': role === 'supervisor',
+      'users-mgmt-role-pill--nurse': role === 'nurse',
+      'users-mgmt-role-pill--pharmacy': role === 'pharmacy',
+    };
   }
 
   loadSupervisors(): void {

@@ -248,6 +248,14 @@ export class NurseService {
     return this.http.get<PatientDetail[]>(base);
   }
 
+  /** Autoasignación: reclamar paciente sin enfermera en camas del área de la enfermera. */
+  claimPatient(patientId: number): Observable<{ patientId: number; assignedToId: number; message: string }> {
+    return this.http.post<{ patientId: number; assignedToId: number; message: string }>(
+      `${this.apiUrl}/nurse/patients/${patientId}/claim`,
+      {},
+    );
+  }
+
   // Obtener tareas/horarios del día
   getTodayTasks(): Observable<TaskGrouped[]> {
     return this.http.get<TaskGrouped[]>(`${this.apiUrl}/nurse/tasks/today`);

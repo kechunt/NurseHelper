@@ -156,10 +156,31 @@ describe('NursePatientsAssignedSectionComponent', () => {
     expect(mineBadge?.title.toLowerCase()).toContain('asign');
     const otherBadge = cards[1].querySelector('.patient-assignment-badge--other') as HTMLSpanElement;
     expect(otherBadge?.title.toLowerCase()).toContain('turno');
+    expect(otherBadge?.textContent?.toLowerCase()).toContain('asignado a');
+    expect(otherBadge?.textContent).toContain('Beatriz');
     const pendingBadge = cards[2].querySelector('.patient-assignment-badge--pending') as HTMLSpanElement;
     expect(pendingBadge?.title.toLowerCase()).toContain('enfermera');
     const btn = cards[0].querySelector('#nurse-patients-assigned-section-view-details-0') as HTMLButtonElement;
     expect(btn.title.toLowerCase()).toContain('detalle');
+    expect(cards[0].querySelector('.patient-assigned-card-footer')).toBeTruthy();
+  });
+
+  it('muestra botón Asignarme solo en pacientes sin enfermera', () => {
+    const cards = Array.from(
+      fixture.nativeElement.querySelectorAll('.patient-assigned-card')
+    ) as HTMLElement[];
+    expect(cards[0].querySelector('.nurse-claim-pill-btn')).toBeFalsy();
+    expect(cards[1].querySelector('.nurse-claim-pill-btn')).toBeFalsy();
+    expect(cards[2].querySelector('.nurse-claim-pill-btn')).toBeTruthy();
+  });
+
+  it('emite claimPatient al pulsar Asignarme', () => {
+    spyOn(fixture.componentInstance.claimPatient, 'emit');
+    const btn = fixture.nativeElement.querySelector(
+      '#nurse-patients-assigned-section-claim-2'
+    ) as HTMLButtonElement;
+    btn.click();
+    expect(fixture.componentInstance.claimPatient.emit).toHaveBeenCalledWith(patients[2]);
   });
 
   it('plantilla: id limpiar filtros y Ver detalles por fila', () => {

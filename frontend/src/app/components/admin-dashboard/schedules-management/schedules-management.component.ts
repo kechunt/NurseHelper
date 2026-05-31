@@ -37,6 +37,10 @@ import { AdminTableRowActionsModalComponent } from '../../../shared/components/a
 import { AdminToggleButtonComponent } from '../../../shared/components/admin-toggle-button/admin-toggle-button.component';
 import { BootstrapIconComponent } from '../../../shared/components/bootstrap-icon/bootstrap-icon.component';
 import { ModalShellComponent } from '../../../shared/components/modal-shell/modal-shell.component';
+import { SchedAreaCoverageAssignModalComponent } from '../sched-area-coverage-assign-modal/sched-area-coverage-assign-modal.component';
+import { SchedAttendanceAssignModalComponent } from '../sched-attendance-assign-modal/sched-attendance-assign-modal.component';
+import { SchedulesWeeklyPersistenceService } from './schedules-weekly-persistence.service';
+import { SchedulesShiftAttendanceFacade } from './schedules-shift-attendance.facade';
 
 type Shift = ShiftInterface & { id: string };
 type WeeklySchedule = WeeklyScheduleInterface;
@@ -51,11 +55,21 @@ type WeeklySchedule = WeeklyScheduleInterface;
     AdminToggleButtonComponent,
     BootstrapIconComponent,
     ModalShellComponent,
+    SchedAreaCoverageAssignModalComponent,
+    SchedAttendanceAssignModalComponent,
   ],
   templateUrl: './schedules-management.component.html',
   styleUrl: './schedules-management.component.css',
 })
 export class SchedulesManagementComponent implements OnInit, OnDestroy {
+  private static readonly ATTENDANCE_STATUS_SORT_ORDER: Record<ShiftAttendanceStatus, number> = {
+    present: 0,
+    late: 1,
+    justified: 2,
+    absent: 3,
+    missing: 4,
+  };
+
   nurses: User[] = [];
   areas: any[] = [];
   patients: any[] = [];
@@ -110,14 +124,19 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
   /** Por defecto: solo presentes en la tabla resumen (no todas como ausentes). */
   attendanceSummaryFilter: ShiftAttendanceStatus | 'all' = 'present';
   attendanceSearchQuery = '';
+  /** Filtro de estado en el listado completo de toma de lista. */
+  attendanceListStatusFilter: ShiftAttendanceStatus | 'all' = 'all';
   /** Listado completo con acciones de toma de lista: visible solo si el usuario lo pide. */
   showAttendanceNurseList = false;
   /** Configuración de turnos: fila → acciones en modal. */
   shiftConfigActionsRow: any = null;
-  /** Tabla resumen asistencia: fila → acciones en modal. */
-  summaryAttendanceActionsItem: ShiftAttendanceItem | null = null;
-  /** Listado toma de lista: fila → acciones en modal. */
-  attendanceListActionsItem: ShiftAttendanceItem | null = null;
+  /** Modal unificado: asignar área + marcar asistencia al clic en enfermera. */
+  showAttendanceAssignModal = false;
+  attendanceAssignItem: ShiftAttendanceItem | null = null;
+  attendanceAssignAreaId: number | null = null;
+  attendanceAssignSuggestedAreaId: number | null = null;
+  attendanceAssignLoading = false;
+  attendanceAssignSaving = false;
   attendanceAreaFilter: number | null = null;
   /** Deep link desde aviso de cobertura (Camas/Áreas): filtrar toma de lista por área. */
   private attendanceAreaRoutePending: number | null = null;
@@ -197,6 +216,21 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
   readonly schedHtmlDayOffModalTitle = $localize`:@@schedMgmtHtml.dayOffModalTitle:Día de descanso`;
   readonly schedHtmlSaving = $localize`:@@schedMgmtHtml.savingLabel:Guardando…`;
   readonly schedHtmlSaveCoverageAssign = $localize`:@@schedMgmtHtml.saveCoverageAssign:Asignar al área`;
+  readonly schedHtmlAttendanceAssignIntro = $localize`:@@schedMgmtHtml.attendanceAssignIntro:¿Asignar a esta enfermera en el turno actual? Confirma el área y marca su asistencia.`;
+  readonly schedHtmlAttendancePersonRoleLabel = $localize`:@@schedAttendanceModal.summaryNurse:Enfermera:`;
+  readonly schedHtmlAttendanceAssignSuggestedHint = $localize`:@@schedMgmtHtml.attendanceAssignSuggestedHint:Área sugerida según turnos anteriores en este horario.`;
+  readonly schedHtmlAttendanceAssignAreaOnly = $localize`:@@schedMgmtHtml.attendanceAssignAreaOnly:Solo asignar área`;
+  readonly schedHtmlAttendanceAssignLoading = $localize`:@@schedMgmtHtml.attendanceAssignLoading:Cargando sugerencias del turno…`;
+  readonly schedHtmlLabelAreaAssigned = $localize`:@@schedMgmtHtml.labelAreaAssigned:Área asignada`;
+  readonly schedHtmlOptionNoArea = $localize`:@@schedMgmtHtml.optionNoArea:Sin área`;
+  readonly schedHtmlLabelListStatus = $localize`:@@schedMgmtHtml.labelListStatus:Estado`;
+  readonly schedHtmlLabelListShift = $localize`:@@schedMgmtHtml.labelListShift:Turno`;
+  readonly schedHtmlOptionAllStatuses = $localize`:@@schedMgmtHtml.optionAllStatuses:Todos los estados`;
+  readonly schedHtmlBtnCancel = $localize`:@@schedMgmtHtml.btnCancel:Cancelar`;
+  readonly schedHtmlBtnSave = $localize`:@@schedMgmtHtml.btnSave:Guardar`;
+  readonly schedToastAttendanceAreaAssigned = $localize`:@@schedMgmt.toastAttendanceAreaAssigned:Área asignada. Marca presente o tarde cuando corresponda.`;
+  readonly schedWarnAreaInvalid = $localize`:@@schedMgmt.warnAreaInvalid:Selecciona un área válida.`;
+  readonly schedWarnAreaMissing = $localize`:@@schedMgmt.warnAreaMissing:El área seleccionada no existe.`;
 
   constructor(
     private adminService: AdminService,
@@ -205,6 +239,8 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
     private shiftRealtimeService: ShiftRealtimeService,
     private confirmationService: ConfirmationService,
     private toastService: ToastService,
+    private weeklyPersistence: SchedulesWeeklyPersistenceService,
+    private shiftAttendanceFacade: SchedulesShiftAttendanceFacade,
     private router: Router,
     private route: ActivatedRoute
   ) {}
@@ -354,7 +390,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
         this.tryApplyAttendanceAreaRouteIntent();
       },
       error: (error) => {
-        console.error(' Error cargando turnos:', error);
+        this.toastService.error(error.error?.message || 'Error cargando turnos');
         // Mantener turnos por defecto si falla la carga
         this.ensureSelectedAttendanceShift();
         this.tryApplyAttendanceAreaRouteIntent();
@@ -440,7 +476,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
         this.tryApplyAttendanceAreaRouteIntent();
       },
       error: (error: any) => {
-        console.error(' Error loading data:', error);
+        this.toastService.error(error.error?.message || 'Error loading data');
         this.loading = false;
       },
     });
@@ -462,12 +498,10 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
         this.loading = false;
       },
       error: (error) => {
-        console.error('Error cargando turnos semanales:', error);
         this.initializeWeeklySchedules([]);
         this.applyFilters();
         this.loading = false;
-
-        this.toastService.error(this.schedErrLoadWeekly);
+        this.toastService.error(error.error?.message || this.schedErrLoadWeekly);
       }
     });
   }
@@ -619,7 +653,6 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
       : parseInt(String(this.selectedShift.id));
     
     if (isNaN(shiftId)) {
-      console.error(' ID de turno inválido:', this.selectedShift.id);
       this.toastService.warning(this.schedWarnInvalidShiftId);
       return;
     }
@@ -649,7 +682,6 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
         this.shiftsService.clearShiftsCache();
       },
       error: (error) => {
-        console.error('Error actualizando turno:', error);
         const detail = error.error?.message || error.message || this.schedMgmtErrUnknown;
         this.toastService.error(
           $localize`:@@schedMgmt.errUpdateShiftTimes:Error al actualizar el horario del turno: ${detail}:msg:`
@@ -700,33 +732,23 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
     if (!silent) {
       this.loading = true;
     }
-    this.shiftsService.getShiftAttendance(this.attendanceDate, this.selectedShiftAttendanceId).subscribe({
-      next: (items) => {
-        this.attendanceItems = (items && items.length > 0) ? items : this.buildFallbackAttendanceItems();
-        if (!silent) {
-          this.loading = false;
-        }
-      },
-      error: (error) => {
-        console.error('Error cargando asistencia de turno:', error);
-        this.attendanceItems = this.buildFallbackAttendanceItems();
-        if (!silent) {
-          this.loading = false;
-        }
-      },
-    });
-  }
-
-  private buildFallbackAttendanceItems(): ShiftAttendanceItem[] {
-    return (this.nurses || []).map((nurse) => ({
-      nurseId: nurse.id!,
-      nurseName: `${nurse.firstName} ${nurse.lastName}`,
-      status: 'absent',
-      assignedAreaId: nurse.assignedAreaId || null,
-      checkInAt: null,
-      checkOutAt: null,
-      notes: null,
-    }));
+    this.shiftAttendanceFacade
+      .loadShiftAttendance(this.attendanceDate, this.selectedShiftAttendanceId, this.nurses)
+      .subscribe({
+        next: (items) => {
+          this.attendanceItems = items;
+          if (!silent) {
+            this.loading = false;
+          }
+        },
+        error: (error) => {
+          this.toastService.error(error.error?.message || 'Error cargando asistencia de turno');
+          this.attendanceItems = this.shiftAttendanceFacade.buildFallbackAttendanceItems(this.nurses);
+          if (!silent) {
+            this.loading = false;
+          }
+        },
+      });
   }
 
   /**
@@ -799,11 +821,11 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
   }
 
   openSummaryAttendanceSheet(item: ShiftAttendanceItem): void {
-    this.summaryAttendanceActionsItem = item;
+    this.openAttendanceAssignModal(item);
   }
 
   closeSummaryAttendanceSheet(): void {
-    this.summaryAttendanceActionsItem = null;
+    this.closeAttendanceAssignModal();
   }
 
   onSummaryAttendanceKeydown(item: ShiftAttendanceItem, event: KeyboardEvent): void {
@@ -814,11 +836,11 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
   }
 
   openAttendanceListSheet(item: ShiftAttendanceItem): void {
-    this.attendanceListActionsItem = item;
+    this.openAttendanceAssignModal(item);
   }
 
   closeAttendanceListSheet(): void {
-    this.attendanceListActionsItem = null;
+    this.closeAttendanceAssignModal();
   }
 
   onAttendanceListKeydown(item: ShiftAttendanceItem, event: KeyboardEvent): void {
@@ -828,21 +850,235 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
     }
   }
 
-  summaryAttendanceSheetSummary(item: ShiftAttendanceItem): string[] {
-    return [
-      item.nurseName,
-      `${this.getAreaName(item.assignedAreaId)}`,
-      `${this.getAttendanceStatusLabel(item.status)}`,
-      this.formatDateTime(item.checkInAt),
-    ];
+  openAttendanceAssignModal(item: ShiftAttendanceItem): void {
+    this.attendanceAssignItem = item;
+    this.attendanceAssignAreaId = item.assignedAreaId ?? null;
+    this.attendanceAssignSuggestedAreaId = null;
+    this.attendanceAssignSaving = false;
+    this.attendanceAssignLoading = true;
+    this.showAttendanceAssignModal = true;
+
+    this.loadShiftHistoryForSuggestions().subscribe({
+      next: (history) => this.applyAttendanceAssignDefaults(item, history || []),
+      error: () => this.applyAttendanceAssignDefaults(item, []),
+    });
   }
 
-  attendanceListSheetSummary(item: ShiftAttendanceItem): string[] {
-    return [
-      item.nurseName,
-      `${this.getAreaName(item.assignedAreaId)}`,
-      `${this.getAttendanceStatusLabel(item.status)}`,
-    ];
+  closeAttendanceAssignModal(): void {
+    this.showAttendanceAssignModal = false;
+    this.attendanceAssignItem = null;
+    this.attendanceAssignAreaId = null;
+    this.attendanceAssignSuggestedAreaId = null;
+    this.attendanceAssignLoading = false;
+    this.attendanceAssignSaving = false;
+  }
+
+  private applyAttendanceAssignDefaults(item: ShiftAttendanceItem, history: ShiftAttendanceHistoryItem[]): void {
+    const suggested = this.resolveDefaultAreaIdForNurse(item.nurseId, history);
+    this.attendanceAssignSuggestedAreaId = suggested;
+    this.attendanceAssignAreaId = suggested ?? item.assignedAreaId ?? null;
+    this.attendanceAssignLoading = false;
+  }
+
+  private loadShiftHistoryForSuggestions() {
+    const from = new Date();
+    from.setDate(from.getDate() - 90);
+    const dateFrom = from.toISOString().split('T')[0];
+    return this.shiftsService.getShiftAttendanceHistory({
+      dateFrom,
+      shiftId: this.selectedShiftAttendanceId ?? undefined,
+      limit: 400,
+    });
+  }
+
+  resolveDefaultAreaIdForNurse(
+    nurseId: number,
+    history: ShiftAttendanceHistoryItem[],
+  ): number | null {
+    const activeStatuses = new Set<ShiftAttendanceStatus>(['present', 'late']);
+    const shiftId = this.selectedShiftAttendanceId;
+    const nurse = this.nurses.find((n) => n.id === nurseId);
+
+    if (shiftId && history.length) {
+      const rows = history
+        .filter(
+          (row) =>
+            row.nurseId === nurseId &&
+            row.shiftId === shiftId &&
+            activeStatuses.has(row.status),
+        )
+        .sort((a, b) => String(b.date).localeCompare(String(a.date)));
+
+      for (const row of rows) {
+        const areaId =
+          row.assignedAreaId ?? nurse?.assignedAreaId ?? null;
+        if (areaId != null) {
+          return areaId;
+        }
+      }
+    }
+
+    return nurse?.assignedAreaId ?? null;
+  }
+
+  getAttendanceAssignModalTitle(): string {
+    const name = this.getAttendanceAssignNurseDisplayName();
+    const shift = this.getResolvedShiftLabelForDisplay();
+    return $localize`:@@schedMgmtHtml.attendanceAssignModalTitle:Asistencia · ${name}:name: · ${shift}:shift:`;
+  }
+
+  getAttendanceAssignNurseDisplayName(): string {
+    return this.attendanceAssignItem?.nurseName ?? this.schedHtmlModalAttendanceFallback;
+  }
+
+  showAttendanceAssignSuggestedHint(): boolean {
+    if (this.attendanceAssignSuggestedAreaId == null || this.attendanceAssignAreaId == null) {
+      return false;
+    }
+    const nurse = this.nurses.find((n) => n.id === this.attendanceAssignItem?.nurseId);
+    const profileArea = nurse?.assignedAreaId ?? this.attendanceAssignItem?.assignedAreaId ?? null;
+    return this.attendanceAssignSuggestedAreaId !== profileArea;
+  }
+
+  getAttendanceStatusBadgeClass(status: ShiftAttendanceStatus): string {
+    return `badge-status-attendance badge-status-attendance--${status}`;
+  }
+
+  private parseAndValidateAssignedAreaId(raw: number | null | undefined): number | null | false {
+    if (raw === null || raw === undefined || raw === ('' as any)) {
+      return null;
+    }
+    const n = typeof raw === 'number' ? raw : parseInt(String(raw), 10);
+    if (Number.isNaN(n)) {
+      this.toastService.warning(this.schedWarnAreaInvalid);
+      return false;
+    }
+    if (!this.areas.some((a) => a.id === n)) {
+      this.toastService.warning(this.schedWarnAreaMissing);
+      return false;
+    }
+    return n;
+  }
+
+  private applyAreaToNurseLocally(nurseId: number, areaId: number | null): void {
+    const nurse = this.nurses.find((n) => n.id === nurseId);
+    if (nurse) {
+      nurse.assignedAreaId = areaId ?? undefined;
+    }
+    for (const item of this.attendanceItems) {
+      if (item.nurseId === nurseId) {
+        item.assignedAreaId = areaId;
+      }
+    }
+    if (this.attendanceAssignItem?.nurseId === nurseId) {
+      this.attendanceAssignItem.assignedAreaId = areaId;
+    }
+  }
+
+  saveAttendanceAreaOnly(): void {
+    this.saveAttendanceWithArea(this.attendanceAssignItem, undefined);
+  }
+
+  saveAttendanceWithArea(
+    item: ShiftAttendanceItem | null,
+    status: ShiftAttendanceStatus | undefined,
+  ): void {
+    if (!item?.nurseId) {
+      return;
+    }
+
+    const parsedArea = this.parseAndValidateAssignedAreaId(this.attendanceAssignAreaId);
+    if (parsedArea === false) {
+      return;
+    }
+
+    const currentShiftId = this.resolveCurrentShiftId();
+    if (!currentShiftId) {
+      this.toastService.warning(this.schedWarnNoCurrentShift);
+      return;
+    }
+
+    const nurse = this.nurses.find((n) => n.id === item.nurseId);
+    const currentProfileArea = nurse?.assignedAreaId ?? item.assignedAreaId ?? null;
+    const areaChanged = parsedArea !== currentProfileArea;
+
+    const applyStatusAndPersist = (): void => {
+      if (status) {
+        item.status = status;
+        const nowIso = new Date().toISOString();
+        if (status === 'present' || status === 'late') {
+          item.checkInAt = item.checkInAt || nowIso;
+          item.checkOutAt = null;
+        } else {
+          item.checkInAt = null;
+          item.checkOutAt = null;
+        }
+      }
+
+      this.attendanceDate = new Date().toISOString().split('T')[0];
+      this.selectedShiftAttendanceId = currentShiftId;
+
+      if (status) {
+        if (this.attendancePersistTimer) {
+          clearTimeout(this.attendancePersistTimer);
+          this.attendancePersistTimer = null;
+        }
+        this.attendanceAssignSaving = true;
+        this.persistAttendanceList((success) => {
+          this.attendanceAssignSaving = false;
+          if (success) {
+            this.closeAttendanceAssignModal();
+          }
+        });
+      } else {
+        this.attendanceAssignSaving = false;
+        this.toastService.success(this.schedToastAttendanceAreaAssigned);
+        this.closeAttendanceAssignModal();
+      }
+    };
+
+    if (!areaChanged) {
+      if (parsedArea != null) {
+        this.applyAreaToNurseLocally(item.nurseId, parsedArea);
+      }
+      applyStatusAndPersist();
+      return;
+    }
+
+    this.attendanceAssignSaving = true;
+    this.adminService.updateUser(item.nurseId, { assignedAreaId: parsedArea }).subscribe({
+      next: () => {
+        this.applyAreaToNurseLocally(item.nurseId, parsedArea);
+        applyStatusAndPersist();
+      },
+      error: (error) => {
+        this.attendanceAssignSaving = false;
+        const detail = error?.error?.message || error?.message || this.schedMgmtErrUnknown;
+        this.toastService.error(
+          $localize`:@@schedMgmt.errAssignAreaCoverage:Error al asignar enfermeras al área: ${detail}:msg:`,
+        );
+      },
+    });
+  }
+
+  markPresentFromAssignModal(): void {
+    this.saveAttendanceWithArea(this.attendanceAssignItem, 'present');
+  }
+
+  markLateFromAssignModal(): void {
+    this.saveAttendanceWithArea(this.attendanceAssignItem, 'late');
+  }
+
+  markJustifiedFromAssignModal(): void {
+    this.saveAttendanceWithArea(this.attendanceAssignItem, 'justified');
+  }
+
+  markMissingFromAssignModal(): void {
+    this.saveAttendanceWithArea(this.attendanceAssignItem, 'missing');
+  }
+
+  markAbsentFromAssignModal(): void {
+    this.saveAttendanceWithArea(this.attendanceAssignItem, 'absent');
   }
 
   getResolvedShiftLabelForDisplay(): string {
@@ -878,11 +1114,11 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
   }
 
   getSummaryAttendanceModalTitle(): string {
-    return this.summaryAttendanceActionsItem?.nurseName ?? this.schedHtmlModalAttendanceFallback;
+    return this.attendanceAssignItem?.nurseName ?? this.schedHtmlModalAttendanceFallback;
   }
 
   getAttendanceListModalTitle(): string {
-    return this.attendanceListActionsItem?.nurseName ?? this.schedHtmlModalListFallback;
+    return this.attendanceAssignItem?.nurseName ?? this.schedHtmlModalListFallback;
   }
 
   /** Agrupa cambios rápidos y persiste la lista completa en la BD (mismo endpoint que antes el botón Guardar). */
@@ -896,7 +1132,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
     }, 450);
   }
 
-  private persistAttendanceList(): void {
+  private persistAttendanceList(onComplete?: (success: boolean) => void): void {
     const currentShiftId = this.resolveCurrentShiftId();
     if (!currentShiftId || !this.attendanceItems.length) {
       return;
@@ -905,20 +1141,19 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
     this.attendanceDate = new Date().toISOString().split('T')[0];
     this.selectedShiftAttendanceId = currentShiftId;
 
-    const nowIso = new Date().toISOString();
-    const payload = this.attendanceItems.map((item) => {
-      if ((item.status === 'present' || item.status === 'late') && !item.checkInAt) {
-        return { ...item, checkInAt: nowIso };
-      }
-      return item;
-    });
-
     this.savingAttendance = true;
-    this.shiftsService.saveShiftAttendance(this.attendanceDate, currentShiftId, payload, { autoHandoff: true }).subscribe({
-      next: (response) => {
+    this.shiftAttendanceFacade
+      .persistAttendanceList(this.attendanceDate, currentShiftId, this.attendanceItems, { autoHandoff: true })
+      .subscribe({
+        next: (response) => {
         this.savingAttendance = false;
         const saveMsg = response?.message || this.schedAttendanceSavedDefault;
-        const handoff = response?.handoff;
+        const handoff = response?.handoff as {
+          processed?: number;
+          assigned?: number;
+          pending?: number;
+          details?: Array<{ patientId: number; status: string; reason?: string }>;
+        } | undefined;
         if (handoff) {
           const processed = handoff.processed ?? 0;
           const assigned = handoff.assigned ?? 0;
@@ -941,6 +1176,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
           this.toastService.success(saveMsg);
         }
         this.loadShiftAttendance({ silent: true });
+        onComplete?.(true);
       },
       error: (error) => {
         this.savingAttendance = false;
@@ -949,6 +1185,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
           $localize`:@@schedMgmt.errSaveAttendanceServer:No se pudo guardar en el servidor: ${detail}:msg:`
         );
         this.loadShiftAttendance({ silent: true });
+        onComplete?.(false);
       },
     });
   }
@@ -959,7 +1196,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
 
   setAttendanceSummaryFilter(status: ShiftAttendanceStatus): void {
     this.attendanceSummaryFilter = this.attendanceSummaryFilter === status ? 'all' : status;
-    this.summaryAttendanceActionsItem = null;
+    this.closeAttendanceAssignModal();
   }
 
   toggleShiftConfigSection(): void {
@@ -991,6 +1228,35 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
   clearAttendanceFilters(): void {
     this.attendanceSearchQuery = '';
     this.attendanceAreaFilter = null;
+    this.attendanceListStatusFilter = 'all';
+  }
+
+  onAttendanceListShiftChange(shiftId: number | null): void {
+    this.selectedShiftAttendanceId = shiftId;
+    this.closeAttendanceAssignModal();
+    this.loadShiftAttendance();
+  }
+
+  getSelectedAttendanceShiftLabel(): string {
+    const id = this.selectedShiftAttendanceId;
+    if (id == null) {
+      return this.schedHtmlNoActiveShift;
+    }
+    const shift = this.shifts.find((s) => Number(s.id) === Number(id));
+    if (!shift) {
+      return this.schedHtmlNoActiveShift;
+    }
+    return this.shiftRealtimeService.formatShiftLabel(shift) || shift.name || this.schedHtmlNoActiveShift;
+  }
+
+  getShiftOptionLabel(shift: { name?: string; startTime?: string; endTime?: string }): string {
+    const name = shift.name ?? '';
+    const start = shift.startTime ?? '';
+    const end = shift.endTime ?? '';
+    if (start && end) {
+      return `${name} (${start}–${end})`;
+    }
+    return name;
   }
 
   getAttendanceStatusLabel(status: ShiftAttendanceStatus): string {
@@ -1020,6 +1286,10 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
   get filteredAttendanceItems(): ShiftAttendanceItem[] {
     let items = [...this.attendanceItems];
 
+    if (this.attendanceListStatusFilter !== 'all') {
+      items = items.filter((item) => item.status === this.attendanceListStatusFilter);
+    }
+
     if (this.attendanceSearchQuery.trim()) {
       const query = this.attendanceSearchQuery.trim().toLowerCase();
       items = items.filter((item) => (item.nurseName || '').toLowerCase().includes(query));
@@ -1028,6 +1298,15 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
     if (this.attendanceAreaFilter !== null) {
       items = items.filter((item) => (item.assignedAreaId || null) === this.attendanceAreaFilter);
     }
+
+    items.sort((a, b) => {
+      const orderA = SchedulesManagementComponent.ATTENDANCE_STATUS_SORT_ORDER[a.status] ?? 99;
+      const orderB = SchedulesManagementComponent.ATTENDANCE_STATUS_SORT_ORDER[b.status] ?? 99;
+      if (orderA !== orderB) {
+        return orderA - orderB;
+      }
+      return (a.nurseName || '').localeCompare(b.nurseName || '', 'es', { sensitivity: 'base' });
+    });
 
     return items;
   }
@@ -1065,21 +1344,10 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
     this.assignCoverageLoadingDefaults = true;
     this.showAssignAreaCoverageModal = true;
 
-    const shiftId = this.selectedShiftAttendanceId;
-    const from = new Date();
-    from.setDate(from.getDate() - 90);
-    const dateFrom = from.toISOString().split('T')[0];
-
-    this.shiftsService
-      .getShiftAttendanceHistory({
-        dateFrom,
-        shiftId: shiftId ?? undefined,
-        limit: 400,
-      })
-      .subscribe({
-        next: (history) => this.applyCoverageModalDefaults(parsed, history || []),
-        error: () => this.applyCoverageModalDefaults(parsed, []),
-      });
+    this.loadShiftHistoryForSuggestions().subscribe({
+      next: (history) => this.applyCoverageModalDefaults(parsed, history || []),
+      error: () => this.applyCoverageModalDefaults(parsed, []),
+    });
   }
 
   private applyCoverageModalDefaults(areaId: number, history: ShiftAttendanceHistoryItem[]): void {
@@ -1146,6 +1414,50 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
     const areaName = this.getAreaName(this.assignCoverageAreaId);
     const shiftLabel = this.getResolvedShiftLabelForDisplay();
     return $localize`:@@schedMgmtHtml.assignAreaCoverageTitle:Asignar enfermeras · ${areaName}:area: · ${shiftLabel}:shift:`;
+  }
+
+  get assignCoverageSelectedNurseIdsArray(): number[] {
+    return [...this.assignCoverageSelectedNurseIds];
+  }
+
+  get assignCoverageDefaultNurseIdsArray(): number[] {
+    return [...this.assignCoverageDefaultNurseIds];
+  }
+
+  get assignCoverageAreaName(): string {
+    return this.getAreaName(this.assignCoverageAreaId);
+  }
+
+  get assignCoverageShiftLabel(): string {
+    return this.getResolvedShiftLabelForDisplay();
+  }
+
+  onCoverageModalToggleNurse(payload: { nurseId: number; checked: boolean }): void {
+    this.toggleCoverageNurse(payload.nurseId, payload.checked);
+  }
+
+  onAttendanceModalAreaChange(areaId: number | null): void {
+    this.attendanceAssignAreaId = areaId;
+  }
+
+  onAttendanceModalMarkStatus(status: ShiftAttendanceStatus): void {
+    switch (status) {
+      case 'present':
+        this.markPresentFromAssignModal();
+        break;
+      case 'late':
+        this.markLateFromAssignModal();
+        break;
+      case 'justified':
+        this.markJustifiedFromAssignModal();
+        break;
+      case 'missing':
+        this.markMissingFromAssignModal();
+        break;
+      case 'absent':
+        this.markAbsentFromAssignModal();
+        break;
+    }
   }
 
   getCoverageAreaAssignAria(areaName: string): string {
@@ -1257,10 +1569,21 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
       Turno: row.shiftName || '-',
       Horario: row.shiftTime || '-',
       Enfermera: row.nurseName || '-',
+      Área: this.getAreaName(row.assignedAreaId),
       Estado: this.getAttendanceStatusLabel(row.status),
       Entrada: this.formatDateTime(row.checkInAt),
     }));
   }
+
+  private readonly attendanceHistoryExportHeaders = [
+    'Fecha',
+    'Turno',
+    'Horario',
+    'Enfermera',
+    'Área',
+    'Estado',
+    'Entrada',
+  ];
 
   exportAttendanceHistoryCsv(): void {
     if (!this.attendanceHistory.length) {
@@ -1271,7 +1594,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
     const rows = this.buildAttendanceHistoryExportRows();
     this.exportService.exportToCSV(rows, {
       filename: `historial_turnos_${new Date().toISOString().split('T')[0]}.csv`,
-      headers: ['Fecha', 'Turno', 'Horario', 'Enfermera', 'Estado', 'Entrada'],
+      headers: this.attendanceHistoryExportHeaders,
     });
   }
 
@@ -1285,7 +1608,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
     this.exportService.exportToPdf(rows, {
       title: $localize`:@@schedMgmt.pdfAttendanceTitle:Historial de asistencia`,
       filename: `historial_turnos_${new Date().toISOString().split('T')[0]}.pdf`,
-      headers: ['Fecha', 'Turno', 'Horario', 'Enfermera', 'Estado', 'Entrada'],
+      headers: this.attendanceHistoryExportHeaders,
       orientation: 'landscape',
     });
   }
@@ -1577,11 +1900,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.weeklySchedules.forEach(schedule => {
-      this.days.forEach(day => {
-        (schedule as any)[day] = '';
-      });
-    });
+    this.weeklyPersistence.clearAllSchedules(this.weeklySchedules, this.days);
     
     this.generateNursesByAreaAndShift();
     this.toastService.success(this.schedToastAllSchedulesCleared);
@@ -1600,11 +1919,8 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const schedule = this.weeklySchedules.find(s => s.nurseId === nurseId);
+    const schedule = this.weeklyPersistence.clearNurseSchedule(this.weeklySchedules, nurseId, this.days);
     if (schedule) {
-      this.days.forEach(day => {
-        (schedule as any)[day] = '';
-      });
       this.generateNursesByAreaAndShift();
       this.toastService.success(
         $localize`:@@schedMgmt.toastNurseSchedulesCleared:Turnos de ${nurse?.firstName ?? ''}:fn: ${nurse?.lastName ?? ''}:ln: limpiados`
@@ -1633,55 +1949,14 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const weekStartDate = this.weekStartDate;
+    const nurseSchedule = this.weeklyPersistence.buildNurseSavePayload(
+      schedule,
+      this.days,
+      this.dayToNumber,
+      this.shifts,
+    );
 
-    // Preparar datos para esta enfermera
-    const nurseSchedule: any = {
-      nurseId: nurseId,
-      shifts: []
-    };
-    
-    // Convertir cada día a un objeto con dayOfWeek y shiftId
-    this.days.forEach(day => {
-      const shiftValue = (schedule as any)[day];
-      
-      // Solo procesar si hay un valor válido
-      if (shiftValue && shiftValue !== '' && shiftValue !== null && shiftValue !== undefined && shiftValue !== 'off') {
-        // Normalizar a tipo de turno
-        let shiftType = '';
-        
-        // Si ya es un tipo válido
-        if (typeof shiftValue === 'string' && ['morning', 'afternoon', 'night'].includes(shiftValue)) {
-          shiftType = shiftValue;
-        }
-        // Si es un ID numérico, buscar el tipo
-        else if (typeof shiftValue === 'number' || (!isNaN(parseInt(String(shiftValue))) && String(shiftValue).length <= 2)) {
-          const shiftId = parseInt(String(shiftValue));
-          const shift = this.shifts.find(s => {
-            const sId = typeof s.id === 'number' ? s.id : parseInt(String(s.id));
-            return sId === shiftId;
-          });
-          if (shift && shift.type) {
-            shiftType = shift.type;
-          } else {
-            return;
-          }
-        } else {
-          return;
-        }
-        
-        // Obtener número del día
-        const dayNumber = this.dayToNumber[day];
-        if (dayNumber !== undefined && shiftType) {
-          nurseSchedule.shifts.push({
-            dayOfWeek: dayNumber,
-            shiftId: shiftType // SIEMPRE enviar el tipo ('morning', 'afternoon', 'night')
-          });
-        }
-      }
-    });
-    
-    if (nurseSchedule.shifts.length === 0) {
+    if (!nurseSchedule) {
       this.toastService.warning(
         $localize`:@@schedMgmt.warnNoShiftsForNurse:No hay turnos asignados para ${nurse.firstName}:fn: ${nurse.lastName}:ln:. Asigna turnos antes de guardar.`
       );
@@ -1689,22 +1964,20 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
     }
 
     this.loading = true;
-    this.shiftsService.saveWeeklySchedule([nurseSchedule], weekStartDate).subscribe({
+    this.weeklyPersistence.saveNurseSchedule(nurseSchedule, this.weekStartDate).subscribe({
       next: (response) => {
         this.loading = false;
         this.toastService.success(
           $localize`:@@schedMgmt.toastNurseShiftsSaved:Turnos guardados (${nurse.firstName}:fn: ${nurse.lastName}:ln:): ${response.shiftsCreated || nurseSchedule.shifts.length}:count: en base de datos`
         );
-        
-        // Recargar los schedules después de guardar
+
         setTimeout(() => {
           this.loadWeeklySchedules();
         }, 300);
       },
       error: (error) => {
         this.loading = false;
-        console.error(' Error al guardar turnos:', error);
-        const errorMsg = error.error?.message || error.message || this.schedMgmtErrUnknown;
+        const errorMsg = error.error?.message || error.message || 'Error al guardar turnos';
         this.toastService.error(
           $localize`:@@schedMgmt.errSaveNurseShifts:Error al guardar turnos (${nurse.firstName}:fn: ${nurse.lastName}:ln:): ${errorMsg}:msg:`
         );
@@ -1713,91 +1986,33 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
   }
 
   saveAllSchedules(): void {
-    const weekStartDate = this.weekStartDate;
+    const schedulesToSave = this.weeklyPersistence.buildBulkSavePayload(
+      this.weeklySchedules,
+      this.days,
+      this.dayToNumber,
+      this.shifts,
+    );
 
-    // Preparar datos para enviar al backend - SIMPLIFICADO
-    const schedulesToSave: any[] = [];
-
-    this.weeklySchedules.forEach(schedule => {
-      const nurseId = typeof schedule.nurseId === 'number' ? schedule.nurseId : parseInt(String(schedule.nurseId));
-
-      if (isNaN(nurseId)) {
-        return;
-      }
-
-      const nurseSchedule: any = {
-        nurseId: nurseId,
-        shifts: []
-      };
-
-      // Convertir cada día a un objeto con dayOfWeek y shiftId
-      this.days.forEach(day => {
-        const shiftValue = (schedule as any)[day];
-        
-        // Solo procesar si hay un valor válido
-        if (shiftValue && shiftValue !== '' && shiftValue !== null && shiftValue !== undefined && shiftValue !== 'off') {
-          // Normalizar a tipo de turno
-          let shiftType = '';
-          
-          // Si ya es un tipo válido
-          if (typeof shiftValue === 'string' && ['morning', 'afternoon', 'night'].includes(shiftValue)) {
-            shiftType = shiftValue;
-          }
-          // Si es un ID numérico, buscar el tipo
-          else if (typeof shiftValue === 'number' || (!isNaN(parseInt(String(shiftValue))) && String(shiftValue).length <= 2)) {
-            const shiftId = parseInt(String(shiftValue));
-            const shift = this.shifts.find(s => {
-              const sId = typeof s.id === 'number' ? s.id : parseInt(String(s.id));
-              return sId === shiftId;
-            });
-            if (shift && shift.type) {
-              shiftType = shift.type;
-            } else {
-              return;
-            }
-          } else {
-            return;
-          }
-          
-          // Obtener número del día
-          const dayNumber = this.dayToNumber[day];
-          if (dayNumber !== undefined && shiftType) {
-            nurseSchedule.shifts.push({
-              dayOfWeek: dayNumber,
-              shiftId: shiftType // SIEMPRE enviar el tipo ('morning', 'afternoon', 'night')
-            });
-          }
-        }
-      });
-      
-      if (nurseSchedule.shifts.length > 0) {
-        schedulesToSave.push(nurseSchedule);
-      }
-    });
-    
     if (schedulesToSave.length === 0) {
       this.toastService.warning(this.schedWarnNoSchedulesToSave);
       return;
     }
-    
+
     this.loading = true;
-    this.shiftsService.saveWeeklySchedule(schedulesToSave, weekStartDate).subscribe({
+    this.weeklyPersistence.saveAllSchedules(schedulesToSave, this.weekStartDate).subscribe({
       next: (response) => {
         this.loading = false;
         this.toastService.success(
           $localize`:@@schedMgmt.toastScheduleSavedBulk:Programación guardada: ${response.shiftsCreated}:count: turnos en base de datos`
         );
-        
-        // Recargar inmediatamente
+
         setTimeout(() => {
           this.loadWeeklySchedules();
         }, 300);
       },
       error: (error) => {
         this.loading = false;
-        console.error('Error al guardar programación:', error);
-        
-        const errorMsg = error.error?.message || error.message || this.schedMgmtErrUnknown;
+        const errorMsg = error.error?.message || error.message || 'Error al guardar programación';
         this.toastService.error(
           $localize`:@@schedMgmt.errSaveScheduleBulk:Error al guardar programación: ${errorMsg}:msg:`
         );

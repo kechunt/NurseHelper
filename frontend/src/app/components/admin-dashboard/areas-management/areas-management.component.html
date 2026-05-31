@@ -19,15 +19,18 @@
       </div>
       <p class="area-description" *ngIf="area.description">{{ area.description }}</p>
       <div class="area-shift-block">
-        <div class="area-shift-heading">
-          {{ areasShiftHeading }}
-          <ng-container *ngIf="shiftCoverageTurnHint() as turnHint">
-            <span class="area-shift-turn-hint">{{ turnHint }}</span>
-          </ng-container>
+        <div class="area-shift-block__head">
+          <span class="area-shift-block__icon" aria-hidden="true">👩‍⚕️</span>
+          <div class="area-shift-block__titles">
+            <div class="area-shift-heading">{{ areasShiftHeading }}</div>
+            <span class="area-shift-turn-badge" *ngIf="shiftCoverageTurnHint() as turnHint">{{ turnHint }}</span>
+          </div>
         </div>
-        <ul class="area-shift-nurse-list" *ngIf="getAreaShiftNurses(area.id).length > 0">
-          <li *ngFor="let n of getAreaShiftNurses(area.id)">{{ n.firstName }} {{ n.lastName }}</li>
-        </ul>
+        <div class="area-shift-nurse-chips" *ngIf="getAreaShiftNurses(area.id).length > 0">
+          <span class="area-shift-nurse-chip" *ngFor="let n of getAreaShiftNurses(area.id)">
+            {{ n.firstName }} {{ n.lastName }}
+          </span>
+        </div>
         <ng-container *ngIf="getAreaShiftNotice(area.id) as areaShiftNotice">
           <button
             *ngIf="shiftCoverageAlertClickable(area)"

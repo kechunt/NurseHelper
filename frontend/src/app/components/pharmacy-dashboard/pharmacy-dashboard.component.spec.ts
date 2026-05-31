@@ -151,7 +151,7 @@ describe('PharmacyDashboardComponent', () => {
     expect(c.pharmacyExpColType).toContain('Tipo');
     expect(c.pharmacyExportKindDelivery).toContain('Entreg');
     expect(c.pharmacyPdfGeneratedPrefix).toContain('Generado');
-    expect(c.pharmacyExportInventoryTitle).toContain('Inventario');
+    expect(c.pharmacyExportInventoryTitle.toLowerCase()).toMatch(/exportar|bodega|stock/);
   });
 
   it('onPharmacyTabKeydown con ArrowRight cambia de módulo', () => {

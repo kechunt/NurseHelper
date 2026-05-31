@@ -12,8 +12,8 @@ export interface BedDisplay {
     id: string;
     name: string;
     age: number;
-    /** Resumen legacy desde API camas (opcional si hay clinicalNotes). */
-    conditions: string[];
+    /** Resumen legacy desde API camas (opcional). */
+    conditions?: string[];
     diagnosis?: string;
     medicalObservations?: string;
     clinicalNotes?: Patient['clinicalNotes'];

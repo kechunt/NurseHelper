@@ -17,6 +17,7 @@ import { fetchPharmacyContactsByShiftForDate } from '../services/pharmacy-contac
 import { fetchMyBedsForNurse } from '../services/nurse-my-beds.service';
 import { fetchMyPatientsForNurse } from '../services/nurse-my-patients.service';
 import { buildNurseShiftContextPayload } from '../services/nurse-shift-context.service';
+import { claimUnassignedPatientForNurse } from '../services/nurse-patient-claim.service';
 import { fetchPatientDetailsForNurse } from '../services/nurse-patient-details.service';
 import {
   recordNurseAdministration,
@@ -565,6 +566,37 @@ export const putNurseHandoverNote = async (req: AuthRequest, res: Response) => {
   } catch (error) {
     logger.error('putNurseHandoverNote:', error);
     return res.status(500).json({ message: 'Error al guardar la nota de entrega' });
+  }
+};
+
+export const claimPatientForNurse = async (req: AuthRequest, res: Response) => {
+  try {
+    const me = req.user;
+    if (!me?.id) {
+      return res.status(401).json({ message: 'Usuario no autenticado' });
+    }
+    if (me.role !== UserRole.NURSE) {
+      return res.status(403).json({ message: 'Solo disponible para el rol enfermería' });
+    }
+
+    const patientId = parseInt(req.params.patientId, 10);
+    if (!Number.isFinite(patientId)) {
+      return res.status(400).json({ message: 'ID de paciente inválido' });
+    }
+
+    const result = await claimUnassignedPatientForNurse(me.id, patientId);
+    if (!result.ok) {
+      return res.status(result.status).json({ message: result.message, code: result.code });
+    }
+
+    return res.json({
+      patientId: result.patientId,
+      assignedToId: result.assignedToId,
+      message: 'Paciente asignado correctamente',
+    });
+  } catch (error) {
+    logger.error('claimPatientForNurse:', error);
+    return res.status(500).json({ message: 'Error al asignar paciente' });
   }
 };
 

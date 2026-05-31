@@ -24,6 +24,10 @@ export interface ComplianceStats {
   byPatient: Array<{
     patientId: number;
     patientName: string;
+    totalSchedules?: number;
+    administered?: number;
+    missed?: number;
+    cancelled?: number;
     complianceRate: number;
   }>;
 }

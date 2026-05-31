@@ -36,13 +36,32 @@ export function stableKeyForClinicalNote(
   return `${scope}:leg:${hash32(`${snippet}|${created}`)}`;
 }
 
-/** Texto en listados previos (sin hora embebida en líneas tipo `[...] texto`). */
+/** Texto en listados previos (sin prefijo [timestamp] al inicio de la línea). */
 export function clinicalNoteDisplayBody(body: string | undefined | null): string {
-  const raw = (body || '').trim();
-  if (!raw) {
+  let text = (body || '').trim();
+  if (!text) {
     return '';
   }
-  return raw.replace(/^\[[^\]]*\]\s*/, '').trim() || raw;
+
+  // Prefijos completos repetidos al inicio: [5/5/2026 21:36:00] nota
+  let prev = '';
+  while (prev !== text) {
+    prev = text;
+    text = text.replace(/^\[[^\]]+\]\s*/, '').trim();
+  }
+
+  // Restos partidos por saltos de línea o chips: "21:36:00] nota" o "[5/5/2026"
+  text = text.replace(/^\d{1,2}:\d{2}(?::\d{2})?\]\s*/i, '').trim();
+  text = text.replace(/^\[\d{1,2}\/\d{1,2}\/\d{2,4}(?:\s+\d{1,2}:\d{2}(?::\d{2})?)?\]?\s*/i, '').trim();
+  text = text.replace(/^\[\d{1,2}\/\d{1,2}\/\d{2,4}\s*$/i, '').trim();
+
+  // Marcas [fecha hora] en cualquier parte del texto
+  text = text
+    .replace(/\[\d{1,2}\/\d{1,2}\/\d{2,4}(?:\s+\d{1,2}:\d{2}(?::\d{2})?)?\]\s*/gi, '')
+    .replace(/\[\d{1,2}\/\d{1,2}\/\d{2,4}\s*\d{1,2}:\d{2}(?::\d{2})?\]\s*/gi, '')
+    .trim();
+
+  return text;
 }
 
 export function sortClinicalNotesNewestFirst(notes: PatientClinicalNoteDto[]): PatientClinicalNoteDto[] {

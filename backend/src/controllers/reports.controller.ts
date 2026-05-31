@@ -7,6 +7,7 @@ import {
   complianceFilterLabel,
   formatReportDateEs,
   parseComplianceExportFilter,
+  reportTitleForType,
   ReportExportMeta,
   reportService,
 } from '../services/report.service';
@@ -31,7 +32,7 @@ async function buildExportScopeLabel(
 ): Promise<string> {
   if (req.user?.role === UserRole.NURSE) {
     const name = await resolveNurseDisplayName(req.user.id);
-    return `Desempeño propio: ${name}`;
+    return `${name} (tus pacientes / área)`;
   }
 
   const nurseUserId =
@@ -41,10 +42,10 @@ async function buildExportScopeLabel(
 
   if (Number.isFinite(nurseUserId) && nurseUserId > 0) {
     const name = await resolveNurseDisplayName(nurseUserId);
-    return `Enfermera: ${name}`;
+    return name;
   }
 
-  return 'Todas las enfermeras (centro completo)';
+  return 'todas las enfermeras (centro completo)';
 }
 
 function buildExportFilename(
@@ -208,6 +209,7 @@ export class ReportsController {
       kpiFilterLabel: complianceFilterLabel(parsedFilter),
       generatedAt: new Date().toLocaleString('es-ES'),
       reportType,
+      reportTitle: reportTitleForType(reportType),
       generatedByRole: req.user?.role ?? 'unknown',
     };
 

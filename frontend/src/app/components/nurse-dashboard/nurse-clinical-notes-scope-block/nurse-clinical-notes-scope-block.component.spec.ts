@@ -63,6 +63,47 @@ describe('NurseClinicalNotesScopeBlockComponent', () => {
     expect(s.length).toBeGreaterThan(6);
   });
 
+  it('displayBody elimina fecha y hora en formato legacy', () => {
+    const body = fixture.componentInstance.displayBody({
+      id: null,
+      body: '[5/5/2026 21:36:00] asdasdasd',
+      authorName: null,
+      createdAt: null,
+      legacy: true,
+    });
+    expect(body).toBe('asdasdasd');
+    expect(body).not.toContain('21:36');
+  });
+
+  it('openList muestra el modal en document.body', () => {
+    fixture.componentRef.setInput('legacySingleFieldText', '[1/1/2026 10:00:00] Nota A');
+    fixture.detectChanges();
+    fixture.componentInstance.openList();
+    fixture.detectChanges();
+    const backdrop = document.body.querySelector('.ncnsb-notes-list-backdrop');
+    expect(backdrop).toBeTruthy();
+    fixture.componentInstance.closeList();
+    fixture.detectChanges();
+  });
+
+  it('emite expandRequest cuando externalExpand está activo', () => {
+    spyOn(fixture.componentInstance.expandRequest, 'emit');
+    fixture.componentRef.setInput('externalExpand', true);
+    fixture.componentRef.setInput('legacySingleFieldText', '[1/1/2026 10:00:00] Nota A');
+    fixture.detectChanges();
+    fixture.componentInstance.onExpandClick(new MouseEvent('click'));
+    expect(fixture.componentInstance.expandRequest.emit).toHaveBeenCalled();
+  });
+
+  it('onTogglePin alterna el estado de pin', () => {
+    fixture.componentRef.setInput('legacySingleFieldText', '[1/1/2026 10:00:00] Nota A');
+    fixture.detectChanges();
+    const note = fixture.componentInstance.effectiveNotes()[0];
+    expect(fixture.componentInstance.isPinned(note)).toBe(false);
+    fixture.componentInstance.onTogglePin(new MouseEvent('click'), note);
+    expect(fixture.componentInstance.isPinned(note)).toBe(true);
+  });
+
   it('detailAuthorLabel distingue legacy sin autor', () => {
     const legacy = fixture.componentInstance.detailAuthorLabel({
       id: null,

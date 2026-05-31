@@ -3,44 +3,20 @@
   width: 100%;
 }
 
-.patient-assignment-badge {
-  flex-shrink: 0;
-  font-size: 0.68rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  padding: 0.2rem 0.45rem;
-  border-radius: 8px;
-  max-width: 11rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.patient-assignment-badge--mine {
-  background: #c6f6d5;
-  color: #22543d;
-  border: 1px solid #9ae6b4;
-}
-
-.patient-assignment-badge--other {
-  background: #e2e8f0;
-  color: #4a5568;
-  border: 1px solid #cbd5e0;
-}
-
-.patient-assignment-badge--pending {
-  background: #fefcbf;
-  color: #744210;
-  border: 1px solid #faf089;
-}
-
-/* Controles neumórficos: el shell del dashboard no estila inputs/selects dentro de este hijo encapsulado. */
+/* Filtros (barra neumórfica al estilo Camas / Áreas admin) */
 .filter-box-actions .filter-box-spacer {
   visibility: hidden;
   min-height: 1.25rem;
   margin: 0;
   padding: 0;
+}
+
+:host .filters-container.patients-filters-bar {
+  background: #e0e5ec;
+  border-radius: 20px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 10px 10px 20px #bebebe, -10px -10px 20px #ffffff;
 }
 
 :host .filters-container.patients-filters-bar .filter-box label {
@@ -111,21 +87,6 @@
   color: #a0aec0;
 }
 
-@media (max-width: 768px) {
-  :host .filters-container.patients-filters-bar {
-    padding: 1rem 0.9rem;
-    gap: 0.85rem;
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 576px) {
-  :host .filters-container.patients-filters-bar {
-    padding: 0.85rem 0.75rem;
-    border-radius: 12px;
-  }
-}
-
 .section-header {
   display: flex;
   justify-content: space-between;
@@ -155,164 +116,170 @@
   text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8);
 }
 
-/* Rejilla de pacientes (misma idea que .nurses-grid en gestión de personal admin) */
-.patients-assigned-grid {
+/* Rejilla alineada con Gestión de Camas (admin) */
+.patients-assigned-grid.beds-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
   margin-bottom: 2rem;
 }
 
-@media (max-width: 1400px) {
-  .patients-assigned-grid {
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1.25rem;
-  }
-}
-
-@media (max-width: 992px) {
-  .patients-assigned-grid {
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1rem;
-  }
-
-  .patient-assigned-card {
-    padding: 1.25rem;
-  }
-}
-
-@media (max-width: 768px) {
-  .patients-assigned-grid {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-
-  .patient-assigned-card {
-    padding: 1rem;
-  }
-
-  .patient-assigned-card-header {
-    flex-direction: column;
-    gap: 0.75rem;
-    align-items: stretch;
-  }
-
-  .patient-assigned-kpis {
-    align-items: flex-start;
-  }
-}
-
-.patient-assigned-card {
-  background: #e0e5ec;
-  border-radius: 20px;
-  padding: 1.5rem;
-  box-shadow: 15px 15px 30px #bebebe, -15px -15px 30px #ffffff;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+.patient-assigned-card.apm-area-card {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.85rem;
   cursor: pointer;
   text-align: left;
   border: none;
   font: inherit;
   color: inherit;
   box-sizing: border-box;
+  min-height: 0;
 }
 
-.patient-assigned-card:hover {
-  transform: translateY(-2px);
-}
-
-.patient-assigned-card:focus-visible {
+.patient-assigned-card.apm-area-card:focus-visible {
   outline: 2px solid rgba(43, 108, 176, 0.55);
   outline-offset: 3px;
 }
 
-.patient-assigned-card--critical {
+.patient-assigned-card--critical.apm-area-card {
   box-shadow:
-    15px 15px 30px #bebebe,
-    -15px -15px 30px #ffffff,
+    10px 10px 20px #bebebe,
+    -10px -10px 20px #ffffff,
     0 0 0 2px rgba(229, 62, 62, 0.38);
 }
 
-.patient-assigned-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 0.75rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid rgba(174, 174, 192, 0.3);
+.patient-assigned-card--critical.apm-area-card:hover {
+  transform: translateY(-2px);
 }
 
-.patient-assigned-card-info {
-  flex: 1;
-  min-width: 0;
+:host .apm-bed-patient-panel {
+  margin-top: 0;
 }
 
-.patient-assigned-card-name {
-  color: #4a5568;
-  font-size: 1.2rem;
-  font-weight: 600;
-  margin: 0;
-  line-height: 1.25;
-  word-break: break-word;
+.nurse-patient-kpi-row {
+  margin-bottom: 0;
 }
 
-.patient-assigned-card-meta {
-  margin: 0;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #4a5568;
-  display: flex;
-  flex-wrap: wrap;
+:host .nurse-patient-kpi-row .nurse-patient-kpi-chip::before {
+  content: none;
+}
+
+.nurse-patient-kpi-chip {
+  display: inline-flex;
   align-items: center;
-  gap: 0.25rem 0.35rem;
-}
-
-.patient-assigned-meta-sep {
-  opacity: 0.55;
-}
-
-.patient-assigned-kpis {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  align-items: flex-end;
+  gap: 0.35rem;
+  padding: 0.45rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
 }
 
 .patient-assigned-task-pill {
-  padding: 6px 12px;
-  border-radius: 8px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  white-space: nowrap;
-  background: #e2e8f0;
+  background: #e0e5ec;
   color: #718096;
-  flex-shrink: 0;
 }
 
 .patient-assigned-task-pill--active {
-  background: #feebc8;
-  color: #c05621;
+  background: rgba(237, 137, 54, 0.16);
+  color: #9c4221;
 }
 
 .patient-assigned-task-pill--muted {
-  background: #edf2f7;
+  background: #e0e5ec;
   color: #4a5568;
 }
 
-.patient-assigned-card-clinical {
+.nurse-patient-clinical-block.apm-shift-block {
+  margin-bottom: 0;
+  padding: 0.85rem 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.65rem;
-  padding: 0.65rem 0.75rem;
-  border-radius: 14px;
-  background: rgba(224, 229, 236, 0.85);
-  box-shadow: inset 5px 5px 10px #cbccd1, inset -4px -4px 10px #fafbff;
 }
 
-.nurse-patient-card-title-row + .patient-assigned-card-meta {
-  margin-top: 0.35rem;
+.patient-assignment-badge {
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.2rem 0.45rem;
+  border-radius: 8px;
+  max-width: 11rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.patient-assignment-badge--mine {
+  background: #c6f6d5;
+  color: #22543d;
+  border: 1px solid #9ae6b4;
+}
+
+.patient-assignment-badge--other {
+  background: #e2e8f0;
+  color: #4a5568;
+  border: 1px solid #cbd5e0;
+}
+
+.patient-assignment-badge--pending {
+  background: #fefcbf;
+  color: #744210;
+  border: 1px solid #faf089;
+}
+
+.patient-assigned-card-assignment-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+}
+
+.patient-assigned-card-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-top: auto;
+  padding-top: 0.25rem;
+}
+
+button.nurse-claim-pill-btn {
+  flex-shrink: 0;
+  box-sizing: border-box;
+  background: #bee3f8;
+  color: #2c5282;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  line-height: 1;
+  min-height: 32px;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #ffffff;
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+button.nurse-claim-pill-btn:hover:not(:disabled) {
+  box-shadow: 3px 3px 6px #bebebe, -3px -3px 6px #ffffff;
+}
+
+button.nurse-claim-pill-btn:active:not(:disabled) {
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+}
+
+button.nurse-claim-pill-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+button.nurse-claim-pill-btn:focus-visible {
+  outline: 2px solid rgba(43, 108, 176, 0.55);
+  outline-offset: 2px;
 }
 
 .empty-message {
@@ -321,4 +288,24 @@
   color: #a0aec0;
   font-style: italic;
   font-size: 1rem;
+}
+
+@media (max-width: 768px) {
+  :host .filters-container.patients-filters-bar {
+    padding: 1rem 0.9rem;
+    gap: 0.85rem;
+    grid-template-columns: 1fr;
+  }
+
+  .patients-assigned-grid.beds-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 576px) {
+  :host .filters-container.patients-filters-bar {
+    padding: 0.85rem 0.75rem;
+    border-radius: 12px;
+  }
 }

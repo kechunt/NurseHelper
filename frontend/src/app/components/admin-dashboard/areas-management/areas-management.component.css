@@ -141,54 +141,96 @@
 
 .area-shift-block {
   margin-bottom: 1rem;
-  padding: 0.75rem 0.9rem;
-  border-radius: 12px;
+  padding: 1rem 1.15rem;
+  border-radius: 16px;
   background: #e0e5ec;
-  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+  box-shadow: 8px 8px 16px #bebebe, -8px -8px 16px #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+}
+
+.area-shift-block__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.area-shift-block__icon {
+  flex-shrink: 0;
+  width: 2.35rem;
+  height: 2.35rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  font-size: 1.15rem;
+  line-height: 1;
+  background: #e0e5ec;
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+}
+
+.area-shift-block__titles {
+  min-width: 0;
+  flex: 1;
 }
 
 .area-shift-heading {
-  font-size: 0.72rem;
+  font-size: 0.85rem;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: #718096;
-  margin-bottom: 0.45rem;
-}
-
-.area-shift-turn-hint {
-  display: block;
-  margin-top: 0.35rem;
-  font-size: 0.78rem;
-  font-weight: 500;
+  color: #4a5568;
+  margin: 0 0 0.35rem;
   text-transform: none;
   letter-spacing: normal;
-  color: #a0aec0;
+  line-height: 1.3;
 }
 
-.area-shift-nurse-list {
-  margin: 0;
-  padding-left: 1.15rem;
-  color: #2d3748;
-  font-size: 0.95rem;
+.area-shift-turn-badge {
+  display: inline-block;
+  padding: 0.28rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
   font-weight: 600;
-  line-height: 1.45;
+  color: #2b6cb0;
+  background: rgba(66, 153, 225, 0.14);
+  box-shadow: 2px 2px 4px #bebebe, -2px -2px 4px #ffffff;
 }
 
-.area-shift-nurse-list li {
-  margin-bottom: 0.15rem;
+.area-shift-nurse-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.area-shift-nurse-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #2d3748;
+  background: #e0e5ec;
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+}
+
+.area-shift-nurse-chip::before {
+  content: '👤';
+  font-size: 0.82rem;
+  line-height: 1;
 }
 
 .area-shift-alert {
-  margin: 0;
-  padding: 0.55rem 0.65rem;
-  border-radius: 10px;
-  font-size: 0.82rem;
+  margin: 0.65rem 0 0;
+  padding: 0.65rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.84rem;
   font-weight: 600;
   line-height: 1.35;
   color: #9c4221;
-  background: rgba(237, 137, 54, 0.14);
-  border: 1px solid rgba(237, 137, 54, 0.35);
+  background: rgba(237, 137, 54, 0.16);
+  border: 1px solid rgba(237, 137, 54, 0.28);
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
 }
 
 button.area-shift-alert--clickable {

@@ -1,12 +1,11 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { BootstrapIconComponent } from '../../../shared/components/bootstrap-icon/bootstrap-icon.component';
 import { NURSE_DASHBOARD_MAIN_VIEWS, type NurseDashboardMainView } from '../nurse-dashboard.types';
 
 @Component({
   selector: 'app-nurse-dashboard-main-nav',
   standalone: true,
-  imports: [CommonModule, BootstrapIconComponent],
+  imports: [CommonModule],
   templateUrl: './nurse-dashboard-main-nav.component.html',
   styleUrl: './nurse-dashboard-main-nav.component.css',
 })

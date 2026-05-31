@@ -88,6 +88,9 @@ describe('PharmacyShiftAttendanceSectionComponent', () => {
     c.openPharmacyAttendanceSheet(row);
     expect(c.pharmacyAttendanceActionsRow).toBe(row);
     expect(c.getPharmacyAttendanceModalTitle()).toContain('Ana');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-sched-attendance-assign-modal')).toBeTruthy();
+    expect(fixture.nativeElement.querySelectorAll('.sched-attendance-status-btn').length).toBe(5);
     c.closePharmacyAttendanceSheet();
     expect(c.pharmacyAttendanceActionsRow).toBeNull();
   });

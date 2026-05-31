@@ -221,7 +221,9 @@ function readNgrokApiKey() {
   for (const configPath of ngrokConfigPaths()) {
     try {
       const content = fs.readFileSync(configPath, 'utf8');
-      const match = content.match(/^\s*api_key:\s*(.+)$/m);
+      const match =
+        content.match(/^\s*api_key:\s*(.+)$/m) ||
+        content.match(/^\s+api_key:\s*(.+)$/m);
       if (match) {
         return match[1].trim().replace(/^['"]|['"]$/g, '');
       }
@@ -293,7 +295,7 @@ async function stopRemoteNgrokSessions(logFn = () => {}) {
     for (const session of sessions) {
       if (!session?.id) continue;
       try {
-        await ngrokApiRequest('POST', `/tunnel_sessions/${session.id}/stop`, apiKey);
+        await ngrokApiRequest('POST', `/tunnel_sessions/${session.id}/stop`, apiKey, '{}');
         logFn(`  Sesión remota cerrada (${session.id.slice(0, 10)}...)`, 'dim');
       } catch {
         /* puede haber expirado entre list y stop */

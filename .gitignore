@@ -5,6 +5,8 @@ node_modules
 # Caché del Angular CLI bajo el proyecto frontend (no versionar)
 frontend/.angular/
 *.tsbuildinfo
+.env
+**/.env
 .env.local
 **/.env.local
 backend/backups/

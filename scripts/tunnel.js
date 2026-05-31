@@ -703,7 +703,7 @@ async function main() {
   let urlPollTimer = null;
   let shuttingDown = false;
 
-  const shutdown = () => {
+  const shutdown = async () => {
     if (shuttingDown) return;
     shuttingDown = true;
     if (urlPollTimer) clearInterval(urlPollTimer);
@@ -713,6 +713,13 @@ async function main() {
 
     killProcessTree(ngrokProcess);
     killProcessTree(devProcess);
+    killStaleNgrok((msg, color) => log(`  ${msg}`, color));
+
+    try {
+      await stopRemoteNgrokSessions((msg, color) => log(`  ${msg}`, color));
+    } catch {
+      /* ignorar */
+    }
 
     try {
       nukeDevEnvironment([BACKEND_PORT, FRONTEND_PORT], REPO_ROOT);

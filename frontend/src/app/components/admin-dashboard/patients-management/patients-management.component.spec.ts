@@ -61,4 +61,27 @@ describe('PatientsManagementComponent', () => {
     expect(c.patientStatusLabel(false)).toContain('Inactivo');
     expect(c.adminPatientsEmDash.length).toBeGreaterThan(0);
   });
+
+  it('carga pacientes paginados al iniciar', () => {
+    const fixture = TestBed.createComponent(PatientsManagementComponent);
+    fixture.detectChanges();
+    expect(adminServiceMock.getPatientsPage).toHaveBeenCalled();
+    expect(fixture.componentInstance.patients).toEqual([]);
+  });
+
+  it('filterPatients reinicia a la página 1 y recarga', () => {
+    const fixture = TestBed.createComponent(PatientsManagementComponent);
+    fixture.detectChanges();
+    adminServiceMock.getPatientsPage.calls.reset();
+    fixture.componentInstance.paginationConfig.currentPage = 3;
+    fixture.componentInstance.filterPatients();
+    expect(fixture.componentInstance.paginationConfig.currentPage).toBe(1);
+    expect(adminServiceMock.getPatientsPage).toHaveBeenCalled();
+  });
+
+  it('hasActiveFilters es false sin filtros aplicados', () => {
+    const fixture = TestBed.createComponent(PatientsManagementComponent);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.hasActiveFilters()).toBe(false);
+  });
 });

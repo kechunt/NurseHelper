@@ -1,127 +1,288 @@
-<div class="ncnsb" [class.ncnsb--compact]="compact" [class.ncnsb--table-cell]="tableCell">
+<div class="ncnsb" [class.ncnsb--compact]="compact">
+
   <div *ngIf="blockLabel" class="ncnsb__block-label">{{ blockLabel }}</div>
 
+
+
   <div
+
     class="ncnsb__preview"
+
     [class.ncnsb__preview--clickable]="effectiveNotes().length > 0"
+
     (click)="onPreviewStripClick($event)"
+
     role="group"
+
     [attr.aria-label]="blockLabel || ncnsbPreviewAria"
+
   >
+
     <button
+
       *ngFor="let note of previewNotes()"
+
       type="button"
+
       class="ncnsb__preview-line-main ncnsb__preview-line-main--block"
+
       (click)="openDetail(note); $event.stopPropagation()"
+
     >
+
       <span class="ncnsb__preview-text">{{ displayBody(note) }}</span>
+
     </button>
+
     <p *ngIf="effectiveNotes().length === 0" class="ncnsb__empty">{{ emptyLabel || ncnsbEmptyDefault }}</p>
+
   </div>
 
+
+
   <button
-    *ngIf="effectiveNotes().length > 0"
+    *ngIf="effectiveNotes().length > 0 && !externalExpand"
     type="button"
     class="ncnsb__expand-btn neuro-btn neuro-btn-sm"
-    (click)="openList(); $event.stopPropagation()"
+    (mousedown)="$event.stopPropagation()"
+    (click)="onExpandClick($event)"
   >
     {{ expandAllLabel(effectiveNotes().length) }}
   </button>
 
-  <!-- Lista completa: solo aquí elige 0–3 visibles fuera -->
+
+
+  <!-- Lista completa: elige 0–3 visibles fuera -->
+
   <div
+
     *ngIf="listModalOpen"
-    class="ncnsb-list-backdrop"
+
+    class="modal-backdrop modal-confirmation ncnsb-notes-list-backdrop"
+
     role="presentation"
+
     (click)="closeList()"
+
   >
+
     <div
-      class="ncnsb-list-dialog"
+
+      class="modal-content modal-small nurse-aux-modal ncnsb-notes-list-dialog"
+
       role="dialog"
+
       aria-modal="true"
+
       aria-labelledby="ncnsb-list-title"
+
       (click)="$event.stopPropagation()"
+
     >
-      <div class="ncnsb-list-header">
-        <h5 id="ncnsb-list-title" class="ncnsb-list-title">{{ blockLabel || ncnsbListTitleFallback }}</h5>
+
+      <div class="modal-header">
+
+        <h3 id="ncnsb-list-title">{{ blockLabel || ncnsbListTitleFallback }}</h3>
+
         <button
+
           type="button"
-          class="ncnsb-list-close neuro-btn neuro-btn-sm ncnsb__icon-close"
+
+          class="close-btn"
+
           (click)="closeList()"
+
           [attr.aria-label]="ncnsbCloseAria"
+
         >
+
           ✕
+
         </button>
+
       </div>
-      <p class="ncnsb-list-hint">{{ ncnsbListHint }}</p>
-      <ul class="ncnsb-list-ul">
-        <li *ngFor="let note of listNotesSorted()" class="ncnsb-list-li">
-          <div class="ncnsb-list-row-wrap">
-            <button
-              type="button"
-              class="ncnsb__eye-btn ncnsb__eye-btn--list neuro-btn neuro-btn-sm"
-              [class.ncnsb__eye-btn--active]="isPinned(note)"
-              [attr.aria-pressed]="isPinned(note)"
-              (click)="onTogglePin($event, note)"
-              [title]="ncnsbPinTitle"
-              [attr.aria-label]="ncnsbPinAria"
-            >
-              <app-bootstrap-icon name="eye" />
-            </button>
-            <button type="button" class="ncnsb-list-row-main" (click)="openDetail(note)">
-              <span class="ncnsb-list-body">{{ displayBody(note) }}</span>
-            </button>
-          </div>
-        </li>
-      </ul>
-      <button
-        type="button"
-        class="ncnsb-list-done neuro-btn neuro-btn-sm"
-        (click)="closeList()"
-        i18n="@@ncnsb.listDoneClose"
-      >
-        Cerrar
-      </button>
+
+
+
+      <div class="modal-body ncnsb-notes-list-body">
+
+        <p class="ncnsb-list-hint">{{ ncnsbListHint }}</p>
+
+        <ul class="ncnsb-list-ul">
+
+          <li *ngFor="let note of listNotesSorted()" class="ncnsb-list-li">
+
+            <div class="ncnsb-list-row-wrap">
+
+              <button
+
+                type="button"
+
+                class="ncnsb-notes-eye-btn"
+
+                [class.ncnsb-notes-eye-btn--active]="isPinned(note)"
+
+                [attr.aria-pressed]="isPinned(note)"
+
+                (click)="onTogglePin($event, note)"
+
+                [title]="ncnsbPinTitle"
+
+                [attr.aria-label]="ncnsbPinAria"
+
+              >
+
+                <app-bootstrap-icon name="eye" />
+
+              </button>
+
+              <button type="button" class="ncnsb-list-row-main" (click)="openDetail(note)">
+
+                <span class="ncnsb-list-body">{{ displayBody(note) }}</span>
+
+              </button>
+
+            </div>
+
+          </li>
+
+        </ul>
+
+      </div>
+
+
+
+      <div class="modal-footer nurse-aux-modal__footer">
+
+        <button
+
+          type="button"
+
+          class="btn-secondary-neuro ncnsb-notes-footer-btn"
+
+          (click)="closeList()"
+
+          i18n="@@ncnsb.listDoneClose"
+
+        >
+
+          Cerrar
+
+        </button>
+
+      </div>
+
     </div>
+
   </div>
 
-  <!-- Detalle con hora -->
+
+
+  <!-- Detalle con fecha y hora -->
+
   <div
+
     *ngIf="detailNote as dn"
-    class="ncnsb-detail-backdrop"
+
+    class="modal-backdrop modal-confirmation ncnsb-notes-detail-backdrop"
+
     role="presentation"
+
     (click)="closeDetail()"
+
   >
-    <div class="ncnsb-detail-dialog" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
-      <div class="ncnsb-detail-header">
-        <h5 class="ncnsb-detail-title" i18n="@@ncnsb.detailTitle">Detalle de la observación</h5>
+
+    <div
+
+      class="modal-content modal-small nurse-aux-modal ncnsb-notes-detail-dialog"
+
+      role="dialog"
+
+      aria-modal="true"
+
+      aria-labelledby="ncnsb-detail-title"
+
+      (click)="$event.stopPropagation()"
+
+    >
+
+      <div class="modal-header">
+
+        <h3 id="ncnsb-detail-title" i18n="@@ncnsb.detailTitle">Detalle de la observación</h3>
+
         <button
+
           type="button"
-          class="ncnsb-detail-close neuro-btn neuro-btn-sm ncnsb__icon-close"
+
+          class="close-btn"
+
           (click)="closeDetail()"
+
           [attr.aria-label]="ncnsbCloseAria"
+
         >
+
           ✕
+
         </button>
+
       </div>
-      <dl class="ncnsb-detail-meta">
-        <dt i18n="@@ncnsb.detailMetaAuthor">Enfermera / autor</dt>
-        <dd>{{ detailAuthorLabel(dn) }}</dd>
-        <dt i18n="@@ncnsb.detailMetaDate">Fecha</dt>
-        <dd>{{ detailDateLabel(dn) }}</dd>
-        <dt i18n="@@ncnsb.detailMetaTime">Hora</dt>
-        <dd>{{ detailTimeLabel(dn) }}</dd>
-      </dl>
-      <p class="ncnsb-detail-body-label" i18n="@@ncnsb.detailBodyLabel">Observación</p>
-      <p class="ncnsb-detail-body">{{ dn.body }}</p>
-      <button
-        type="button"
-        class="ncnsb-detail-done neuro-btn neuro-btn-sm"
-        (click)="closeDetail()"
-        i18n="@@ncnsb.detailDoneClose"
-      >
-        Cerrar
-      </button>
+
+
+
+      <div class="modal-body ncnsb-notes-detail-body">
+
+        <dl class="ncnsb-detail-meta">
+
+          <dt i18n="@@ncnsb.detailMetaAuthor">Enfermera / autor</dt>
+
+          <dd>{{ detailAuthorLabel(dn) }}</dd>
+
+          <dt i18n="@@ncnsb.detailMetaDate">Fecha</dt>
+
+          <dd>{{ detailDateLabel(dn) }}</dd>
+
+          <dt i18n="@@ncnsb.detailMetaTime">Hora</dt>
+
+          <dd>{{ detailTimeLabel(dn) }}</dd>
+
+        </dl>
+
+        <p class="ncnsb-detail-body-label" i18n="@@ncnsb.detailBodyLabel">Observación</p>
+
+        <div class="nurse-aux-modal__inset ncnsb-detail-body-inset">
+
+          <p class="ncnsb-detail-body">{{ displayBody(dn) }}</p>
+
+        </div>
+
+      </div>
+
+
+
+      <div class="modal-footer nurse-aux-modal__footer">
+
+        <button
+
+          type="button"
+
+          class="btn-secondary-neuro ncnsb-notes-footer-btn"
+
+          (click)="closeDetail()"
+
+          i18n="@@ncnsb.detailDoneClose"
+
+        >
+
+          Cerrar
+
+        </button>
+
+      </div>
+
     </div>
+
   </div>
+
 </div>
+

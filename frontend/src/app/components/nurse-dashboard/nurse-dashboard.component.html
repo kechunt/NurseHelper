@@ -136,6 +136,7 @@
       [assignedArea]="assignedArea"
       (bedEditRequest)="openEditBedModal($event)"
       (viewPatientRequest)="viewPatientDetails($event)"
+      (openClinicalNotesRequest)="openPatientModalForBedClinicalNotes($event)"
     />
   </div>
 
@@ -161,6 +162,8 @@
         (clearPatientFiltersClick)="clearPatientsSectionFilters()"
         (openPatientDetails)="openPatientModal($event)"
         (openPatientMedicationSchedule)="openPatientModal($event, 'schedule')"
+        (claimPatient)="onClaimPatientRequested($event)"
+        [claimingPatientId]="claimingPatientId"
       />
     </div>
     </div>
@@ -174,6 +177,7 @@
       (notCompletedDismissed)="closeNotCompletedModal()"
       (notCompletedConfirmed)="onNotCompletedTaskConfirmed($event)"
       (patientModalClosed)="closePatientModal()"
+      (patientClinicalNotesListScopeHandled)="onClinicalNotesListScopeHandled()"
       (patientModalPdfRequested)="exportPatientPdf()"
       (patientExportCsvRequested)="exportPatientTab($event.tab)"
       (patientActiveTabChange)="activeTab = $event"

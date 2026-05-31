@@ -1,84 +1,116 @@
-<div class="section-card nurse-module nurse-beds-module">
-  <div class="nurse-module-stack nurse-beds-stack">
-    <div class="section-header beds-section-header">
-      <h2 id="nurse-beds-section-title" class="section-title">
-        <app-bootstrap-icon name="rectangle-group" /> <span i18n="@@nurseBedsSection.sectionTitle">Mis Camas Asignadas</span>
-      </h2>
-      <span class="section-subtitle" i18n="@@nurseBedsSection.sectionSubtitle"
-        >{{ myBeds.length }} camas en {{ assignedArea }}</span
-      >
-    </div>
-
-    <div class="beds-grid">
-      <div
-        *ngFor="let bed of myBeds; let i = index"
-        class="bed-card clickable-bed"
-        [attr.id]="'nurse-beds-section-bed-card-' + i"
-        [class.occupied]="bed.patient"
-        [class.available]="!bed.patient"
-        (click)="bedEditRequest.emit(bed)"
-        title="Click para editar cama"
-        i18n-title="@@nurseBedsSection.cardEditBedTitle"
-      >
-        <div class="bed-header">
-          <div class="bed-number">{{ bed.bedNumber }}</div>
-          <div class="bed-status-badge" [class.occupied]="bed.patient">
-            <span *ngIf="bed.patient"
-              ><app-bootstrap-icon name="rectangle-group" /> <span i18n="@@nurseBedsSection.statusOccupied">Ocupada</span></span
-            >
-            <span *ngIf="!bed.patient"
-              ><app-bootstrap-icon name="check-circle" /> <span i18n="@@nurseBedsSection.statusAvailable">Disponible</span></span
-            >
-          </div>
-        </div>
-
-        <div *ngIf="bed.patient" class="bed-patient-info">
-          <div class="nurse-patient-card-title-row">
-            <span class="bed-patient-card-name">{{ bed.patient.name }}</span>
-            <button
-              type="button"
-              class="nurse-details-pill-btn"
-              [attr.id]="'nurse-beds-section-view-patient-' + i"
-              (click)="onViewPatientClick(bed.patient, $event)"
-              title="Ver detalles del paciente"
-              i18n-title="@@nurseBedsSection.btnViewPatientTitle"
-            >
-              <span i18n="@@nurseBedsSection.btnDetails">Detalles</span>
-            </button>
-          </div>
-          <p class="bed-patient-card-meta">
-            <span class="bed-patient-meta-item"
-              ><app-bootstrap-icon name="cake" /> <span i18n="@@nurseBedsSection.ageYearsLine">{{ bed.patient.age }} años</span></span
-            >
-          </p>
-          <div class="bed-patient-clinical" *ngIf="bed.patient" (click)="$event.stopPropagation()">
-            <app-nurse-clinical-notes-scope-block
-              [patientId]="bed.patient.id"
-              scope="diagnosis"
-              [notesFromApi]="bed.patient.clinicalNotes?.diagnosis ?? []"
-              [legacySingleFieldText]="bed.patient.diagnosis ?? ''"
-              [compact]="true"
-              [blockLabel]="clinicalDiagnosisBlockLabel"
-              [emptyLabel]="clinicalDiagnosisEmptyLabel"
-            />
-            <app-nurse-clinical-notes-scope-block
-              [patientId]="bed.patient.id"
-              scope="medical"
-              [notesFromApi]="bed.patient.clinicalNotes?.medical ?? []"
-              [legacySingleFieldText]="bed.patient.medicalObservations ?? ''"
-              [compact]="true"
-              [blockLabel]="clinicalMedicalBlockLabel"
-              [emptyLabel]="clinicalMedicalEmptyLabel"
-            />
-          </div>
-        </div>
-
-        <div *ngIf="!bed.patient" class="bed-empty">
-          <div class="empty-icon"><app-bootstrap-icon name="building-office-2" /></div>
-          <p i18n="@@nurseBedsSection.emptyBedAvailable">Cama disponible</p>
-          <small class="click-hint" i18n="@@nurseBedsSection.emptyBedClickHint">Click para asignar paciente</small>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+<div class="section-card nurse-module nurse-beds-module">
+  <div class="nurse-module-stack nurse-beds-stack">
+    <div class="section-header beds-section-header">
+      <h2 id="nurse-beds-section-title" class="section-title">
+        <app-bootstrap-icon name="rectangle-group" /> <span i18n="@@nurseBedsSection.sectionTitle">Mis Camas Asignadas</span>
+      </h2>
+      <span class="section-subtitle" i18n="@@nurseBedsSection.sectionSubtitle"
+        >{{ myBeds.length }} camas en {{ assignedArea }}</span
+      >
+    </div>
+
+    <div class="beds-grid">
+      <div
+        *ngFor="let bed of myBeds; let i = index"
+        class="apm-area-card nurse-bed-card clickable-bed"
+        [class.nurse-bed-card--occupied]="bed.patient"
+        [class.nurse-bed-card--available]="!bed.patient"
+        [class.apm-area-card--inactive]="!bed.patient"
+        [attr.id]="'nurse-beds-section-bed-card-' + i"
+        (click)="onBedCardClick($event, bed)"
+        title="Click para editar cama"
+        i18n-title="@@nurseBedsSection.cardEditBedTitle"
+      >
+        <div class="apm-area-card__header">
+          <h4 class="apm-area-card__title">{{ bed.bedNumber }}</h4>
+          <span
+            class="apm-status-pill"
+            [class.apm-status-pill--busy]="bed.patient"
+            [class.apm-status-pill--ok]="!bed.patient"
+          >
+            <span *ngIf="bed.patient" i18n="@@nurseBedsSection.statusOccupied">Ocupada</span>
+            <span *ngIf="!bed.patient" i18n="@@nurseBedsSection.statusAvailable">Disponible</span>
+          </span>
+        </div>
+
+        <ng-container *ngIf="bed.patient">
+          <div class="apm-bed-patient-panel">
+            <span class="apm-bed-patient-avatar" aria-hidden="true">{{ getPatientInitials(bed.patient.name) }}</span>
+            <div class="apm-bed-patient-details">
+              <span class="apm-bed-patient-label" i18n="@@nurseBedsSection.patientLabel">Paciente</span>
+              <span class="apm-bed-patient-name">{{ bed.patient.name }}</span>
+              <span class="apm-bed-patient-meta" i18n="@@nurseBedsSection.ageYearsLine">{{ bed.patient.age }} años</span>
+            </div>
+          </div>
+
+          <div class="apm-shift-block nurse-bed-clinical-block" (click)="$event.stopPropagation()">
+            <div class="nurse-bed-clinical-row">
+              <app-nurse-clinical-notes-scope-block
+                [patientId]="bed.patient.id"
+                scope="diagnosis"
+                [notesFromApi]="bed.patient.clinicalNotes?.diagnosis ?? []"
+                [legacySingleFieldText]="bed.patient.diagnosis ?? ''"
+                [blockLabel]="clinicalDiagnosisBlockLabel"
+                [emptyLabel]="clinicalDiagnosisEmptyLabel"
+                [compact]="true"
+                [externalExpand]="true"
+                (expandRequest)="onOpenClinicalNotes(bed.patient!, 'diagnosis')"
+              />
+              <button
+                *ngIf="getDiagnosisNotesCount(bed.patient) > 0"
+                type="button"
+                class="ncnsb__expand-btn neuro-btn neuro-btn-sm nurse-bed-expand-btn"
+                (click)="onOpenClinicalNotes(bed.patient!, 'diagnosis')"
+              >
+                {{ expandClinicalLabel(getDiagnosisNotesCount(bed.patient)) }}
+              </button>
+            </div>
+
+            <div class="nurse-bed-clinical-row">
+              <app-nurse-clinical-notes-scope-block
+                [patientId]="bed.patient.id"
+                scope="medical"
+                [notesFromApi]="bed.patient.clinicalNotes?.medical ?? []"
+                [legacySingleFieldText]="bed.patient.medicalObservations ?? ''"
+                [blockLabel]="clinicalMedicalBlockLabel"
+                [emptyLabel]="clinicalMedicalEmptyLabel"
+                [compact]="true"
+                [externalExpand]="true"
+                (expandRequest)="onOpenClinicalNotes(bed.patient!, 'medical')"
+              />
+              <button
+                *ngIf="getMedicalNotesCount(bed.patient) > 0"
+                type="button"
+                class="ncnsb__expand-btn neuro-btn neuro-btn-sm nurse-bed-expand-btn"
+                (click)="onOpenClinicalNotes(bed.patient!, 'medical')"
+              >
+                {{ expandClinicalLabel(getMedicalNotesCount(bed.patient)) }}
+              </button>
+            </div>
+          </div>
+
+          <div class="nurse-bed-card-footer" (click)="$event.stopPropagation()">
+            <button
+              type="button"
+              class="nurse-details-pill-btn"
+              [attr.id]="'nurse-beds-section-view-patient-' + i"
+              (click)="onViewPatientClick(bed.patient, $event)"
+              title="Ver detalles del paciente"
+              i18n-title="@@nurseBedsSection.btnViewPatientTitle"
+            >
+              <span i18n="@@nurseBedsSection.btnDetails">Detalles</span>
+            </button>
+          </div>
+        </ng-container>
+
+        <div *ngIf="!bed.patient" class="apm-bed-state-panel apm-bed-state-panel--available">
+          <span class="apm-bed-state-panel__icon" aria-hidden="true">✅</span>
+          <div class="nurse-bed-empty-copy">
+            <span i18n="@@nurseBedsSection.emptyBedAvailable">Cama disponible</span>
+            <small class="nurse-bed-click-hint" i18n="@@nurseBedsSection.emptyBedClickHint">Click para asignar paciente</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

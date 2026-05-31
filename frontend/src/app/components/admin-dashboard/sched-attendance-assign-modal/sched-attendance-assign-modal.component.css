@@ -1,0 +1,168 @@
+.sched-attendance-assign-backdrop {
+  z-index: 2000 !important;
+}
+
+.sched-attendance-assign-body {
+  padding: 1.25rem 2rem 1.5rem;
+}
+
+.sched-attendance-intro {
+  margin: 0 0 1.25rem;
+  color: #718096;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.sched-attendance-loading {
+  margin: 0;
+  color: #718096;
+  font-style: italic;
+  font-size: 0.88rem;
+}
+
+.sched-attendance-area-summary {
+  margin-bottom: 1rem;
+}
+
+.sched-attendance-area-field.input-group {
+  margin-top: 0;
+}
+
+.sched-attendance-area-field .neuro-select {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  padding-right: 2.5rem;
+  background: #e0e5ec;
+  border: none;
+  border-radius: 15px;
+  box-shadow: inset 6px 6px 12px #bebebe, inset -6px -6px 12px #ffffff;
+  color: #4a5568;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%234a5568' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  box-sizing: border-box;
+}
+
+.sched-attendance-area-field .neuro-select:focus {
+  outline: none;
+  box-shadow: inset 8px 8px 16px #bebebe, inset -8px -8px 16px #ffffff;
+}
+
+.sched-attendance-area-field .neuro-select:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.sched-attendance-suggested-hint {
+  margin: 0.75rem 0 0;
+  font-size: 0.82rem;
+  color: #2b6cb0;
+  line-height: 1.4;
+}
+
+.sched-attendance-status-summary {
+  margin-bottom: 0;
+}
+
+.sched-attendance-status-heading {
+  margin: 0 0 0.85rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.sched-attendance-status-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.sched-attendance-status-btn {
+  border: none;
+  border-radius: 12px;
+  padding: 0.75rem 0.85rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+  box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #ffffff;
+}
+
+.sched-attendance-status-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 3px 3px 6px #bebebe, -3px -3px 6px #ffffff;
+}
+
+.sched-attendance-status-btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+}
+
+.sched-attendance-status-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.sched-attendance-status-btn--present {
+  color: #276749;
+  background: rgba(72, 187, 120, 0.14);
+}
+
+.sched-attendance-status-btn--late {
+  color: #975a16;
+  background: rgba(237, 137, 54, 0.14);
+}
+
+.sched-attendance-status-btn--justified {
+  color: #2b6cb0;
+  background: rgba(102, 126, 234, 0.12);
+}
+
+.sched-attendance-status-btn--missing,
+.sched-attendance-status-btn--absent {
+  color: #9b2c2c;
+  background: rgba(245, 101, 101, 0.12);
+}
+
+.sched-attendance-status-btn--absent {
+  grid-column: 1 / -1;
+}
+
+.sched-attendance-assign-footer {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.75rem;
+  padding: 1.25rem 2rem 1.75rem;
+}
+
+.sched-attendance-assign-footer .btn-primary-neuro,
+.sched-attendance-assign-footer .btn-secondary-neuro {
+  width: 100%;
+  justify-content: center;
+  gap: 0.5rem;
+  min-width: 0;
+  border-radius: 12px;
+  padding: 12px 20px;
+  font-size: 0.95rem;
+}
+
+.sched-attendance-assign-footer--single .btn-secondary-neuro {
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .sched-attendance-assign-body {
+    padding: 1rem 1.25rem 1.25rem;
+  }
+
+  .sched-attendance-assign-footer {
+    padding: 1rem 1.25rem max(1.25rem, env(safe-area-inset-bottom, 0px));
+  }
+}

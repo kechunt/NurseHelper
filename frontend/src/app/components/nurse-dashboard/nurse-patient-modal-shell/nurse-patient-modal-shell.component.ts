@@ -48,6 +48,7 @@ export class NursePatientModalShellComponent {
 
   @Input({ required: true }) patient!: Patient;
   @Input({ required: true }) activeTab!: string;
+  @Input() clinicalNotesListScopeToOpen: import('../nurse-clinical-notes-pin.helpers').ClinicalNotesPinScope | null = null;
   @Input({ required: true }) newDiagnosisNote!: string;
   @Input({ required: true }) newMedicalObservationNote!: string;
   @Input({ required: true }) newAllergiesNote!: string;
@@ -64,6 +65,7 @@ export class NursePatientModalShellComponent {
   @Input({ required: true }) historyRecords!: TreatmentRecord[];
 
   @Output() readonly closed = new EventEmitter<void>();
+  @Output() readonly clinicalNotesListScopeHandled = new EventEmitter<void>();
   @Output() readonly pdfRequested = new EventEmitter<void>();
   @Output() readonly exportCsvRequested = new EventEmitter<{ tab: NursePatientModalTabId }>();
   @Output() readonly activeTabChange = new EventEmitter<string>();

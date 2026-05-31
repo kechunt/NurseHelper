@@ -278,25 +278,25 @@ export class StaffManagementComponent implements OnInit, OnDestroy, OnChanges {
     forkJoin({
       areas: this.adminService.getAreas(false).pipe(
         catchError((err) => {
-          console.error('Error cargando áreas:', err);
+          this.toastService.error(err.error?.message || 'Error cargando áreas');
           return of([]);
         })
       ),
       beds: this.adminService.getBeds(false).pipe(
         catchError((err) => {
-          console.error('Error cargando camas:', err);
+          this.toastService.error(err.error?.message || 'Error cargando camas');
           return of([]);
         })
       ),
       patients: this.adminService.getPatients(false).pipe(
         catchError((err) => {
-          console.error('Error cargando pacientes:', err);
+          this.toastService.error(err.error?.message || 'Error cargando pacientes');
           return of([]);
         })
       ),
       users: this.adminService.getUsersPaginated({ page: 1, limit: 200 }).pipe(
         catchError((err) => {
-          console.error('Error cargando usuarios:', err);
+          this.toastService.error(err.error?.message || 'Error cargando usuarios');
           return of({ users: [], total: 0 });
         })
       ),
@@ -453,7 +453,7 @@ export class StaffManagementComponent implements OnInit, OnDestroy, OnChanges {
         onComplete?.();
       },
       error: (error) => {
-        console.error(' Error cargando datos:', error);
+        this.toastService.error(error.error?.message || 'Error cargando datos');
         this.error = 'Error al cargar los datos. Por favor, recarga la página.';
         this.loading = false;
         onComplete?.();
@@ -703,7 +703,6 @@ export class StaffManagementComponent implements OnInit, OnDestroy, OnChanges {
         this.loadData(); // Recargar para actualizar todo (incluyendo pacientes asignados)
       },
       error: (error) => {
-        console.error('Error actualizando enfermera:', error);
         const detail = error.error?.message || error.message || this.staffMgmtErrUnknown;
         this.toastService.error(
           $localize`:@@staffMgmt.errUpdateNurse:Error al actualizar la enfermera: ${detail}:msg:`

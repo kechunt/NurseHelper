@@ -22,6 +22,7 @@ import type { TreatmentTodayItem } from '../../nurse-dashboard/treatment-today-i
 import type { TreatmentRecord as NurseTreatmentRecord } from '../../nurse-dashboard/nurse-treatment-record.model';
 import type { HistoryOutcomeFilter, HistoryPeriodFilter } from '../../nurse-dashboard/nurse-patient-history.helpers';
 import { buildAdminPatientModalViewModel } from '../shared/admin-patient-modal-adapter';
+import { parseJsonArraySafe } from '../../../shared/utils/parse-json-array.helpers';
 import { AdminToggleButtonComponent } from '../../../shared/components/admin-toggle-button/admin-toggle-button.component';
 import { BootstrapIconComponent } from '../../../shared/components/bootstrap-icon/bootstrap-icon.component';
 
@@ -1072,17 +1073,7 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
 
   // ========== MEDICAMENTOS ==========
   loadMedications(patient: Patient): Medication[] {
-    try {
-      if (patient.medications) {
-        const parsed = typeof patient.medications === 'string' 
-          ? JSON.parse(patient.medications) 
-          : patient.medications;
-        return Array.isArray(parsed) ? parsed : [];
-      }
-    } catch (error) {
-      console.error('Error parsing medications:', error);
-    }
-    return [];
+    return parseJsonArraySafe<Medication>(patient.medications);
   }
 
   addMedication(): void {
@@ -1111,17 +1102,7 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
 
   // ========== HISTORIAL DE TRATAMIENTOS ==========
   loadTreatmentHistory(patient: Patient): TreatmentRecord[] {
-    try {
-      if (patient.treatmentHistory) {
-        const parsed = typeof patient.treatmentHistory === 'string' 
-          ? JSON.parse(patient.treatmentHistory) 
-          : patient.treatmentHistory;
-        return Array.isArray(parsed) ? parsed : [];
-      }
-    } catch (error) {
-      console.error('Error parsing treatment history:', error);
-    }
-    return [];
+    return parseJsonArraySafe<TreatmentRecord>(patient.treatmentHistory);
   }
 
   addTreatmentRecord(): void {
@@ -1152,17 +1133,7 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
 
   // ========== TAREAS PENDIENTES ==========
   loadPendingTasks(patient: Patient): PendingTask[] {
-    try {
-      if (patient.pendingTasks) {
-        const parsed = typeof patient.pendingTasks === 'string' 
-          ? JSON.parse(patient.pendingTasks) 
-          : patient.pendingTasks;
-        return Array.isArray(parsed) ? parsed : [];
-      }
-    } catch (error) {
-      console.error('Error parsing pending tasks:', error);
-    }
-    return [];
+    return parseJsonArraySafe<PendingTask>(patient.pendingTasks);
   }
 
   addPendingTask(): void {

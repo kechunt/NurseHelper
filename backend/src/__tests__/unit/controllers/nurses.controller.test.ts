@@ -52,6 +52,10 @@ jest.mock('../../../services/nurse-shift-context.service', () => ({
   buildNurseShiftContextPayload: jest.fn(),
 }));
 
+jest.mock('../../../services/nurse-patient-claim.service', () => ({
+  claimUnassignedPatientForNurse: jest.fn(),
+}));
+
 jest.mock('../../../services/nurse-patient-details.service', () => ({
   fetchPatientDetailsForNurse: jest.fn(),
 }));
@@ -94,6 +98,7 @@ import {
   deletePendingNursePatientSchedule,
 } from '../../../services/nurse-treatments.service';
 import { buildNurseShiftContextPayload } from '../../../services/nurse-shift-context.service';
+import { claimUnassignedPatientForNurse } from '../../../services/nurse-patient-claim.service';
 import {
   findHandoverNoteForAreaDateAndShift,
   upsertHandoverNoteForArea,
@@ -120,6 +125,7 @@ import {
   deleteAdministrationHistoryRecord,
   patchNursePatientSchedule,
   deleteNursePatientSchedule,
+  claimPatientForNurse,
 } from '../../../controllers/nurses.controller';
 
 function resMocks(): { json: jest.Mock; status: jest.Mock; res: Response } {
@@ -164,6 +170,11 @@ describe('nurses.controller', () => {
     (buildNurseShiftContextPayload as jest.Mock).mockResolvedValue({ shiftSlot: 'morning' });
     (findHandoverNoteForAreaDateAndShift as jest.Mock).mockResolvedValue(null);
     (upsertHandoverNoteForArea as jest.Mock).mockResolvedValue({ id: 1, body: 'texto' });
+    (claimUnassignedPatientForNurse as jest.Mock).mockResolvedValue({
+      ok: true,
+      patientId: 5,
+      assignedToId: 1,
+    });
   });
 
   describe('getNurseStats', () => {
@@ -318,9 +329,64 @@ describe('nurses.controller', () => {
     });
 
     it('200', async () => {
-      const json = jest.fn();
-      await getNurseShiftContext({ user: nurseUser() } as AuthRequest, { json } as unknown as Response);
+      (buildNurseShiftContextPayload as jest.Mock).mockResolvedValueOnce({ shiftSlot: 'morning' });
+      const { json, res } = resMocks();
+      await getNurseShiftContext({ user: nurseUser() } as AuthRequest, res);
+      expect(buildNurseShiftContextPayload).toHaveBeenCalledWith(1);
       expect(json).toHaveBeenCalledWith({ shiftSlot: 'morning' });
+    });
+  });
+
+  describe('claimPatientForNurse', () => {
+    it('401 sin usuario', async () => {
+      const { status, res } = resMocks();
+      await claimPatientForNurse(
+        { user: undefined, params: { patientId: '5' } } as unknown as AuthRequest,
+        res,
+      );
+      expect(status).toHaveBeenCalledWith(401);
+    });
+
+    it('403 si no es enfermería', async () => {
+      const { status, res } = resMocks();
+      await claimPatientForNurse(
+        {
+          user: { ...nurseUser(), role: UserRole.ADMIN },
+          params: { patientId: '5' },
+        } as unknown as AuthRequest,
+        res,
+      );
+      expect(status).toHaveBeenCalledWith(403);
+    });
+
+    it('200 cuando la autoasignación es válida', async () => {
+      const { json, res } = resMocks();
+      await claimPatientForNurse(
+        { user: nurseUser(), params: { patientId: '5' } } as unknown as AuthRequest,
+        res,
+      );
+      expect(claimUnassignedPatientForNurse).toHaveBeenCalledWith(1, 5);
+      expect(json).toHaveBeenCalledWith(
+        expect.objectContaining({ patientId: 5, assignedToId: 1 }),
+      );
+    });
+
+    it('409 si el paciente ya está asignado', async () => {
+      (claimUnassignedPatientForNurse as jest.Mock).mockResolvedValueOnce({
+        ok: false,
+        status: 409,
+        message: 'El paciente ya tiene enfermera asignada',
+        code: 'PATIENT_ALREADY_ASSIGNED',
+      });
+      const { status, json, res } = resMocks();
+      await claimPatientForNurse(
+        { user: nurseUser(), params: { patientId: '5' } } as unknown as AuthRequest,
+        res,
+      );
+      expect(status).toHaveBeenCalledWith(409);
+      expect(json).toHaveBeenCalledWith(
+        expect.objectContaining({ code: 'PATIENT_ALREADY_ASSIGNED' }),
+      );
     });
   });
 

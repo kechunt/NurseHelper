@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { forkJoin, of } from 'rxjs';
@@ -36,6 +37,8 @@ import { SectionHeaderComponent } from '../../../shared/components/section-heade
   styleUrls: ['./areas-management.component.css', '../../../shared/styles/admin-assign-modal.shared.css'],
 })
 export class AreasManagementComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
+
   areas: Area[] = [];
   beds: Bed[] = [];
   patients: any[] = [];
@@ -337,13 +340,13 @@ export class AreasManagementComponent implements OnInit {
   }
 
   loadPatients(): void {
-    this.adminService.getPatients(false).subscribe({
+    this.adminService.getPatients(false).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (patients) => {
         this.rawPatients = patients.filter((p: any) => p.isActive);
         this.normalizePatientsData();
       },
       error: (error) => {
-        console.error('Error loading patients:', error);
+        this.toastService.error(error.error?.message || 'Error loading patients');
       },
     });
   }
@@ -404,7 +407,7 @@ export class AreasManagementComponent implements OnInit {
           return of(null);
         })
       ),
-    }).subscribe({
+    }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: ({ areas, coverage }) => {
         this.areas = areas;
         this.shiftCoverage = coverage;
@@ -415,7 +418,7 @@ export class AreasManagementComponent implements OnInit {
         this.loading = false;
       },
       error: (error) => {
-        console.error('Error loading areas:', error);
+        this.toastService.error(error.error?.message || 'Error loading areas');
         this.loading = false;
       },
     });
@@ -474,13 +477,13 @@ export class AreasManagementComponent implements OnInit {
   }
 
   loadBeds(): void {
-    this.adminService.getBeds().subscribe({
+    this.adminService.getBeds().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (beds) => {
         this.beds = beds;
         this.normalizePatientsData();
       },
       error: (error) => {
-        console.error('Error loading beds:', error);
+        this.toastService.error(error.error?.message || 'Error loading beds');
       },
     });
   }
@@ -529,7 +532,7 @@ export class AreasManagementComponent implements OnInit {
     if (this.selectedArea?.id) {
       // Actualizar área
       const { bedsCount, ...areaData } = this.areaForm;
-      this.adminService.updateArea(this.selectedArea.id, areaData).subscribe({
+      this.adminService.updateArea(this.selectedArea.id, areaData).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => {
           if (bedsToAdd > 0) {
             // Si necesita agregar camas, abrir modal de selección
@@ -548,7 +551,7 @@ export class AreasManagementComponent implements OnInit {
     } else {
       const { bedsCount, ...areaData } = this.areaForm;
       const bedsCountValue = bedsCount || 0;
-      this.adminService.createArea(areaData as Area).subscribe({
+      this.adminService.createArea(areaData as Area).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: (response: any) => {
           const newAreaId = response.area?.id || response.id;
           if (newAreaId && bedsCountValue > 0) {
@@ -629,7 +632,7 @@ export class AreasManagementComponent implements OnInit {
     const errorMessages: string[] = [];
 
     bedsToCreate.forEach((bed) => {
-      this.adminService.createBed(bed).subscribe({
+      this.adminService.createBed(bed).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => {
           created++;
           if (created + errors === bedsToCreate.length) {
@@ -651,7 +654,7 @@ export class AreasManagementComponent implements OnInit {
           }
         },
         error: (error) => {
-          console.error('Error creating bed:', error);
+          this.toastService.error(error.error?.message || 'Error creating bed');
           errors++;
           errorMessages.push(
             `${bed.bedNumber}: ${error.error?.message || this.areasErrUnknown}`
@@ -744,7 +747,7 @@ export class AreasManagementComponent implements OnInit {
 
     const createdAreaId = this.createBedForm.areaId;
 
-    this.adminService.createBed(newBed as Bed).subscribe({
+    this.adminService.createBed(newBed as Bed).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.toastService.success(
           $localize`:@@areasMgmt.toastBedCreated:Cama ${String(newBed.bedNumber)}:bedNumber: creada exitosamente`
@@ -778,7 +781,7 @@ export class AreasManagementComponent implements OnInit {
     };
 
     // Actualizar nombre y estado disponible/no disponible
-    this.adminService.updateBed(this.selectedBed.id, bedUpdate).subscribe({
+    this.adminService.updateBed(this.selectedBed.id, bedUpdate).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         // Si cambió el paciente, actualizar la asignación
         if (this.editBedForm.patientId !== (this.selectedBed?.patientId || null)) {
@@ -792,7 +795,7 @@ export class AreasManagementComponent implements OnInit {
                   areaId: this.selectedBed!.areaId,
                   patientHint: this.patientHintFromList(pid),
                 });
-          assign$.subscribe({
+          assign$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
             next: () => {
               this.loadBeds();
               this.loadAreas();
@@ -846,7 +849,7 @@ export class AreasManagementComponent implements OnInit {
       return;
     }
 
-    this.adminService.deleteBed(bed.id!).subscribe({
+    this.adminService.deleteBed(bed.id!).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.loadBeds();
         const currentBedsCount = this.selectedArea?.id 
@@ -875,7 +878,7 @@ export class AreasManagementComponent implements OnInit {
       return;
     }
 
-    this.adminService.deleteArea(area.id!).subscribe({
+    this.adminService.deleteArea(area.id!).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.toastService.success(
           $localize`:@@areasMgmt.toastAreaDeleted:Área ${areaName}:name: eliminada exitosamente`
@@ -1069,7 +1072,7 @@ export class AreasManagementComponent implements OnInit {
       return;
     }
 
-    this.adminService.assignPatientToBed(bed.id, null).subscribe({
+    this.adminService.assignPatientToBed(bed.id, null).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.toastService.success(
           $localize`:@@areasMgmt.toastPatientReleasedBed:Paciente liberado de la cama ${String(bed.bedNumber ?? '')}:bedNumber:`
@@ -1155,7 +1158,7 @@ export class AreasManagementComponent implements OnInit {
   onAreaSelectedForAssignment(): void {
     const areaId = this.assignAreaForm.areaId;
     if (areaId) {
-      this.adminService.getBedsByArea(areaId).subscribe({
+      this.adminService.getBedsByArea(areaId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: (beds) => {
           // Mostrar camas disponibles (sin paciente asignado) y la cama actual si existe
           this.availableBedsForAssignment = beds.filter(bed => 
@@ -1164,7 +1167,7 @@ export class AreasManagementComponent implements OnInit {
           this.assignAreaForm.bedId = null;
         },
         error: (error) => {
-          console.error('Error loading beds:', error);
+          this.toastService.error(error.error?.message || 'Error loading beds');
           this.availableBedsForAssignment = [];
         },
       });
@@ -1203,6 +1206,7 @@ export class AreasManagementComponent implements OnInit {
         areaId: this.assignAreaForm.areaId,
         patientHint: hint,
       })
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
           this.toastService.success(
@@ -1253,7 +1257,7 @@ export class AreasManagementComponent implements OnInit {
   onAreaSelectedForChange(): void {
     const areaId = this.changeAreaForm.areaId;
     if (areaId) {
-      this.adminService.getBedsByArea(areaId).subscribe({
+      this.adminService.getBedsByArea(areaId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: (beds) => {
           // Mostrar camas disponibles y la cama actual del paciente
           this.availableBedsForAssignment = beds.filter(bed => 
@@ -1265,7 +1269,7 @@ export class AreasManagementComponent implements OnInit {
           }
         },
         error: (error) => {
-          console.error('Error loading beds:', error);
+          this.toastService.error(error.error?.message || 'Error loading beds');
           this.availableBedsForAssignment = [];
         },
       });
@@ -1308,6 +1312,7 @@ export class AreasManagementComponent implements OnInit {
           areaId: this.changeAreaForm.areaId,
           patientHint: hint,
         })
+        .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
           next: () => {
             const msg =
@@ -1328,7 +1333,7 @@ export class AreasManagementComponent implements OnInit {
     // Si cambió la cama, primero liberar la anterior y luego asignar la nueva
     if (oldBedId && oldBedId !== newBedId) {
       // Liberar cama anterior
-      this.adminService.assignPatientToBed(oldBedId, null).subscribe({
+      this.adminService.assignPatientToBed(oldBedId, null).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => assignNewBed(),
         error: () => {
           this.toastService.error(this.areasErrReleaseOldBed);

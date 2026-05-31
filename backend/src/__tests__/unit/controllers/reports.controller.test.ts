@@ -398,7 +398,7 @@ describe('ReportsController', () => {
         'csv',
         expect.objectContaining({
           reportType: 'compliance',
-          kpiFilterLabel: expect.stringContaining('completados'),
+          kpiFilterLabel: 'Filtro activo: Completados',
         }),
         'completed',
       );

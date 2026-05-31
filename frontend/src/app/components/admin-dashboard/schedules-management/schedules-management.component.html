@@ -76,8 +76,12 @@
             >
               <td>{{ item.nurseName }}</td>
               <td>{{ getAreaName(item.assignedAreaId) }}</td>
-              <td>{{ getResolvedShiftLabelForDisplay() }}</td>
-              <td>{{ getAttendanceStatusLabel(item.status) }}</td>
+              <td class="attendance-shift-cell-neuro">{{ getResolvedShiftLabelForDisplay() }}</td>
+              <td>
+                <span [class]="getAttendanceStatusBadgeClass(item.status)">
+                  {{ getAttendanceStatusLabel(item.status) }}
+                </span>
+              </td>
               <td>{{ formatDateTime(item.checkInAt) }}</td>
             </tr>
           </ng-container>
@@ -95,7 +99,10 @@
 
     <div class="attendance-nurse-list-panel module-section-neuro" *ngIf="!loading">
       <div class="attendance-list-header-row-neuro">
-        <h3 class="subsection-title-neuro" i18n="@@schedMgmtHtml.nurseListTitle">Listado de enfermeras — Toma de lista</h3>
+        <h3 class="subsection-title-neuro">
+          <span i18n="@@schedMgmtHtml.nurseListTitle">Listado de enfermeras — Toma de lista</span>
+          <span class="attendance-table-shift-label">· {{ getSelectedAttendanceShiftLabel() }}</span>
+        </h3>
         <app-admin-toggle-button
           class="btn-toggle-attendance-list-neuro"
           [expanded]="showAttendanceNurseList"
@@ -115,7 +122,31 @@
             <option *ngFor="let area of areas" [ngValue]="area.id">{{ area.name }}</option>
           </select>
         </div>
-        <div class="filter-item-neuro filter-actions-neuro" *ngIf="attendanceSearchQuery || attendanceAreaFilter !== null">
+        <div class="filter-item-neuro">
+          <label><app-bootstrap-icon name="clipboard-document-check" /> <span>{{ schedHtmlLabelListStatus }}</span></label>
+          <select class="select-neuro" [(ngModel)]="attendanceListStatusFilter">
+            <option [ngValue]="'all'">{{ schedHtmlOptionAllStatuses }}</option>
+            <option [ngValue]="'present'">{{ getAttendanceStatusLabel('present') }}</option>
+            <option [ngValue]="'late'">{{ getAttendanceStatusLabel('late') }}</option>
+            <option [ngValue]="'justified'">{{ getAttendanceStatusLabel('justified') }}</option>
+            <option [ngValue]="'absent'">{{ getAttendanceStatusLabel('absent') }}</option>
+            <option [ngValue]="'missing'">{{ getAttendanceStatusLabel('missing') }}</option>
+          </select>
+        </div>
+        <div class="filter-item-neuro">
+          <label><app-bootstrap-icon name="clock" /> <span>{{ schedHtmlLabelListShift }}</span></label>
+          <select
+            class="select-neuro"
+            [ngModel]="selectedShiftAttendanceId"
+            (ngModelChange)="onAttendanceListShiftChange($event)"
+          >
+            <option *ngFor="let shift of getEditableShifts()" [ngValue]="shift.id">{{ getShiftOptionLabel(shift) }}</option>
+          </select>
+        </div>
+        <div
+          class="filter-item-neuro filter-actions-neuro"
+          *ngIf="attendanceSearchQuery || attendanceAreaFilter !== null || attendanceListStatusFilter !== 'all'"
+        >
           <button type="button" class="btn-attendance" (click)="clearAttendanceFilters()" i18n="@@schedMgmtHtml.btnClearFilters">Limpiar filtros</button>
         </div>
       </div>
@@ -140,7 +171,7 @@
             <td>{{ item.nurseName }}</td>
             <td>{{ getAreaName(item.assignedAreaId) }}</td>
             <td>
-              <span class="badge-status-attendance">
+              <span [class]="getAttendanceStatusBadgeClass(item.status)">
                 {{ getAttendanceStatusLabel(item.status) }}
               </span>
             </td>
@@ -206,51 +237,26 @@
     <button type="button" class="btn-attendance" (click)="fromShiftConfigSheetEdit()" i18n="@@schedMgmtHtml.btnEditShiftTime">Editar horario</button>
   </app-admin-table-row-actions-modal>
 
-  <app-admin-table-row-actions-modal
-    [open]="!!summaryAttendanceActionsItem"
-    [title]="getSummaryAttendanceModalTitle()"
-    [summaryLines]="summaryAttendanceActionsItem ? summaryAttendanceSheetSummary(summaryAttendanceActionsItem) : []"
-    (dismissed)="closeSummaryAttendanceSheet()"
-  >
-    <button type="button" class="btn-attendance" [disabled]="savingAttendance" (click)="markPresent(summaryAttendanceActionsItem!); closeSummaryAttendanceSheet()" i18n="@@schedMgmtHtml.markPresent">
-      Presente
-    </button>
-    <button type="button" class="btn-attendance" [disabled]="savingAttendance" (click)="markLate(summaryAttendanceActionsItem!); closeSummaryAttendanceSheet()" i18n="@@schedMgmtHtml.markLate">
-      Tarde
-    </button>
-    <button type="button" class="btn-attendance" [disabled]="savingAttendance" (click)="markJustified(summaryAttendanceActionsItem!); closeSummaryAttendanceSheet()" i18n="@@schedMgmtHtml.markJustified">
-      Justificada
-    </button>
-    <button type="button" class="btn-attendance" [disabled]="savingAttendance" (click)="markMissing(summaryAttendanceActionsItem!); closeSummaryAttendanceSheet()" i18n="@@schedMgmtHtml.markMissing">
-      Falta
-    </button>
-    <button type="button" class="btn-attendance" [disabled]="savingAttendance" (click)="markAbsent(summaryAttendanceActionsItem!); closeSummaryAttendanceSheet()" i18n="@@schedMgmtHtml.markAbsent">
-      Ausente
-    </button>
-  </app-admin-table-row-actions-modal>
-
-  <app-admin-table-row-actions-modal
-    [open]="!!attendanceListActionsItem"
-    [title]="getAttendanceListModalTitle()"
-    [summaryLines]="attendanceListActionsItem ? attendanceListSheetSummary(attendanceListActionsItem) : []"
-    (dismissed)="closeAttendanceListSheet()"
-  >
-    <button type="button" class="btn-attendance" [disabled]="savingAttendance" (click)="markPresent(attendanceListActionsItem!); closeAttendanceListSheet()" i18n="@@schedMgmtHtml.markPresent">
-      Presente
-    </button>
-    <button type="button" class="btn-attendance" [disabled]="savingAttendance" (click)="markLate(attendanceListActionsItem!); closeAttendanceListSheet()" i18n="@@schedMgmtHtml.markLate">
-      Tarde
-    </button>
-    <button type="button" class="btn-attendance" [disabled]="savingAttendance" (click)="markJustified(attendanceListActionsItem!); closeAttendanceListSheet()" i18n="@@schedMgmtHtml.markJustified">
-      Justificada
-    </button>
-    <button type="button" class="btn-attendance" [disabled]="savingAttendance" (click)="markMissing(attendanceListActionsItem!); closeAttendanceListSheet()" i18n="@@schedMgmtHtml.markMissing">
-      Falta
-    </button>
-    <button type="button" class="btn-attendance" [disabled]="savingAttendance" (click)="markAbsent(attendanceListActionsItem!); closeAttendanceListSheet()" i18n="@@schedMgmtHtml.markAbsent">
-      Ausente
-    </button>
-  </app-admin-table-row-actions-modal>
+  <app-sched-attendance-assign-modal
+    *ngIf="showAttendanceAssignModal"
+    [personName]="getAttendanceAssignNurseDisplayName()"
+    [personRoleLabel]="schedHtmlAttendancePersonRoleLabel"
+    [shiftLabel]="getResolvedShiftLabelForDisplay()"
+    [intro]="schedHtmlAttendanceAssignIntro"
+    [areaLabel]="schedHtmlLabelAreaAssigned"
+    [noAreaOptionLabel]="schedHtmlOptionNoArea"
+    [suggestedHint]="schedHtmlAttendanceAssignSuggestedHint"
+    [areas]="areas"
+    [areaId]="attendanceAssignAreaId"
+    [showSuggestedHint]="showAttendanceAssignSuggestedHint()"
+    [loading]="attendanceAssignLoading"
+    [saving]="attendanceAssignSaving"
+    [savingAttendance]="savingAttendance"
+    (dismissed)="closeAttendanceAssignModal()"
+    (saveAreaOnly)="saveAttendanceAreaOnly()"
+    (areaIdChange)="onAttendanceModalAreaChange($event)"
+    (markAttendance)="onAttendanceModalMarkStatus($event)"
+  />
 
   <app-modal-shell
     *ngIf="showEditShiftModal"
@@ -327,6 +333,7 @@
                 <th i18n="@@schedMgmtHtml.thHistoryShift">Turno</th>
                 <th i18n="@@schedMgmtHtml.thHistorySchedule">Horario</th>
                 <th i18n="@@schedMgmtHtml.thHistoryNurse">Enfermera</th>
+                <th i18n="@@schedMgmtHtml.thHistoryArea">Área</th>
                 <th i18n="@@schedMgmtHtml.thHistoryStatus">Estado</th>
                 <th i18n="@@schedMgmtHtml.thHistoryCheckIn">Entrada</th>
               </tr>
@@ -337,11 +344,12 @@
                 <td>{{ row.shiftName }}</td>
                 <td>{{ row.shiftTime }}</td>
                 <td>{{ row.nurseName }}</td>
+                <td>{{ getAreaName(row.assignedAreaId) }}</td>
                 <td>{{ getAttendanceStatusLabel(row.status) }}</td>
                 <td>{{ formatDateTime(row.checkInAt) }}</td>
               </tr>
               <tr *ngIf="!loadingHistory && attendanceHistory.length === 0">
-                <td colspan="6" class="empty-neuro" i18n="@@schedMgmtHtml.emptyHistoryFilters">No hay historial para los filtros seleccionados</td>
+                <td colspan="7" class="empty-neuro" i18n="@@schedMgmtHtml.emptyHistoryFilters">No hay historial para los filtros seleccionados</td>
               </tr>
             </tbody>
           </table>
@@ -349,50 +357,20 @@
       </div>
   </app-modal-shell>
 
-  <app-modal-shell
+  <app-sched-area-coverage-assign-modal
     *ngIf="showAssignAreaCoverageModal"
-    titleIcon="building-office"
-    [title]="getAssignAreaCoverageModalTitle()"
-    (dismiss)="closeAssignAreaCoverageModal()"
-  >
-    <div class="modal-body">
-      <p class="coverage-assign-intro" i18n="@@schedMgmtHtml.coverageAssignIntro">
-        Elige una o más enfermeras para cubrir esta área en el turno actual. Las marcadas como
-        <strong>sugeridas</strong> ya tienen el área asignada o estuvieron presentes en este turno con anterioridad.
-        Después, márcalas <strong>presentes</strong> en la toma de lista si aún no aparecen.
-      </p>
-      <p class="coverage-assign-loading" *ngIf="assignCoverageLoadingDefaults" i18n="@@schedMgmtHtml.coverageAssignLoading">
-        Cargando sugerencias del turno…
-      </p>
-      <ul class="coverage-assign-nurse-list" *ngIf="!assignCoverageLoadingDefaults">
-        <li *ngFor="let nurse of nurses" class="coverage-assign-nurse-row">
-          <label class="coverage-assign-nurse-label">
-            <input
-              type="checkbox"
-              [checked]="isCoverageNurseSelected(nurse.id)"
-              (change)="toggleCoverageNurse(nurse.id, $any($event.target).checked)"
-            />
-            <span class="coverage-assign-nurse-name">{{ getCoverageAssignNurseLabel(nurse) }}</span>
-            <span class="coverage-assign-nurse-badge" *ngIf="isCoverageDefaultNurse(nurse.id)" i18n="@@schedMgmtHtml.coverageDefaultBadge">
-              Sugerida
-            </span>
-          </label>
-        </li>
-      </ul>
-    </div>
-    <div class="modal-footer-neuro">
-      <button type="button" class="btn-cancel-neuro" (click)="closeAssignAreaCoverageModal()" i18n="@@schedMgmtHtml.btnCancel">Cancelar</button>
-      <button
-        type="button"
-        class="btn-save-neuro"
-        (click)="saveAssignAreaCoverageModal()"
-        [disabled]="assignCoverageSaving || assignCoverageLoadingDefaults || assignCoverageSelectedNurseIds.size === 0"
-      >
-        <app-bootstrap-icon [name]="assignCoverageSaving ? 'clock' : 'clipboard-document'" />
-        {{ assignCoverageSaving ? schedHtmlSaving : schedHtmlSaveCoverageAssign }}
-      </button>
-    </div>
-  </app-modal-shell>
+    [areaName]="assignCoverageAreaName"
+    [shiftLabel]="assignCoverageShiftLabel"
+    [nurses]="nurses"
+    [selectedNurseIds]="assignCoverageSelectedNurseIdsArray"
+    [defaultNurseIds]="assignCoverageDefaultNurseIdsArray"
+    [loadingDefaults]="assignCoverageLoadingDefaults"
+    [saving]="assignCoverageSaving"
+    [nurseRowLabel]="getCoverageAssignNurseLabel.bind(this)"
+    (dismissed)="closeAssignAreaCoverageModal()"
+    (save)="saveAssignAreaCoverageModal()"
+    (toggleNurse)="onCoverageModalToggleNurse($event)"
+  />
 
   <app-modal-shell
     *ngIf="showDayOffPickerModal"

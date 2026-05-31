@@ -14,6 +14,7 @@ import {
   NurseDayHistoryItem,
   NurseShiftContext,
   TaskItem,
+  NurseService,
   type ClinicalObservationAppendScope,
   type HandoverShiftSlot,
 } from '../../services/nurse.service';
@@ -59,6 +60,7 @@ import {
   mapBedsWithPatientForNurseDashboard,
   mapPatientDetailsToPatients,
   mergeClinicalDataIntoBeds,
+  resolvePatientForBedModal,
 } from './nurse-dashboard-patient-mapping';
 import {
   buildScheduleSlotsViewPayload,
@@ -369,6 +371,7 @@ export class NurseDashboardComponent implements OnInit {
   private readonly patientClinicalWriteFacade = inject(NurseDashboardPatientClinicalWriteFacade);
   private readonly administrationHistoryWriteFacade = inject(NurseDashboardAdministrationHistoryWriteFacade);
   private readonly medicationMutationFacade = inject(NurseDashboardMedicationMutationFacade);
+  private readonly nurseService = inject(NurseService);
 
   @ViewChild(NurseDashboardOverlaysStackComponent)
   private nurseOverlaysStack?: NurseDashboardOverlaysStackComponent;
@@ -418,6 +421,7 @@ export class NurseDashboardComponent implements OnInit {
 
   patients: Patient[] = [];
   filteredPatients: Patient[] = [];
+  claimingPatientId: string | null = null;
   
   /** Cama en edición (`NurseEditBedModalComponent`); solo se asigna si `id` está definido. */
   editBedModalBed: (BedDisplay & { id: number }) | null = null;
@@ -426,6 +430,8 @@ export class NurseDashboardComponent implements OnInit {
   selectedFilter: string = 'mine';
 
   showPatientModal: boolean = false;
+  /** Abre el listado «Ver todas» en la pestaña Observaciones al abrir desde camas. */
+  clinicalNotesListScopeToOpen: import('./nurse-clinical-notes-pin.helpers').ClinicalNotesPinScope | null = null;
   selectedPatient: Patient | null = null;
   activeTab: string = 'medications';
   newDiagnosisNote = '';
@@ -1036,6 +1042,50 @@ export class NurseDashboardComponent implements OnInit {
     this.filterPatients();
   }
 
+  async onClaimPatientRequested(patient: Patient): Promise<void> {
+    if (patient.isAssignedToMe || patient.assignedToName) {
+      return;
+    }
+    const patientId = parseInt(patient.id, 10);
+    if (!Number.isFinite(patientId)) {
+      this.toastService.error('No se pudo identificar el paciente.');
+      return;
+    }
+
+    const message =
+      patient.pendingTasks >= 3
+        ? $localize`:@@nurseDashboard.claimPatientConfirmManyTasks:${patient.name}:name: tiene ${patient.pendingTasks}:count: tareas pendientes. ¿Te asignas este paciente?`
+        : $localize`:@@nurseDashboard.claimPatientConfirm:¿Te asignas a ${patient.name}:name:?`;
+
+    const confirmed = await this.confirmationService.confirm({
+      title: $localize`:@@nurseDashboard.claimPatientConfirmTitle:Asignarme paciente`,
+      message,
+      confirmText: $localize`:@@nurseDashboard.claimPatientConfirmYes:Asignarme`,
+      cancelText: $localize`:@@nurseDashboard.claimPatientConfirmNo:Cancelar`,
+      type: 'info',
+    });
+    if (!confirmed) {
+      return;
+    }
+
+    this.claimingPatientId = patient.id;
+    this.nurseService.claimPatient(patientId).subscribe({
+      next: () => {
+        this.claimingPatientId = null;
+        this.toastService.success(
+          $localize`:@@nurseDashboard.claimPatientSuccess:Paciente asignado correctamente.`,
+        );
+        this.reloadDashboard$.next();
+      },
+      error: (err) => {
+        this.claimingPatientId = null;
+        this.toastService.error(
+          readNurseDashboardHttpErrorMessage(err, 'Error al asignar paciente'),
+        );
+      },
+    });
+  }
+
   /** Referencia estable para `app-nurse-patients-assigned-section` (`medicationDosesToday`). */
   readonly todayMedicationDosesCountForList = countPatientMedicationListDoses;
   /** Referencia estable para diferenciar tratamientos del día en tarjetas de pacientes. */
@@ -1046,6 +1096,28 @@ export class NurseDashboardComponent implements OnInit {
     if (fullPatient) {
       this.openPatientModal(fullPatient);
     }
+  }
+
+  openPatientModalForBedClinicalNotes(payload: {
+    patient: { id: string };
+    scope: 'diagnosis' | 'medical';
+  }): void {
+    const bed = this.bedsDisplayWithClinical.find((b) => b.patient?.id === payload.patient.id);
+    const fullPatient = bed
+      ? resolvePatientForBedModal(bed, this.patients)
+      : (this.patients.find((p) => p.id === payload.patient.id) ?? null);
+    if (!fullPatient) {
+      this.toastService.warning(
+        $localize`:@@nurseDashboard.bedClinicalNotesPatientMissing:No se encontró el paciente para abrir sus notas clínicas.`
+      );
+      return;
+    }
+    this.clinicalNotesListScopeToOpen = payload.scope;
+    this.openPatientModal(fullPatient, 'observations');
+  }
+
+  onClinicalNotesListScopeHandled(): void {
+    this.clinicalNotesListScopeToOpen = null;
   }
 
   openPatientModal(patient: Patient, activeTab?: string): void {
@@ -1066,6 +1138,7 @@ export class NurseDashboardComponent implements OnInit {
   closePatientModal(): void {
     this.showPatientModal = false;
     this.selectedPatient = null;
+    this.clinicalNotesListScopeToOpen = null;
     this.newDiagnosisNote = '';
     this.newMedicalObservationNote = '';
     this.newAllergiesNote = '';

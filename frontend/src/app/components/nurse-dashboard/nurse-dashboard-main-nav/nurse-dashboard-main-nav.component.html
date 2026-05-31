@@ -28,8 +28,7 @@
     (click)="select('tasks')"
     (keydown)="onMainViewTabKeydown($event, 'tasks')"
   >
-    <app-bootstrap-icon name="clock" [size]="16" />
-    <span i18n="@@nurseDashboardMainNav.tab.tasks">Tareas</span>
+    ⏰ <span i18n="@@nurseDashboardMainNav.tab.tasks">Tareas</span>
   </button>
   <button
     type="button"
@@ -42,8 +41,7 @@
     (click)="select('pharmacy')"
     (keydown)="onMainViewTabKeydown($event, 'pharmacy')"
   >
-    <app-bootstrap-icon name="beaker" [size]="16" />
-    <span i18n="@@nurseDashboardMainNav.tab.pharmacy">Farmacia</span>
+    💊 <span i18n="@@nurseDashboardMainNav.tab.pharmacy">Farmacia</span>
   </button>
   <button
     type="button"
@@ -56,8 +54,7 @@
     (click)="select('beds')"
     (keydown)="onMainViewTabKeydown($event, 'beds')"
   >
-    <app-bootstrap-icon name="rectangle-group" [size]="16" />
-    <span i18n="@@nurseDashboardMainNav.tab.beds">Camas</span>
+    🛏️ <span i18n="@@nurseDashboardMainNav.tab.beds">Camas</span>
   </button>
   <button
     type="button"
@@ -70,8 +67,7 @@
     (click)="select('patients')"
     (keydown)="onMainViewTabKeydown($event, 'patients')"
   >
-    <app-bootstrap-icon name="users" [size]="16" />
-    <span i18n="@@nurseDashboardMainNav.tab.patients">Pacientes</span>
+    🧑‍🤝‍🧑 <span i18n="@@nurseDashboardMainNav.tab.patients">Pacientes</span>
   </button>
 
   <button
@@ -84,8 +80,7 @@
     i18n-title="@@nurseDashboardMainNav.quick.handoverTitle"
     i18n-aria-label="@@nurseDashboardMainNav.quick.handoverAriaLabel"
   >
-    <app-bootstrap-icon name="clipboard-document" [size]="16" />
-    <span i18n="@@nurseDashboardMainNav.quick.handover">Entrega</span>
+    📋 <span i18n="@@nurseDashboardMainNav.quick.handover">Entrega</span>
     @if (handoverPendingNotice) {
       <span class="quick-pending-chip" i18n="@@nurseDashboardMainNav.quick.handoverPendingChip">Pendiente</span>
     }
@@ -100,7 +95,6 @@
     i18n-title="@@nurseDashboardMainNav.quick.reportsTitle"
     i18n-aria-label="@@nurseDashboardMainNav.quick.reportsAriaLabel"
   >
-    <app-bootstrap-icon name="chart-bar" [size]="16" />
-    <span i18n="@@nurseDashboardMainNav.quick.reports">Reportes</span>
+    📈 <span i18n="@@nurseDashboardMainNav.quick.reports">Reportes</span>
   </button>
 </div>

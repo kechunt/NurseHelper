@@ -1,4 +1,17 @@
-import { Component, EventEmitter, Input, Output, QueryList, ViewChildren } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  EventEmitter,
+  Input,
+  Output,
+  QueryList,
+  ViewChildren,
+  OnChanges,
+  SimpleChanges,
+  AfterViewInit,
+  inject,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import type {
@@ -7,6 +20,7 @@ import type {
 } from '../../../services/nurse.service';
 import { NurseClinicalNotesScopeBlockComponent } from '../nurse-clinical-notes-scope-block/nurse-clinical-notes-scope-block.component';
 import { BootstrapIconComponent } from '../../../shared/components/bootstrap-icon/bootstrap-icon.component';
+import type { ClinicalNotesPinScope } from '../nurse-clinical-notes-pin.helpers';
 
 @Component({
   selector: 'app-nurse-patient-observations-tab',
@@ -15,7 +29,9 @@ import { BootstrapIconComponent } from '../../../shared/components/bootstrap-ico
   templateUrl: './nurse-patient-observations-tab.component.html',
   styleUrls: ['./nurse-patient-observations-tab.component.css'],
 })
-export class NursePatientObservationsTabComponent {
+export class NursePatientObservationsTabComponent implements OnChanges, AfterViewInit {
+  private readonly destroyRef = inject(DestroyRef);
+
   readonly emptyLabelDiagnosis = $localize`:@@nursePatientObservationsTab.emptyDiagnosis:Sin diagnóstico registrado`;
   readonly emptyLabelMedical = $localize`:@@nursePatientObservationsTab.emptyMedical:Sin observaciones médicas registradas`;
   readonly emptyLabelAllergies = $localize`:@@nursePatientObservationsTab.emptyAllergies:Ninguna conocida`;
@@ -56,113 +72,52 @@ export class NursePatientObservationsTabComponent {
 
   @Input() isSavingObservation = false;
 
-  @Output() readonly saveDiagnosis = new EventEmitter<string>();
-  @Output() readonly saveMedicalObservations = new EventEmitter<string>();
-  @Output() readonly saveAllergies = new EventEmitter<string>();
-  @Output() readonly saveSpecialNeeds = new EventEmitter<string>();
-  @Output() readonly saveGeneralObservationsFull = new EventEmitter<string>();
+  @Input() openListScope: ClinicalNotesPinScope | null = null;
+  @Output() readonly openListScopeHandled = new EventEmitter<void>();
+
   @Output() readonly saveClinicalAppend = new EventEmitter<ClinicalObservationAppendScope>();
 
-  editingDiagnosis = false;
-  editedDiagnosis = '';
+  private pendingListOpenAttempts = 0;
 
-  editingMedicalObservations = false;
-  editedMedicalObservations = '';
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['openListScope'] && this.openListScope) {
+      this.pendingListOpenAttempts = 0;
+      queueMicrotask(() => this.tryOpenPendingList());
+    }
+  }
 
-  editingAllergies = false;
-  editedAllergies = '';
+  ngAfterViewInit(): void {
+    this.clinicalScopeBlocks?.changes
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.tryOpenPendingList());
+    if (this.openListScope) {
+      queueMicrotask(() => this.tryOpenPendingList());
+    }
+  }
 
-  editingSpecialNeeds = false;
-  editedSpecialNeeds = '';
-
-  editingGeneralObsFull = false;
-  editedGeneralObservationsFull = '';
+  tryOpenPendingList(): void {
+    const scope = this.openListScope;
+    if (!scope) {
+      return;
+    }
+    const block = this.clinicalScopeBlocks?.find((b) => b.scope === scope);
+    if (!block) {
+      if (this.pendingListOpenAttempts < 8) {
+        this.pendingListOpenAttempts += 1;
+        setTimeout(() => this.tryOpenPendingList(), 40);
+      }
+      return;
+    }
+    this.pendingListOpenAttempts = 0;
+    block.openList();
+    this.openListScopeHandled.emit();
+  }
 
   emitClinicalAppend(scope: ClinicalObservationAppendScope): void {
     this.saveClinicalAppend.emit(scope);
   }
 
-  /** Llamar desde el dashboard tras guardados exitosos en API. */
   resetObservationEditState(): void {
-    this.editingDiagnosis = false;
-    this.editedDiagnosis = '';
-    this.editingMedicalObservations = false;
-    this.editedMedicalObservations = '';
-    this.editingAllergies = false;
-    this.editedAllergies = '';
-    this.editingSpecialNeeds = false;
-    this.editedSpecialNeeds = '';
-    this.editingGeneralObsFull = false;
-    this.editedGeneralObservationsFull = '';
     this.clinicalScopeBlocks?.forEach((b) => b.dismissOverlays());
-  }
-
-  startEditingDiagnosis(): void {
-    this.editedDiagnosis = this.diagnosis || '';
-    this.editingDiagnosis = true;
-  }
-
-  cancelEditingDiagnosis(): void {
-    this.editingDiagnosis = false;
-    this.editedDiagnosis = '';
-  }
-
-  emitSaveDiagnosis(): void {
-    this.saveDiagnosis.emit((this.editedDiagnosis || '').trim());
-  }
-
-  startEditingMedicalObservations(): void {
-    this.editedMedicalObservations = this.medicalObservations ?? '';
-    this.editingMedicalObservations = true;
-  }
-
-  cancelEditingMedicalObservations(): void {
-    this.editingMedicalObservations = false;
-    this.editedMedicalObservations = '';
-  }
-
-  emitSaveMedicalObservations(): void {
-    this.saveMedicalObservations.emit((this.editedMedicalObservations || '').trim());
-  }
-
-  startEditingAllergies(): void {
-    this.editedAllergies = this.allergies ?? '';
-    this.editingAllergies = true;
-  }
-
-  cancelEditingAllergies(): void {
-    this.editingAllergies = false;
-    this.editedAllergies = '';
-  }
-
-  emitSaveAllergies(): void {
-    this.saveAllergies.emit((this.editedAllergies || '').trim());
-  }
-
-  startEditingSpecialNeeds(): void {
-    this.editedSpecialNeeds = this.specialNeeds ?? '';
-    this.editingSpecialNeeds = true;
-  }
-
-  cancelEditingSpecialNeeds(): void {
-    this.editingSpecialNeeds = false;
-    this.editedSpecialNeeds = '';
-  }
-
-  emitSaveSpecialNeeds(): void {
-    this.saveSpecialNeeds.emit((this.editedSpecialNeeds || '').trim());
-  }
-
-  startEditingGeneralObservationsFull(): void {
-    this.editedGeneralObservationsFull = this.generalObservations || '';
-    this.editingGeneralObsFull = true;
-  }
-
-  cancelEditingGeneralObservationsFull(): void {
-    this.editingGeneralObsFull = false;
-  }
-
-  emitSaveGeneralObservationsFull(): void {
-    this.saveGeneralObservationsFull.emit(this.editedGeneralObservationsFull ?? '');
   }
 }

@@ -12,6 +12,7 @@ import { BootstrapIconComponent } from '../../../shared/components/bootstrap-ico
   templateUrl: './nurse-patients-assigned-section.component.html',
   styleUrls: [
     '../../../shared/styles/admin-panel-responsive.css',
+    '../../../shared/styles/admin-panel-neomorphic.shared.css',
     '../shared/nurse-patient-card-inline-actions.shared.css',
     './nurse-patients-assigned-section.component.css',
   ],
@@ -31,6 +32,9 @@ export class NursePatientsAssignedSectionComponent {
   @Output() readonly clearPatientFiltersClick = new EventEmitter<void>();
   @Output() readonly openPatientDetails = new EventEmitter<Patient>();
   @Output() readonly openPatientMedicationSchedule = new EventEmitter<Patient>();
+  @Output() readonly claimPatient = new EventEmitter<Patient>();
+
+  @Input() claimingPatientId: string | null = null;
 
   @Input({ required: true }) medicationDosesToday!: (patient: Patient) => number;
   @Input({ required: true }) treatmentsTodayCount!: (patient: Patient) => number;
@@ -53,5 +57,31 @@ export class NursePatientsAssignedSectionComponent {
 
   patientCardAriaLabel(patient: Patient): string {
     return $localize`:@@nursePatientsAssigned.rowAriaViewPatientDetail:Ver detalle de ${patient.name}:patientName:`;
+  }
+
+  canClaimPatient(patient: Patient): boolean {
+    return !patient.isAssignedToMe && !patient.assignedToName;
+  }
+
+  onClaimPatientClick(patient: Patient, event: Event): void {
+    event.stopPropagation();
+    if (!this.canClaimPatient(patient) || this.claimingPatientId === patient.id) {
+      return;
+    }
+    this.claimPatient.emit(patient);
+  }
+
+  getPatientInitials(name: string): string {
+    const parts = String(name ?? '')
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+    if (parts.length === 0) {
+      return '?';
+    }
+    if (parts.length === 1) {
+      return parts[0].slice(0, 2).toUpperCase();
+    }
+    return `${parts[0].charAt(0)}${parts[parts.length - 1].charAt(0)}`.toUpperCase();
   }
 }

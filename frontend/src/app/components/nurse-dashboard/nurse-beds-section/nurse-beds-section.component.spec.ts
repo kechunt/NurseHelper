@@ -2,17 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import type { BedDisplay } from '../nurse-dashboard.types';
 import { NurseBedsSectionComponent } from './nurse-beds-section.component';
 
-function ensureLocalizeShim(): void {
-  const g = globalThis as any;
-  if (typeof g.$localize === 'function') {
-    return;
-  }
-  g.$localize = (strings: TemplateStringsArray, ...expr: unknown[]) =>
-    strings.reduce((acc, rawPart, idx) => {
-      const part = idx === 0 ? rawPart.replace(/^:.*?:/, '') : rawPart;
-      return acc + part + (idx < expr.length ? String(expr[idx]) : '');
-    }, '');
-}
+import { ensureLocalizeShim } from '../../../testing/localize-shim';
 
 describe('NurseBedsSectionComponent', () => {
   let fixture: ComponentFixture<NurseBedsSectionComponent>;
@@ -20,7 +10,26 @@ describe('NurseBedsSectionComponent', () => {
   const occupiedBed: BedDisplay = {
     id: 1,
     bedNumber: '12A',
-    patient: { id: '9', name: 'Luis', age: 55, conditions: ['HTA'] },
+    patient: {
+      id: '9',
+      name: 'Luis',
+      age: 55,
+      clinicalNotes: {
+        diagnosis: [
+          {
+            id: 1,
+            body: 'Hipertensión',
+            authorName: 'Dr. Ana',
+            createdAt: '2026-01-01T10:00:00.000Z',
+            legacy: false,
+          },
+        ],
+        medical: [],
+        allergies: [],
+        specialNeeds: [],
+        general: [],
+      },
+    },
   };
 
   const freeBed: BedDisplay = {
@@ -63,7 +72,7 @@ describe('NurseBedsSectionComponent', () => {
   });
 
   it('estado ocupada y bloques clínicos compactos muestran etiquetas localizables', () => {
-    const occupied = fixture.nativeElement.querySelector('.bed-card.occupied .bed-status-badge') as HTMLElement;
+    const occupied = fixture.nativeElement.querySelector('.nurse-bed-card--occupied .apm-status-pill') as HTMLElement;
     expect(occupied?.textContent?.toLowerCase()).toContain('ocup');
     const labels = Array.from(fixture.nativeElement.querySelectorAll('.ncnsb__block-label')) as HTMLElement[];
     const joined = labels.map((el) => el.textContent || '').join(' ');
@@ -76,11 +85,12 @@ describe('NurseBedsSectionComponent', () => {
     expect(free?.textContent?.toLowerCase()).toContain('disponible');
   });
 
-  it('emite bedEditRequest al pulsar la tarjeta de cama', () => {
+  it('emite bedEditRequest al pulsar la tarjeta de cama (zona no interactiva)', () => {
     spyOn(fixture.componentInstance.bedEditRequest, 'emit');
     const card = fixture.nativeElement.querySelector('#nurse-beds-section-bed-card-0') as HTMLElement;
-    expect(card).toBeTruthy();
-    card.click();
+    const header = card.querySelector('.apm-area-card__header') as HTMLElement;
+    expect(header).toBeTruthy();
+    header.click();
     expect(fixture.componentInstance.bedEditRequest.emit).toHaveBeenCalledWith(occupiedBed);
   });
 
@@ -100,5 +110,15 @@ describe('NurseBedsSectionComponent', () => {
     const card = fixture.nativeElement.querySelector('#nurse-beds-section-bed-card-1') as HTMLElement;
     card.click();
     expect(fixture.componentInstance.bedEditRequest.emit).toHaveBeenCalledWith(freeBed);
+  });
+
+  it('emite openClinicalNotesRequest al pulsar Ver y gestionar', () => {
+    spyOn(fixture.componentInstance.openClinicalNotesRequest, 'emit');
+    const btn = fixture.nativeElement.querySelector('.ncnsb__expand-btn') as HTMLButtonElement;
+    expect(btn).toBeTruthy();
+    btn.click();
+    expect(fixture.componentInstance.openClinicalNotesRequest.emit).toHaveBeenCalledWith(
+      jasmine.objectContaining({ scope: 'diagnosis', patient: jasmine.objectContaining({ id: '9' }) })
+    );
   });
 });

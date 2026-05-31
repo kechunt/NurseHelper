@@ -11,12 +11,15 @@ import { ShiftRealtimeService } from '../../shared/services/shift-realtime.servi
 import { formatLocalDateIsoYmd } from '../nurse-dashboard/nurse-dashboard-local-date.helpers';
 import { ToastService } from '../../services/toast.service';
 import { BootstrapIconComponent } from '../../shared/components/bootstrap-icon/bootstrap-icon.component';
-import { AdminTableRowActionsModalComponent } from '../../shared/components/admin-table-row-actions-modal/admin-table-row-actions-modal.component';
+import {
+  SchedAttendanceAssignModalComponent,
+  type AttendanceMarkActionItem,
+} from '../admin-dashboard/sched-attendance-assign-modal/sched-attendance-assign-modal.component';
 
 @Component({
   selector: 'app-pharmacy-shift-attendance-section',
   standalone: true,
-  imports: [CommonModule, FormsModule, BootstrapIconComponent, AdminTableRowActionsModalComponent],
+  imports: [CommonModule, FormsModule, BootstrapIconComponent, SchedAttendanceAssignModalComponent],
   templateUrl: './pharmacy-shift-attendance-section.component.html',
   styleUrls: [
     '../../shared/styles/admin-table-unified.css',
@@ -49,6 +52,9 @@ export class PharmacyShiftAttendanceSectionComponent implements OnInit {
   readonly pharmacyAttendanceSaveSaving = $localize`:@@pharmacyAttendance.saveSaving:Guardando…`;
   readonly pharmacyAttendanceSaveIdle = $localize`:@@pharmacyAttendance.saveIdle:Guardar asistencia`;
   readonly pharmacyAttendanceModalFallback = $localize`:@@pharmacyAttendance.modalFallback:Asistencia`;
+  readonly pharmacyAttendanceModalIntro = $localize`:@@pharmacyAttendance.modalIntro:Marca la asistencia del personal de farmacia en el turno seleccionado.`;
+  readonly pharmacyAttendancePersonRoleLabel = $localize`:@@pharmacyAttendance.summaryStaff:Personal:`;
+  readonly pharmacyAttendanceSummaryCheckIn = $localize`:@@pharmacyAttendance.summaryCheckIn:Entrada:`;
 
   pharmacyWorkShifts: Shift[] = [];
   pharmacyAttendanceActionsRow: PharmacyShiftAttendanceRow | null = null;
@@ -191,6 +197,50 @@ export class PharmacyShiftAttendanceSectionComponent implements OnInit {
 
   getPharmacyAttendanceModalTitle(): string {
     return this.pharmacyAttendanceActionsRow?.pharmacyUserName ?? this.pharmacyAttendanceModalFallback;
+  }
+
+  getPharmacyAttendanceShiftLabel(): string {
+    const sid = this.pharmacyAttendanceShiftId;
+    const shift =
+      sid != null
+        ? this.pharmacyWorkShifts.find((s) => Number(s.id) === Number(sid)) ?? null
+        : null;
+    return this.shiftRealtime.formatShiftLabel(shift) || '—';
+  }
+
+  getPharmacyAttendanceStatusActions(): AttendanceMarkActionItem[] {
+    return [
+      { status: 'present', label: this.pharmacyAttendanceStatusPresent, modifier: 'present' },
+      { status: 'late', label: this.pharmacyAttendanceStatusLate, modifier: 'late' },
+      { status: 'justified', label: this.pharmacyAttendanceStatusJustified, modifier: 'justified' },
+      { status: 'missing', label: this.pharmacyAttendanceStatusMissing, modifier: 'missing' },
+      { status: 'absent', label: this.pharmacyAttendanceStatusAbsent, modifier: 'absent' },
+    ];
+  }
+
+  onPharmacyAttendanceModalMark(status: ShiftAttendanceStatus): void {
+    const row = this.pharmacyAttendanceActionsRow;
+    if (!row) {
+      return;
+    }
+    switch (status) {
+      case 'present':
+        this.markPharmacyPresent(row);
+        break;
+      case 'late':
+        this.markPharmacyLate(row);
+        break;
+      case 'justified':
+        this.markPharmacyJustified(row);
+        break;
+      case 'missing':
+        this.markPharmacyMissing(row);
+        break;
+      case 'absent':
+        this.markPharmacyAbsent(row);
+        break;
+    }
+    this.closePharmacyAttendanceSheet();
   }
 
   getPharmacyAttendanceRowAriaLabel(row: PharmacyShiftAttendanceRow): string {

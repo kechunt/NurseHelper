@@ -2,18 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { NursePatientObservationsTabComponent } from './nurse-patient-observations-tab.component';
 import { NurseClinicalNotesScopeBlockComponent } from '../nurse-clinical-notes-scope-block/nurse-clinical-notes-scope-block.component';
-
-function ensureLocalizeShim(): void {
-  const g = globalThis as any;
-  if (typeof g.$localize === 'function') {
-    return;
-  }
-  g.$localize = (strings: TemplateStringsArray, ...expr: unknown[]) =>
-    strings.reduce((acc, rawPart, idx) => {
-      const part = idx === 0 ? rawPart.replace(/^:.*?:/, '') : rawPart;
-      return acc + part + (idx < expr.length ? String(expr[idx]) : '');
-    }, '');
-}
+import { ensureLocalizeShim } from '../../../testing/localize-shim';
 
 describe('NursePatientObservationsTabComponent', () => {
   let fixture: ComponentFixture<NursePatientObservationsTabComponent>;
@@ -64,25 +53,15 @@ describe('NursePatientObservationsTabComponent', () => {
     ]);
   });
 
-  it('resetObservationEditState limpia modo edición', () => {
-    fixture.componentInstance.startEditingDiagnosis();
-    expect(fixture.componentInstance.editingDiagnosis).toBeTrue();
+  it('resetObservationEditState cierra overlays de bloques clínicos', () => {
+    const block = {
+      dismissOverlays: jasmine.createSpy('dismissOverlays'),
+    } as unknown as NurseClinicalNotesScopeBlockComponent;
+    (fixture.componentInstance as any).clinicalScopeBlocks = {
+      forEach: (fn: (b: NurseClinicalNotesScopeBlockComponent) => void) => fn(block),
+    };
     fixture.componentInstance.resetObservationEditState();
-    expect(fixture.componentInstance.editingDiagnosis).toBeFalse();
-    expect(fixture.componentInstance.editedDiagnosis).toBe('');
-  });
-
-  it('flujo editar diagnóstico emite saveDiagnosis con texto recortado', () => {
-    let payload = '';
-    const sub = fixture.componentInstance.saveDiagnosis.subscribe((v) => {
-      payload = v;
-    });
-    fixture.componentInstance.startEditingDiagnosis();
-    fixture.detectChanges();
-    fixture.componentInstance.editedDiagnosis = '  Nuevo dx  ';
-    fixture.componentInstance.emitSaveDiagnosis();
-    expect(payload).toBe('Nuevo dx');
-    sub.unsubscribe();
+    expect(block.dismissOverlays).toHaveBeenCalled();
   });
 
   it('emitClinicalAppend emite saveClinicalAppend', () => {
@@ -91,5 +70,23 @@ describe('NursePatientObservationsTabComponent', () => {
     fixture.componentInstance.emitClinicalAppend('general');
     expect(scopes).toEqual(['general']);
     sub.unsubscribe();
+  });
+
+  it('tryOpenPendingList abre listado del scope y emite handled', () => {
+    const block = {
+      scope: 'medical',
+      openList: jasmine.createSpy('openList'),
+    } as unknown as NurseClinicalNotesScopeBlockComponent;
+    (fixture.componentInstance as any).clinicalScopeBlocks = {
+      find: () => block,
+    };
+    let handled = false;
+    fixture.componentInstance.openListScopeHandled.subscribe(() => {
+      handled = true;
+    });
+    fixture.componentRef.setInput('openListScope', 'medical');
+    fixture.componentInstance.tryOpenPendingList();
+    expect(block.openList).toHaveBeenCalled();
+    expect(handled).toBeTrue();
   });
 });

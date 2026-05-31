@@ -1,0 +1,105 @@
+<div
+  class="modal-backdrop modal-confirmation sched-area-coverage-assign-backdrop"
+  role="presentation"
+  (click)="onBackdropClick()"
+>
+  <div
+    class="modal-content modal-large"
+    appModalFocusTrap
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="sched-area-coverage-assign-dialog-title"
+    (click)="$event.stopPropagation()"
+  >
+    <div class="modal-header">
+      <h3 id="sched-area-coverage-assign-dialog-title">
+        <app-bootstrap-icon name="building-office" /> {{ modalTitle() }}
+      </h3>
+      <button
+        type="button"
+        class="close-btn"
+        aria-label="Cerrar"
+        i18n-aria-label="@@schedAreaCoverageModal.closeAriaLabel"
+        (click)="dismissed.emit()"
+      >
+        ✕
+      </button>
+    </div>
+
+    <div class="modal-body sched-area-coverage-assign-body">
+      <div class="task-info-summary">
+        <p i18n="@@schedAreaCoverageModal.summaryArea"><strong>Área:</strong> {{ areaName }}</p>
+        <p i18n="@@schedAreaCoverageModal.summaryShift"><strong>Turno:</strong> {{ shiftLabel }}</p>
+        <p i18n="@@schedAreaCoverageModal.summarySelected">
+          <strong>Seleccionadas:</strong> {{ selectedCount() }}
+        </p>
+      </div>
+
+      <p class="sched-area-coverage-intro" i18n="@@schedMgmtHtml.coverageAssignIntro">
+        Elige una o más enfermeras para cubrir esta área en el turno actual. Las marcadas como
+        <strong>sugeridas</strong> ya tienen el área asignada o estuvieron presentes en este turno con anterioridad.
+        Después, márcalas <strong>presentes</strong> en la toma de lista si aún no aparecen.
+      </p>
+
+      <p class="coverage-assign-loading" *ngIf="loadingDefaults" i18n="@@schedMgmtHtml.coverageAssignLoading">
+        Cargando sugerencias del turno…
+      </p>
+
+      <div class="patients-table-container-modal" *ngIf="!loadingDefaults">
+        <table class="patients-table sched-area-coverage-table">
+          <thead>
+            <tr>
+              <th scope="col" i18n="@@schedAreaCoverageModal.thSelect">Sel.</th>
+              <th scope="col" i18n="@@schedAreaCoverageModal.thNurse">Enfermera</th>
+              <th scope="col" i18n="@@schedAreaCoverageModal.thArea">Área actual</th>
+              <th scope="col" i18n="@@schedAreaCoverageModal.thSuggested">Sugerencia</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let nurse of nurses">
+              <td>
+                <input
+                  type="checkbox"
+                  class="input-neuro coverage-assign-checkbox-neuro"
+                  [checked]="isSelected(nurse.id)"
+                  (change)="onToggle(nurse.id, $event)"
+                  [attr.aria-label]="nurseRowLabel(nurse)"
+                />
+              </td>
+              <td>{{ nurseRowLabel(nurse).split(' · ')[0] }}</td>
+              <td>{{ nurseRowLabel(nurse).split(' · ')[1] || '—' }}</td>
+              <td>
+                <span class="coverage-assign-nurse-badge" *ngIf="isDefault(nurse.id)" i18n="@@schedMgmtHtml.coverageDefaultBadge">
+                  Sugerida
+                </span>
+              </td>
+            </tr>
+            <tr *ngIf="nurses.length === 0">
+              <td colspan="4" class="no-data" i18n="@@schedAreaCoverageModal.noNurses">No hay enfermeras disponibles</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="modal-footer sched-area-coverage-assign-footer">
+      <button
+        type="button"
+        class="btn-secondary-neuro"
+        (click)="dismissed.emit()"
+        i18n="@@schedMgmtHtml.btnCancel"
+      >
+        Cancelar
+      </button>
+      <button
+        type="button"
+        class="btn-primary-neuro"
+        (click)="save.emit()"
+        [disabled]="saving || loadingDefaults || selectedCount() === 0"
+      >
+        <app-bootstrap-icon [name]="saving ? 'clock' : 'clipboard-document'" />
+        {{ saving ? savingLabel : saveLabel }}
+      </button>
+    </div>
+  </div>
+</div>

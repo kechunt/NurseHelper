@@ -70,13 +70,18 @@
       </h3>
 
       <div class="apm-shift-block">
-        <div class="apm-shift-heading">
-          <span i18n="@@bedsMgmtHtml.shiftNursesHeading">Enfermera(s) en este turno</span>
-          <span class="apm-shift-turn-hint" *ngIf="shiftCoverageTurnHint()">{{ shiftCoverageTurnHint() }}</span>
+        <div class="apm-shift-block__head">
+          <span class="apm-shift-block__icon" aria-hidden="true">👩‍⚕️</span>
+          <div class="apm-shift-block__titles">
+            <div class="apm-shift-heading" i18n="@@bedsMgmtHtml.shiftNursesHeading">Enfermera(s) en este turno</div>
+            <span class="apm-shift-turn-badge" *ngIf="shiftCoverageTurnHint()">{{ shiftCoverageTurnHint() }}</span>
+          </div>
         </div>
-        <ul class="apm-shift-nurse-list" *ngIf="getAreaShiftNurses(area.id).length > 0">
-          <li *ngFor="let n of getAreaShiftNurses(area.id)">{{ n.firstName }} {{ n.lastName }}</li>
-        </ul>
+        <div class="apm-shift-nurse-chips" *ngIf="getAreaShiftNurses(area.id).length > 0">
+          <span class="apm-shift-nurse-chip" *ngFor="let n of getAreaShiftNurses(area.id)">
+            {{ n.firstName }} {{ n.lastName }}
+          </span>
+        </div>
         <ng-container *ngIf="getAreaShiftNotice(area.id) as shiftNotice">
           <button
             *ngIf="shiftCoverageAlertClickable(area)"
@@ -115,15 +120,22 @@
               {{ getBedStatusLabel(bed) }}
             </span>
           </div>
-          <p *ngIf="getBedClass(bed) === 'occupied'" class="apm-area-description" i18n="@@bedsMgmtHtml.bedCardPatientLine">
-            <strong>Paciente:</strong> {{ getPatientNameForBed(bed) }}
-          </p>
-          <p *ngIf="getBedClass(bed) === 'available'" class="apm-area-description apm-area-description--muted">
-            {{ bedsPatientNoteReady }}
-          </p>
-          <p *ngIf="getBedClass(bed) === 'unavailable'" class="apm-area-description apm-area-description--muted">
-            {{ bedsCardStatusUnavailableShort }}
-          </p>
+          <div *ngIf="getBedClass(bed) === 'occupied'" class="apm-bed-patient-panel">
+            <span class="apm-bed-patient-avatar" aria-hidden="true">{{ getPatientInitialsForBed(bed) }}</span>
+            <div class="apm-bed-patient-details">
+              <span class="apm-bed-patient-label" i18n="@@bedsMgmtHtml.bedCardPatientLabel">Paciente</span>
+              <span class="apm-bed-patient-name">{{ getPatientNameForBed(bed) }}</span>
+              <span class="apm-bed-patient-meta" *ngIf="getPatientAgeLineForBed(bed) as ageLine">{{ ageLine }}</span>
+            </div>
+          </div>
+          <div *ngIf="getBedClass(bed) === 'available'" class="apm-bed-state-panel apm-bed-state-panel--available">
+            <span class="apm-bed-state-panel__icon" aria-hidden="true">✅</span>
+            <span>{{ bedsPatientNoteReady }}</span>
+          </div>
+          <div *ngIf="getBedClass(bed) === 'unavailable'" class="apm-bed-state-panel apm-bed-state-panel--unavailable">
+            <span class="apm-bed-state-panel__icon" aria-hidden="true">⛔</span>
+            <span>{{ bedsCardStatusUnavailableShort }}</span>
+          </div>
         </div>
       </div>
     </div>

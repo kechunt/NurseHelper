@@ -3,7 +3,6 @@
   width: 100%;
 }
 
-/* Esta pestaña lleva la tarjeta en el propio hijo: damos aire respecto al borde exterior y entre bloques. */
 :host .section-card.nurse-beds-module {
   box-sizing: border-box;
   padding: 2rem 2.25rem 2.35rem;
@@ -48,166 +47,115 @@
 
 .beds-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
-  gap: 2rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  gap: 1.25rem;
   padding: 0.35rem 0.25rem 0.15rem;
   box-sizing: border-box;
 }
 
-.bed-card {
-  background: #e0e5ec;
-  border-radius: 20px;
-  padding: 1.65rem 1.6rem;
-  box-shadow: 15px 15px 30px #bebebe, -15px -15px 30px #ffffff;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  border: 2px solid transparent;
+.nurse-bed-card.apm-area-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-height: 0;
+  text-align: left;
+  border: none;
+  font: inherit;
+  color: inherit;
+  box-sizing: border-box;
+  overflow: visible;
 }
 
-.bed-card:hover {
-  box-shadow: 15px 15px 32px #bebebe, -15px -15px 32px #ffffff;
-  transform: translateY(-2px);
+.nurse-bed-card.apm-area-card:hover {
+  transform: none;
 }
 
-.bed-card.available {
-  opacity: 0.8;
-  border-color: rgba(174, 174, 192, 0.3);
-}
-
-.bed-card.occupied {
-  border-color: rgba(174, 174, 192, 0.35);
-}
-
-.bed-card.clickable-bed {
+.nurse-bed-card.clickable-bed {
   cursor: pointer;
 }
 
-.click-hint {
-  font-size: 0.75rem;
-  color: #718096;
-  margin-top: 0.5rem;
-  font-style: italic;
+.nurse-bed-card.clickable-bed:focus-visible {
+  outline: 2px solid rgba(43, 108, 176, 0.55);
+  outline-offset: 3px;
 }
 
-.bed-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-  padding-bottom: 0.75rem;
+:host .nurse-bed-card .apm-bed-patient-panel {
+  margin-top: 0;
 }
 
-.bed-number {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #4a5568;
-}
-
-.bed-status-badge {
-  padding: 6px 14px;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
-  transition: all 0.3s ease;
-}
-
-.bed-status-badge.occupied {
-  background: #e0e5ec;
-  color: #4a5568;
-  box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
-  text-shadow: none;
-}
-
-.bed-status-badge:not(.occupied) {
-  background: #e0e5ec;
-  color: #718096;
-}
-
-.bed-patient-info {
+.nurse-bed-clinical-block.apm-shift-block {
+  margin-bottom: 0;
+  padding: 0.85rem 1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
-  padding: 1rem 1.1rem;
-  margin-top: 0.85rem;
-  border-radius: 14px;
-  background: rgba(224, 229, 236, 0.85);
-  box-shadow: inset 5px 5px 10px #cbccd1, inset -4px -4px 10px #fafbff;
+  gap: 0.75rem;
 }
 
-.bed-patient-card-name {
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: #4a5568;
-  line-height: 1.25;
-  word-break: break-word;
-}
-
-.bed-patient-card-meta {
-  margin: 0 0 0.15rem 0;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #4a5568;
+.nurse-bed-clinical-row {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  flex-direction: column;
   gap: 0.35rem;
 }
 
-.bed-patient-meta-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.2rem;
+.nurse-bed-clinical-row .ncnsb__block-label {
+  margin: 0;
 }
 
-.patient-conditions {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  margin-top: 0.5rem;
+.nurse-bed-clinical-preview {
+  min-height: 0;
 }
 
-.condition-badge {
-  background: #e0e5ec;
-  padding: 4px 10px;
+.nurse-bed-clinical-preview-line {
+  margin: 0 0 0.3rem;
+  padding: 0.45rem 0.55rem;
   border-radius: 10px;
+  background: #e0e5ec;
+  box-shadow: inset 2px 2px 5px #cbccd1, inset -2px -2px 5px #fafbff;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: #2d3748;
+  word-break: break-word;
+}
+
+.nurse-bed-clinical-preview-line:last-child {
+  margin-bottom: 0;
+}
+
+.nurse-bed-clinical-preview-empty {
+  margin: 0;
+  font-size: 0.78rem;
+  font-style: italic;
+  color: #a0aec0;
+}
+
+.nurse-bed-clinical-row .nurse-bed-expand-btn {
+  align-self: flex-start;
+  margin-top: 0.15rem;
+}
+
+.nurse-bed-card-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-top: auto;
+  padding-top: 0.15rem;
+}
+
+.nurse-bed-empty-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.nurse-bed-click-hint {
   font-size: 0.75rem;
   color: #718096;
-  box-shadow: inset 2px 2px 4px #bebebe, inset -2px -2px 4px #ffffff;
-}
-
-.bed-patient-clinical {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding-top: 0.5rem;
-  margin-top: 0.15rem;
-  border-top: 1px solid rgba(174, 174, 192, 0.28);
-}
-
-.bed-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem 0;
-  opacity: 0.6;
-  text-align: center;
-}
-
-.empty-icon {
-  font-size: 3rem;
-  margin-bottom: 0.5rem;
-  opacity: 0.5;
-}
-
-.bed-empty p {
-  color: #a0aec0;
   font-style: italic;
-  margin: 0.5rem 0 0 0;
   font-weight: 500;
+  line-height: 1.35;
 }
+
 @media (max-width: 1024px) {
   :host .section-card.nurse-beds-module {
     padding: 1.65rem 1.5rem 1.85rem;
@@ -215,7 +163,7 @@
 
   .beds-grid {
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
-    gap: 1.65rem;
+    gap: 1.15rem;
     padding: 0.25rem 0.1rem 0;
   }
 }
@@ -245,8 +193,7 @@
 
   .beds-grid {
     grid-template-columns: 1fr;
-    gap: 1.35rem;
+    gap: 1.15rem;
     padding: 0.2rem 0 0;
   }
 }
-

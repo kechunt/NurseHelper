@@ -1,18 +1,6 @@
 import type { BedWithPatient, PatientDetail } from '../../services/nurse.service';
 import type { BedDisplay, Patient } from './nurse-dashboard.types';
 
-/** Fragmentos cortos a partir de texto de observaciones (tarjeta de cama). */
-export function parseConditions(observations: string): string[] {
-  if (!observations) {
-    return [];
-  }
-  return observations
-    .split(/[.,;]/)
-    .map((c) => c.trim())
-    .filter((c) => c.length > 0)
-    .slice(0, 3);
-}
-
 /** Camas con paciente resumido para la vista «Mis camas». */
 export function mapBedsWithPatientForNurseDashboard(beds: BedWithPatient[] | null | undefined): BedDisplay[] {
   return (beds || []).map((bed) => ({
@@ -26,7 +14,6 @@ export function mapBedsWithPatientForNurseDashboard(beds: BedWithPatient[] | nul
           id: bed.patient.id?.toString() || '',
           name: `${bed.patient.firstName || ''} ${bed.patient.lastName || ''}`,
           age: bed.patient.age || 0,
-          conditions: parseConditions(bed.patient.medicalObservations || ''),
           medicalObservations: bed.patient.medicalObservations || '',
         }
       : null,
@@ -37,6 +24,42 @@ export function mapBedsWithPatientForNurseDashboard(beds: BedWithPatient[] | nul
  * Convierte `PatientDetail[]` al modelo de lista del panel (misma forma que la carga inicial).
  * `beds` sirve para rellenar cama cuando la API de paciente devuelve placeholder.
  */
+/** Resuelve ficha de paciente para abrir modal desde una cama (listado completo o datos de la tarjeta). */
+export function resolvePatientForBedModal(
+  bed: BedDisplay,
+  patients: Patient[]
+): Patient | null {
+  if (!bed.patient) {
+    return null;
+  }
+  const fromList = patients.find((p) => p.id === bed.patient!.id);
+  if (fromList) {
+    return fromList;
+  }
+  const bp = bed.patient;
+  return {
+    id: bp.id,
+    name: bp.name,
+    bedNumber: bed.bedNumber,
+    age: bp.age,
+    diagnosis: bp.diagnosis ?? 'Sin diagnóstico',
+    medications: [],
+    pendingTasks: 0,
+    priority: 'normal',
+    medicalObservations: bp.medicalObservations ?? '',
+    allergies: '',
+    specialNeeds: '',
+    generalObservations: '',
+    clinicalNotes: bp.clinicalNotes ?? {
+      diagnosis: [],
+      medical: [],
+      allergies: [],
+      specialNeeds: [],
+      general: [],
+    },
+  };
+}
+
 /** Une datos clínicos del listado de pacientes del dashboard en cada cama (para pins / vistas compactas). */
 export function mergeClinicalDataIntoBeds(beds: BedDisplay[], patients: Patient[]): BedDisplay[] {
   const byId = new Map(patients.map((p) => [p.id, p]));

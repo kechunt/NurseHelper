@@ -1,80 +1,93 @@
 <div class="users-management">
   <app-section-header [title]="usersMgmtSectionTitle">
-    <button sectionHeaderActions type="button" class="neuro-btn" (click)="loadUsers(); loadSupervisors(); loadPharmacyUsers();">
+    <button sectionHeaderActions type="button" class="neuro-btn" (click)="refreshAll()">
       <app-bootstrap-icon name="arrow-path" /> {{ usersMgmtRefresh }}
     </button>
   </app-section-header>
 
   <!-- Sección de Jefas de Enfermeras -->
-  <div class="role-section">
-    <h3 class="role-section-title"><app-bootstrap-icon name="user-group" /> {{ usersMgmtSupervisorsTitle }}</h3>
+  <div class="users-mgmt-section">
+    <h3 class="users-mgmt-section-title"><app-bootstrap-icon name="user-group" /> {{ usersMgmtSupervisorsTitle }}</h3>
     <div *ngIf="loadingSupervisors" class="loading-state">
       <p><app-bootstrap-icon name="clock" /> {{ usersMgmtLoadingSupervisors }}</p>
     </div>
-    <div *ngIf="!loadingSupervisors" class="role-cards-container">
+    <div *ngIf="!loadingSupervisors" class="users-mgmt-grid beds-grid">
       <app-admin-empty-state *ngIf="supervisors.length === 0" [message]="usersMgmtEmptySupervisors" />
-      <div *ngFor="let supervisor of supervisors" class="role-card">
-        <div class="role-card-content">
-          <div class="role-card-info">
-            <h4>{{ supervisor.firstName }} {{ supervisor.lastName }}</h4>
-            <p class="role-card-username">@{{ supervisor.username }}</p>
-            <p class="role-card-email">{{ supervisor.email }}</p>
-            <p class="role-card-phone" *ngIf="(supervisor.phone || '').toString().trim()">
-              <app-bootstrap-icon name="phone" /> {{ supervisor.phone }}
-            </p>
-            <span class="neuro-status" [class.role-admin]="supervisor.role === 'admin'"
-              [class.role-supervisor]="supervisor.role === 'supervisor'">
-              {{ getRoleLabel(supervisor.role) }}
-            </span>
+      <div *ngFor="let supervisor of supervisors" class="apm-area-card users-mgmt-card">
+        <div class="apm-area-card__header">
+          <h4 class="apm-area-card__title">{{ supervisor.firstName }} {{ supervisor.lastName }}</h4>
+          <span class="apm-status-pill" [ngClass]="getRolePillClass(supervisor.role)">
+            {{ getRoleLabel(supervisor.role) }}
+          </span>
+        </div>
+        <div class="apm-bed-patient-panel users-mgmt-user-panel">
+          <span class="apm-bed-patient-avatar" aria-hidden="true">{{ getUserInitials(supervisor) }}</span>
+          <div class="apm-bed-patient-details">
+            <span class="apm-bed-patient-label">{{ usersMgmtColUsername }}</span>
+            <span class="apm-bed-patient-name">@{{ supervisor.username }}</span>
+            <span class="apm-bed-patient-meta users-mgmt-email" [title]="supervisor.email">{{ supervisor.email }}</span>
           </div>
-          <div class="role-card-actions">
-            <button
-              type="button"
-              class="neuro-btn-icon"
-              (click)="openEditModal(supervisor)"
-              [title]="usersMgmtEditUserTitle"
-              [attr.aria-label]="usersMgmtEditUserTitle"
-            >
-              <app-bootstrap-icon name="pencil" />
-            </button>
-          </div>
+        </div>
+        <div class="users-mgmt-card-footer">
+          <span
+            class="apm-shift-nurse-chip users-mgmt-meta-chip"
+            *ngIf="(supervisor.phone || '').toString().trim()"
+          >
+            <app-bootstrap-icon name="phone" /> {{ supervisor.phone }}
+          </span>
+          <button
+            type="button"
+            class="apm-shift-nurse-chip users-mgmt-meta-chip users-mgmt-action-chip"
+            (click)="openEditModal(supervisor)"
+            [title]="usersMgmtEditUserTitle"
+            [attr.aria-label]="usersMgmtEditUserTitle"
+          >
+            <app-bootstrap-icon name="pencil" /> {{ usersMgmtSheetEdit }}
+          </button>
         </div>
       </div>
     </div>
   </div>
 
   <!-- Sección de Encargado de Farmacia -->
-  <div class="role-section">
-    <h3 class="role-section-title"><app-bootstrap-icon name="beaker" /> {{ usersMgmtPharmacyTitle }}</h3>
+  <div class="users-mgmt-section">
+    <h3 class="users-mgmt-section-title"><app-bootstrap-icon name="beaker" /> {{ usersMgmtPharmacyTitle }}</h3>
     <div *ngIf="loadingPharmacy" class="loading-state">
       <p><app-bootstrap-icon name="clock" /> {{ usersMgmtLoadingPharmacy }}</p>
     </div>
-    <div *ngIf="!loadingPharmacy" class="role-cards-container">
+    <div *ngIf="!loadingPharmacy" class="users-mgmt-grid beds-grid">
       <app-admin-empty-state *ngIf="pharmacyUsers.length === 0" [message]="usersMgmtEmptyPharmacy" />
-      <div *ngFor="let pharmacyUser of pharmacyUsers" class="role-card">
-        <div class="role-card-content">
-          <div class="role-card-info">
-            <h4>{{ pharmacyUser.firstName }} {{ pharmacyUser.lastName }}</h4>
-            <p class="role-card-username">@{{ pharmacyUser.username }}</p>
-            <p class="role-card-email">{{ pharmacyUser.email }}</p>
-            <p class="role-card-phone" *ngIf="(pharmacyUser.phone || '').toString().trim()">
-              <app-bootstrap-icon name="phone" /> {{ pharmacyUser.phone }}
-            </p>
-            <span class="neuro-status role-pharmacy">
-              {{ getRoleLabel(pharmacyUser.role) }}
-            </span>
+      <div *ngFor="let pharmacyUser of pharmacyUsers" class="apm-area-card users-mgmt-card">
+        <div class="apm-area-card__header">
+          <h4 class="apm-area-card__title">{{ pharmacyUser.firstName }} {{ pharmacyUser.lastName }}</h4>
+          <span class="apm-status-pill users-mgmt-role-pill--pharmacy">
+            {{ getRoleLabel(pharmacyUser.role) }}
+          </span>
+        </div>
+        <div class="apm-bed-patient-panel users-mgmt-user-panel">
+          <span class="apm-bed-patient-avatar" aria-hidden="true">{{ getUserInitials(pharmacyUser) }}</span>
+          <div class="apm-bed-patient-details">
+            <span class="apm-bed-patient-label">{{ usersMgmtColUsername }}</span>
+            <span class="apm-bed-patient-name">@{{ pharmacyUser.username }}</span>
+            <span class="apm-bed-patient-meta users-mgmt-email" [title]="pharmacyUser.email">{{ pharmacyUser.email }}</span>
           </div>
-          <div class="role-card-actions">
-            <button
-              type="button"
-              class="neuro-btn-icon"
-              (click)="openEditModal(pharmacyUser)"
-              [title]="usersMgmtEditUserTitle"
-              [attr.aria-label]="usersMgmtEditUserTitle"
-            >
-              <app-bootstrap-icon name="pencil" />
-            </button>
-          </div>
+        </div>
+        <div class="users-mgmt-card-footer">
+          <span
+            class="apm-shift-nurse-chip users-mgmt-meta-chip"
+            *ngIf="(pharmacyUser.phone || '').toString().trim()"
+          >
+            <app-bootstrap-icon name="phone" /> {{ pharmacyUser.phone }}
+          </span>
+          <button
+            type="button"
+            class="apm-shift-nurse-chip users-mgmt-meta-chip users-mgmt-action-chip"
+            (click)="openEditModal(pharmacyUser)"
+            [title]="usersMgmtEditUserTitle"
+            [attr.aria-label]="usersMgmtEditUserTitle"
+          >
+            <app-bootstrap-icon name="pencil" /> {{ usersMgmtSheetEdit }}
+          </button>
         </div>
       </div>
     </div>
@@ -82,13 +95,6 @@
 
   <!-- Filtros -->
   <div class="filters-container">
-    <div class="filter-group">
-      <label for="role-filter">{{ usersMgmtFilterRoleLabel }}</label>
-      <select id="role-filter" class="neuro-select" [(ngModel)]="selectedRole" (change)="onRoleFilterChange()">
-        <option *ngFor="let opt of usersMgmtRoleFilterOptions" [ngValue]="opt.value">{{ opt.label }}</option>
-      </select>
-    </div>
-
     <div class="filter-group search-group">
       <label for="search-input">{{ usersMgmtSearchLabel }}</label>
       <div class="search-input-wrapper">
@@ -107,28 +113,59 @@
       </div>
     </div>
 
-    <div class="filter-group" *ngIf="selectedRole !== 'all' || searchQuery.trim()">
+    <div class="filter-group" *ngIf="hasActiveListFilters()">
       <button class="neuro-btn clear-filters-btn" (click)="clearFilters()">
         <app-bootstrap-icon name="trash" /> {{ usersMgmtClearFilters }}
       </button>
     </div>
   </div>
 
-  <div class="results-info" *ngIf="!loading">
-    <p>
-      {{ getUsersResultsLine() }}
-      <span *ngIf="selectedRole !== 'all'">{{ getUsersResultsRolePart() }}</span>
-      <span *ngIf="searchQuery.trim()">{{ getUsersResultsSearchPart() }}</span>
-    </p>
+  <div class="apm-shift-block users-mgmt-results-block" *ngIf="!loading">
+    <div class="apm-shift-block__head users-mgmt-results-head">
+      <span class="apm-shift-block__icon" aria-hidden="true">👥</span>
+      <div class="apm-shift-block__titles">
+        <div class="apm-shift-heading">{{ usersMgmtResultsHeading }}</div>
+        <p class="users-mgmt-results-line">
+          {{ getUsersResultsLine() }}
+          <span *ngIf="selectedRole !== 'all'">{{ getUsersResultsRolePart() }}</span>
+          <span *ngIf="selectedShiftPresence !== 'all'">{{ getUsersResultsShiftPart() }}</span>
+          <span *ngIf="searchQuery.trim()">{{ getUsersResultsSearchPart() }}</span>
+        </p>
+        <p class="users-mgmt-shift-hint" *ngIf="liveShiftLabel">{{ liveShiftLabel }}</p>
+      </div>
+    </div>
+    <div class="users-mgmt-results-filters">
+      <div class="users-mgmt-results-filter">
+        <label for="results-role-filter">{{ usersMgmtFilterRoleLabel }}</label>
+        <select
+          id="results-role-filter"
+          class="neuro-select users-mgmt-results-select"
+          [(ngModel)]="selectedRole"
+          (change)="onRoleFilterChange()"
+        >
+          <option *ngFor="let opt of usersMgmtRoleFilterOptions" [ngValue]="opt.value">{{ opt.label }}</option>
+        </select>
+      </div>
+      <div class="users-mgmt-results-filter">
+        <label for="results-shift-filter">{{ usersMgmtFilterShiftLabel }}</label>
+        <select
+          id="results-shift-filter"
+          class="neuro-select users-mgmt-results-select"
+          [(ngModel)]="selectedShiftPresence"
+          (change)="onShiftPresenceFilterChange()"
+        >
+          <option *ngFor="let opt of usersMgmtShiftFilterOptions" [ngValue]="opt.value">{{ opt.label }}</option>
+        </select>
+      </div>
+    </div>
   </div>
 
   <div *ngIf="loading" class="loading-state">
     <p><app-bootstrap-icon name="clock" /> {{ usersMgmtLoadingUsers }}</p>
   </div>
 
-
-  <div *ngIf="!loading" class="table-container">
-    <div class="export-panel export-panel--admin-users" [attr.aria-label]="usersMgmtExportPanelAria">
+  <div *ngIf="!loading" class="users-mgmt-list">
+    <div class="export-panel export-panel--admin-users users-mgmt-export-block" [attr.aria-label]="usersMgmtExportPanelAria">
       <div class="export-panel__icon" aria-hidden="true">
         <app-bootstrap-icon name="user-group" />
       </div>
@@ -147,58 +184,65 @@
         </div>
       </div>
     </div>
-    <table class="neuro-table" role="table" [attr.aria-label]="usersMgmtTableAria">
-      <thead>
-        <tr>
-          <th scope="col">{{ usersMgmtColId }}</th>
-          <th scope="col">{{ usersMgmtColUsername }}</th>
-          <th scope="col">{{ usersMgmtColEmail }}</th>
-          <th scope="col">{{ usersMgmtColFullName }}</th>
-          <th scope="col">{{ usersMgmtColPhone }}</th>
-          <th scope="col">{{ usersMgmtColRole }}</th>
-          <th scope="col">{{ usersMgmtColStatus }}</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr
-          *ngFor="let user of paginatedUsers; trackBy: trackByUserId"
-          [class.inactive]="!user.isActive"
-          class="admin-table-row--clickable"
-          tabindex="0"
-          role="button"
-          [attr.aria-label]="userTableRowAriaLabel(user.username)"
-          (click)="openUserRowActionsSheet(user)"
-          (keydown)="onUserTableRowKeydown(user, $event)"
-        >
-          <td>{{ user.id }}</td>
-          <td>{{ user.username }}</td>
-          <td>{{ user.email }}</td>
-          <td>{{ user.firstName }} {{ user.lastName }}</td>
-          <td>{{ (user.phone || '').toString().trim() || usersMgmtHtmlTableDash }}</td>
-          <td>
-            <span class="neuro-status" [class.role-admin]="user.role === 'admin'"
-              [class.role-supervisor]="user.role === 'supervisor'"
-              [class.role-nurse]="user.role === 'nurse'"
-              [class.role-pharmacy]="user.role === 'pharmacy'">
-              {{ getRoleLabel(user.role) }}
-            </span>
-          </td>
-          <td>
-            <span class="neuro-status" [class.active]="user.isActive"
-              [class.inactive]="!user.isActive">
-              {{ user.isActive ? usersMgmtStatusActive : usersMgmtStatusInactive }}
-            </span>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-    
+
+    <div
+      class="users-mgmt-grid beds-grid"
+      role="list"
+      [attr.aria-label]="usersMgmtTableAria"
+      *ngIf="filteredUsers.length > 0"
+    >
+      <div
+        *ngFor="let user of paginatedUsers; trackBy: trackByUserId"
+        class="apm-area-card users-mgmt-card users-mgmt-card--clickable"
+        [class.apm-area-card--inactive]="!user.isActive"
+        role="listitem"
+        tabindex="0"
+        (click)="openUserRowActionsSheet(user)"
+        (keydown)="onUserTableRowKeydown(user, $event)"
+        [attr.aria-label]="userTableRowAriaLabel(user.username)"
+      >
+        <div class="apm-area-card__header">
+          <h4 class="apm-area-card__title">{{ user.firstName }} {{ user.lastName }}</h4>
+          <span
+            class="apm-status-pill"
+            [class.apm-status-pill--ok]="user.isActive"
+            [class.apm-status-pill--off]="!user.isActive"
+          >
+            {{ user.isActive ? usersMgmtStatusActive : usersMgmtStatusInactive }}
+          </span>
+        </div>
+        <div class="apm-bed-patient-panel users-mgmt-user-panel">
+          <span class="apm-bed-patient-avatar" aria-hidden="true">{{ getUserInitials(user) }}</span>
+          <div class="apm-bed-patient-details">
+            <span class="apm-bed-patient-label">{{ usersMgmtColUsername }}</span>
+            <span class="apm-bed-patient-name">@{{ user.username }}</span>
+            <span class="apm-bed-patient-meta users-mgmt-email" [title]="user.email">{{ user.email }}</span>
+          </div>
+        </div>
+        <div class="apm-shift-nurse-chips users-mgmt-meta-row">
+          <span class="apm-shift-nurse-chip users-mgmt-meta-chip users-mgmt-role-chip" [ngClass]="getRolePillClass(user.role)">
+            {{ getRoleLabel(user.role) }}
+          </span>
+          <span
+            class="apm-shift-nurse-chip users-mgmt-meta-chip users-mgmt-shift-chip"
+            *ngIf="user.role === 'nurse'"
+            [class.users-mgmt-shift-chip--on]="isUserOnCurrentShift(user)"
+            [class.users-mgmt-shift-chip--off]="!isUserOnCurrentShift(user)"
+          >
+            {{ getShiftPresenceLabel(user) }}
+          </span>
+          <span class="apm-shift-nurse-chip users-mgmt-meta-chip" *ngIf="(user.phone || '').toString().trim()">
+            <app-bootstrap-icon name="phone" /> {{ user.phone }}
+          </span>
+        </div>
+      </div>
+    </div>
+
     <div *ngIf="filteredUsers.length === 0 && !loading" class="no-results" role="status" aria-live="polite">
       <p>{{ usersMgmtNoResults }}</p>
     </div>
-    
-    <!-- Componente de paginación -->
-    <app-pagination 
+
+    <app-pagination
       *ngIf="filteredUsers.length > 0"
       [config]="paginationConfig"
       (pageChange)="onPageChange($event)"

@@ -26,6 +26,8 @@ describe('OverviewComponent', () => {
     getAreas: jasmine.createSpy('getAreas').and.returnValue(of([{ id: 1 }])),
     getBeds: jasmine.createSpy('getBeds').and.returnValue(of([{ id: 1, patientId: null }])),
     getPatientsTotal: jasmine.createSpy('getPatientsTotal').and.returnValue(of(3)),
+    listBackups: jasmine.createSpy('listBackups').and.returnValue(of({ backups: [], lastBackup: null })),
+    createBackup: jasmine.createSpy('createBackup').and.returnValue(of({ filename: 'test.sql' })),
   };
 
   const toastMock = {
@@ -85,6 +87,12 @@ describe('OverviewComponent', () => {
   it('expone mensaje localizado de error al cargar estadísticas', () => {
     expect(fixture.componentInstance.adminOverviewErrLoadStats).toContain('estadísticas');
   });
+
+  it('carga respaldos al iniciar', () => {
+    expect(adminServiceMock.listBackups).toHaveBeenCalled();
+    expect(fixture.componentInstance.loadingBackups).toBe(false);
+    expect(fixture.componentInstance.backups).toEqual([]);
+  });
 });
 
 describe('OverviewComponent (fallo loadStats)', () => {
@@ -110,6 +118,8 @@ describe('OverviewComponent (fallo loadStats)', () => {
       getAreas: jasmine.createSpy('getAreas').and.returnValue(of([])),
       getBeds: jasmine.createSpy('getBeds').and.returnValue(of([])),
       getPatientsTotal: jasmine.createSpy('getPatientsTotal').and.returnValue(of(0)),
+      listBackups: jasmine.createSpy('listBackups').and.returnValue(of({ backups: [], lastBackup: null })),
+      createBackup: jasmine.createSpy('createBackup').and.returnValue(of({ filename: 'test.sql' })),
     };
     await TestBed.configureTestingModule({
       imports: [OverviewComponent],

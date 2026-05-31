@@ -1,8 +1,10 @@
 import type { BedWithPatient, PatientDetail } from '../../services/nurse.service';
+import type { BedDisplay, Patient } from './nurse-dashboard.types';
 import {
   mapBedsWithPatientForNurseDashboard,
   mapPatientDetailsToPatients,
-  parseConditions,
+  mergeClinicalDataIntoBeds,
+  resolvePatientForBedModal,
 } from './nurse-dashboard-patient-mapping';
 
 function patientDetail(overrides: Partial<PatientDetail> & Pick<PatientDetail, 'id'>): PatientDetail {
@@ -28,25 +30,13 @@ function patientDetail(overrides: Partial<PatientDetail> & Pick<PatientDetail, '
 }
 
 describe('nurse-dashboard-patient-mapping', () => {
-  describe('parseConditions', () => {
-    it('devuelve vacío para texto ausente', () => {
-      expect(parseConditions('')).toEqual([]);
-      expect(parseConditions(null as any)).toEqual([]);
-    });
-
-    it('parte por . , ; y recorta; máximo 3 fragmentos', () => {
-      expect(parseConditions('Hipertensión, diabetes; asma')).toEqual(['Hipertensión', 'diabetes', 'asma']);
-      expect(parseConditions('a.b.c.d')).toEqual(['a', 'b', 'c']);
-    });
-  });
-
   describe('mapBedsWithPatientForNurseDashboard', () => {
     it('devuelve array vacío para null/undefined', () => {
       expect(mapBedsWithPatientForNurseDashboard(undefined)).toEqual([]);
       expect(mapBedsWithPatientForNurseDashboard(null)).toEqual([]);
     });
 
-    it('mapea cama con paciente y condiciones', () => {
+    it('mapea cama con paciente', () => {
       const beds: BedWithPatient[] = [
         {
           id: 1,
@@ -66,7 +56,7 @@ describe('nurse-dashboard-patient-mapping', () => {
       expect(out.length).toBe(1);
       expect(out[0].bedNumber).toBe('12A');
       expect(out[0].patient?.name).toBe('Luis Pérez');
-      expect(out[0].patient?.conditions).toEqual(['HTA', 'DM2']);
+      expect(out[0].patient?.medicalObservations).toBe('HTA; DM2');
     });
 
     it('cama sin paciente deja patient null', () => {
@@ -75,6 +65,76 @@ describe('nurse-dashboard-patient-mapping', () => {
       ]);
       expect(out[0].patient).toBeNull();
       expect(out[0].patientId).toBeNull();
+    });
+  });
+
+  describe('mergeClinicalDataIntoBeds', () => {
+    it('une diagnosis y clinicalNotes del listado de pacientes', () => {
+      const beds: BedDisplay[] = [
+        {
+          bedNumber: '1A',
+          patient: { id: '7', name: 'Luis', age: 50, medicalObservations: '' },
+        },
+      ];
+      const patients: Patient[] = [
+        {
+          id: '7',
+          name: 'Luis',
+          bedNumber: '1A',
+          age: 50,
+          diagnosis: 'Dx API',
+          medications: [],
+          pendingTasks: 0,
+          priority: 'normal',
+          clinicalNotes: {
+            diagnosis: [{ id: 1, body: 'nota', authorName: null, createdAt: null, legacy: false }],
+            medical: [],
+            allergies: [],
+            specialNeeds: [],
+            general: [],
+          },
+        },
+      ];
+      const out = mergeClinicalDataIntoBeds(beds, patients);
+      expect(out[0].patient?.diagnosis).toBe('Dx API');
+      expect(out[0].patient?.clinicalNotes?.diagnosis?.length).toBe(1);
+    });
+  });
+
+  describe('resolvePatientForBedModal', () => {
+    it('prefiere paciente del listado completo', () => {
+      const bed: BedDisplay = {
+        bedNumber: '2B',
+        patient: { id: '3', name: 'Ana', age: 30, medicalObservations: '' },
+      };
+      const full: Patient = {
+        id: '3',
+        name: 'Ana Completa',
+        bedNumber: '2B',
+        age: 30,
+        diagnosis: 'Dx',
+        medications: [],
+        pendingTasks: 0,
+        priority: 'normal',
+      };
+      expect(resolvePatientForBedModal(bed, [full])?.name).toBe('Ana Completa');
+    });
+
+    it('construye paciente mínimo desde la cama si no está en listado', () => {
+      const bed: BedDisplay = {
+        bedNumber: '9Z',
+        patient: {
+          id: '99',
+          name: 'Solo Cama',
+          age: 44,
+          diagnosis: 'Dx cama',
+          medicalObservations: 'obs',
+        },
+      };
+      const resolved = resolvePatientForBedModal(bed, []);
+      expect(resolved?.id).toBe('99');
+      expect(resolved?.bedNumber).toBe('9Z');
+      expect(resolved?.diagnosis).toBe('Dx cama');
     });
   });
 

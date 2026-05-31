@@ -52,11 +52,10 @@
   </div>
 </div>
 
-<!-- Cuadrícula tipo gestión de enfermeras (admin) -->
-<div *ngIf="patients.length > 0" class="patients-assigned-grid">
+<div *ngIf="patients.length > 0" class="patients-assigned-grid beds-grid">
   <div
     *ngFor="let patient of patients; let i = index"
-    class="patient-assigned-card"
+    class="apm-area-card patient-assigned-card nurse-patient-area-card"
     [class.patient-assigned-card--critical]="patient.priority === 'critical'"
     role="button"
     tabindex="0"
@@ -65,68 +64,44 @@
     (keydown.enter)="openPatientDetails.emit(patient)"
     (keydown.space)="$event.preventDefault(); openPatientDetails.emit(patient)"
   >
-    <div class="patient-assigned-card-header">
-      <div class="patient-assigned-card-info">
-        <div class="nurse-patient-card-title-row">
-          <h3 class="patient-assigned-card-name">{{ patient.name }}</h3>
-          <span
-            *ngIf="patient.isAssignedToMe"
-            class="patient-assignment-badge patient-assignment-badge--mine"
-            title="Asignado a ti"
-            i18n-title="@@nursePatientsAssigned.badgeAssignedToMeTitle"
-            ><span i18n="@@nursePatientsAssigned.badgeMyPatient">Mi paciente</span></span
-          >
-          <span
-            *ngIf="!patient.isAssignedToMe && patient.assignedToName"
-            class="patient-assignment-badge patient-assignment-badge--other"
-            title="Responsable según reparto de turno"
-            i18n-title="@@nursePatientsAssigned.badgeShiftAssigneeTitle"
-            >{{ patient.assignedToName }}</span
-          >
-          <span
-            *ngIf="!patient.isAssignedToMe && !patient.assignedToName"
-            class="patient-assignment-badge patient-assignment-badge--pending"
-            title="Sin enfermera asignada (pendiente de reparto)"
-            i18n-title="@@nursePatientsAssigned.badgeUnassignedTitle"
-            ><span i18n="@@nursePatientsAssigned.badgeUnassigned">Sin asignar</span></span
-          >
-          <button
-            type="button"
-            class="nurse-details-pill-btn"
-            [attr.id]="'nurse-patients-assigned-section-view-details-' + i"
-            (click)="openPatientDetails.emit(patient); $event.stopPropagation()"
-            title="Ver detalles del paciente"
-            i18n-title="@@nursePatientsAssigned.btnViewPatientDetailsTitle"
-          >
-            <span i18n="@@nursePatientsAssigned.btnDetails">Detalles</span>
-          </button>
-        </div>
-        <p class="patient-assigned-card-meta">
-          <span class="patient-assigned-meta-item"><app-bootstrap-icon name="rectangle-group" /> {{ patient.bedNumber }}</span>
-          <span class="patient-assigned-meta-sep">·</span>
-          <span class="patient-assigned-meta-item"
-            ><app-bootstrap-icon name="cake" /> <span i18n="@@nursePatientsAssigned.ageYearsLine">{{ patient.age }} años</span></span
-          >
-        </p>
-      </div>
-      <div class="patient-assigned-kpis">
-        <div
-          class="patient-assigned-task-pill"
-          [class.patient-assigned-task-pill--active]="medicationDosesToday(patient) > 0"
-        >
-          <app-bootstrap-icon name="beaker" />
-          <span i18n="@@nursePatientsAssigned.kpiMedicationsCount">{{ medicationDosesToday(patient) }} medicamentos</span>
-        </div>
-        <div
-          class="patient-assigned-task-pill patient-assigned-task-pill--muted"
-        >
-          <app-bootstrap-icon name="shield-check" />
-          <span i18n="@@nursePatientsAssigned.kpiTreatmentsCount">{{ treatmentsTodayCount(patient) }} tratamientos</span>
-        </div>
+    <div class="apm-area-card__header">
+      <h4 class="apm-area-card__title">{{ patient.name }}</h4>
+      <span
+        class="apm-status-pill"
+        [class.apm-status-pill--ok]="patient.isAssignedToMe"
+        [class.apm-status-pill--busy]="patient.priority === 'critical'"
+        [class.apm-status-pill--off]="!patient.isAssignedToMe && !!patient.assignedToName"
+      >
+        <ng-container *ngIf="patient.isAssignedToMe" i18n="@@nursePatientsAssigned.badgeMyPatient">Mi paciente</ng-container>
+        <ng-container *ngIf="!patient.isAssignedToMe && patient.assignedToName" i18n="@@nursePatientsAssigned.badgeAssignedShort">Asignado</ng-container>
+        <ng-container *ngIf="!patient.isAssignedToMe && !patient.assignedToName" i18n="@@nursePatientsAssigned.badgeUnassigned">Sin asignar</ng-container>
+      </span>
+    </div>
+
+    <div class="apm-bed-patient-panel">
+      <span class="apm-bed-patient-avatar" aria-hidden="true">{{ getPatientInitials(patient.name) }}</span>
+      <div class="apm-bed-patient-details">
+        <span class="apm-bed-patient-label" i18n="@@nursePatientsAssigned.bedLabel">Cama</span>
+        <span class="apm-bed-patient-name">{{ patient.bedNumber }}</span>
+        <span class="apm-bed-patient-meta" i18n="@@nursePatientsAssigned.ageYearsLine">{{ patient.age }} años</span>
       </div>
     </div>
 
-    <div class="patient-assigned-card-clinical" (click)="$event.stopPropagation()">
+    <div class="apm-shift-nurse-chips nurse-patient-kpi-row">
+      <span
+        class="patient-assigned-task-pill nurse-patient-kpi-chip"
+        [class.patient-assigned-task-pill--active]="medicationDosesToday(patient) > 0"
+      >
+        <app-bootstrap-icon name="beaker" />
+        <span i18n="@@nursePatientsAssigned.kpiMedicationsCount">{{ medicationDosesToday(patient) }} medicamentos</span>
+      </span>
+      <span class="patient-assigned-task-pill patient-assigned-task-pill--muted nurse-patient-kpi-chip">
+        <app-bootstrap-icon name="shield-check" />
+        <span i18n="@@nursePatientsAssigned.kpiTreatmentsCount">{{ treatmentsTodayCount(patient) }} tratamientos</span>
+      </span>
+    </div>
+
+    <div class="apm-shift-block nurse-patient-clinical-block" (click)="$event.stopPropagation()">
       <app-nurse-clinical-notes-scope-block
         [patientId]="patient.id"
         scope="diagnosis"
@@ -145,6 +120,58 @@
         [blockLabel]="clinicalMedicalBlockLabel"
         [emptyLabel]="clinicalMedicalEmptyLabel"
       />
+    </div>
+
+    <div class="patient-assigned-card-assignment-row" (click)="$event.stopPropagation()">
+      <span
+        *ngIf="patient.isAssignedToMe"
+        class="patient-assignment-badge patient-assignment-badge--mine"
+        title="Asignado a ti"
+        i18n-title="@@nursePatientsAssigned.badgeAssignedToMeTitle"
+      >
+        <span i18n="@@nursePatientsAssigned.badgeMyPatient">Mi paciente</span>
+      </span>
+      <span
+        *ngIf="!patient.isAssignedToMe && patient.assignedToName"
+        class="patient-assignment-badge patient-assignment-badge--other"
+        title="Responsable según reparto de turno"
+        i18n-title="@@nursePatientsAssigned.badgeShiftAssigneeTitle"
+      >
+        <span i18n="@@nursePatientsAssigned.badgeAssignedToPrefix">Asignado a:</span>
+        {{ patient.assignedToName }}
+      </span>
+      <span
+        *ngIf="!patient.isAssignedToMe && !patient.assignedToName"
+        class="patient-assignment-badge patient-assignment-badge--pending"
+        title="Sin enfermera asignada (pendiente de reparto)"
+        i18n-title="@@nursePatientsAssigned.badgeUnassignedTitle"
+      >
+        <span i18n="@@nursePatientsAssigned.badgeUnassigned">Sin asignar</span>
+      </span>
+      <button
+        *ngIf="canClaimPatient(patient)"
+        type="button"
+        class="nurse-claim-pill-btn"
+        [attr.id]="'nurse-patients-assigned-section-claim-' + i"
+        [disabled]="claimingPatientId === patient.id"
+        (click)="onClaimPatientClick(patient, $event)"
+        i18n="@@nursePatientsAssigned.btnClaimPatient"
+      >
+        Asignarme
+      </button>
+    </div>
+
+    <div class="patient-assigned-card-footer" (click)="$event.stopPropagation()">
+      <button
+        type="button"
+        class="nurse-details-pill-btn"
+        [attr.id]="'nurse-patients-assigned-section-view-details-' + i"
+        (click)="openPatientDetails.emit(patient)"
+        title="Ver detalles del paciente"
+        i18n-title="@@nursePatientsAssigned.btnViewPatientDetailsTitle"
+      >
+        <span i18n="@@nursePatientsAssigned.btnDetails">Detalles</span>
+      </button>
     </div>
   </div>
 </div>

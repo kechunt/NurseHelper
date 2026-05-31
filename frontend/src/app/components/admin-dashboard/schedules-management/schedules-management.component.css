@@ -1,5 +1,6 @@
 @import '../../../shared/styles/admin-table-unified.css';
 @import '../../../shared/styles/admin-panel-responsive.css';
+@import '../../../shared/styles/admin-panel-neomorphic.shared.css';
 
 /* ========== GESTIÓN DE TURNOS - DISEÑO NEUMÓRFICO ========== */
 
@@ -231,13 +232,42 @@
 }
 
 .badge-status-attendance {
+  display: inline-flex;
+  align-items: center;
   padding: 6px 10px;
-  border-radius: 8px;
-  font-size: 0.8rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
   font-weight: 700;
   background: #e0e5ec;
   color: #4a5568;
   box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
+  white-space: normal;
+  line-height: 1.2;
+}
+
+.badge-status-attendance--present {
+  color: #276749;
+  background: rgba(72, 187, 120, 0.16);
+  box-shadow: none;
+}
+
+.badge-status-attendance--late {
+  color: #975a16;
+  background: rgba(237, 137, 54, 0.16);
+  box-shadow: none;
+}
+
+.badge-status-attendance--justified {
+  color: #2b6cb0;
+  background: rgba(102, 126, 234, 0.14);
+  box-shadow: none;
+}
+
+.badge-status-attendance--absent,
+.badge-status-attendance--missing {
+  color: #9b2c2c;
+  background: rgba(245, 101, 101, 0.14);
+  box-shadow: none;
 }
 
 .attendance-actions-cell {
@@ -462,11 +492,58 @@
   outline-offset: 2px;
 }
 
-.coverage-assign-intro {
+.coverage-assign-intro,
+.sched-assign-intro-neuro {
   margin: 0 0 1rem;
   font-size: 0.88rem;
-  color: #4f5968;
+  color: #718096;
   line-height: 1.45;
+}
+
+.sched-assign-intro-neuro strong,
+.coverage-assign-intro strong {
+  color: #4a5568;
+  font-weight: 600;
+}
+
+.sched-assign-shift-neuro {
+  margin: 0 0 1rem;
+  font-size: 0.85rem;
+  color: #4a5568;
+  font-weight: 600;
+}
+
+.sched-assign-suggested-hint-neuro {
+  margin: 0.65rem 0 0;
+  font-size: 0.82rem;
+  color: #2b6cb0;
+  line-height: 1.4;
+}
+
+.attendance-assign-status-neuro {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(174, 174, 192, 0.35);
+}
+
+.attendance-assign-status-label-neuro {
+  margin: 0 0 0.65rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #4a5568;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.attendance-assign-status-buttons-neuro {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.attendance-assign-status-buttons-neuro .btn-attendance {
+  min-width: 0;
+  flex: 1 1 calc(50% - 0.45rem);
 }
 
 .coverage-assign-loading {
@@ -497,12 +574,16 @@
   padding: 0.55rem 0.65rem;
   border-radius: 12px;
   background: #e8edf3;
+  box-shadow: 4px 4px 8px #c8ced8, -4px -4px 8px #ffffff;
   cursor: pointer;
   font-size: 0.88rem;
   color: #4a5568;
 }
 
-.coverage-assign-nurse-label input {
+.coverage-assign-checkbox-neuro {
+  width: auto;
+  min-height: 0;
+  padding: 0;
   flex-shrink: 0;
 }
 
@@ -547,9 +628,20 @@
 .attendance-summary-table-neuro td,
 .attendance-list-table-neuro th,
 .attendance-list-table-neuro td {
-  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.attendance-summary-table-neuro .attendance-shift-cell-neuro {
+  white-space: normal;
+  word-break: break-word;
+  min-width: 7.5rem;
+}
+
+.attendance-summary-table-neuro td:nth-child(4),
+.attendance-list-table-neuro td:nth-child(3) {
+  white-space: normal;
+  overflow: visible;
 }
 
 .shifts-table-neuro thead {

@@ -5,7 +5,7 @@
     <div class="observation-header">
       <h5 i18n="@@nursePatientObservationsTab.cardDiagnosisTitle"><app-bootstrap-icon name="clipboard-document-list" /> Diagnóstico / historial clínico</h5>
     </div>
-    <div *ngIf="!editingDiagnosis" class="observations-list observations-list--dense">
+    <div class="observations-list observations-list--dense">
       <app-nurse-clinical-notes-scope-block
         [patientId]="patientId"
         scope="diagnosis"
@@ -14,25 +14,7 @@
         [emptyLabel]="emptyLabelDiagnosis"
       />
     </div>
-    <div *ngIf="editingDiagnosis" class="edit-observation-form">
-      <textarea
-        class="observation-input"
-        [(ngModel)]="editedDiagnosis"
-        placeholder="Diagnóstico u historial (reemplaza todo el texto al guardar aquí)..."
-        i18n-placeholder="@@nursePatientObservationsTab.placeholderDiagnosis"
-        rows="3"
-      ></textarea>
-      <div class="edit-actions">
-        <button type="button" class="save-observation-btn-neuro small" (click)="emitSaveDiagnosis()" i18n="@@nursePatientObservationsTab.saveDiag">
-          <app-bootstrap-icon name="clipboard-document" /> Guardar
-        </button>
-        <button type="button" class="cancel-edit-btn" (click)="cancelEditingDiagnosis()" i18n="@@nursePatientObservationsTab.cancelDiag">
-          <app-bootstrap-icon name="x-circle" /> Cancelar
-        </button>
-      </div>
-    </div>
-
-    <div *ngIf="!editingDiagnosis" class="append-note-inset">
+    <div class="append-note-inset">
       <p class="append-note-lead" i18n="@@nursePatientObservationsTab.diagnosisAppendLead"><app-bootstrap-icon name="plus-circle" /> Añadir nota con fecha</p>
       <p class="append-note-hint" i18n="@@nursePatientObservationsTab.diagnosisAppendHint">
         Se concatena al diagnóstico / historial clínico en la base de datos.
@@ -61,7 +43,7 @@
     <div class="observation-header">
       <h5 i18n="@@nursePatientObservationsTab.cardMedicalTitle"><app-bootstrap-icon name="shield-check" /> Observaciones médicas / evolución</h5>
     </div>
-    <div *ngIf="!editingMedicalObservations" class="observations-list observations-list--dense">
+    <div class="observations-list observations-list--dense">
       <app-nurse-clinical-notes-scope-block
         [patientId]="patientId"
         scope="medical"
@@ -70,25 +52,7 @@
         [emptyLabel]="emptyLabelMedical"
       />
     </div>
-    <div *ngIf="editingMedicalObservations" class="edit-observation-form">
-      <textarea
-        class="observation-input"
-        [(ngModel)]="editedMedicalObservations"
-        placeholder="Texto libre del campo (reemplaza todo el bloque al guardar aquí)..."
-        i18n-placeholder="@@nursePatientObservationsTab.placeholderMedical"
-        rows="3"
-      ></textarea>
-      <div class="edit-actions">
-        <button type="button" class="save-observation-btn-neuro small" (click)="emitSaveMedicalObservations()" i18n="@@nursePatientObservationsTab.saveMedical">
-          <app-bootstrap-icon name="clipboard-document" /> Guardar
-        </button>
-        <button type="button" class="cancel-edit-btn" (click)="cancelEditingMedicalObservations()" i18n="@@nursePatientObservationsTab.cancelMedical">
-          <app-bootstrap-icon name="x-circle" /> Cancelar
-        </button>
-      </div>
-    </div>
-
-    <div *ngIf="!editingMedicalObservations" class="append-note-inset">
+    <div class="append-note-inset">
       <p class="append-note-lead" i18n="@@nursePatientObservationsTab.medicalAppendLead">
         <app-bootstrap-icon name="plus-circle" /> Añadir nota con fecha (se guarda en la base de datos)
       </p>
@@ -119,7 +83,7 @@
     <div class="observation-header">
       <h5 i18n="@@nursePatientObservationsTab.cardAllergiesTitle"><app-bootstrap-icon name="exclamation-triangle" /> Alergias</h5>
     </div>
-    <div *ngIf="!editingAllergies" class="observations-list observations-list--dense">
+    <div class="observations-list observations-list--dense">
       <app-nurse-clinical-notes-scope-block
         [patientId]="patientId"
         scope="allergies"
@@ -128,25 +92,7 @@
         [emptyLabel]="emptyLabelAllergies"
       />
     </div>
-    <div *ngIf="editingAllergies" class="edit-observation-form">
-      <textarea
-        class="observation-input"
-        [(ngModel)]="editedAllergies"
-        placeholder="Escribe las alergias del paciente..."
-        i18n-placeholder="@@nursePatientObservationsTab.placeholderAllergies"
-        rows="3"
-      ></textarea>
-      <div class="edit-actions">
-        <button type="button" class="save-observation-btn-neuro small" (click)="emitSaveAllergies()" i18n="@@nursePatientObservationsTab.saveAllergies">
-          <app-bootstrap-icon name="clipboard-document" /> Guardar
-        </button>
-        <button type="button" class="cancel-edit-btn" (click)="cancelEditingAllergies()" i18n="@@nursePatientObservationsTab.cancelAllergies">
-          <app-bootstrap-icon name="x-circle" /> Cancelar
-        </button>
-      </div>
-    </div>
-
-    <div *ngIf="!editingAllergies" class="append-note-inset">
+    <div class="append-note-inset">
       <p class="append-note-lead" i18n="@@nursePatientObservationsTab.allergiesAppendLead"><app-bootstrap-icon name="plus-circle" /> Añadir nota con fecha</p>
       <p class="append-note-hint" i18n="@@nursePatientObservationsTab.allergiesAppendHint">Se guarda en el campo de alergias del paciente.</p>
       <textarea
@@ -173,7 +119,7 @@
     <div class="observation-header">
       <h5 i18n="@@nursePatientObservationsTab.cardSpecialTitle"><app-bootstrap-icon name="user-circle" /> Necesidades Especiales</h5>
     </div>
-    <div *ngIf="!editingSpecialNeeds" class="observations-list observations-list--dense">
+    <div class="observations-list observations-list--dense">
       <app-nurse-clinical-notes-scope-block
         [patientId]="patientId"
         scope="specialNeeds"
@@ -182,25 +128,7 @@
         [emptyLabel]="emptyLabelSpecial"
       />
     </div>
-    <div *ngIf="editingSpecialNeeds" class="edit-observation-form">
-      <textarea
-        class="observation-input"
-        [(ngModel)]="editedSpecialNeeds"
-        placeholder="Escribe las necesidades especiales del paciente..."
-        i18n-placeholder="@@nursePatientObservationsTab.placeholderSpecial"
-        rows="3"
-      ></textarea>
-      <div class="edit-actions">
-        <button type="button" class="save-observation-btn-neuro small" (click)="emitSaveSpecialNeeds()" i18n="@@nursePatientObservationsTab.saveSpecial">
-          <app-bootstrap-icon name="clipboard-document" /> Guardar
-        </button>
-        <button type="button" class="cancel-edit-btn" (click)="cancelEditingSpecialNeeds()" i18n="@@nursePatientObservationsTab.cancelSpecial">
-          <app-bootstrap-icon name="x-circle" /> Cancelar
-        </button>
-      </div>
-    </div>
-
-    <div *ngIf="!editingSpecialNeeds" class="append-note-inset">
+    <div class="append-note-inset">
       <p class="append-note-lead" i18n="@@nursePatientObservationsTab.specialAppendLead"><app-bootstrap-icon name="plus-circle" /> Añadir nota con fecha</p>
       <p class="append-note-hint" i18n="@@nursePatientObservationsTab.specialAppendHint">Se guarda en necesidades especiales del paciente.</p>
       <textarea
@@ -227,7 +155,7 @@
     <div class="observation-header">
       <h5 i18n="@@nursePatientObservationsTab.cardGeneralTitle"><app-bootstrap-icon name="clipboard-document-list" /> Observaciones Generales</h5>
     </div>
-    <div *ngIf="!editingGeneralObsFull" class="observations-list observations-list--dense">
+    <div class="observations-list observations-list--dense">
       <app-nurse-clinical-notes-scope-block
         [patientId]="patientId"
         scope="general"
@@ -236,30 +164,7 @@
         [emptyLabel]="emptyLabelGeneral"
       />
     </div>
-    <div *ngIf="editingGeneralObsFull" class="edit-observation-form">
-      <textarea
-        class="observation-input"
-        [(ngModel)]="editedGeneralObservationsFull"
-        placeholder="Texto completo (incluye líneas con fecha si las necesitas)..."
-        i18n-placeholder="@@nursePatientObservationsTab.placeholderGeneralFull"
-        rows="8"
-      ></textarea>
-      <div class="edit-actions">
-        <button
-          type="button"
-          class="save-observation-btn-neuro small"
-          (click)="emitSaveGeneralObservationsFull()"
-          i18n="@@nursePatientObservationsTab.saveGeneralDb"
-        >
-          <app-bootstrap-icon name="clipboard-document" /> Guardar en base de datos
-        </button>
-        <button type="button" class="cancel-edit-btn" (click)="cancelEditingGeneralObservationsFull()" i18n="@@nursePatientObservationsTab.cancelGeneralFull">
-          <app-bootstrap-icon name="x-circle" /> Cancelar
-        </button>
-      </div>
-    </div>
-
-    <div *ngIf="!editingGeneralObsFull" class="append-note-inset">
+    <div class="append-note-inset">
       <p class="append-note-lead" i18n="@@nursePatientObservationsTab.generalAppendLead"><app-bootstrap-icon name="plus-circle" /> Añadir nota con fecha</p>
       <p class="append-note-hint" i18n="@@nursePatientObservationsTab.generalAppendHint">
         Se concatena a observaciones generales en la base de datos (una línea por guardado).
@@ -283,5 +188,4 @@
       </button>
     </div>
   </div>
-
 </div>

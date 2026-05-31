@@ -5,6 +5,8 @@ import { AdminService } from '../../../services/admin.service';
 import { ToastService } from '../../../services/toast.service';
 import { ConfirmationService } from '../../../services/confirmation.service';
 import { ExportService } from '../../../shared/services/export.service';
+import { ShiftsService } from '../../../services/shifts.service';
+import { ShiftRealtimeService } from '../../../shared/services/shift-realtime.service';
 
 function ensureLocalizeShim(): void {
   const g = globalThis as any;
@@ -42,6 +44,16 @@ describe('UsersManagementComponent', () => {
     exportToPdf: jasmine.createSpy('exportToPdf'),
   };
 
+  const shiftsServiceMock = {
+    getAllShifts: jasmine.createSpy('getAllShifts').and.returnValue(of([])),
+    getShiftAttendance: jasmine.createSpy('getShiftAttendance').and.returnValue(of([])),
+  };
+
+  const shiftRealtimeMock = {
+    resolveCurrentShift: jasmine.createSpy('resolveCurrentShift').and.returnValue(null),
+    formatShiftLabel: jasmine.createSpy('formatShiftLabel').and.returnValue('Sin turno activo'),
+  };
+
   beforeEach(async () => {
     ensureLocalizeShim();
 
@@ -52,6 +64,8 @@ describe('UsersManagementComponent', () => {
         { provide: ToastService, useValue: toastMock },
         { provide: ConfirmationService, useValue: confirmationMock },
         { provide: ExportService, useValue: exportMock },
+        { provide: ShiftsService, useValue: shiftsServiceMock },
+        { provide: ShiftRealtimeService, useValue: shiftRealtimeMock },
       ],
     }).compileComponents();
 
@@ -113,6 +127,20 @@ describe('UsersManagementComponent', () => {
     const roles = calls.map((a) => a[0]?.role).filter(Boolean);
     expect(roles).toContain('supervisor');
     expect(roles).toContain('pharmacy');
+  });
+
+  it('filtra enfermeras presentes en turno actual', () => {
+    const c = fixture.componentInstance;
+    c.users = [
+      { id: 1, role: 'nurse', username: 'n1' } as any,
+      { id: 2, role: 'nurse', username: 'n2' } as any,
+      { id: 3, role: 'admin', username: 'a1' } as any,
+    ];
+    (c as any).userShiftPresence.set(1, true);
+    c.selectedShiftPresence = 'onShift';
+    (c as any).applyDisplayFilters();
+    expect(c.filteredUsers.length).toBe(1);
+    expect(c.filteredUsers[0].id).toBe(1);
   });
 
   it('detecta cambio de nombre de usuario y avisa sobre el login', () => {

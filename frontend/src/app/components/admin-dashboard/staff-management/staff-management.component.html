@@ -58,20 +58,11 @@
   <!-- Grid de Enfermeras -->
   <div *ngIf="!loading" class="nurses-grid">
     <!-- Mensaje informativo cuando no hay enfermeras -->
-    <div *ngIf="nurses.length === 0 && !loading && !error" class="no-results debug-info">
-      <div style="text-align: center; padding: 2rem;">
-        <h3><app-bootstrap-icon name="exclamation-triangle" /> <span i18n="@@staffMgmtHtml.emptyNoNursesTitle">No se encontraron enfermeras</span></h3>
-        <p i18n="@@staffMgmtHtml.emptyNoNursesHint">Verifica en la consola del navegador (F12) los logs de debug para más información.</p>
-        <p><strong i18n="@@staffMgmtHtml.emptyNoNursesCausesTitle">Posibles causas:</strong></p>
-        <ul style="text-align: left; display: inline-block; margin: 1rem 0;">
-          <li i18n="@@staffMgmtHtml.emptyCauseNoRole">No hay usuarios con rol "nurse" en la base de datos</li>
-          <li i18n="@@staffMgmtHtml.emptyCauseInactive">Los usuarios enfermeras están inactivos (isActive = false)</li>
-          <li i18n="@@staffMgmtHtml.emptyCauseBackend">Problema de conexión con el backend</li>
-        </ul>
-        <button class="neuro-btn" (click)="loadData()" style="margin-top: 1rem;">
-          <app-bootstrap-icon name="arrow-path" /> <span i18n="@@staffMgmtHtml.btnRetryLoad">Reintentar Carga</span>
-        </button>
-      </div>
+    <div *ngIf="nurses.length === 0 && !loading && !error" class="no-results">
+      <p i18n="@@staffMgmtHtml.emptyNoNursesTitle">No se encontraron enfermeras</p>
+      <button type="button" class="neuro-btn no-results-retry-btn" (click)="loadData()">
+        <app-bootstrap-icon name="arrow-path" /> <span i18n="@@staffMgmtHtml.btnRetryLoad">Reintentar Carga</span>
+      </button>
     </div>
     
     <div *ngFor="let nurse of getFilteredNurses(); trackBy: trackByNurseId" class="nurse-card">

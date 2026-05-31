@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "node scripts/start-dev.js",
     "tunnel": "node scripts/tunnel.js",
+    "tunnel:stop": "node scripts/tunnel-stop.js",
     "tunnel:win": "node scripts/tunnel.js",
     "dev:tunnel": "npm run tunnel",
     "dev:win": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-dev.ps1",
@@ -41,7 +42,7 @@
   },
   "private": true,
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^9.2.1"
   },
   "engines": {
     "node": ">=18.0.0",

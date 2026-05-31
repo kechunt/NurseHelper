@@ -17,6 +17,9 @@ describe('nurse-clinical-notes-pin.helpers', () => {
 
   it('clinicalNoteDisplayBody oculta prefijo tipo [timestamp]', () => {
     expect(clinicalNoteDisplayBody('[2024-01-02] Hola')).toBe('Hola');
+    expect(clinicalNoteDisplayBody('[5/5/2026 21:36:00] nota medica')).toBe('nota medica');
+    expect(clinicalNoteDisplayBody('21:36:00] asdasdasd')).toBe('asdasdasd');
+    expect(clinicalNoteDisplayBody('[5/5/2026')).toBe('');
     expect(clinicalNoteDisplayBody('Sin prefijo')).toBe('Sin prefijo');
   });
 

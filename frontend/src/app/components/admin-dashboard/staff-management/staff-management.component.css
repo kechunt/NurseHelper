@@ -807,6 +807,10 @@
   box-shadow: inset 6px 6px 12px #bebebe, inset -6px -6px 12px #ffffff;
 }
 
+.no-results-retry-btn {
+  margin-top: 1rem;
+}
+
 /* Cuerpo/pie de modales (cabecera y backdrop en app-modal-shell) */
 :host ::ng-deep app-modal-shell .modal-content.modal-large {
   max-width: 900px;

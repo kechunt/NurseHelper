@@ -20,6 +20,7 @@ import {
   getNurseShiftContext,
   getNurseHandoverNote,
   putNurseHandoverNote,
+  claimPatientForNurse,
 } from '../controllers/nurses.controller';
 
 const router = Router();
@@ -126,6 +127,8 @@ router.get('/beds', getMyBeds);
  */
 /** Lista de pacientes; query opcional `q` filtra en servidor (nombre, cama, id, identificación). */
 router.get('/patients', getMyPatients);
+
+router.post('/patients/:patientId/claim', claimPatientForNurse);
 
 /**
  * @swagger

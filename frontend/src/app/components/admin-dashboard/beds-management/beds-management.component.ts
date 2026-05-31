@@ -1,5 +1,5 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { forkJoin, Observable, of } from 'rxjs';
+import { Component, OnInit, ChangeDetectorRef, DestroyRef, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';import { forkJoin, Observable, of } from 'rxjs';
 import { catchError, concatMap } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -40,6 +40,8 @@ import { AdminShiftCoverageAlertNavigationService } from '../../../services/admi
   styleUrls: ['./beds-management.component.css', '../../../shared/styles/admin-panel-neomorphic.shared.css'],
 })
 export class BedsManagementComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
+
   showUnifiedPatientModal = false;
   unifiedPatient: NursePatient | null = null;
   unifiedActiveTab: NursePatientModalTabId = 'medications';
@@ -230,7 +232,7 @@ export class BedsManagementComponent implements OnInit {
           return of(null);
         })
       ),
-    }).subscribe({
+    }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: ({ beds, areas, coverage }) => {
         this.areas = areas;
         this.shiftCoverage = coverage;
@@ -262,7 +264,7 @@ export class BedsManagementComponent implements OnInit {
         this.cdr.detectChanges();
       },
       error: (error) => {
-        console.error(' Error loading beds:', error);
+        this.toastService.error(error.error?.message || 'Error loading beds');
         this.loading = false;
         this.cdr.detectChanges();
       },
@@ -323,7 +325,7 @@ export class BedsManagementComponent implements OnInit {
    * Carga pacientes y los relaciona con sus camas para obtener el área
    */
   private loadPatientsWithBedInfo(): void {
-    this.adminService.getPatients(false).subscribe({
+    this.adminService.getPatients(false).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (patients) => {
         // Cargar pacientes activos con información de su cama y área
         this.patients = patients
@@ -351,7 +353,7 @@ export class BedsManagementComponent implements OnInit {
         }
       },
       error: (error) => {
-        console.error('Error loading patients:', error);
+        this.toastService.error(error.error?.message || 'Error loading patients');
       },
     });
   }
@@ -594,7 +596,7 @@ export class BedsManagementComponent implements OnInit {
       isActive: true
     };
 
-    this.adminService.createBed(newBed as Bed).subscribe({
+    this.adminService.createBed(newBed as Bed).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.closeCreateBedModal();
         this.loadData();
@@ -626,7 +628,7 @@ export class BedsManagementComponent implements OnInit {
       isActive: true,
       page: 1,
       limit: 1000
-    }).subscribe({
+    }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res) => {
         const responsePatients = (res.items || []).filter((patient: any) => patient.isActive !== false);
         const fallbackPatients = this.patients.filter((patient: any) => {
@@ -755,7 +757,7 @@ export class BedsManagementComponent implements OnInit {
       return;
     }
     if (this.crossAreaFilter === 'unassigned') {
-      this.adminService.getPatientsPage({ isActive: true, hasBed: false, page: 1, limit: 1000 }).subscribe({
+      this.adminService.getPatientsPage({ isActive: true, hasBed: false, page: 1, limit: 1000 }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: (res) => {
           this.crossAreaPatientsRaw = (res.items || []).filter((p: any) => p.isActive !== false);
           this.applyCrossAreaPatientSearch();
@@ -774,7 +776,7 @@ export class BedsManagementComponent implements OnInit {
       this.applyCrossAreaPatientSearch();
       return;
     }
-    this.adminService.getPatientsPage({ areaId, isActive: true, page: 1, limit: 1000 }).subscribe({
+    this.adminService.getPatientsPage({ areaId, isActive: true, page: 1, limit: 1000 }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res) => {
         this.crossAreaPatientsRaw = (res.items || []).filter((p: any) => p.isActive !== false);
         this.applyCrossAreaPatientSearch();
@@ -814,7 +816,7 @@ export class BedsManagementComponent implements OnInit {
     const hint =
       `${patient?.firstName ?? ''} ${patient?.lastName ?? ''}`.trim() || this.bedsDefaultPatientName;
 
-    this.assignPatientToSelectedBed(pid, hint).subscribe({
+    this.assignPatientToSelectedBed(pid, hint).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.toastService.success(
           $localize`:@@bedsMgmt.toastPatientAssignedBed:Paciente ${hint}:name: asignado a la cama`
@@ -885,6 +887,42 @@ export class BedsManagementComponent implements OnInit {
     return $localize`:@@bedsMgmt.patientWithId:Paciente #${patientId}:id:`;
   }
 
+  getPatientForBed(bed: Bed): { firstName?: string; lastName?: string; dateOfBirth?: Date | string } | null {
+    const patientId = this.toId((bed as any).patientId);
+    if (!patientId) {
+      return null;
+    }
+    const patientFromList = this.patients.find((p) => this.toId((p as any).id) === patientId);
+    if (patientFromList) {
+      return patientFromList;
+    }
+    return bed.patient ?? null;
+  }
+
+  getPatientInitialsForBed(bed: Bed): string {
+    const patient = this.getPatientForBed(bed);
+    if (!patient) {
+      return '?';
+    }
+    const first = String(patient.firstName ?? '').trim().charAt(0);
+    const last = String(patient.lastName ?? '').trim().charAt(0);
+    const initials = `${first}${last}`.toUpperCase();
+    return initials || '?';
+  }
+
+  getPatientAgeLineForBed(bed: Bed): string | null {
+    const patient = this.getPatientForBed(bed);
+    if (!patient?.dateOfBirth) {
+      return null;
+    }
+    const birthDate = new Date(patient.dateOfBirth);
+    if (Number.isNaN(birthDate.getTime())) {
+      return null;
+    }
+    const age = Math.max(0, new Date().getFullYear() - birthDate.getFullYear());
+    return $localize`:@@bedsMgmt.patientAgeYears:${age} años:age:`;
+  }
+
   openPatientDetailModalFromBed(bed?: Bed): void {
     const targetBed = bed ?? this.bedCardActionsTarget;
     const patientId = this.toId((targetBed as any)?.patientId);
@@ -893,7 +931,7 @@ export class BedsManagementComponent implements OnInit {
       return;
     }
 
-    this.adminService.getPatient(patientId).subscribe({
+    this.adminService.getPatient(patientId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (patient) => {
         const vm = buildAdminPatientModalViewModel(patient as any);
         this.unifiedPatient = vm.patient;
@@ -926,7 +964,7 @@ export class BedsManagementComponent implements OnInit {
       return;
     }
     const medicalHistory = (text ?? '').trim();
-    this.adminService.updatePatient(idNum, { medicalHistory }).subscribe({
+    this.adminService.updatePatient(idNum, { medicalHistory }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         if (this.unifiedPatient) {
           this.unifiedPatient.diagnosis = medicalHistory;
@@ -968,7 +1006,7 @@ export class BedsManagementComponent implements OnInit {
           ? this.adminService.assignPatientToBed(this.selectedBed.id, null)
           : this.assignPatientToSelectedBed(newPatientId, this.getCurrentPatientName() || this.bedsDefaultPatientName);
 
-    assign$.subscribe({
+    assign$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         const formValue: any = this.editBedForm.isActive;
         let isActiveBoolean: boolean;
@@ -986,7 +1024,7 @@ export class BedsManagementComponent implements OnInit {
           isActive: isActiveBoolean,
         };
 
-        this.adminService.updateBed(this.selectedBed!.id!, bedUpdate).subscribe({
+        this.adminService.updateBed(this.selectedBed!.id!, bedUpdate).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
           next: (response2) => {
             const bedIndex = this.beds.findIndex((b) => b.id === this.selectedBed?.id);
             if (bedIndex !== -1 && response2.bed) {
@@ -1054,7 +1092,7 @@ export class BedsManagementComponent implements OnInit {
       return;
     }
 
-    this.adminService.deleteBed(bed.id!).subscribe({
+    this.adminService.deleteBed(bed.id!).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.toastService.success(
           $localize`:@@bedsMgmt.toastBedDeleted:Cama ${bedNum}:bedNumber: eliminada exitosamente`

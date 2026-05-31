@@ -125,52 +125,20 @@
       </div>
     </div>
 
-    <app-admin-table-row-actions-modal
-      [open]="!!pharmacyAttendanceActionsRow"
-      [title]="getPharmacyAttendanceModalTitle()"
-      [summaryLines]="pharmacyAttendanceActionsRow ? pharmacyAttendanceSheetSummary(pharmacyAttendanceActionsRow) : []"
+    <app-sched-attendance-assign-modal
+      *ngIf="pharmacyAttendanceActionsRow as attendanceRow"
+      [personName]="attendanceRow.pharmacyUserName"
+      [personRoleLabel]="pharmacyAttendancePersonRoleLabel"
+      [shiftLabel]="getPharmacyAttendanceShiftLabel()"
+      [intro]="pharmacyAttendanceModalIntro"
+      [showAreaSection]="false"
+      [showSaveAreaOnlyAction]="false"
+      [currentStatusLabel]="getPharmacyAttendanceStatusLabel(attendanceRow.status)"
+      [checkInDisplay]="attendanceRow.checkInAt ? formatPharmacyCheckIn(attendanceRow.checkInAt) : null"
+      [statusActionItems]="getPharmacyAttendanceStatusActions()"
+      [saving]="pharmacyAttendanceSaving"
       (dismissed)="closePharmacyAttendanceSheet()"
-    >
-      <button
-        type="button"
-        class="btn-attendance"
-        [disabled]="pharmacyAttendanceSaving"
-        (click)="markPharmacyPresent(pharmacyAttendanceActionsRow!); closePharmacyAttendanceSheet()"
-      >
-        {{ pharmacyAttendanceStatusPresent }}
-      </button>
-      <button
-        type="button"
-        class="btn-attendance"
-        [disabled]="pharmacyAttendanceSaving"
-        (click)="markPharmacyLate(pharmacyAttendanceActionsRow!); closePharmacyAttendanceSheet()"
-      >
-        {{ pharmacyAttendanceStatusLate }}
-      </button>
-      <button
-        type="button"
-        class="btn-attendance"
-        [disabled]="pharmacyAttendanceSaving"
-        (click)="markPharmacyJustified(pharmacyAttendanceActionsRow!); closePharmacyAttendanceSheet()"
-      >
-        {{ pharmacyAttendanceStatusJustified }}
-      </button>
-      <button
-        type="button"
-        class="btn-attendance"
-        [disabled]="pharmacyAttendanceSaving"
-        (click)="markPharmacyMissing(pharmacyAttendanceActionsRow!); closePharmacyAttendanceSheet()"
-      >
-        {{ pharmacyAttendanceStatusMissing }}
-      </button>
-      <button
-        type="button"
-        class="btn-attendance"
-        [disabled]="pharmacyAttendanceSaving"
-        (click)="markPharmacyAbsent(pharmacyAttendanceActionsRow!); closePharmacyAttendanceSheet()"
-      >
-        {{ pharmacyAttendanceStatusAbsent }}
-      </button>
-    </app-admin-table-row-actions-modal>
+      (markAttendance)="onPharmacyAttendanceModalMark($event)"
+    />
   </section>
 </div>

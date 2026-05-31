@@ -1,4 +1,5 @@
 import type { Patient } from '../../../services/admin.service';
+import { parseJsonArraySafe } from '../../../shared/utils/parse-json-array.helpers';
 import type { MedicationTodaySlot } from '../../nurse-dashboard/medication-today-slot.model';
 import type { TreatmentTodayItem } from '../../nurse-dashboard/treatment-today-item.model';
 import type { TreatmentRecord as NurseTreatmentRecord } from '../../nurse-dashboard/nurse-treatment-record.model';
@@ -9,16 +10,6 @@ export interface AdminPatientModalViewModel {
   medicationsSlots: MedicationTodaySlot[];
   treatmentsSlots: TreatmentTodayItem[];
   historyRecords: NurseTreatmentRecord[];
-}
-
-export function parseJsonArraySafe(value: unknown): any[] {
-  if (!value) return [];
-  try {
-    const parsed = typeof value === 'string' ? JSON.parse(value) : value;
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
 }
 
 export function buildAdminPatientModalViewModel(patient: Patient): AdminPatientModalViewModel {

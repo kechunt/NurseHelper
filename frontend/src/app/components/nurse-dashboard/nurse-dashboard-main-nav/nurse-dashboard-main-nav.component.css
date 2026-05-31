@@ -12,10 +12,6 @@
   display: contents;
 }
 
-:host-context(.nurse-dashboard) .nav-link app-bootstrap-icon {
-  margin-right: 0.35rem;
-}
-
 :host-context(.nurse-dashboard) .quick-pending-chip {
   margin-left: 0.4rem;
   padding: 2px 8px;

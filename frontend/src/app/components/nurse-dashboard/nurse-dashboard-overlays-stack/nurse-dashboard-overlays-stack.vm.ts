@@ -22,6 +22,7 @@ export interface NurseDashboardOverlaysStackVm {
   showPatientModal: boolean;
   selectedPatient: Patient | null;
   activeTab: string;
+  clinicalNotesListScopeToOpen: import('../nurse-clinical-notes-pin.helpers').ClinicalNotesPinScope | null;
   newDiagnosisNote: string;
   newMedicalObservationNote: string;
   newAllergiesNote: string;
@@ -92,6 +93,7 @@ export function createEmptyNurseDashboardOverlaysStackVm(): NurseDashboardOverla
     showPatientModal: false,
     selectedPatient: null,
     activeTab: 'medications',
+    clinicalNotesListScopeToOpen: null,
     newDiagnosisNote: '',
     newMedicalObservationNote: '',
     newAllergiesNote: '',

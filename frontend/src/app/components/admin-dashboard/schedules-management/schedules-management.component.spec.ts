@@ -29,6 +29,7 @@ describe('SchedulesManagementComponent', () => {
     getUsers: jasmine.createSpy('getUsers').and.returnValue(of([])),
     getPatients: jasmine.createSpy('getPatients').and.returnValue(of([])),
     getBeds: jasmine.createSpy('getBeds').and.returnValue(of([])),
+    updateUser: jasmine.createSpy('updateUser').and.returnValue(of({})),
   };
 
   const shiftsServiceMock = {
@@ -45,6 +46,10 @@ describe('SchedulesManagementComponent', () => {
       ])
     ),
     getShiftAttendance: jasmine.createSpy('getShiftAttendance').and.returnValue(of([])),
+    getShiftAttendanceHistory: jasmine.createSpy('getShiftAttendanceHistory').and.returnValue(of([])),
+    saveShiftAttendance: jasmine.createSpy('saveShiftAttendance').and.returnValue(
+      of({ message: 'ok', handoff: null }),
+    ),
   };
 
   const exportServiceMock = {};
@@ -172,5 +177,120 @@ describe('SchedulesManagementComponent', () => {
 
     expect(cmp.showDayOffPickerModal).toBe(false);
     expect(resolve).toHaveBeenCalledWith(null);
+  });
+
+  it('resolveDefaultAreaIdForNurse usa el área más reciente del mismo turno', () => {
+    fixture.detectChanges();
+    const c = fixture.componentInstance;
+    c.selectedShiftAttendanceId = 1;
+    c.nurses = [{ id: 10, assignedAreaId: 1, firstName: 'Ana', lastName: 'G' } as any];
+    c.areas = [{ id: 2, name: 'Piso 2' }, { id: 5, name: 'area a' }];
+
+    const history = [
+      { nurseId: 10, shiftId: 1, status: 'present', date: '2026-05-20', assignedAreaId: 2 },
+      { nurseId: 10, shiftId: 1, status: 'present', date: '2026-05-28', assignedAreaId: 5 },
+      { nurseId: 10, shiftId: 2, status: 'present', date: '2026-05-29', assignedAreaId: 99 },
+    ] as any[];
+
+    expect(c.resolveDefaultAreaIdForNurse(10, history)).toBe(5);
+  });
+
+  it('resolveDefaultAreaIdForNurse cae al perfil si no hay historial del turno', () => {
+    fixture.detectChanges();
+    const c = fixture.componentInstance;
+    c.selectedShiftAttendanceId = 1;
+    c.nurses = [{ id: 10, assignedAreaId: 3, firstName: 'Ana', lastName: 'G' } as any];
+
+    expect(c.resolveDefaultAreaIdForNurse(10, [])).toBe(3);
+  });
+
+  it('openAttendanceAssignModal pre-rellena área sugerida desde historial', () => {
+    fixture.detectChanges();
+    const c = fixture.componentInstance;
+    c.selectedShiftAttendanceId = 1;
+    c.nurses = [{ id: 10, assignedAreaId: 1, firstName: 'Ana', lastName: 'G' } as any];
+    c.areas = [{ id: 2, name: 'Piso 2' }];
+    shiftsServiceMock.getShiftAttendanceHistory.and.returnValue(
+      of([
+        { nurseId: 10, shiftId: 1, status: 'present', date: '2026-05-28', assignedAreaId: 2 },
+      ] as any[]),
+    );
+
+    const item = {
+      nurseId: 10,
+      nurseName: 'Ana G',
+      status: 'absent',
+      assignedAreaId: 1,
+      checkInAt: null,
+      checkOutAt: null,
+      notes: null,
+    } as any;
+
+    c.openAttendanceAssignModal(item);
+
+    expect(c.showAttendanceAssignModal).toBe(true);
+    expect(c.attendanceAssignAreaId).toBe(2);
+    expect(c.attendanceAssignSuggestedAreaId).toBe(2);
+    expect(c.attendanceAssignLoading).toBe(false);
+  });
+
+  it('saveAttendanceWithArea actualiza área y guarda asistencia en orden', () => {
+    fixture.detectChanges();
+    const c = fixture.componentInstance;
+    c.selectedShiftAttendanceId = 1;
+    c.nurses = [{ id: 10, assignedAreaId: 1, firstName: 'Ana', lastName: 'G' } as any];
+    c.areas = [{ id: 2, name: 'Piso 2' }];
+    c.attendanceItems = [
+      {
+        nurseId: 10,
+        nurseName: 'Ana G',
+        status: 'absent',
+        assignedAreaId: 1,
+        checkInAt: null,
+        checkOutAt: null,
+        notes: null,
+      },
+    ] as any[];
+    c.attendanceAssignAreaId = 2;
+
+    const item = c.attendanceItems[0];
+    c.saveAttendanceWithArea(item, 'present');
+
+    expect(adminServiceMock.updateUser).toHaveBeenCalledWith(10, { assignedAreaId: 2 });
+    expect(shiftsServiceMock.saveShiftAttendance).toHaveBeenCalled();
+    expect(item.status).toBe('present');
+    expect(item.assignedAreaId).toBe(2);
+  });
+
+  it('getAttendanceStatusBadgeClass incluye el estado', () => {
+    fixture.detectChanges();
+    const c = fixture.componentInstance;
+    expect(c.getAttendanceStatusBadgeClass('present')).toContain('present');
+    expect(c.getAttendanceStatusBadgeClass('absent')).toContain('absent');
+  });
+
+  it('filteredAttendanceItems ordena presentes primero y filtra por estado', () => {
+    fixture.detectChanges();
+    const c = fixture.componentInstance;
+    c.attendanceItems = [
+      { nurseId: 1, nurseName: 'Zoe', status: 'absent', assignedAreaId: 1 } as any,
+      { nurseId: 2, nurseName: 'Ana', status: 'present', assignedAreaId: 1 } as any,
+      { nurseId: 3, nurseName: 'Bea', status: 'late', assignedAreaId: 1 } as any,
+    ];
+
+    const all = c.filteredAttendanceItems.map((i) => i.nurseName);
+    expect(all).toEqual(['Ana', 'Bea', 'Zoe']);
+
+    c.attendanceListStatusFilter = 'present';
+    expect(c.filteredAttendanceItems.map((i) => i.nurseName)).toEqual(['Ana']);
+  });
+
+  it('onAttendanceListShiftChange recarga asistencia del turno elegido', () => {
+    fixture.detectChanges();
+    const c = fixture.componentInstance;
+    shiftsServiceMock.getShiftAttendance.calls.reset();
+    c.onAttendanceListShiftChange(2);
+    expect(c.selectedShiftAttendanceId).toBe(2);
+    expect(shiftsServiceMock.getShiftAttendance).toHaveBeenCalled();
   });
 });

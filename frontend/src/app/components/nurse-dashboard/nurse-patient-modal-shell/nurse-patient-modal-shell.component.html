@@ -144,6 +144,8 @@
             [clinicalNotesAllergies]="patient.clinicalNotes?.allergies ?? []"
             [clinicalNotesSpecialNeeds]="patient.clinicalNotes?.specialNeeds ?? []"
             [clinicalNotesGeneral]="patient.clinicalNotes?.general ?? []"
+            [openListScope]="clinicalNotesListScopeToOpen"
+            (openListScopeHandled)="clinicalNotesListScopeHandled.emit()"
             [newDiagnosisNote]="newDiagnosisNote"
             [newMedicalObservationNote]="newMedicalObservationNote"
             [newAllergiesNote]="newAllergiesNote"
@@ -155,11 +157,6 @@
             (newSpecialNeedsNoteChange)="newSpecialNeedsNoteChange.emit($event)"
             (newGeneralObservationNoteChange)="newGeneralObservationNoteChange.emit($event)"
             [isSavingObservation]="isSavingObservation"
-            (saveDiagnosis)="saveDiagnosis.emit($event)"
-            (saveMedicalObservations)="saveMedicalObservations.emit($event)"
-            (saveAllergies)="saveAllergies.emit($event)"
-            (saveSpecialNeeds)="saveSpecialNeeds.emit($event)"
-            (saveGeneralObservationsFull)="saveGeneralObservationsFull.emit($event)"
             (saveClinicalAppend)="saveClinicalAppend.emit($event)"
           />
         </div>

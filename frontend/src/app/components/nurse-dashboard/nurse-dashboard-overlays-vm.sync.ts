@@ -7,6 +7,7 @@ export interface NurseDashboardOverlaysStateSource {
   selectedPatient: NurseDashboardOverlaysStackVm['selectedPatient'];
   showPatientModal: boolean;
   activeTab: NurseDashboardOverlaysStackVm['activeTab'];
+  clinicalNotesListScopeToOpen: NurseDashboardOverlaysStackVm['clinicalNotesListScopeToOpen'];
   newDiagnosisNote: string;
   newMedicalObservationNote: string;
   newAllergiesNote: string;
@@ -76,6 +77,7 @@ export function syncNurseDashboardOverlaysStackVm(
   vm.showPatientModal = state.showPatientModal;
   vm.selectedPatient = state.selectedPatient;
   vm.activeTab = state.activeTab;
+  vm.clinicalNotesListScopeToOpen = state.clinicalNotesListScopeToOpen;
   vm.newDiagnosisNote = state.newDiagnosisNote;
   vm.newMedicalObservationNote = state.newMedicalObservationNote;
   vm.newAllergiesNote = state.newAllergiesNote;
