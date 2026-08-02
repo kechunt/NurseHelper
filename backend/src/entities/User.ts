@@ -31,8 +31,6 @@ export enum UserRole {
 @Index(['isActive'])
 @Index(['role', 'isActive'])
 @Index(['createdAt'])
-@Index(['email'])
-@Index(['username'])
 export class User {
   @PrimaryGeneratedColumn()
   id: number;

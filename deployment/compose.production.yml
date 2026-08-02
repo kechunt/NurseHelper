@@ -1,0 +1,89 @@
+name: nursehelper
+
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: nursehelper
+      MYSQL_USER: nursehelper
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      TZ: America/Chihuahua
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$${MYSQL_ROOT_PASSWORD} --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  backend:
+    build:
+      context: ..
+      dockerfile: deployment/backend.Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      LOG_LEVEL: info
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USERNAME: nursehelper
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DATABASE: nursehelper
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: 8h
+      FIELD_ENCRYPTION_KEY: ${FIELD_ENCRYPTION_KEY}
+      FIELD_HASH_KEY: ${FIELD_HASH_KEY}
+      CORS_ORIGIN: ${PUBLIC_ORIGIN}
+      FRONTEND_URL: ${PUBLIC_ORIGIN}
+      BACKUP_ENABLED: "true"
+      BACKUP_PATH: /app/backups
+      BACKUP_RETENTION_DAYS: 14
+      NOTIFICATION_JOBS_INTERVAL_MS: 120000
+      TZ: America/Chihuahua
+    volumes:
+      - app_backups:/app/backups
+    networks:
+      - internal
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - fetch('http://127.0.0.1:3000/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+
+  web:
+    build:
+      context: ..
+      dockerfile: deployment/frontend.Dockerfile
+    restart: unless-stopped
+    ports:
+      - "192.168.100.90:80:80"
+    networks:
+      - internal
+    depends_on:
+      backend:
+        condition: service_healthy
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  app_backups:

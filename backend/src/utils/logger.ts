@@ -38,7 +38,7 @@ const prodConsoleFormat = winston.format.combine(
   })
 );
 
-// Logger principal: archivos + consola (stdout) en todos los entornos (Railway/Docker leen stdout)
+// Logger principal: archivos + consola (stdout) en todos los entornos (Docker/containers leen stdout)
 export const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
   format: logFormat,

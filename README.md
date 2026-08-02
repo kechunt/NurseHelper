@@ -64,7 +64,11 @@ El workflow unificado en `.github/workflows/ci-cd.yml` ejecuta build, tests, lin
 
 ## Despliegue
 
-- **Frontend:** Vercel (`frontend/`)
-- **Backend:** Railway u otro host Node (`backend/`)
+Producción con **Docker Compose** (`deployment/compose.production.yml`):
 
-Configura `JWT_SECRET`, `FIELD_ENCRYPTION_KEY` y variables `DB_*` en producción antes de ejecutar migraciones.
+```bash
+cp .env.production .env   # ajusta secretos y PUBLIC_ORIGIN
+docker compose -f deployment/compose.production.yml up -d --build
+```
+
+El frontend se sirve con nginx (proxy `/api` → backend). Configura `JWT_SECRET`, `FIELD_ENCRYPTION_KEY`, `FIELD_HASH_KEY` y variables `DB_*` antes de levantar los contenedores.

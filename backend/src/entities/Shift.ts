@@ -16,7 +16,6 @@ export enum ShiftType {
 }
 
 @Entity('shifts')
-@Index(['type'])
 @Index(['isActive'])
 export class Shift {
   @PrimaryGeneratedColumn()

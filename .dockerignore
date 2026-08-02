@@ -1,0 +1,17 @@
+.git
+.github
+**/node_modules
+**/.angular
+**/dist
+**/coverage
+frontend/playwright-report
+frontend/test-results
+backend/backups
+Diagramas
+expocicion
+docs
+*.log
+.env
+**/.env
+**/.env.local
+.env.production

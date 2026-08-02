@@ -14,7 +14,6 @@ import { Patient } from './Patient';
 
 @Entity('beds')
 @Index(['areaId'])
-@Index(['bedNumber'])
 @Index(['areaId', 'isActive'])
 // @Index(['isOccupied']) // Comentado temporalmente hasta que se ejecute la migración
 export class Bed {

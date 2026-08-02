@@ -1,6 +1,6 @@
 /**
  * Escribe `src/environments/api-url.generated.ts` antes del build.
- * En Vercel: define la variable de entorno NG_APP_API_URL (p. ej. https://tu-api.com/api).
+ * Define NG_APP_API_URL (p. ej. `/api` en Docker o `https://tu-dominio.com/api`).
  */
 import fs from 'fs';
 import path from 'path';
@@ -11,7 +11,7 @@ const dest = path.join(__dirname, '..', 'src', 'environments', 'api-url.generate
 
 let u = (process.env.NG_APP_API_URL || process.env.API_PUBLIC_URL || '').trim();
 if (!u) {
-  u = 'https://nursehelper-production.up.railway.app/api';
+  u = '/api';
 }
 u = u.replace(/\/+$/, '');
 if (!u.endsWith('/api')) {

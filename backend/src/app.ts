@@ -60,15 +60,12 @@ const corsOptions: cors.CorsOptions = {
     const defaultOrigins: string[] = ['http://localhost:4200'];
     const allAllowedOrigins: string[] = [...defaultOrigins, ...allowedOriginsEnv];
 
-    /** Previews y producción en Vercel (*.vercel.app) */
-    const vercelPattern = /^https:\/\/([a-z0-9-]+\.)*vercel\.app$/i;
     /** Túneles ngrok (desarrollo remoto; p. ej. *.ngrok-free.dev) */
     const ngrokPattern =
       /^https:\/\/[a-z0-9-]+(?:-[a-z0-9-]+)*\.ngrok(?:-free)?\.(?:app|dev)$/i;
 
     const isAllowed =
       allAllowedOrigins.includes(origin) ||
-      vercelPattern.test(origin) ||
       ngrokPattern.test(origin);
 
     if (isAllowed) {
@@ -295,14 +292,9 @@ AppDataSource.initialize()
       logger.error(`   Base de datos intentada: ${process.env.DB_DATABASE || 'nursehelper'}`);
       logger.error('');
       logger.error('🔧 SOLUCIÓN:');
-      logger.error('   1. Verifica que la variable DB_DATABASE en Railway esté correcta');
+      logger.error('   1. Verifica que la variable DB_DATABASE esté correcta');
       logger.error('   2. Asegúrate de que el nombre de la BD coincida exactamente');
-      logger.error('   3. Si usas Railway, verifica que la BD esté creada y activa');
-      logger.error('');
-      if (process.env.DB_DATABASE?.toLowerCase().includes('raikway')) {
-        logger.error('⚠️  DETECTADO: El nombre contiene "raikway" (error de tipeo)');
-        logger.error('   Debe ser "railway" (con "l" después de "rai")');
-      }
+      logger.error('   3. Verifica que la base de datos exista y esté activa');
     } else if (error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT') {
       logger.error('💡 ERROR: No se puede conectar al servidor de base de datos');
       logger.error(`   Host intentado: ${process.env.DB_HOST || 'localhost'}`);
@@ -311,10 +303,9 @@ AppDataSource.initialize()
       logger.error('🔧 POSIBLES SOLUCIONES:');
       logger.error('   1. Verifica que el servidor de base de datos esté corriendo');
       logger.error('   2. Verifica las variables DB_HOST y DB_PORT en tu archivo .env');
-      logger.error('   3. Si usas Railway, verifica que el servicio esté activo');
-      logger.error('   4. Para desarrollo local, asegúrate de que MySQL esté corriendo:');
+      logger.error('   3. Para desarrollo local, asegúrate de que MySQL esté corriendo:');
       logger.error('      brew services start mysql');
-      logger.error('   5. Puedes aumentar el timeout con: DB_CONNECT_TIMEOUT=60000');
+      logger.error('   4. Puedes aumentar el timeout con: DB_CONNECT_TIMEOUT=60000');
       logger.error('');
       if (process.env.DB_HOST && !process.env.DB_HOST.includes('localhost') && !process.env.DB_HOST.includes('127.0.0.1')) {
         logger.error('⚠️  Estás intentando conectarte a un servidor remoto.');

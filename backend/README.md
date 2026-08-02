@@ -22,21 +22,22 @@ El detalle de paciente (`getPatientDetails`) y los endpoints de **observaciones 
 
 - **Desarrollo:** desde `backend/`: `npm run migration:run`  
 - **Raíz del monorepo:** `npm run migration:run`  
-- **Producción (build compilado):** `npm run migration:run:prod` (Railway ya lo ejecuta antes de `npm start` en `railway.json`).
+- **Producción (build compilado):** `npm run migration:run:prod`
 
 Tras desplegar código nuevo, asegúrate de que las migraciones se hayan ejecutado en **esa** base de datos.
 
 **Nota:** `npm run dev:simple` en la raíz del monorepo **no** ejecuta migraciones; usa `npm run dev` o ejecuta `migration:run` a mano antes.
 
-## `backend/frontend/package.json`
+## Despliegue en producción
 
-Carpeta **`backend/frontend/`** con un `package.json` mínimo es un **stub de compatibilidad** para despliegues que esperan un comando de build de “frontend” dentro del árbol del backend (p. ej. configuraciones heredadas en Vercel). El script solo hace `echo` y **no construye** la app Angular (el frontend real está en `../frontend/`). **No lo borres** si tu pipeline o documentación de deploy lo referencian; si unifica el build, puedes eliminar la carpeta y actualizar la plataforma.
+Usa Docker Compose desde la raíz del monorepo:
 
-## Entrada serverless (`api/`)
+```bash
+docker compose -f deployment/compose.production.yml up -d --build
+```
 
-El handler de Vercel u otras funciones serverless está en [`api/index.ts`](api/index.ts). Ese archivo importa la instancia de Express desde [`src/app-test.ts`](src/app-test.ts) (no desde [`src/app.ts`](src/app.ts)).
+Ver `deployment/backend.Dockerfile` y `deployment/compose.production.yml` para variables de entorno y health checks.
 
-- **Propósito habitual de `app-test`:** exponer una app HTTP mínima o de prueba para el arranque en entorno serverless (inicialización de DB, health, rutas acotadas), sin cargar toda la superficie del servidor “completo”.
-- **Si en producción debe usarse la API completa:** cambia el import en `api/index.ts` para apuntar al módulo que exporte la app real (por ejemplo [`src/app.ts`](src/app.ts)), verifica CORS, orden de middlewares y que todas las rutas necesarias estén registradas; vuelve a desplegar y prueba los flujos críticos.
+## App de pruebas (`app-test.ts`)
 
-No se modifica el comportamiento por defecto en el código salvo decisión explícita del equipo de despliegue.
+[`src/app-test.ts`](src/app-test.ts) exporta la instancia Express usada por los tests de integración con Supertest (sin levantar el servidor en un puerto real).

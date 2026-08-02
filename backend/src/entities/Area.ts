@@ -12,7 +12,6 @@ import { User } from './User';
 
 @Entity('areas')
 @Index(['isActive'])
-@Index(['name'])
 export class Area {
   @PrimaryGeneratedColumn()
   id: number;

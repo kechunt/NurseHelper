@@ -19,19 +19,12 @@ import { AdminHandoverNote } from './entities/AdminHandoverNote';
 import { PatientClinicalNote } from './entities/PatientClinicalNote';
 import { UserNotification } from './entities/UserNotification';
 import { loadEnv } from './utils/env';
-import { logger } from './utils/logger';
 import path from 'path';
 
 loadEnv();
 
 const password = process.env.DB_PASSWORD ?? '';
 const databaseName = process.env.DB_DATABASE || 'nursehelper';
-
-if (databaseName.toLowerCase().includes('raikway')) {
-  logger.error('❌ ERROR: El nombre de la base de datos contiene un error de tipeo: "raikway"');
-  logger.error('💡 Debe ser "railway" (con "l" después de "rai")');
-  process.exit(1);
-}
 
 export const AppDataSource = new DataSource({
   type: 'mysql',
