@@ -137,12 +137,6 @@ export class PharmacyService {
 
   constructor(private http: HttpClient) {}
 
-  getMedicationRequests(status?: string): Observable<MedicationRequest[]> {
-    const params: any = {};
-    if (status) params.status = status;
-    return this.http.get<MedicationRequest[]>(`${this.apiUrl}/requests`, { params });
-  }
-
   getMedicationRequestsPaged(page: number, limit: number, status?: string): Observable<MedicationRequestsPagedResult> {
     const params: any = { page: String(page), limit: String(limit) };
     if (status) params.status = status;
@@ -162,14 +156,6 @@ export class PharmacyService {
 
   deliverMedication(requestId: number, notes: string): Observable<any> {
     return this.http.post(`${this.apiUrl}/requests/${requestId}/deliver`, { notes });
-  }
-
-  getDeliveryHistory(includeCancelled: boolean = false, startDate?: string, endDate?: string): Observable<any> {
-    const params: any = {};
-    if (includeCancelled) params.includeCancelled = 'true';
-    if (startDate) params.startDate = startDate;
-    if (endDate) params.endDate = endDate;
-    return this.http.get<any>(`${this.apiUrl}/deliveries`, { params });
   }
 
   getDeliveryHistoryPaged(
@@ -214,15 +200,6 @@ export class PharmacyService {
       `${this.apiUrl}/inventory/${medicationId}/movements`,
       body
     );
-  }
-
-  getInventoryMovements(
-    medicationId: number,
-    limit: number = 100
-  ): Observable<InventoryMovementRow[]> {
-    return this.http.get<InventoryMovementRow[]>(`${this.apiUrl}/inventory/movements`, {
-      params: { medicationId: String(medicationId), limit: String(limit) },
-    });
   }
 
   getInventoryMovementsPaged(

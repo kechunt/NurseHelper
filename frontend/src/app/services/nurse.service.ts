@@ -1,8 +1,11 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { map, shareReplay, tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
+
+const NURSE_CACHE_SIZE = 1;
+const NURSE_VOLATILE_TTL_MS = 45_000;
 
 export type HandoverShiftSlot = 'morning' | 'afternoon' | 'night';
 
@@ -155,13 +158,43 @@ export interface NurseDayHistoryResponse {
 /** Respuesta de `GET /nurse/shift-context` (turno en horario + asistencia del día). */
 export interface NurseShiftContext {
   hasActiveShiftWindow: boolean;
+  shiftId: number | null;
   shiftName: string | null;
   shiftTime: string | null;
   /** Tipo de turno en curso: morning | afternoon | night; null si no aplica */
   shiftSlot: HandoverShiftSlot | null;
   attendanceStatus: string | null;
   onDuty: boolean;
+  pendingAreaAssignment: boolean;
+  canCheckIn: boolean;
+  checkInAt: string | null;
+  punctuality: 'early' | 'on_time' | 'late' | null;
+  punctualityLabel: string | null;
+  assignedAreaId: number | null;
+  assignedAreaName: string | null;
   summary: string;
+}
+
+export interface NurseCoordinationNoteDto {
+  id: number;
+  noteDate: string;
+  shiftSlot: string;
+  body: string;
+  authorUserId: number | null | undefined;
+  updatedAt: string | Date | undefined;
+}
+
+export interface NurseAdmitPatientPayload {
+  firstName: string;
+  lastName: string;
+  identificationNumber?: string | null;
+  dateOfBirth?: string | null;
+  gender?: string | null;
+  medicalHistory?: string | null;
+  allergies?: string | null;
+  medicalObservations?: string | null;
+  bedId?: number | null;
+  assignToSelf?: boolean;
 }
 
 export interface MedicationForPharmacy {
@@ -201,16 +234,148 @@ export interface MedicationsForPharmacyPayload {
 export class NurseService {
   private apiUrl = environment.apiUrl;
 
+  private statsCache$: Observable<NurseStats> | null = null;
+  private statsCachedAt = 0;
+  private bedsCache$: Observable<BedWithPatient[]> | null = null;
+  private bedsCachedAt = 0;
+  private patientsCache$: Observable<PatientDetail[]> | null = null;
+  private patientsCachedAt = 0;
+  private tasksCache$: Observable<TaskGrouped[]> | null = null;
+  private tasksCachedAt = 0;
+  private pharmacyCache$: Observable<MedicationsForPharmacyPayload> | null = null;
+  private pharmacyCachedAt = 0;
+  private shiftContextCache$: Observable<NurseShiftContext> | null = null;
+  private shiftContextCachedAt = 0;
+
   constructor(private http: HttpClient) {}
 
+  /** Invalida todas las cachés HTTP del panel enfermería. */
+  clearNurseCaches(): void {
+    this.statsCache$ = null;
+    this.statsCachedAt = 0;
+    this.bedsCache$ = null;
+    this.bedsCachedAt = 0;
+    this.patientsCache$ = null;
+    this.patientsCachedAt = 0;
+    this.tasksCache$ = null;
+    this.tasksCachedAt = 0;
+    this.pharmacyCache$ = null;
+    this.pharmacyCachedAt = 0;
+    this.shiftContextCache$ = null;
+    this.shiftContextCachedAt = 0;
+  }
+
+  clearNursePrimaryCaches(): void {
+    this.statsCache$ = null;
+    this.statsCachedAt = 0;
+    this.bedsCache$ = null;
+    this.bedsCachedAt = 0;
+    this.patientsCache$ = null;
+    this.patientsCachedAt = 0;
+  }
+
+  clearNurseSecondaryCaches(): void {
+    this.tasksCache$ = null;
+    this.tasksCachedAt = 0;
+    this.pharmacyCache$ = null;
+    this.pharmacyCachedAt = 0;
+    this.shiftContextCache$ = null;
+    this.shiftContextCachedAt = 0;
+  }
+
+  private isVolatileStale(cachedAt: number, refresh: boolean): boolean {
+    if (refresh) {
+      return true;
+    }
+    if (!cachedAt) {
+      // Petición en vuelo: reutilizar `cache$` existente.
+      return false;
+    }
+    return Date.now() - cachedAt > NURSE_VOLATILE_TTL_MS;
+  }
+
+  private refreshParams(refresh: boolean): HttpParams | undefined {
+    return refresh ? new HttpParams().set('refresh', '1') : undefined;
+  }
+
+  private afterMutationClear(scope: 'all' | 'primary' | 'secondary' = 'all'): void {
+    if (scope === 'all') {
+      this.clearNurseCaches();
+    } else if (scope === 'primary') {
+      this.clearNursePrimaryCaches();
+    } else {
+      this.clearNurseSecondaryCaches();
+    }
+  }
+
   // Obtener estadísticas de la enfermera
-  getNurseStats(): Observable<NurseStats> {
-    return this.http.get<NurseStats>(`${this.apiUrl}/nurse/stats`);
+  getNurseStats(refresh = false): Observable<NurseStats> {
+    if (!this.statsCache$ || this.isVolatileStale(this.statsCachedAt, refresh)) {
+      this.statsCache$ = this.http
+        .get<NurseStats>(`${this.apiUrl}/nurse/stats`, { params: this.refreshParams(refresh) })
+        .pipe(
+          tap(() => {
+            this.statsCachedAt = Date.now();
+          }),
+          shareReplay(NURSE_CACHE_SIZE),
+        );
+    }
+    return this.statsCache$;
   }
 
   /** Turno en curso y registro de asistencia de hoy (solo rol enfermería). */
-  getShiftContext(): Observable<NurseShiftContext> {
-    return this.http.get<NurseShiftContext>(`${this.apiUrl}/nurse/shift-context`);
+  getShiftContext(refresh = false): Observable<NurseShiftContext> {
+    if (!this.shiftContextCache$ || this.isVolatileStale(this.shiftContextCachedAt, refresh)) {
+      this.shiftContextCache$ = this.http
+        .get<NurseShiftContext>(`${this.apiUrl}/nurse/shift-context`, { params: this.refreshParams(refresh) })
+        .pipe(
+          tap(() => {
+            this.shiftContextCachedAt = Date.now();
+          }),
+          shareReplay(NURSE_CACHE_SIZE),
+        );
+    }
+    return this.shiftContextCache$;
+  }
+
+  /** Autoregistro de asistencia; notifica al admin para asignar área. */
+  checkInShift(): Observable<{
+    message: string;
+    punctuality: string;
+    punctualityLabel: string;
+    context: NurseShiftContext;
+  }> {
+    return this.http.post<{
+      message: string;
+      punctuality: string;
+      punctualityLabel: string;
+      context: NurseShiftContext;
+    }>(`${this.apiUrl}/nurse/check-in`, {}).pipe(
+      tap((res) => {
+        this.clearNurseCaches();
+        if (res.context) {
+          this.shiftContextCache$ = null;
+          this.shiftContextCachedAt = Date.now();
+        }
+      }),
+    );
+  }
+
+  /** Nota de coordinación del admin (solo lectura). */
+  getCoordinationNote(date: string, shiftSlot: HandoverShiftSlot): Observable<{ note: NurseCoordinationNoteDto | null }> {
+    const params = new HttpParams().set('date', date).set('shift', shiftSlot);
+    return this.http.get<{ note: NurseCoordinationNoteDto | null }>(`${this.apiUrl}/nurse/coordination-note`, {
+      params,
+    });
+  }
+
+  /** Alta rápida de paciente en el área de la enfermera. */
+  admitPatient(payload: NurseAdmitPatientPayload): Observable<{ message: string; patient: unknown; bedNumber: string | null }> {
+    return this.http
+      .post<{ message: string; patient: unknown; bedNumber: string | null }>(
+      `${this.apiUrl}/nurse/patients/admit`,
+      payload,
+    ).pipe(tap(() => this.afterMutationClear('all')));
   }
 
   /** Nota de entrega de turno del área para una fecha (YYYY-MM-DD). */
@@ -231,34 +396,74 @@ export class NurseService {
   }
 
   // Obtener camas asignadas
-  getMyBeds(): Observable<BedWithPatient[]> {
-    return this.http.get<BedWithPatient[]>(`${this.apiUrl}/nurse/beds`);
+  getMyBeds(refresh = false): Observable<BedWithPatient[]> {
+    if (!this.bedsCache$ || this.isVolatileStale(this.bedsCachedAt, refresh)) {
+      this.bedsCache$ = this.http
+        .get<BedWithPatient[]>(`${this.apiUrl}/nurse/beds`, { params: this.refreshParams(refresh) })
+        .pipe(
+          tap(() => {
+            this.bedsCachedAt = Date.now();
+          }),
+          shareReplay(NURSE_CACHE_SIZE),
+        );
+    }
+    return this.bedsCache$;
   }
 
   /**
    * Pacientes asignados a la enfermera.
-   * @param q Opcional: filtro servidor por nombre, cama, id o identificación (máx. 100 caracteres).
+   * @param q Opcional: filtro servidor (sin caché).
    */
-  getMyPatients(q?: string): Observable<PatientDetail[]> {
+  getMyPatients(q?: string, refresh = false): Observable<PatientDetail[]> {
     const base = `${this.apiUrl}/nurse/patients`;
     if (q != null && String(q).trim().length > 0) {
       const enc = encodeURIComponent(String(q).trim());
       return this.http.get<PatientDetail[]>(`${base}?q=${enc}`);
     }
-    return this.http.get<PatientDetail[]>(base);
+    if (!this.patientsCache$ || this.isVolatileStale(this.patientsCachedAt, refresh)) {
+      this.patientsCache$ = this.http
+        .get<PatientDetail[]>(base, { params: this.refreshParams(refresh) })
+        .pipe(
+          tap(() => {
+            this.patientsCachedAt = Date.now();
+          }),
+          shareReplay(NURSE_CACHE_SIZE),
+        );
+    }
+    return this.patientsCache$;
   }
 
   /** Autoasignación: reclamar paciente sin enfermera en camas del área de la enfermera. */
   claimPatient(patientId: number): Observable<{ patientId: number; assignedToId: number; message: string }> {
-    return this.http.post<{ patientId: number; assignedToId: number; message: string }>(
+    return this.http
+      .post<{ patientId: number; assignedToId: number; message: string }>(
       `${this.apiUrl}/nurse/patients/${patientId}/claim`,
       {},
-    );
+    ).pipe(tap(() => this.afterMutationClear('primary')));
+  }
+
+  /** Checkout explícito: libera pacientes y cierra asistencia del turno activo. */
+  checkoutShift(): Observable<{ message: string; releasedPatients: number; handoffProcessed: number }> {
+    return this.http
+      .post<{ message: string; releasedPatients: number; handoffProcessed: number }>(
+      `${this.apiUrl}/nurse/checkout`,
+      {},
+    ).pipe(tap(() => this.afterMutationClear('all')));
   }
 
   // Obtener tareas/horarios del día
-  getTodayTasks(): Observable<TaskGrouped[]> {
-    return this.http.get<TaskGrouped[]>(`${this.apiUrl}/nurse/tasks/today`);
+  getTodayTasks(refresh = false): Observable<TaskGrouped[]> {
+    if (!this.tasksCache$ || this.isVolatileStale(this.tasksCachedAt, refresh)) {
+      this.tasksCache$ = this.http
+        .get<TaskGrouped[]>(`${this.apiUrl}/nurse/tasks/today`, { params: this.refreshParams(refresh) })
+        .pipe(
+          tap(() => {
+            this.tasksCachedAt = Date.now();
+          }),
+          shareReplay(NURSE_CACHE_SIZE),
+        );
+    }
+    return this.tasksCache$;
   }
 
   /** Historial del día: medicación/tratamientos completados o no realizados. `date` = YYYY-MM-DD (local). */
@@ -269,44 +474,54 @@ export class NurseService {
 
   // Completar tarea
   completeTask(taskId: number): Observable<any> {
-    return this.http.put(`${this.apiUrl}/schedules/${taskId}/complete`, {});
+    return this.http.put(`${this.apiUrl}/schedules/${taskId}/complete`, {}).pipe(
+      tap(() => this.afterMutationClear('secondary')),
+    );
   }
 
   // Marcar tarea como no completada
   markTaskAsNotCompleted(taskId: number, reason: string): Observable<any> {
-    return this.http.put(`${this.apiUrl}/schedules/${taskId}/not-completed`, { reason });
+    return this.http.put(`${this.apiUrl}/schedules/${taskId}/not-completed`, { reason }).pipe(
+      tap(() => this.afterMutationClear('secondary')),
+    );
   }
 
   // Posponer tarea
   postponeTask(taskId: number, newTime: string): Observable<any> {
-    return this.http.put(`${this.apiUrl}/schedules/${taskId}/postpone`, { newTime });
+    return this.http.put(`${this.apiUrl}/schedules/${taskId}/postpone`, { newTime }).pipe(
+      tap(() => this.afterMutationClear('secondary')),
+    );
   }
 
   /** Medicamentos agrupados + contacto farmacia por turno (fecha servidor). */
-  getMedicationsForPharmacy(): Observable<MedicationsForPharmacyPayload> {
-    return this.http
-      .get<MedicationForPharmacy[] | MedicationsForPharmacyPayload>(`${this.apiUrl}/nurse/medications/pharmacy`)
-      .pipe(
-        map((raw) => {
-          if (Array.isArray(raw)) {
-            return { medications: raw, pharmacyContactsByShift: [] };
-          }
-          return {
-            medications: raw.medications ?? [],
-            pharmacyContactsByShift: raw.pharmacyContactsByShift ?? [],
-          };
+  getMedicationsForPharmacy(refresh = false): Observable<MedicationsForPharmacyPayload> {
+    if (!this.pharmacyCache$ || this.isVolatileStale(this.pharmacyCachedAt, refresh)) {
+      this.pharmacyCache$ = this.http
+        .get<MedicationForPharmacy[] | MedicationsForPharmacyPayload>(`${this.apiUrl}/nurse/medications/pharmacy`, {
+          params: this.refreshParams(refresh),
         })
-      );
+        .pipe(
+          map((raw) => {
+            if (Array.isArray(raw)) {
+              return { medications: raw, pharmacyContactsByShift: [] };
+            }
+            return {
+              medications: raw.medications ?? [],
+              pharmacyContactsByShift: raw.pharmacyContactsByShift ?? [],
+            };
+          }),
+          tap(() => {
+            this.pharmacyCachedAt = Date.now();
+          }),
+          shareReplay(NURSE_CACHE_SIZE),
+        );
+    }
+    return this.pharmacyCache$;
   }
 
   // Obtener detalles de un paciente
   getPatientDetails(patientId: number): Observable<PatientDetail> {
     return this.http.get<PatientDetail>(`${this.apiUrl}/nurse/patients/${patientId}`);
-  }
-
-  // Registrar medicamento administrado
-  markMedicationGiven(scheduleId: number, notes?: string): Observable<any> {
-    return this.http.put(`${this.apiUrl}/schedules/${scheduleId}/medication-given`, { notes });
   }
 
   /** Añade una línea `[fecha] texto` en el campo indicado por `scope`. */
@@ -380,11 +595,6 @@ export class NurseService {
     return this.http.put(`${this.apiUrl}/medications/patient/${patientId}/${encodedMedication}/reactivate`, {});
   }
 
-  // Obtener medicamentos activos de un paciente
-  getPatientMedications(patientId: number): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/medications/patient/${patientId}`);
-  }
-
   // Agregar tratamiento/tarea
   addTreatment(data: {
     patientId: number;
@@ -430,28 +640,6 @@ export class NurseService {
     return this.http.post(`${this.apiUrl}/nurse/treatments`, payload);
   }
 
-  private parseTimeToDate(time: string): Date {
-    const [hours, minutes] = time.split(':').map(Number);
-    const date = new Date();
-    date.setHours(hours, minutes, 0, 0);
-    return date;
-  }
-
-  // Registrar administración de medicamento/tratamiento
-  recordAdministration(data: {
-    scheduleId: number;
-    status: 'administered' | 'not_administered' | 'missed';
-    reasonNotAdministered?: string;
-    notes?: string;
-  }): Observable<any> {
-    return this.http.post(`${this.apiUrl}/nurse/administration`, data);
-  }
-
-  // Obtener historial de administraciones de un paciente
-  getPatientHistory(patientId: number): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/nurse/patients/${patientId}/history`);
-  }
-
   patchAdministrationHistory(
     patientId: number,
     historyId: number,
@@ -480,14 +668,6 @@ export class NurseService {
     return this.http.patch(`${this.apiUrl}/nurse/patients/${patientId}/schedules/${scheduleId}`, body);
   }
 
-  /** Alta rápida de un tratamiento (no medicación) para un paciente. */
-  quickAddPatientTreatment(
-    patientId: number,
-    body: { description: string; date: string; time: string; notes?: string }
-  ): Observable<any> {
-    return this.http.post(`${this.apiUrl}/nurse/patients/${patientId}/treatments/quick`, body);
-  }
-
   /** Aceptar, posponer o cancelar un tratamiento/chequeo (no medicamento). */
   patchTreatmentScheduleAction(
     patientId: number,
@@ -510,21 +690,5 @@ export class NurseService {
 
   replaceGeneralObservations(patientId: number, generalObservations: string): Observable<any> {
     return this.http.patch(`${this.apiUrl}/patients/${patientId}`, { generalObservations });
-  }
-
-  // ========== GESTIÓN DE CAMAS (Reutilizando funcionalidad del admin) ==========
-  
-  // Actualizar cama (asignar/liberar paciente, cambiar estado)
-  updateBed(bedId: number, data: {
-    bedNumber?: string;
-    patientId?: number | null;
-    isActive?: boolean;
-  }): Observable<any> {
-    return this.http.patch(`${this.apiUrl}/beds/${bedId}`, data);
-  }
-
-  // Obtener detalles de una cama
-  getBed(bedId: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/beds/${bedId}`);
   }
 }

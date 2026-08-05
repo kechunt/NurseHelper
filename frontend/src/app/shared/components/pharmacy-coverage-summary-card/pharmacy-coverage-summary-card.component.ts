@@ -6,13 +6,7 @@ import {
   PharmacyShiftCoverageSummaryShift,
 } from '../../../services/pharmacy.service';
 import { BootstrapIconComponent } from '../bootstrap-icon/bootstrap-icon.component';
-
-function formatLocalDateIsoYmd(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
+import { formatLocalDateIsoYmd } from '../../../components/nurse-dashboard/nurse-dashboard-local-date.helpers';
 
 @Component({
   selector: 'app-pharmacy-coverage-summary-card',

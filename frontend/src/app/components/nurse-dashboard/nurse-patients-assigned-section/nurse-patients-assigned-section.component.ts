@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import type { Patient } from '../nurse-dashboard.types';
 import { NurseClinicalNotesScopeBlockComponent } from '../nurse-clinical-notes-scope-block/nurse-clinical-notes-scope-block.component';
 import { BootstrapIconComponent } from '../../../shared/components/bootstrap-icon/bootstrap-icon.component';
+import { getPatientInitials } from '../../../shared/utils/patient-display.helpers';
 
 @Component({
   selector: 'app-nurse-patients-assigned-section',
@@ -35,6 +36,7 @@ export class NursePatientsAssignedSectionComponent {
   @Output() readonly claimPatient = new EventEmitter<Patient>();
 
   @Input() claimingPatientId: string | null = null;
+  @Input() nurseOnDuty = false;
 
   @Input({ required: true }) medicationDosesToday!: (patient: Patient) => number;
   @Input({ required: true }) treatmentsTodayCount!: (patient: Patient) => number;
@@ -60,7 +62,7 @@ export class NursePatientsAssignedSectionComponent {
   }
 
   canClaimPatient(patient: Patient): boolean {
-    return !patient.isAssignedToMe && !patient.assignedToName;
+    return this.nurseOnDuty && !patient.isAssignedToMe && !patient.assignedToName;
   }
 
   onClaimPatientClick(patient: Patient, event: Event): void {
@@ -71,17 +73,5 @@ export class NursePatientsAssignedSectionComponent {
     this.claimPatient.emit(patient);
   }
 
-  getPatientInitials(name: string): string {
-    const parts = String(name ?? '')
-      .trim()
-      .split(/\s+/)
-      .filter(Boolean);
-    if (parts.length === 0) {
-      return '?';
-    }
-    if (parts.length === 1) {
-      return parts[0].slice(0, 2).toUpperCase();
-    }
-    return `${parts[0].charAt(0)}${parts[parts.length - 1].charAt(0)}`.toUpperCase();
-  }
+  readonly getPatientInitials = getPatientInitials;
 }

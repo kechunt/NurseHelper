@@ -2,7 +2,6 @@ import type { NextFunction, Request, Response } from 'express';
 import {
   authRateLimitMiddleware,
   rateLimitMiddleware,
-  strictRateLimitMiddleware,
 } from '../../../middleware/rate-limit.middleware';
 import { TooManyRequestsError } from '../../../utils/errors';
 import { logger } from '../../../utils/logger';
@@ -95,18 +94,5 @@ describe('authRateLimitMiddleware', () => {
     const next = jest.fn() as NextFunction;
     mw(remoteReq(), res, next);
     expect(res.setHeader).toHaveBeenCalledWith('X-RateLimit-Limit', '5');
-  });
-});
-
-describe('strictRateLimitMiddleware', () => {
-  it('devuelve middleware con límite 10 por minuto', () => {
-    const prev = process.env.NODE_ENV;
-    process.env.NODE_ENV = 'test';
-    const mw = strictRateLimitMiddleware();
-    const res = { setHeader: jest.fn() } as unknown as Response;
-    const next = jest.fn() as NextFunction;
-    mw(remoteReq(), res, next);
-    expect(res.setHeader).toHaveBeenCalledWith('X-RateLimit-Limit', '10');
-    process.env.NODE_ENV = prev;
   });
 });

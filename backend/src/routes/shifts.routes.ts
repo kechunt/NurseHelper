@@ -11,6 +11,7 @@ import {
   getPresentNursesByShift,
   getShiftAttendanceHistory,
   runShiftHandoff,
+  getShiftAssignmentSuggestions,
 } from '../controllers/shifts.controller';
 
 const router = Router();
@@ -171,6 +172,7 @@ router.post('/weekly', saveWeeklySchedule);
 router.get('/attendance', getShiftAttendance);
 router.post('/attendance', saveShiftAttendance);
 router.post('/handoff', runShiftHandoff);
+router.get('/assignment-suggestions', getShiftAssignmentSuggestions);
 router.get('/attendance/present', getPresentNursesByShift);
 router.get('/attendance/history', getShiftAttendanceHistory);
 

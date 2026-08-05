@@ -291,7 +291,7 @@ button.area-shift-alert--clickable:focus-visible {
   justify-content: flex-end;
 }
 
-/* app-modal-shell: mantener ancho amplio para tablas (antes .modal-content.modal-large en este componente) */
+/* app-modal-shell: ancho amplio para tablas */
 :host ::ng-deep app-modal-shell .modal-content.modal-large {
   max-width: 800px;
 }

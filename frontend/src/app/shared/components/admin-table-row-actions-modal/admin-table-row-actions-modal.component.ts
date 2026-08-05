@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 
 let idSeq = 0;
 
-/** Variante visual del badge de estado (misma familia que `apm-status-pill` en tarjetas admin). */
+/** Variante visual del badge de estado (`apm-status-pill`). */
 export type AdminTableRowSummaryBadgeVariant = 'ok' | 'busy' | 'off';
 
 export interface AdminTableRowSummaryRow {

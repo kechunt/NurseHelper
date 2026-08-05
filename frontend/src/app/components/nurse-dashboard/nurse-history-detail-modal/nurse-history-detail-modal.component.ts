@@ -6,7 +6,7 @@ import { historyRecordStatusLabel } from '../nurse-patient-history.helpers';
 import { BootstrapIconComponent } from '../../../shared/components/bootstrap-icon/bootstrap-icon.component';
 import { nurseUiEmDash } from '../nurse-dashboard-ui-i18n.helpers';
 
-/** Fila de historial (alineada con `TreatmentRecord` del dashboard). */
+/** Fila de historial (`TreatmentRecord`). */
 export interface NurseHistoryDetailRecord {
   date: string;
   time: string;

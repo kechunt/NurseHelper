@@ -12,8 +12,7 @@ import { CommonModule } from '@angular/common';
 import { DashboardUserProfileModalComponent } from '../dashboard-user-profile-modal/dashboard-user-profile-modal.component';
 
 /**
- * Envoltorio neumórfico compartido (cabecera + nav + contenido) alineado con
- * `shared/styles/dashboard-layout.css`.
+ * Envoltorio neumórfico compartido (cabecera + nav + contenido).
  * Usa `panelSkin` para que el host tenga la clase raíz (p. ej. `nurse-dashboard`) y los
  * selectores `.nurse-dashboard .dashboard-header` del layout compartido apliquen bien.
  */

@@ -108,7 +108,7 @@ export function decryptJsonValue<T = unknown>(value: unknown): T | null {
   }
 }
 
-export function formatDateForEncryption(value: Date | string): string {
+function formatDateForEncryption(value: Date | string): string {
   if (value instanceof Date) {
     return value.toISOString().slice(0, 10);
   }

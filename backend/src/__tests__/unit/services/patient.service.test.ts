@@ -6,7 +6,7 @@ import { PatientService } from '../../../services/patient.service';
 import { AppDataSource } from '../../../data-source';
 import { Patient } from '../../../entities/Patient';
 import { NotFoundError, ValidationError } from '../../../utils/errors';
-import { CreatePatientDto, SaveObservationDto } from '../../../dto/patient.dto';
+import { SaveObservationDto } from '../../../dto/patient.dto';
 
 // Mock de AppDataSource
 jest.mock('../../../data-source', () => ({
@@ -110,25 +110,6 @@ describe('PatientService', () => {
     });
   });
 
-  describe('createPatient', () => {
-    it('debería crear paciente exitosamente', async () => {
-      const dto: CreatePatientDto = {
-        firstName: 'Juan',
-        lastName: 'Pérez',
-        identificationNumber: '12345678',
-      };
-
-      const savedPatient = { id: 1, ...dto };
-      mockPatientRepository.save.mockResolvedValue(savedPatient);
-      mockPatientRepository.findOne.mockResolvedValue(savedPatient);
-
-      const result = await patientService.createPatient(dto);
-
-      expect(mockPatientRepository.save).toHaveBeenCalled();
-      expect(result).toBeDefined();
-    });
-  });
-
   describe('saveObservation', () => {
     it('debería guardar observación en tabla clínica', async () => {
       const patient = { id: 1, generalObservations: null };
@@ -213,19 +194,4 @@ describe('PatientService', () => {
     });
   });
 
-  describe('deletePatient', () => {
-    it('debería eliminar paciente y desasignar cama (bedId null)', async () => {
-      const patient = { id: 1 };
-
-      mockPatientRepository.findOne.mockResolvedValue(patient);
-      mockScheduleRepository.delete.mockResolvedValue({});
-      mockPatientRepository.remove.mockResolvedValue(patient);
-
-      await patientService.deletePatient(1);
-
-      expect(mockPatientRepository.update).toHaveBeenCalledWith({ id: 1 }, { bedId: null, areaId: null });
-      expect(mockScheduleRepository.delete).toHaveBeenCalledWith({ patientId: 1 });
-      expect(mockPatientRepository.remove).toHaveBeenCalledWith(patient);
-    });
-  });
 });

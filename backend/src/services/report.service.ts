@@ -78,7 +78,7 @@ export function formatGeneratedByRole(role: string): string {
     case 'nurse':
       return 'Enfermera';
     case 'supervisor':
-      return 'Supervisor';
+      return 'Supervisor del sistema';
     default:
       return role;
   }
@@ -242,7 +242,7 @@ export function complianceStatsToCsvExport(stats: ComplianceStats, meta: ReportE
 
 export class ReportService {
   /**
-   * Pacientes visibles para una enfermera (asignación directa o camas del área), alineado con `getMyPatients`.
+   * Pacientes visibles para una enfermera (asignación directa o camas del área); misma regla que `getMyPatients`.
    */
   async getPatientIdsVisibleToNurse(nurseUserId: number): Promise<number[]> {
     const userRepo = AppDataSource.getRepository(User);

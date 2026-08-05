@@ -34,7 +34,7 @@ describe('mapNurseDayHistoryItemsToCsvRows', () => {
     const rows = mapNurseDayHistoryItemsToCsvRows('2026-05-03', [
       {
         time: '08:00',
-        type: 'MED',
+        type: 'medication',
         patientName: 'Ana',
         bedNumber: '1',
         description: 'Dosis',
@@ -47,7 +47,7 @@ describe('mapNurseDayHistoryItemsToCsvRows', () => {
       },
       {
         time: '09:00',
-        type: 'CHK',
+        type: 'check',
         patientName: 'Luis',
         bedNumber: '2',
         description: 'Chequeo',
@@ -60,7 +60,7 @@ describe('mapNurseDayHistoryItemsToCsvRows', () => {
       },
       {
         time: '10:00',
-        type: 'TRT',
+        type: 'treatment',
         patientName: 'Bea',
         bedNumber: '3',
         description: 'Curación',
@@ -74,12 +74,15 @@ describe('mapNurseDayHistoryItemsToCsvRows', () => {
     ]);
     expect(rows.length).toBe(3);
     expect(rows[0].Fecha).toBe('2026-05-03');
+    expect(rows[0].Tipo).toBe('Medicamento');
     expect(rows[0].Resultado).toBe('Completada');
     expect(rows[0].Medicamento).toBe('X');
     expect(rows[0].HoraRegistro).toBe('08:05');
+    expect(rows[1].Tipo).toBe('Control');
     expect(rows[1].Resultado).toBe('No realizada');
     expect(rows[1].Medicamento).toBe('');
     expect(rows[1].HoraRegistro).toBe('');
+    expect(rows[2].Tipo).toBe('Tratamiento');
     expect(rows[2].Resultado).toBe('En curso');
   });
 });

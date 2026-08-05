@@ -8,6 +8,7 @@ import type { HandoverShiftSlot } from './nurse.service';
 import { environment } from '../../environments/environment';
 import type {
   AdminHandoverNoteDto,
+  AdminOperationalSummary,
   Area,
   AreasShiftCoverageNurse,
   AreasShiftCoveragePayload,
@@ -20,6 +21,7 @@ import type {
 
 export type {
   AdminHandoverNoteDto,
+  AdminOperationalSummary,
   Area,
   AreasShiftCoverageNurse,
   AreasShiftCoveragePayload,
@@ -33,6 +35,7 @@ export type {
 // Constantes para configuración
 const CACHE_SIZE = 1;
 const DEFAULT_TIMEOUT = 10000;
+const OPERATIONAL_SUMMARY_CLIENT_TTL_MS = 30_000;
 
 @Injectable({
   providedIn: 'root',
@@ -42,22 +45,20 @@ export class AdminService {
   private usersCache$: Observable<User[]> | null = null;
   private bedsCache$: Observable<Bed[]> | null = null;
   private patientsCache$: Observable<Patient[]> | null = null;
+  private operationalSummaryCache$: Observable<AdminOperationalSummary> | null = null;
+  private operationalSummaryCachedAt = 0;
 
   constructor(private http: HttpClient) {}
 
   /**
-   * Obtiene todos los usuarios con caché opcional
-   * Siempre devuelve User[] para compatibilidad con otros componentes
+   * Obtiene todos los usuarios con caché opcional.
    * @param useCache - Si es true, usa caché (por defecto true)
    */
   getUsers(useCache: boolean = true): Observable<User[]> {
     if (!useCache || !this.usersCache$) {
       // Por defecto, pedir 100 usuarios (suficiente para la mayoría de casos)
-      this.usersCache$ = this.http.get<any>(`${environment.apiUrl}/users?limit=100`).pipe(
-        map(response => {
-          // Si la respuesta tiene formato paginado, extraer items
-          return response.items ? response.items : response;
-        }),
+      this.usersCache$ = this.http.get<{ items: User[] }>(`${environment.apiUrl}/users?limit=100`).pipe(
+        map((response) => response.items ?? []),
         shareReplay(CACHE_SIZE)
       );
     }
@@ -88,23 +89,12 @@ export class AdminService {
     
     const url = `${environment.apiUrl}/users`;
     
-    return this.http.get<any>(url, { params: queryParams }).pipe(
+    return this.http.get<{ items: User[]; total: number }>(url, { params: queryParams }).pipe(
       timeout(DEFAULT_TIMEOUT),
-      map(response => {
-        // Si la respuesta tiene formato paginado, devolver objeto con users y total
-        if (response.items) {
-          return { users: response.items, total: response.total };
-        }
-        
-        // Si es un array directo, devolverlo como users
-        if (Array.isArray(response)) {
-          return { users: response, total: response.length };
-        }
-        
-        // Si no es ninguno de los formatos esperados
-        console.warn(' Formato inesperado de respuesta:', response);
-        return { users: [], total: 0 };
-      }),
+      map((response) => ({
+        users: response.items ?? [],
+        total: response.total ?? 0,
+      })),
       catchError(error => {
         if (error.name === 'TimeoutError') {
           console.error('⏱ Timeout: El servidor no respondió en 10 segundos');
@@ -166,6 +156,38 @@ export class AdminService {
   /** Enfermeras presentes en el turno vigente, por área (panel administración). */
   getAreasShiftCoverage(): Observable<AreasShiftCoveragePayload> {
     return this.http.get<AreasShiftCoveragePayload>(`${environment.apiUrl}/areas/shift-coverage`);
+  }
+
+  /**
+   * Resumen operativo del turno (caché cliente ~30s + caché servidor ~45s).
+   * @param refresh true fuerza bypass de caché cliente y pide refresh=1 al servidor
+   */
+  getOperationalSummary(refresh = false): Observable<AdminOperationalSummary> {
+    const stale =
+      refresh ||
+      !this.operationalSummaryCache$ ||
+      Date.now() - this.operationalSummaryCachedAt > OPERATIONAL_SUMMARY_CLIENT_TTL_MS;
+
+    if (stale) {
+      const params = refresh ? new HttpParams().set('refresh', '1') : undefined;
+      this.operationalSummaryCache$ = this.http
+        .get<AdminOperationalSummary>(`${environment.apiUrl}/areas/operational-summary`, { params })
+        .pipe(
+          tap(() => {
+            this.operationalSummaryCachedAt = Date.now();
+          }),
+          shareReplay(CACHE_SIZE),
+        );
+    }
+    return this.operationalSummaryCache$!;
+  }
+
+  /** Tras handoff, asistencia o cambios operativos: invalidar cachés volátiles. */
+  clearOperationalCaches(): void {
+    this.operationalSummaryCache$ = null;
+    this.operationalSummaryCachedAt = 0;
+    this.clearPatientsCache();
+    this.clearUsersCache();
   }
 
   getArea(id: number): Observable<Area> {
@@ -333,11 +355,10 @@ export class AdminService {
   getPatients(useCache: boolean = true): Observable<Patient[]> {
     if (!useCache || !this.patientsCache$) {
       const params = new HttpParams().set('page', '1').set('limit', '500');
-      this.patientsCache$ = this.http.get<any>(`${environment.apiUrl}/patients`, { params }).pipe(
-        map((response) => {
-          const patients = response.items || response || [];
-          return Array.isArray(patients) ? patients : [];
-        }),
+      this.patientsCache$ = this.http
+        .get<{ items: Patient[] }>(`${environment.apiUrl}/patients`, { params })
+        .pipe(
+        map((response) => response.items ?? []),
         shareReplay(CACHE_SIZE),
         catchError((error) => {
           this.patientsCache$ = null;
@@ -415,35 +436,5 @@ export class AdminService {
       body,
     });
   }
-
-  listBackups(): Observable<{ backups: BackupListItem[]; lastBackup: BackupListItem | null }> {
-    return this.http
-      .get<{ backups: BackupListItem[]; lastBackup: BackupListItem | null }>(`${environment.apiUrl}/backup`)
-      .pipe(
-        map((r) => ({
-          backups: r.backups ?? [],
-          lastBackup: r.lastBackup ?? (r.backups?.[0] ?? null),
-        })),
-      );
-  }
-
-  createBackup(
-    type: 'full' | 'incremental' = 'full',
-    name?: string,
-  ): Observable<{ message: string; backup: BackupListItem }> {
-    const body: { type: 'full' | 'incremental'; name?: string } = { type };
-    const trimmed = name?.trim();
-    if (trimmed) {
-      body.name = trimmed;
-    }
-    return this.http.post<{ message: string; backup: BackupListItem }>(`${environment.apiUrl}/backup`, body);
-  }
-}
-
-export interface BackupListItem {
-  filename: string;
-  size: number;
-  createdAt: string;
-  type?: 'full' | 'incremental';
 }
 

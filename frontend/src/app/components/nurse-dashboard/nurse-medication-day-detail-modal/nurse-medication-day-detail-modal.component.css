@@ -2,7 +2,7 @@
   z-index: 2250 !important;
 }
 
-/* Auxiliar estrecho + cuerpo (antes compartido vía nurse-pending-task-detail-modal CSS). */
+/* Auxiliar estrecho + cuerpo. */
 .modal-content.nurse-aux-modal {
   max-width: min(520px, 94vw);
 }

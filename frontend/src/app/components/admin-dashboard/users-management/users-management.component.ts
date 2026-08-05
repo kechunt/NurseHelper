@@ -6,7 +6,7 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 import { AdminService } from '../../../services/admin.service';
 import { User } from '../../../services/auth.service';
 import { environment } from '../../../../environments/environment';
-import { forkJoin } from 'rxjs';
+import { forkJoin, firstValueFrom } from 'rxjs';
 import { ToastService } from '../../../services/toast.service';
 import { ConfirmationService } from '../../../services/confirmation.service';
 import { ExportService } from '../../../shared/services/export.service';
@@ -61,7 +61,7 @@ export class UsersManagementComponent implements OnInit, OnDestroy {
   // Información de paginación (si el backend la devuelve)
   totalUsers: number = 0;
 
-  // Jefas de enfermeras y encargado de farmacia
+  // Administradoras/supervisores y encargado de farmacia
   supervisors: User[] = [];
   pharmacyUsers: User[] = [];
   loadingSupervisors = false;
@@ -69,9 +69,9 @@ export class UsersManagementComponent implements OnInit, OnDestroy {
 
   readonly usersMgmtSectionTitle = $localize`:@@usersMgmt.sectionTitle:Gestión de Usuarios`;
   readonly usersMgmtRefresh = $localize`:@@usersMgmt.refresh:Actualizar`;
-  readonly usersMgmtSupervisorsTitle = $localize`:@@usersMgmt.supervisorsTitle:Jefas de Enfermeras`;
-  readonly usersMgmtLoadingSupervisors = $localize`:@@usersMgmt.loadingSupervisors:Cargando jefas de enfermeras...`;
-  readonly usersMgmtEmptySupervisors = $localize`:@@usersMgmt.emptySupervisors:No hay jefas de enfermeras asignadas`;
+  readonly usersMgmtSupervisorsTitle = $localize`:@@usersMgmt.supervisorsTitle:Administradoras y supervisores`;
+  readonly usersMgmtLoadingSupervisors = $localize`:@@usersMgmt.loadingSupervisors:Cargando administradoras y supervisores...`;
+  readonly usersMgmtEmptySupervisors = $localize`:@@usersMgmt.emptySupervisors:No hay administradoras ni supervisores asignados`;
   readonly usersMgmtEditUserTitle = $localize`:@@usersMgmt.editUserTitle:Editar usuario`;
   readonly usersMgmtPharmacyTitle = $localize`:@@usersMgmt.pharmacyTitle:Encargado de Farmacia`;
   readonly usersMgmtLoadingPharmacy = $localize`:@@usersMgmt.loadingPharmacy:Cargando encargado de farmacia...`;
@@ -114,7 +114,7 @@ export class UsersManagementComponent implements OnInit, OnDestroy {
     { value: 'all', label: $localize`:@@usersMgmt.roleAll:Todos los roles` },
     { value: 'admin', label: $localize`:@@usersMgmt.roleAdmin:Administrador` },
     { value: 'nurse', label: $localize`:@@usersMgmt.roleNurse:Enfermera` },
-    { value: 'supervisor', label: $localize`:@@usersMgmt.roleSupervisor:Supervisor` },
+    { value: 'supervisor', label: $localize`:@@usersMgmt.roleSupervisor:Supervisor del sistema` },
     { value: 'pharmacy', label: $localize`:@@usersMgmt.rolePharmacy:Farmacia` },
   ];
 
@@ -135,6 +135,8 @@ export class UsersManagementComponent implements OnInit, OnDestroy {
   readonly usersMgmtWarnPhoneTooLong = $localize`:@@usersMgmt.warnPhoneTooLong:El teléfono no puede superar 30 caracteres`;
   readonly usersMgmtConfirmNurseRoleTitle = $localize`:@@usersMgmt.confirmNurseRoleTitle:Cambiar rol de enfermera`;
   readonly usersMgmtConfirmNurseRoleMessage = $localize`:@@usersMgmt.confirmNurseRoleMessage:¿Estás seguro de cambiar el rol de esta enfermera?\n\nLos pacientes asignados a esta enfermera mantendrán su área pero quedarán sin enfermera asignada para poder asignar otra.`;
+  readonly usersMgmtConfirmDeactivateNurseTitle = $localize`:@@usersMgmt.confirmDeactivateNurseTitle:Desactivar enfermera`;
+  readonly usersMgmtConfirmDeactivateNurse = $localize`:@@usersMgmt.confirmDeactivateNurse:Desactivar`;
   readonly usersMgmtConfirmChangeRole = $localize`:@@usersMgmt.confirmChangeRole:Cambiar rol`;
   readonly usersMgmtConfirmCancel = $localize`:@@usersMgmt.confirmCancel:Cancelar`;
   readonly usersMgmtErrInvalidData = $localize`:@@usersMgmt.errInvalidData:Datos inválidos`;
@@ -158,7 +160,7 @@ export class UsersManagementComponent implements OnInit, OnDestroy {
   readonly usersMgmtErrLoadUsers403 = $localize`:@@usersMgmt.errLoadUsers403:Acceso denegado. No tienes permisos para ver usuarios.`;
   readonly usersMgmtErrLoadSupervisors = $localize`:@@usersMgmt.errLoadSupervisors:Error al cargar supervisores`;
   readonly usersMgmtErrLoadPharmacy = $localize`:@@usersMgmt.errLoadPharmacy:Error al cargar usuarios de farmacia`;
-  readonly usersMgmtExportColId = $localize`:@@usersMgmt.exportColId:ID`;
+  readonly usersMgmtExportColId = $localize`:@@usersMgmt.exportColId:Nº de usuario`;
   readonly usersMgmtExportColUsername = $localize`:@@usersMgmt.exportColUsername:Usuario`;
   readonly usersMgmtExportColEmail = $localize`:@@usersMgmt.exportColEmail:Email`;
   readonly usersMgmtExportColFirstName = $localize`:@@usersMgmt.exportColFirstName:Nombre`;
@@ -544,14 +546,23 @@ export class UsersManagementComponent implements OnInit, OnDestroy {
     // Confirmación especial si se está cambiando el rol de enfermera
     const wasNurse = this.selectedUser.role === 'nurse';
     const isChangingFromNurse = !!(wasNurse && this.editForm.role && this.editForm.role !== 'nurse');
-    
-    this.updateUserWithConfirmation(isChangingFromNurse);
+    const isDeactivatingNurse = !!(
+      wasNurse &&
+      this.selectedUser.isActive &&
+      this.editForm.isActive === false &&
+      this.editForm.role === 'nurse'
+    );
+
+    this.updateUserWithConfirmation(isChangingFromNurse, isDeactivatingNurse);
   }
 
   /**
    * Actualiza el usuario con confirmación si es necesario
    */
-  private async updateUserWithConfirmation(isChangingFromNurse: boolean): Promise<void> {
+  private async updateUserWithConfirmation(
+    isChangingFromNurse: boolean,
+    isDeactivatingNurse: boolean,
+  ): Promise<void> {
     if (isChangingFromNurse) {
       const confirmed = await this.confirmationService.confirm({
         title: this.usersMgmtConfirmNurseRoleTitle,
@@ -563,6 +574,23 @@ export class UsersManagementComponent implements OnInit, OnDestroy {
       
       if (!confirmed) {
         return;
+      }
+    }
+
+    if (isDeactivatingNurse && this.selectedUser?.id) {
+      const patientCount = await this.countPatientsAssignedToNurse(this.selectedUser.id);
+      if (patientCount > 0) {
+        const message = $localize`:@@usersMgmt.confirmDeactivateNurseMessage:Esta enfermera tiene ${patientCount}:count: paciente(s) asignado(s).\n\nAl desactivarla, los pacientes mantendrán su área pero quedarán sin enfermera hasta que se reasignen.\n\n¿Continuar?`;
+        const confirmed = await this.confirmationService.confirm({
+          title: this.usersMgmtConfirmDeactivateNurseTitle,
+          message,
+          confirmText: this.usersMgmtConfirmDeactivateNurse,
+          cancelText: this.usersMgmtConfirmCancel,
+          type: 'warning',
+        });
+        if (!confirmed) {
+          return;
+        }
       }
     }
 
@@ -608,6 +636,15 @@ export class UsersManagementComponent implements OnInit, OnDestroy {
         this.toastService.error(errorMessage);
       },
     });
+  }
+
+  private async countPatientsAssignedToNurse(nurseId: number): Promise<number> {
+    try {
+      const patients = await firstValueFrom(this.adminService.getPatients());
+      return patients.filter((p) => p.assignedToId === nurseId).length;
+    } catch {
+      return 0;
+    }
   }
 
   private buildDeleteUserConfirmMessage(user: User, isNurse: boolean): string {

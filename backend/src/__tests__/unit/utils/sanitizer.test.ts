@@ -8,12 +8,8 @@ jest.mock('isomorphic-dompurify', () => ({
 }));
 
 import {
-  sanitizeEmail,
-  sanitizeId,
   sanitizeMiddleware,
-  sanitizeNumber,
   sanitizeObject,
-  sanitizePhone,
   sanitizeString,
 } from '../../../utils/sanitizer';
 
@@ -43,39 +39,6 @@ describe('sanitizer', () => {
       };
       const out = sanitizeObject(input);
       expect(out).toEqual({ a: 'x', nested: { y: ['z'] }, n: 3 });
-    });
-  });
-
-  describe('sanitizeNumber', () => {
-    it('parsea número o string numérico y rechaza NaN', () => {
-      expect(sanitizeNumber(null)).toBeNull();
-      expect(sanitizeNumber(undefined)).toBeNull();
-      expect(sanitizeNumber('12.5')).toBe(12.5);
-      expect(sanitizeNumber(7)).toBe(7);
-      expect(sanitizeNumber('no')).toBeNull();
-    });
-  });
-
-  describe('sanitizeId', () => {
-    it('acepta enteros positivos y rechaza el resto', () => {
-      expect(sanitizeId('42')).toBe(42);
-      expect(sanitizeId(0)).toBeNull();
-      expect(sanitizeId(-1)).toBeNull();
-      expect(sanitizeId('1.5')).toBeNull();
-    });
-  });
-
-  describe('sanitizeEmail', () => {
-    it('normaliza email válido a minúsculas y rechaza inválidos', () => {
-      expect(sanitizeEmail('  User@Mail.COM  ')).toBe('user@mail.com');
-      expect(sanitizeEmail('no-arroba')).toBe('');
-      expect(sanitizeEmail(null)).toBe('');
-    });
-  });
-
-  describe('sanitizePhone', () => {
-    it('conserva dígitos, espacios, guiones y paréntesis', () => {
-      expect(sanitizePhone('  +34 612-34 (56)  abc  ')).toBe('34 612-34 (56)');
     });
   });
 

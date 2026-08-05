@@ -32,7 +32,7 @@ npm run dev
 | Script | Descripción |
 |--------|-------------|
 | `npm run dev` | Backend + frontend en paralelo |
-| `npm run tunnel` | Túnel ngrok para demo remota |
+| `npm run dev:win` | Igual que `dev`, optimizado para Windows |
 | `npm run build` | Compila backend y frontend |
 | `npm test` | Tests backend + frontend (headless) |
 | `npm run test:backend` | Solo Jest (backend) |
@@ -68,7 +68,19 @@ Producción con **Docker Compose** (`deployment/compose.production.yml`):
 
 ```bash
 cp .env.production .env   # ajusta secretos y PUBLIC_ORIGIN
-docker compose -f deployment/compose.production.yml up -d --build
+docker compose -f deployment/compose.production.yml --env-file .env up -d --build
 ```
 
-El frontend se sirve con nginx (proxy `/api` → backend). Configura `JWT_SECRET`, `FIELD_ENCRYPTION_KEY`, `FIELD_HASH_KEY` y variables `DB_*` antes de levantar los contenedores.
+El frontend se sirve con nginx (proxy `/api` → backend). Configura `JWT_SECRET`, `FIELD_ENCRYPTION_KEY` (misma que la BD cifrada) y variables `DB_*` / `EMAIL_*` antes de levantar los contenedores.
+
+### Restaurar dump local en el MySQL de producción
+
+Con el stack ya levantado y un dump generado en esta PC (`backend/backups/nursehelper_local_*.sql`):
+
+```bash
+# En el servidor (desde la raíz del repo, con .env de prod cargado):
+docker compose -f deployment/compose.production.yml exec -T db \
+  mysql -uroot -p"$DB_ROOT_PASSWORD" nursehelper < backend/backups/nursehelper_local_YYYYMMDD.sql
+```
+
+Tras restaurar, reinicia el backend si hace falta y prueba login, un paciente cifrado y un correo de verificación.

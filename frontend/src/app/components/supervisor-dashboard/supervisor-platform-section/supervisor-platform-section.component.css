@@ -1,0 +1,80 @@
+@import '../../../shared/styles/admin-panel-responsive.css';
+@import '../supervisor-section.shared.css';
+
+.supervisor-platform-card {
+  padding: 1.5rem 1.75rem 2rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.supervisor-platform-list {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.supervisor-platform-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid rgba(113, 128, 150, 0.15);
+}
+
+.supervisor-platform-row:last-child {
+  border-bottom: none;
+}
+
+.supervisor-platform-row dt {
+  color: #718096;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.supervisor-platform-row dd {
+  margin: 0;
+  color: #4a5568;
+  font-size: 0.92rem;
+  font-weight: 500;
+  text-align: right;
+  word-break: break-all;
+}
+
+.supervisor-platform-pill {
+  display: inline-block;
+  padding: 0.28rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #9b2c2c;
+  background: rgba(245, 101, 101, 0.16);
+}
+
+.supervisor-platform-pill--ok {
+  color: #276749;
+  background: rgba(72, 187, 120, 0.16);
+}
+
+@media (max-width: 768px) {
+  .supervisor-platform-card {
+    padding: 1.1rem 1.15rem 1.5rem;
+  }
+
+  .supervisor-platform-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .supervisor-platform-row dd {
+    text-align: left;
+  }
+}
+
+@media (max-width: 576px) {
+  .supervisor-platform-card {
+    padding: 0.95rem 0.9rem 1.25rem;
+  }
+}

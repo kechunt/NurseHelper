@@ -12,10 +12,22 @@ jest.mock('../../../services/nurse-patient-access.service', () => ({
   assertNurseCanAccessPatient: jest.fn(),
 }));
 
+jest.mock('../../../services/nurse-on-duty.service', () => ({
+  isNurseOnDuty: jest.fn(),
+}));
+
+jest.mock('../../../services/patient-shift-assignment.service', () => ({
+  recordPatientShiftAssignment: jest.fn().mockResolvedValue(undefined),
+  resolveCurrentShiftId: jest.fn().mockResolvedValue(1),
+  todayDateIso: jest.fn().mockReturnValue('2026-08-02'),
+}));
+
 import { AppDataSource } from '../../../data-source';
 import { Patient } from '../../../entities/Patient';
 import { User } from '../../../entities/User';
 import { assertNurseCanAccessPatient } from '../../../services/nurse-patient-access.service';
+import { isNurseOnDuty } from '../../../services/nurse-on-duty.service';
+import { recordPatientShiftAssignment } from '../../../services/patient-shift-assignment.service';
 import { claimUnassignedPatientForNurse } from '../../../services/nurse-patient-claim.service';
 
 describe('nurse-patient-claim.service', () => {
@@ -34,6 +46,7 @@ describe('nurse-patient-claim.service', () => {
       throw new Error(`unexpected entity: ${String(entity)}`);
     });
     (assertNurseCanAccessPatient as jest.Mock).mockResolvedValue({ ok: true });
+    (isNurseOnDuty as jest.Mock).mockResolvedValue(true);
   });
 
   it('asigna paciente sin enfermera cuando la enfermera tiene acceso al área', async () => {
@@ -46,7 +59,6 @@ describe('nurse-patient-claim.service', () => {
       lastAssignmentAt: null,
     };
     patientRepo.findOne.mockResolvedValue(patient);
-    patientRepo.save.mockImplementation(async (p: typeof patient) => p);
 
     await expect(claimUnassignedPatientForNurse(10, 9)).resolves.toEqual({
       ok: true,
@@ -54,9 +66,13 @@ describe('nurse-patient-claim.service', () => {
       assignedToId: 10,
     });
 
-    expect(patient.assignedToId).toBe(10);
-    expect(patient.assignmentStatus).toBe('assigned');
-    expect(patient.lastAssignmentAt).toBeInstanceOf(Date);
+    expect(recordPatientShiftAssignment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        date: '2026-08-02',
+        shiftId: 1,
+        record: expect.objectContaining({ patientId: 9, nurseId: 10, source: 'claim' }),
+      }),
+    );
     expect(assertNurseCanAccessPatient).toHaveBeenCalledWith(10, 2, 9);
   });
 
@@ -74,6 +90,7 @@ describe('nurse-patient-claim.service', () => {
       code: 'PATIENT_ALREADY_ASSIGNED',
     });
     expect(patientRepo.save).not.toHaveBeenCalled();
+    expect(recordPatientShiftAssignment).not.toHaveBeenCalled();
   });
 
   it('403 si la enfermera no puede acceder al paciente', async () => {
@@ -105,6 +122,18 @@ describe('nurse-patient-claim.service', () => {
       status: 404,
       code: 'PATIENT_NOT_FOUND',
     });
+  });
+
+  it('403 si la enfermera no está en turno', async () => {
+    userRepo.findOne.mockResolvedValue({ id: 10, assignedAreaId: 2 });
+    (isNurseOnDuty as jest.Mock).mockResolvedValue(false);
+
+    await expect(claimUnassignedPatientForNurse(10, 9)).resolves.toMatchObject({
+      ok: false,
+      status: 403,
+      code: 'NURSE_OFF_DUTY',
+    });
+    expect(patientRepo.findOne).not.toHaveBeenCalled();
   });
 
   it('404 si la enfermera no existe', async () => {

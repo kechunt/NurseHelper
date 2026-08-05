@@ -1,5 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { of } from 'rxjs';
+import { NurseService } from '../../../services/nurse.service';
 import { NurseHandoverModalComponent } from './nurse-handover-modal.component';
 
 function ensureLocalizeShim(): void {
@@ -21,6 +23,16 @@ describe('NurseHandoverModalComponent', () => {
     ensureLocalizeShim();
     await TestBed.configureTestingModule({
       imports: [NurseHandoverModalComponent],
+      providers: [
+        {
+          provide: NurseService,
+          useValue: {
+            getCoordinationNote: jasmine
+              .createSpy('getCoordinationNote')
+              .and.returnValue(of({ note: null })),
+          },
+        },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(NurseHandoverModalComponent);

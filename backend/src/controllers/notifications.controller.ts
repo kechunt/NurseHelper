@@ -6,6 +6,8 @@ import { Response } from 'express';
 import { asyncHandler } from '../utils/error-handler';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { AppError, ErrorCode } from '../utils/errors';
+import { UserRole } from '../entities/User';
+import { isNurseOnDuty } from '../services/nurse-on-duty.service';
 import {
   deleteNotificationForUser,
   bulkDeleteNotificationsForUser,
@@ -15,6 +17,12 @@ import {
   markNotificationAcknowledged,
   markNotificationRead,
 } from '../services/user-notifications-persistence.service';
+
+const NURSE_OPERATIONAL_DEDUPE_PREFIXES = ['sch:', 'handover:'];
+
+function isOperationalNurseNotification(dedupeKey: string): boolean {
+  return NURSE_OPERATIONAL_DEDUPE_PREFIXES.some((p) => dedupeKey.startsWith(p));
+}
 
 function parseNotificationId(raw: string | undefined): number {
   const id = parseInt(String(raw), 10);
@@ -27,7 +35,15 @@ function parseNotificationId(raw: string | undefined): number {
 export class NotificationsController {
   getNotifications = asyncHandler(async (req: AuthRequest, res: Response) => {
     const userId = req.user!.id;
-    const list = await listActiveNotificationsForUser(userId);
+    let list = await listActiveNotificationsForUser(userId);
+
+    if (req.user!.role === UserRole.NURSE) {
+      const onDuty = await isNurseOnDuty(userId);
+      if (!onDuty) {
+        list = list.filter((n) => !isOperationalNurseNotification(n.dedupeKey));
+      }
+    }
+
     res.json(list);
   });
 

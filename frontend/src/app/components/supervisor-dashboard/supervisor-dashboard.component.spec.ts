@@ -32,7 +32,7 @@ describe('SupervisorDashboardComponent', () => {
 
   beforeEach(async () => {
     ensureLocalizeShim();
-    localStorage.removeItem('supervisor-dashboard-active-tab-v1');
+    localStorage.removeItem('supervisor-dashboard-active-tab-v2');
 
     const authMock = {
       isAuthenticated: jasmine.createSpy('isAuthenticated').and.returnValue(true),
@@ -55,14 +55,23 @@ describe('SupervisorDashboardComponent', () => {
 
   it('setActiveTab actualiza el estado de pestañas', () => {
     const c = fixture.componentInstance;
-    c.setActiveTab('users');
-    expect(c.tabState.activeTab()).toBe('users');
-    expect(localStorage.getItem('supervisor-dashboard-active-tab-v1')).toBe('users');
+    c.setActiveTab('backups');
+    expect(c.tabState.activeTab()).toBe('backups');
+    expect(localStorage.getItem('supervisor-dashboard-active-tab-v2')).toBe('backups');
   });
 
   it('expone textos del shell localizables', () => {
     const c = fixture.componentInstance;
-    expect(c.supervisorShellDashboardTitle).toContain('Supervisión');
+    expect(c.supervisorShellDashboardTitle).toContain('supervisión');
     expect(c.supervisorShellRoleDisplayLabel).toContain('Supervisor');
+    expect(c.supervisorHamburgerOpenNavAriaLabel.length).toBeGreaterThan(0);
+  });
+
+  it('hamburguesa del layout móvil: id estable #supervisor-shell-nav-hamburger-btn', () => {
+    const btn = fixture.nativeElement.querySelector(
+      '#supervisor-shell-nav-hamburger-btn'
+    ) as HTMLButtonElement | null;
+    expect(btn).toBeTruthy();
+    expect(btn?.classList.contains('nav-hamburger')).toBeTrue();
   });
 });

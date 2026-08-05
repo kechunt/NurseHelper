@@ -11,3 +11,25 @@
   line-height: 1.4;
   color: #718096;
 }
+
+.nurse-coordination-note-block {
+  margin-bottom: 1rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.5rem;
+  background: #f7fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.nurse-coordination-note-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.nurse-coordination-note-body {
+  white-space: pre-wrap;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: #4a5568;
+}

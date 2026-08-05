@@ -5,7 +5,13 @@
 .schedules-management,
 .beds-management,
 .areas-management,
-.staff-management {
+.staff-management,
+.supervisor-overview,
+.overview-backups-card,
+.supervisor-health-card,
+.supervisor-audit-card,
+.supervisor-webhooks-card,
+.supervisor-platform-card {
   width: 100%;
   max-width: 100%;
 }
@@ -27,7 +33,9 @@
   min-height: 76px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 1rem;
+  flex-wrap: wrap;
 }
 
 /* Botón estándar para Mostrar/Ocultar en todo Admin */
@@ -86,7 +94,7 @@
   transform: translateY(0);
 }
 
-/* Filtros alineados con pacientes (admin) — reutilizable en enfermería / otros paneles */
+/* Filtros de listado (admin / enfermería / otros paneles) */
 .filters-container {
   background: #e0e5ec;
   border-radius: 15px;

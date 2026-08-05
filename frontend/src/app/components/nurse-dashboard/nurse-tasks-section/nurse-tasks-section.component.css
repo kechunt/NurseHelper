@@ -6,8 +6,7 @@
 }
 
 /*
- * Patrón alineado con Farmacia/Camas: la tarjeta elevada `.section-card` está en `nurse-dashboard`;
- * aquí solo paneles «hundidos» (.nurse-inner-well) con separación entre sí.
+ * Paneles hundidos (`.nurse-inner-well`); la tarjeta elevada `.section-card` está en el padre.
  */
 :host .nurse-tasks-inner {
   display: flex;
@@ -144,7 +143,7 @@
   box-sizing: border-box;
 }
 
-/* Controles neumórficos (mismo criterio que `nurse-dashboard` / admin): el dashboard padre no puede estilar selects/inputs encapsulados aquí. */
+/* Controles neumórficos: el padre no puede estilar selects/inputs encapsulados aquí. */
 :host .filters-container .filter-box label {
   font-weight: 600;
   color: #4a5568;

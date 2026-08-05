@@ -3,6 +3,7 @@ import { Patient } from '../entities/Patient';
 import { Shift } from '../entities/Shift';
 import { ShiftAttendance, ShiftAttendanceStatus } from '../entities/ShiftAttendance';
 import { User, UserRole } from '../entities/User';
+import { recordPatientShiftAssignment } from './patient-shift-assignment.service';
 
 export interface AssignmentSummary {
   date: string;
@@ -81,7 +82,7 @@ export class PatientAssignmentService {
       where: { role: UserRole.NURSE, isActive: true },
     });
     const nurses = allPresentNurses.filter(
-      (n) => presentNurseIds.has(n.id) && n.assignedAreaId != null
+      (n) => presentNurseIds.has(n.id) && n.assignedAreaId != null,
     );
 
     const patientsQb = this.patientRepository
@@ -127,13 +128,18 @@ export class PatientAssignmentService {
     for (const patient of patients) {
       const areaId = patient.areaId ?? null;
       if (!areaId) {
-        if (patient.assignedToId !== null || patient.assignmentStatus !== 'pending') {
-          await this.patientRepository.update(patient.id, {
-            assignedToId: null,
-            assignmentStatus: 'pending',
-            lastAssignmentAt: null,
-          });
-        }
+        await recordPatientShiftAssignment({
+          date,
+          shiftId,
+          record: {
+            patientId: patient.id,
+            nurseId: null,
+            areaId: null,
+            status: 'pending',
+            source: 'handoff',
+            reason: 'Paciente sin area',
+          },
+        });
         pending++;
         details.push({
           patientId: patient.id,
@@ -156,12 +162,17 @@ export class PatientAssignmentService {
         presentNurseIds.has(currentAssigned);
 
       if (currentValid) {
-        if (patient.assignmentStatus !== 'assigned') {
-          await this.patientRepository.update(patient.id, {
-            assignmentStatus: 'assigned',
-            lastAssignmentAt: new Date(),
-          });
-        }
+        await recordPatientShiftAssignment({
+          date,
+          shiftId,
+          record: {
+            patientId: patient.id,
+            nurseId: currentAssigned,
+            areaId,
+            status: 'assigned',
+            source: 'handoff',
+          },
+        });
         details.push({
           patientId: patient.id,
           areaId,
@@ -174,10 +185,17 @@ export class PatientAssignmentService {
 
       const areaNurses = nurseBuckets.get(areaId) || [];
       if (areaNurses.length === 0) {
-        await this.patientRepository.update(patient.id, {
-          assignedToId: null,
-          assignmentStatus: 'pending',
-          lastAssignmentAt: null,
+        await recordPatientShiftAssignment({
+          date,
+          shiftId,
+          record: {
+            patientId: patient.id,
+            nurseId: null,
+            areaId,
+            status: 'pending',
+            source: 'handoff',
+            reason: 'No hay enfermeras presentes en el area',
+          },
         });
         pending++;
         details.push({
@@ -197,10 +215,17 @@ export class PatientAssignmentService {
       });
 
       if (eligible.length === 0) {
-        await this.patientRepository.update(patient.id, {
-          assignedToId: null,
-          assignmentStatus: 'pending',
-          lastAssignmentAt: null,
+        await recordPatientShiftAssignment({
+          date,
+          shiftId,
+          record: {
+            patientId: patient.id,
+            nurseId: null,
+            areaId,
+            status: 'pending',
+            source: 'handoff',
+            reason: 'Capacidad maxima alcanzada en el area',
+          },
         });
         pending++;
         details.push({
@@ -213,7 +238,12 @@ export class PatientAssignmentService {
         continue;
       }
 
+      const preferredNurseId = currentAssigned;
       eligible.sort((a, b) => {
+        if (preferredNurseId != null) {
+          if (a.id === preferredNurseId) return -1;
+          if (b.id === preferredNurseId) return 1;
+        }
         const loadA = loadMap.get(a.id) || 0;
         const loadB = loadMap.get(b.id) || 0;
         if (loadA !== loadB) return loadA - loadB;
@@ -221,10 +251,16 @@ export class PatientAssignmentService {
       });
       const selected = eligible[0];
 
-      await this.patientRepository.update(patient.id, {
-        assignedToId: selected.id,
-        assignmentStatus: 'assigned',
-        lastAssignmentAt: new Date(),
+      await recordPatientShiftAssignment({
+        date,
+        shiftId,
+        record: {
+          patientId: patient.id,
+          nurseId: selected.id,
+          areaId,
+          status: 'assigned',
+          source: 'handoff',
+        },
       });
       loadMap.set(selected.id, (loadMap.get(selected.id) || 0) + 1);
       assigned++;
@@ -244,6 +280,10 @@ export class PatientAssignmentService {
       pending,
       details,
     };
+  }
+
+  async syncAssignmentsForActiveShift(): Promise<AssignmentSummary> {
+    return this.autoAssignForShift();
   }
 }
 

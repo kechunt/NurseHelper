@@ -1,0 +1,66 @@
+<div class="overview-container dashboard-overview supervisor-overview">
+  <div class="section-header">
+    <h2 class="section-title">{{ title }}</h2>
+    <button type="button" class="neuro-btn" (click)="loadSummary()" [disabled]="loading">
+      {{ refreshLabel }}
+    </button>
+  </div>
+
+  <div *ngIf="loading" class="loading-state">
+    <p>{{ loadingLabel }}</p>
+  </div>
+
+  <div *ngIf="!loading" class="stats-grid">
+    <div class="stat-card clickable" (click)="navigate('health')">
+      <div class="stat-icon">🩺</div>
+      <div class="stat-content">
+        <span [class]="healthStatusClass()">{{ health?.status || '—' }}</span>
+        <p class="stat-label">{{ statHealthLabel }}</p>
+      </div>
+    </div>
+
+    <div class="stat-card clickable" (click)="navigate('backups')">
+      <div class="stat-icon">💾</div>
+      <div class="stat-content">
+        <h3 class="stat-value supervisor-overview-value">
+          {{ lastBackup ? formatBackupDate(lastBackup.createdAt) : noBackupLabel }}
+        </h3>
+        <p class="stat-label">{{ statBackupLabel }}</p>
+      </div>
+    </div>
+
+    <div class="stat-card clickable" (click)="navigate('platform')">
+      <div class="stat-icon">📧</div>
+      <div class="stat-content">
+        <h3 class="stat-value supervisor-overview-value">
+          {{ platform?.smtpConfigured ? smtpOkLabel : smtpMissingLabel }}
+        </h3>
+        <p class="stat-label">{{ statSmtpLabel }}</p>
+      </div>
+    </div>
+
+    <div class="stat-card clickable" (click)="navigate('audit')">
+      <div class="stat-icon">📜</div>
+      <div class="stat-content">
+        <h3 class="stat-value overview-action-value">{{ viewDetailLabel }}</h3>
+        <p class="stat-label">{{ statAuditLabel }}</p>
+      </div>
+    </div>
+
+    <div class="stat-card clickable" (click)="navigate('webhooks')">
+      <div class="stat-icon">🔗</div>
+      <div class="stat-content">
+        <h3 class="stat-value overview-action-value">{{ viewDetailLabel }}</h3>
+        <p class="stat-label">{{ statWebhooksLabel }}</p>
+      </div>
+    </div>
+
+    <div class="stat-card clickable" (click)="navigate('platform')">
+      <div class="stat-icon">⚙️</div>
+      <div class="stat-content">
+        <h3 class="stat-value overview-action-value">{{ viewDetailLabel }}</h3>
+        <p class="stat-label">{{ statPlatformLabel }}</p>
+      </div>
+    </div>
+  </div>
+</div>

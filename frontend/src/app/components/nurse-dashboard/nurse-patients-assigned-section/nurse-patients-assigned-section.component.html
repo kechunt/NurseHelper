@@ -52,6 +52,10 @@
   </div>
 </div>
 
+<p *ngIf="!nurseOnDuty" class="nurse-off-duty-hint" i18n="@@nursePatientsAssigned.offDutyHint">
+  No estás en turno (presente/tarde). No puedes autoasignarte pacientes hasta que registren tu asistencia.
+</p>
+
 <div *ngIf="patients.length > 0" class="patients-assigned-grid beds-grid">
   <div
     *ngFor="let patient of patients; let i = index"

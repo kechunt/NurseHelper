@@ -10,6 +10,20 @@ jest.mock('../../../services/backup.service', () => ({
   },
 }));
 
+jest.mock('../../../services/audit.service', () => ({
+  AuditAction: {
+    BACKUP_CREATED: 'BACKUP_CREATED',
+    BACKUP_RESTORED: 'BACKUP_RESTORED',
+  },
+  AuditService: {
+    getIpAddress: jest.fn().mockReturnValue('127.0.0.1'),
+    getUserAgent: jest.fn().mockReturnValue('jest'),
+  },
+  auditService: {
+    log: jest.fn().mockResolvedValue(undefined),
+  },
+}));
+
 import type { AuthRequest } from '../../../middleware/auth.middleware';
 import { backupService } from '../../../services/backup.service';
 import { BackupController } from '../../../controllers/backup.controller';

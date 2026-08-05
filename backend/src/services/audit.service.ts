@@ -1,41 +1,30 @@
 /**
  * Servicio de auditoría
- * Registra acciones críticas y cambios en datos sensibles
+ * Registra acciones críticas; mantiene un buffer reciente para el panel de supervisor.
  */
 
-import { AppDataSource } from '../data-source';
 import { logger } from '../utils/logger';
-import { User } from '../entities/User';
 
 export enum AuditAction {
-  // Autenticación
   LOGIN_SUCCESS = 'LOGIN_SUCCESS',
   LOGIN_FAILED = 'LOGIN_FAILED',
   LOGOUT = 'LOGOUT',
-  
-  // Pacientes
   PATIENT_CREATED = 'PATIENT_CREATED',
   PATIENT_UPDATED = 'PATIENT_UPDATED',
   PATIENT_DELETED = 'PATIENT_DELETED',
   PATIENT_OBSERVATION_ADDED = 'PATIENT_OBSERVATION_ADDED',
-  
-  // Medicamentos
   MEDICATION_ADDED = 'MEDICATION_ADDED',
   MEDICATION_SUSPENDED = 'MEDICATION_SUSPENDED',
   MEDICATION_DELETED = 'MEDICATION_DELETED',
   MEDICATION_REACTIVATED = 'MEDICATION_REACTIVATED',
-  
-  // Administraciones
   ADMINISTRATION_RECORDED = 'ADMINISTRATION_RECORDED',
   ADMINISTRATION_MISSED = 'ADMINISTRATION_MISSED',
-  
-  // Usuarios
   USER_CREATED = 'USER_CREATED',
   USER_UPDATED = 'USER_UPDATED',
   USER_DELETED = 'USER_DELETED',
   USER_ROLE_CHANGED = 'USER_ROLE_CHANGED',
-  
-  // Seguridad
+  BACKUP_CREATED = 'BACKUP_CREATED',
+  BACKUP_RESTORED = 'BACKUP_RESTORED',
   PERMISSION_DENIED = 'PERMISSION_DENIED',
   RATE_LIMIT_EXCEEDED = 'RATE_LIMIT_EXCEEDED',
   SUSPICIOUS_ACTIVITY = 'SUSPICIOUS_ACTIVITY',
@@ -53,9 +42,9 @@ export interface AuditLog {
 }
 
 export class AuditService {
-  /**
-   * Registrar acción de auditoría
-   */
+  private readonly recent: AuditLog[] = [];
+  private readonly maxRecent = 200;
+
   async log(action: AuditAction, options: {
     userId?: number;
     resourceType: string;
@@ -75,26 +64,22 @@ export class AuditService {
       timestamp: new Date(),
     };
 
-    // Log estructurado usando Winston
+    this.recent.push(auditLog);
+    if (this.recent.length > this.maxRecent) {
+      this.recent.splice(0, this.recent.length - this.maxRecent);
+    }
+
     logger.info('Audit log', {
       type: 'audit',
       ...auditLog,
     });
-
-    // En producción, también guardar en base de datos
-    if (process.env.NODE_ENV === 'production') {
-      try {
-        // Aquí podrías guardar en una tabla de auditoría si existe
-        // await this.saveToDatabase(auditLog);
-      } catch (error) {
-        logger.error('Error saving audit log to database', { error, auditLog });
-      }
-    }
   }
 
-  /**
-   * Registrar login exitoso
-   */
+  getRecent(limit: number = 50): AuditLog[] {
+    const n = Math.max(1, Math.min(limit, this.maxRecent));
+    return this.recent.slice(-n).reverse();
+  }
+
   async logLoginSuccess(userId: number, ipAddress?: string, userAgent?: string): Promise<void> {
     await this.log(AuditAction.LOGIN_SUCCESS, {
       userId,
@@ -104,9 +89,6 @@ export class AuditService {
     });
   }
 
-  /**
-   * Registrar intento de login fallido
-   */
   async logLoginFailed(username: string, reason: string, ipAddress?: string, userAgent?: string): Promise<void> {
     await this.log(AuditAction.LOGIN_FAILED, {
       resourceType: 'auth',
@@ -116,48 +98,6 @@ export class AuditService {
     });
   }
 
-  /**
-   * Registrar cambio en datos sensibles
-   */
-  async logDataChange(
-    action: AuditAction,
-    userId: number,
-    resourceType: string,
-    resourceId: number | string,
-    changes: { before?: any; after?: any },
-    ipAddress?: string
-  ): Promise<void> {
-    await this.log(action, {
-      userId,
-      resourceType,
-      resourceId,
-      details: changes,
-      ipAddress,
-    });
-  }
-
-  /**
-   * Registrar acceso denegado
-   */
-  async logPermissionDenied(
-    userId: number,
-    resourceType: string,
-    resourceId: number | string,
-    reason: string,
-    ipAddress?: string
-  ): Promise<void> {
-    await this.log(AuditAction.PERMISSION_DENIED, {
-      userId,
-      resourceType,
-      resourceId,
-      details: { reason },
-      ipAddress,
-    });
-  }
-
-  /**
-   * Obtener IP del request
-   */
   static getIpAddress(req: any): string {
     return (
       req.headers['x-forwarded-for']?.split(',')[0] ||
@@ -168,9 +108,6 @@ export class AuditService {
     );
   }
 
-  /**
-   * Obtener User-Agent del request
-   */
   static getUserAgent(req: any): string {
     return req.headers['user-agent'] || 'unknown';
   }

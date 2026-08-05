@@ -1,4 +1,4 @@
-/** Ventana "por caducar" alineada con farmacia (días inclusivos desde hoy). */
+/** Ventana "por caducar" (días inclusivos desde hoy). */
 export const EXPIRING_SOON_DAYS = 30;
 
 export type ExpiryClassification = 'none' | 'expired' | 'expiring_soon';

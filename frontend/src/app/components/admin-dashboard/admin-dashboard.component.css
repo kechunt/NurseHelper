@@ -19,7 +19,7 @@
   text-decoration: underline;
 }
 
-/* ===== Normalización visual Admin ~ Farmacia ===== */
+/* ===== Contenido de pestañas y tarjetas de sección ===== */
 .admin-dashboard .tab-content {
   width: 100%;
   animation: fadeIn 0.3s ease;

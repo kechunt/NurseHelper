@@ -18,7 +18,7 @@ import {
   NURSE_MODAL_HISTORY_EDIT_SUCCESS_SCHEDULE,
 } from '../nurse-modal-component-toasts.helpers';
 
-/** Registro editable (alineado con `TreatmentRecord` del dashboard). */
+/** Registro editable (`TreatmentRecord`). */
 export interface NurseHistoryEditRecord {
   description: string;
   status?: 'administered' | 'not_administered' | 'missed' | 'postponed';

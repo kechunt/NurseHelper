@@ -1,0 +1,108 @@
+<section class="section-card supervisor-health-card" aria-labelledby="supervisor-health-heading">
+  <div class="section-header">
+    <h2 id="supervisor-health-heading" class="section-title">{{ title }}</h2>
+    <button type="button" class="neuro-btn" (click)="loadHealth()" [disabled]="loading">
+      {{ refreshLabel }}
+    </button>
+  </div>
+
+  <p *ngIf="loading" class="loading-state">{{ loadingLabel }}</p>
+
+  <ng-container *ngIf="!loading && health">
+    <div class="supervisor-health-summary">
+      <span [class]="statusPillClass(health.status)">{{ health.status }}</span>
+      <span class="supervisor-health-meta">{{ versionLabel }}: {{ health.version }}</span>
+      <span class="supervisor-health-meta">{{ environmentLabel }}: {{ health.environment }}</span>
+      <span class="supervisor-health-meta">{{ uptimeLabel }}: {{ formatUptime(health.uptime) }}</span>
+    </div>
+
+    <h3 class="supervisor-health-subtitle">{{ detailedTitle }}</h3>
+    <div class="supervisor-health-grid">
+      <div class="supervisor-health-block">
+        <div class="supervisor-health-block-header">
+          <span class="supervisor-health-block-title">{{ dbLabel }}</span>
+          <span [class]="statusPillClass(health.checks.database.status)">{{ health.checks.database.status }}</span>
+        </div>
+        <p class="supervisor-health-block-line">
+          {{ responseTimeLabel }}: {{ health.checks.database.responseTime }} ms
+        </p>
+        <p *ngIf="health.checks.database.message" class="supervisor-health-block-line supervisor-health-block-line--warn">
+          {{ health.checks.database.message }}
+        </p>
+      </div>
+
+      <div class="supervisor-health-block">
+        <div class="supervisor-health-block-header">
+          <span class="supervisor-health-block-title">{{ memoryLabel }}</span>
+          <span [class]="statusPillClass(health.checks.memory.status)">{{ health.checks.memory.status }}</span>
+        </div>
+        <p class="supervisor-health-block-line">
+          {{ formatBytes(health.checks.memory.used) }} / {{ formatBytes(health.checks.memory.total) }}
+          ({{ formatPercentage(health.checks.memory.percentage) }})
+        </p>
+      </div>
+
+      <div class="supervisor-health-block">
+        <div class="supervisor-health-block-header">
+          <span class="supervisor-health-block-title">{{ diskLabel }}</span>
+          <span [class]="statusPillClass(health.checks.disk.status)">{{ health.checks.disk.status }}</span>
+        </div>
+        <p class="supervisor-health-block-line">
+          {{ formatBytes(health.checks.disk.used) }} / {{ formatBytes(health.checks.disk.total) }}
+          ({{ formatPercentage(health.checks.disk.percentage) }})
+        </p>
+      </div>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="!loading && metrics">
+    <h3 class="supervisor-health-subtitle">{{ metricsTitle }}</h3>
+    <div class="supervisor-health-grid">
+      <div class="supervisor-health-block">
+        <div class="supervisor-health-block-header">
+          <span class="supervisor-health-block-title">{{ cpuLabel }}</span>
+        </div>
+        <p class="supervisor-health-block-line">
+          {{ formatPercentage(metrics.system.cpu.usage) }} · {{ metrics.system.cpu.cores }} núcleos
+        </p>
+      </div>
+
+      <div class="supervisor-health-block">
+        <div class="supervisor-health-block-header">
+          <span class="supervisor-health-block-title">{{ memoryLabel }}</span>
+        </div>
+        <p class="supervisor-health-block-line">
+          {{ formatBytes(metrics.system.memory.used) }} / {{ formatBytes(metrics.system.memory.total) }}
+          ({{ formatPercentage(metrics.system.memory.percentage) }})
+        </p>
+      </div>
+
+      <div class="supervisor-health-block">
+        <div class="supervisor-health-block-header">
+          <span class="supervisor-health-block-title">{{ requestsLabel }}</span>
+        </div>
+        <p class="supervisor-health-block-line">
+          {{ requestsTotalLabel }}: {{ metrics.application.requests.total }} ·
+          {{ requestsPerMinuteLabel }}: {{ metrics.application.requests.perMinute }}
+        </p>
+        <p class="supervisor-health-block-line">
+          {{ requestsErrorsLabel }}: {{ metrics.application.requests.errors }} ·
+          {{ requestsErrorRateLabel }}: {{ formatPercentage(metrics.application.requests.errorRate) }}
+        </p>
+      </div>
+
+      <div class="supervisor-health-block">
+        <div class="supervisor-health-block-header">
+          <span class="supervisor-health-block-title">{{ dbLabel }}</span>
+        </div>
+        <p class="supervisor-health-block-line">
+          {{ dbConnectionsLabel }}: {{ metrics.application.database.connections }}
+        </p>
+        <p class="supervisor-health-block-line">
+          {{ dbQueriesLabel }}: {{ metrics.application.database.queries }} ·
+          {{ dbSlowQueriesLabel }}: {{ metrics.application.database.slowQueries }}
+        </p>
+      </div>
+    </div>
+  </ng-container>
+</section>

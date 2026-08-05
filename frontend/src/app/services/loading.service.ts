@@ -27,24 +27,4 @@ export class LoadingService {
       return newCount;
     });
   }
-
-  /**
-   * Resetear loading
-   */
-  reset(): void {
-    this.loadingCount.set(0);
-    this.isLoading.set(false);
-  }
-
-  /**
-   * Ejecutar función con loading automático
-   */
-  async withLoading<T>(fn: () => Promise<T>): Promise<T> {
-    this.start();
-    try {
-      return await fn();
-    } finally {
-      this.stop();
-    }
-  }
 }

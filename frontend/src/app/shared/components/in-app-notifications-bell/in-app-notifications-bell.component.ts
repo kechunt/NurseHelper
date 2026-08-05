@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { catchError, finalize, interval, of } from 'rxjs';
 import { UserNotificationsService, type UserNotificationDto } from '../../../services/user-notifications.service';
+import { RealtimeService } from '../../../services/realtime.service';
 import { ToastService } from '../../../services/toast.service';
 
 @Component({
@@ -15,6 +16,7 @@ import { ToastService } from '../../../services/toast.service';
 })
 export class InAppNotificationsBellComponent implements OnInit {
   private readonly notificationsApi = inject(UserNotificationsService);
+  private readonly realtime = inject(RealtimeService);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
@@ -73,10 +75,44 @@ export class InAppNotificationsBellComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadOnce();
+
+    this.realtime
+      .onNotificationUpsert()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((notification) => this.mergeNotification(notification));
+
     interval(60_000)
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => this.loadOnce());
+      .subscribe(() => {
+        if (!this.realtime.isConnected()) {
+          this.loadOnce();
+        }
+      });
+
+    interval(300_000)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        if (this.realtime.isConnected()) {
+          this.loadOnce();
+        }
+      });
+
     this.destroyRef.onDestroy(() => this.clearMobilePanelTop());
+  }
+
+  private mergeNotification(notification: UserNotificationDto): void {
+    const idx = this.items.findIndex(
+      (n) => n.id === notification.id || n.dedupeKey === notification.dedupeKey,
+    );
+    if (idx >= 0) {
+      const next = [...this.items];
+      next[idx] = notification;
+      this.items = next.sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
+      return;
+    }
+    this.items = [notification, ...this.items];
   }
 
   @HostListener('window:resize')
@@ -326,10 +362,50 @@ export class InAppNotificationsBellComponent implements OnInit {
       this.closePanel();
       return;
     }
+    if (
+      n.type === 'patient_unassigned' &&
+      (this.dashboardKind === 'admin' || this.dashboardKind === 'supervisor')
+    ) {
+      const base = this.dashboardKind === 'admin' ? '/admin' : '/supervisor';
+      void this.router.navigate([base], { queryParams: { tab: 'patients' } });
+      this.closePanel();
+      return;
+    }
+    if (n.type === 'nurse_check_in' && this.dashboardKind === 'admin') {
+      const nurseId = n.payload?.['nurseId'];
+      void this.router.navigate(['/admin'], {
+        queryParams: {
+          tab: 'schedules',
+          ...(typeof nurseId === 'number' ? { attendanceNurseId: nurseId } : {}),
+        },
+      });
+      this.closePanel();
+      return;
+    }
+    if (this.dashboardKind === 'nurse') {
+      if (n.type === 'patient_unassigned') {
+        void this.router.navigate(['/nurse-dashboard'], { queryParams: { view: 'patients' } });
+        this.closePanel();
+        return;
+      }
+      if (n.type === 'handover_missing' || (typeof deep === 'string' && deep.includes('handover'))) {
+        void this.router.navigate(['/nurse-dashboard'], { queryParams: { view: 'handover' } });
+        this.closePanel();
+        return;
+      }
+      const scheduleId = n.payload?.['scheduleId'];
+      if (typeof scheduleId === 'number') {
+        void this.router.navigate(['/nurse-dashboard'], {
+          queryParams: { view: 'tasks', highlightSchedule: scheduleId },
+        });
+        this.closePanel();
+        return;
+      }
+    }
     const areaId = n.payload?.['areaId'];
     if (this.dashboardKind === 'admin' || this.dashboardKind === 'supervisor') {
       if (typeof areaId === 'number' || (typeof areaId === 'string' && areaId !== '')) {
-        const base = this.dashboardKind === 'admin' ? '/admin-dashboard' : '/supervisor-dashboard';
+        const base = this.dashboardKind === 'admin' ? '/admin' : '/supervisor';
         void this.router.navigate([base], { queryParams: { tab: 'areas' } });
         this.closePanel();
       }

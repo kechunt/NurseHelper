@@ -1,6 +1,13 @@
 import { AppDataSource } from '../data-source';
 import { Patient } from '../entities/Patient';
 import { assertNurseCanAccessPatient } from './nurse-patient-access.service';
+import { isNurseOnDuty } from './nurse-on-duty.service';
+import {
+  recordPatientShiftAssignment,
+  resolveCurrentShiftId,
+  todayDateIso,
+} from './patient-shift-assignment.service';
+import { invalidateNurseDashboardCache } from './nurse-dashboard-cache.service';
 import { User } from '../entities/User';
 
 export type ClaimPatientResult =
@@ -17,6 +24,16 @@ export async function claimUnassignedPatientForNurse(
   const nurse = await userRepo.findOne({ where: { id: nurseId } });
   if (!nurse) {
     return { ok: false, status: 404, message: 'Usuario no encontrado', code: 'USER_NOT_FOUND' };
+  }
+
+  const onDuty = await isNurseOnDuty(nurseId);
+  if (!onDuty) {
+    return {
+      ok: false,
+      status: 403,
+      message: 'Solo puedes asignarte pacientes durante tu turno (presente o tarde)',
+      code: 'NURSE_OFF_DUTY',
+    };
   }
 
   const patient = await patientRepo.findOne({ where: { id: patientId, isActive: true } });
@@ -43,10 +60,30 @@ export async function claimUnassignedPatientForNurse(
     };
   }
 
-  patient.assignedToId = nurseId;
-  patient.assignmentStatus = 'assigned';
-  patient.lastAssignmentAt = new Date();
-  await patientRepo.save(patient);
+  const shiftId = await resolveCurrentShiftId();
+  if (!shiftId) {
+    return {
+      ok: false,
+      status: 400,
+      message: 'No hay turno activo para registrar la asignación',
+      code: 'NO_ACTIVE_SHIFT',
+    };
+  }
+
+  const date = todayDateIso();
+  await recordPatientShiftAssignment({
+    date,
+    shiftId,
+    record: {
+      patientId,
+      nurseId,
+      areaId: patient.areaId ?? nurse.assignedAreaId ?? null,
+      status: 'assigned',
+      source: 'claim',
+    },
+  });
+
+  await invalidateNurseDashboardCache(nurseId);
 
   return { ok: true, patientId, assignedToId: nurseId };
 }

@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 import { ValidationError } from '../../../utils/errors';
-import { asyncHandler, errorHandler, sendError } from '../../../utils/error-handler';
+import { asyncHandler, errorHandler } from '../../../utils/error-handler';
 import { logger, logApiError } from '../../../utils/logger';
 
 jest.mock('../../../utils/logger', () => ({
@@ -88,28 +88,6 @@ describe('error-handler', () => {
       asyncHandler(fn as any)({} as Request, {} as Response, next as NextFunction);
       await new Promise<void>((r) => setImmediate(r));
       expect(next).toHaveBeenCalledWith(expect.objectContaining({ message: 'async boom' }));
-    });
-  });
-
-  describe('sendError', () => {
-    it('envía AppError con status y código', () => {
-      const { res, json, status } = mockRes();
-      const req = { originalUrl: '/r' } as Request;
-      sendError(res, new ValidationError('bad'), req);
-      expect(logApiError).toHaveBeenCalled();
-      expect(status).toHaveBeenCalledWith(400);
-      expect(json).toHaveBeenCalledWith(
-        expect.objectContaining({ message: 'bad', statusCode: 400, path: '/r' })
-      );
-    });
-
-    it('Error genérico responde 500 genérico', () => {
-      const { res, json, status } = mockRes();
-      sendError(res, new Error('interno'), {} as Request);
-      expect(status).toHaveBeenCalledWith(500);
-      expect(json).toHaveBeenCalledWith(
-        expect.objectContaining({ message: 'Error interno del servidor', statusCode: 500 })
-      );
     });
   });
 });

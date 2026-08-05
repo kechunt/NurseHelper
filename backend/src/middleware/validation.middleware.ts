@@ -38,33 +38,6 @@ export function validateDto<T extends object>(dtoClass: new () => T) {
 }
 
 /**
- * Valida query parameters
- */
-export function validateQuery<T extends object>(dtoClass: new () => T) {
-  return async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const dto = plainToInstance(dtoClass, req.query, {
-        enableImplicitConversion: true,
-      });
-      const errors = await validate(dto as object, {
-        whitelist: true,
-        forbidNonWhitelisted: false,
-      });
-
-      if (errors.length > 0) {
-        const formattedErrors = formatValidationErrors(errors);
-        throw new AppValidationError('Error de validación en query parameters', formattedErrors);
-      }
-
-      req.query = dto as any;
-      next();
-    } catch (error) {
-      next(error);
-    }
-  };
-}
-
-/**
  * Formatea errores de validación para respuesta
  */
 function formatValidationErrors(errors: ValidationError[]): any {

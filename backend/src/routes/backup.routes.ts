@@ -7,13 +7,13 @@ import { UserRole } from '../entities/User';
 const router = Router();
 
 router.use(authMiddleware);
-router.use(roleMiddleware([UserRole.ADMIN]));
+router.use(roleMiddleware([UserRole.SUPERVISOR]));
 
 /**
  * @swagger
  * /api/backup:
  *   post:
- *     summary: Crear backup (solo admin)
+ *     summary: Crear backup (solo supervisor)
  *     tags: [Backup]
  *     security:
  *       - bearerAuth: []
@@ -39,7 +39,7 @@ router.post('/', backupController.createBackup);
  * @swagger
  * /api/backup:
  *   get:
- *     summary: Listar backups disponibles (solo admin)
+ *     summary: Listar backups disponibles (solo supervisor)
  *     tags: [Backup]
  *     security:
  *       - bearerAuth: []
@@ -53,7 +53,7 @@ router.get('/', backupController.listBackups);
  * @swagger
  * /api/backup/restore:
  *   post:
- *     summary: Restaurar desde un archivo de backup (solo admin)
+ *     summary: Restaurar desde un archivo de backup (solo supervisor)
  *     tags: [Backup]
  *     security:
  *       - bearerAuth: []
@@ -80,7 +80,7 @@ router.post('/restore', backupController.restoreBackup);
  * @swagger
  * /api/backup/verify:
  *   get:
- *     summary: Verificar integridad de un backup (solo admin)
+ *     summary: Verificar integridad de un backup (solo supervisor)
  *     tags: [Backup]
  *     security:
  *       - bearerAuth: []
@@ -100,7 +100,7 @@ router.get('/verify', backupController.verifyBackup);
  * @swagger
  * /api/backup/test-restore:
  *   post:
- *     summary: Probar restauración sin aplicar cambios definitivos (solo admin)
+ *     summary: Probar restauración sin aplicar cambios definitivos (solo supervisor)
  *     tags: [Backup]
  *     security:
  *       - bearerAuth: []

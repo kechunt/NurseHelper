@@ -1,7 +1,4 @@
-/**
- * Toasts y copias de confirmación en modales hijos del panel enfermería
- * (fuera de los helpers del `nurse-dashboard.component.ts`).
- */
+/** Toasts y copias de confirmación en modales hijos del panel enfermería. */
 
 // --- Alta medicación ---
 export const NURSE_MODAL_ADD_MED_WARN_COMPLETE_FIELDS = $localize`:@@nurseModal.addMed.warnCompleteFields:Por favor complete todos los campos requeridos`;
@@ -15,12 +12,6 @@ export function nurseModalAddMedicationSuccessToast(schedulesCreated: number): s
 export const NURSE_MODAL_ADD_MED_ERR_FALLBACK = $localize`:@@nurseModal.addMed.errFallback:Error al agregar medicamento. Intente nuevamente.`;
 
 // --- Alta tratamiento ---
-export const NURSE_MODAL_ADD_TRT_WARN_DESCRIPTION = $localize`:@@nurseModal.addTrt.warnDescription:Indique la descripción del tratamiento`;
-
-export const NURSE_MODAL_ADD_TRT_WARN_DATE_TIME = $localize`:@@nurseModal.addTrt.warnDateTime:Indique fecha y hora`;
-
-export const NURSE_MODAL_ADD_TRT_SUCCESS_QUICK = $localize`:@@nurseModal.addTrt.successQuick:Tratamiento agregado`;
-
 export const NURSE_MODAL_ADD_TRT_ERR_CREATE_FALLBACK = $localize`:@@nurseModal.addTrt.errCreateFallback:Error al crear tratamiento`;
 
 export const NURSE_MODAL_ADD_TRT_WARN_REQUIRED_FIELDS = $localize`:@@nurseModal.addTrt.warnRequiredFields:Por favor complete todos los campos obligatorios`;

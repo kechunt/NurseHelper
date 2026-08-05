@@ -1,4 +1,4 @@
-/* Modal base (mismo criterio que nurse-dashboard; el hijo no hereda estilos encapsulados del padre) */
+/* Modal base (el hijo no hereda estilos encapsulados del padre). */
 .modal-backdrop {
   position: fixed;
   top: 0;

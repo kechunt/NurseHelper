@@ -8,6 +8,7 @@ import {
   requireAdminOrSupervisor,
   requireAdminOrSupervisorOrNurseInArea,
   requireRole,
+  requireSupervisor,
 } from '../../../middleware/role.middleware';
 import { verifyToken } from '../../../utils/jwt';
 
@@ -73,6 +74,18 @@ describe('role.middleware', () => {
     it('permite solo admin', () => {
       requireAdmin({ user: { role: UserRole.ADMIN } } as AuthRequest, res, next);
       expect(next).toHaveBeenCalled();
+    });
+  });
+
+  describe('requireSupervisor', () => {
+    it('permite solo supervisor', () => {
+      requireSupervisor({ user: { role: UserRole.SUPERVISOR } } as AuthRequest, res, next);
+      expect(next).toHaveBeenCalled();
+    });
+
+    it('rechaza admin', () => {
+      requireSupervisor({ user: { role: UserRole.ADMIN } } as AuthRequest, res, next);
+      expect(status).toHaveBeenCalledWith(403);
     });
   });
 

@@ -49,6 +49,38 @@
       </p>
     </div>
 
+    <div
+      class="coverage-alert-neuro module-section-neuro"
+      *ngIf="pendingShiftAssignmentSuggestions.length > 0"
+    >
+      <div class="coverage-alert-header-neuro">
+        <h3 class="subsection-title-neuro" i18n="@@schedMgmtHtml.shiftAssignmentsPendingTitle">
+          Pacientes sin enfermera en turno
+        </h3>
+        <span class="coverage-alert-count-neuro">{{ pendingShiftAssignmentSuggestions.length }}</span>
+      </div>
+      <p class="coverage-alert-text-neuro" i18n="@@schedMgmtHtml.shiftAssignmentsPendingIntro">
+        Asigne enfermera o ejecute reparto automático guardando la lista de asistencia.
+      </p>
+      <ul class="coverage-alert-tags-neuro shift-assignment-suggestions-list">
+        <li *ngFor="let row of pendingShiftAssignmentSuggestions.slice(0, 12)">
+          <span i18n="@@schedMgmtHtml.shiftAssignmentPatientLine">
+            Paciente #{{ row.patientId }} · área {{ row.areaId ?? '—' }}
+          </span>
+          <span *ngIf="row.reason"> — {{ row.reason }}</span>
+        </li>
+      </ul>
+      <button
+        type="button"
+        class="neuro-btn neuro-btn-sm"
+        (click)="loadShiftAssignmentSuggestions()"
+        [disabled]="loadingShiftAssignmentSuggestions"
+        i18n="@@schedMgmtHtml.refreshShiftAssignments"
+      >
+        Actualizar sugerencias
+      </button>
+    </div>
+
     <div class="table-wrapper-neuro module-section-neuro">
       <h3 class="subsection-title-neuro">
         {{ getAttendanceTableTitle() }}
@@ -371,6 +403,35 @@
     (save)="saveAssignAreaCoverageModal()"
     (toggleNurse)="onCoverageModalToggleNurse($event)"
   />
+
+  <app-modal-shell
+    *ngIf="showHandoffPendingModal"
+    [title]="schedHtmlHandoffPendingTitle"
+    contentClass="handoff-pending-modal-neuro"
+    (dismiss)="closeHandoffPendingModal()"
+  >
+    <div class="modal-body-neuro">
+      <p class="handoff-pending-summary-neuro">{{ handoffSummaryLine }}</p>
+      <p class="handoff-pending-hint-neuro" i18n="@@schedMgmtHtml.handoffPendingHint">
+        Estos pacientes siguen sin enfermera asignada. Revisa la pestaña Pacientes para asignarlos manualmente.
+      </p>
+      <ul class="handoff-pending-list-neuro" *ngIf="handoffPendingRows.length">
+        <li *ngFor="let row of handoffPendingRows.slice(0, 12)">
+          <span i18n="@@schedMgmtHtml.handoffPendingPatient">Paciente #{{ row.patientId }}</span>
+          <span *ngIf="row.reason" class="handoff-pending-reason-neuro"> — {{ row.reason }}</span>
+        </li>
+        <li *ngIf="handoffPendingRows.length > 12" class="handoff-pending-more-neuro" i18n="@@schedMgmtHtml.handoffPendingMore">
+          … y {{ handoffPendingRows.length - 12 }} más
+        </li>
+      </ul>
+    </div>
+    <div class="modal-footer-neuro">
+      <button type="button" class="btn-cancel-neuro" (click)="closeHandoffPendingModal()" i18n="@@schedMgmtHtml.btnClose">Cerrar</button>
+      <button type="button" class="btn-save-neuro" (click)="goToPatientsFromHandoffModal()" i18n="@@schedMgmtHtml.btnGoPatients">
+        Ir a Pacientes
+      </button>
+    </div>
+  </app-modal-shell>
 
   <app-modal-shell
     *ngIf="showDayOffPickerModal"

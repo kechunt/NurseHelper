@@ -9,7 +9,7 @@ import { hookMysqlPoolSetNamesUtf8Mb4 } from './utils/mysql-utf8mb4-pool';
 import { setupSwagger } from './config/swagger';
 import { errorHandler } from './utils/error-handler';
 import { sanitizeMiddleware } from './utils/sanitizer';
-import { rateLimitMiddleware, authRateLimitMiddleware } from './middleware/rate-limit.middleware';
+import { rateLimitMiddleware } from './middleware/rate-limit.middleware';
 import { metricsMiddleware } from './middleware/metrics.middleware';
 import authRoutes from './routes/auth.routes';
 import usersRoutes from './routes/users.routes';
@@ -26,9 +26,11 @@ import handoverRoutes from './routes/handover.routes';
 import webhooksRoutes from './routes/webhooks.routes';
 import notificationsRoutes from './routes/notifications.routes';
 import backupRoutes from './routes/backup.routes';
-import diagnosticRoutes from './routes/diagnostic.routes';
 import healthRoutes from './routes/health.routes';
+import supervisorRoutes from './routes/supervisor.routes';
 import { startInAppNotificationJobs } from './services/notification-jobs.service';
+import http from 'http';
+import { initRealtimeServer } from './services/realtime.service';
 
 // Cargar variables de entorno al inicio
 loadEnv();
@@ -60,13 +62,7 @@ const corsOptions: cors.CorsOptions = {
     const defaultOrigins: string[] = ['http://localhost:4200'];
     const allAllowedOrigins: string[] = [...defaultOrigins, ...allowedOriginsEnv];
 
-    /** Túneles ngrok (desarrollo remoto; p. ej. *.ngrok-free.dev) */
-    const ngrokPattern =
-      /^https:\/\/[a-z0-9-]+(?:-[a-z0-9-]+)*\.ngrok(?:-free)?\.(?:app|dev)$/i;
-
-    const isAllowed =
-      allAllowedOrigins.includes(origin) ||
-      ngrokPattern.test(origin);
+    const isAllowed = allAllowedOrigins.includes(origin);
 
     if (isAllowed) {
       callback(null, true);
@@ -128,10 +124,9 @@ app.use('/api/handover', handoverRoutes);
 app.use('/api/webhooks', webhooksRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/backup', backupRoutes);
-if (process.env.NODE_ENV !== 'production') {
-  app.use('/api/diagnostic', diagnosticRoutes);
-}
+app.use('/api/supervisor', supervisorRoutes);
 app.use('/health', healthRoutes);
+app.use('/api/health', healthRoutes);
 logger.info('✅ Rutas registradas');
 
 /**
@@ -145,31 +140,6 @@ logger.info('✅ Rutas registradas');
  *       200:
  *         description: Metadatos y enlaces útiles
  */
-/**
- * @swagger
- * /health-basic:
- *   get:
- *     summary: Health check mínimo (sin prefijo /health)
- *     tags: [Health]
- *     security: []
- *     responses:
- *       200:
- *         description: Servidor en ejecución
- */
-// Health check básico (deprecado; usar GET /health)
-app.get('/health-basic', (req, res) => {
-  res.setHeader('Deprecation', 'true');
-  res.setHeader('Link', '</health>; rel="successor-version"');
-  res.json({
-    status: 'ok',
-    message: 'Deprecated: use GET /health instead',
-    deprecated: true,
-    successor: '/health',
-    timestamp: new Date().toISOString(),
-    port: PORT,
-  });
-});
-
 // Raíz
 app.get('/', (req, res) => {
   res.json({ 
@@ -236,8 +206,10 @@ AppDataSource.initialize()
     }
 
     logger.info('🔄 Iniciando servidor HTTP...');
-    // Escuchar en todas las interfaces (0.0.0.0) para permitir conexiones locales y remotas
-    const server = app.listen(PORT, '0.0.0.0', () => {
+    const httpServer = http.createServer(app);
+    initRealtimeServer(httpServer);
+
+    const server = httpServer.listen(PORT, '0.0.0.0', () => {
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4200';
       const backendUrl = `http://localhost:${PORT}`;
       const address = server.address();
@@ -320,4 +292,3 @@ AppDataSource.initialize()
   });
 
 export default app;
-

@@ -6,6 +6,9 @@ import { User, UserRole } from '../entities/User';
 import { buildAreasShiftCoverage, type AreasShiftCoveragePayload } from './area-shift-coverage.service';
 import {
   bulkDismissDedupesForUsers,
+  dismissAllPatientUnassignedNotifications,
+  dismissPatientUnassignedNotificationsExcept,
+  dismissOperationalNotificationsForNurse,
   dismissScheduleNotificationGroup,
   dismissScheduleNotificationsExceptUser,
   dismissScheduleNotificationsForNonPendingSchedules,
@@ -16,6 +19,7 @@ import { UserNotification } from '../entities/UserNotification';
 import { Medication, MedicationStatus } from '../entities/Medication';
 import { Shift } from '../entities/Shift';
 import { ShiftHandoverNote } from '../entities/ShiftHandoverNote';
+import { patientAssignmentService } from './patient-assignment.service';
 import { logger } from '../utils/logger';
 
 async function getAreaIdsWithActiveOccupiedPatients(): Promise<Set<number>> {
@@ -102,13 +106,108 @@ async function syncAreaCoverageNotifications(): Promise<void> {
   }
 }
 
+async function syncUnassignedPatientNotifications(): Promise<void> {
+  const coverage = await buildAreasShiftCoverage();
+  const userRepo = AppDataSource.getRepository(User);
+  const recipients = await userRepo.find({
+    where: { role: In([UserRole.ADMIN, UserRole.SUPERVISOR]), isActive: true },
+    select: ['id'],
+  });
+  const recipientIds = recipients.map((u) => u.id as number).filter((id) => id > 0);
+  if (recipientIds.length === 0) return;
+
+  if (!coverage.hasActiveShift || coverage.shiftId == null) {
+    await dismissAllPatientUnassignedNotifications();
+    return;
+  }
+
+  const patientRepo = AppDataSource.getRepository(Patient);
+  const patients = await patientRepo.find({
+    where: { isActive: true },
+    relations: ['bed', 'bed.area', 'area'],
+  });
+
+  const date = coverage.date;
+  const shiftId = coverage.shiftId;
+  const keysToKeep = new Set<string>();
+
+  for (const p of patients) {
+    const hasBed = p.bedId != null;
+    const unassigned = p.assignedToId == null || p.assignmentStatus === 'pending';
+    if (!hasBed || !unassigned) continue;
+
+    const areaId =
+      p.areaId != null
+        ? Number(p.areaId)
+        : p.bed?.areaId != null
+          ? Number(p.bed.areaId)
+          : null;
+    const areaName =
+      p.area?.name ?? p.bed?.area?.name ?? (areaId != null ? `Área ${areaId}` : 'Sin área');
+    const dedupeKey = `patient-unassigned:${date}:${shiftId}:p${p.id}`;
+    keysToKeep.add(dedupeKey);
+
+    for (const uid of recipientIds) {
+      await upsertUserNotification({
+        userId: uid,
+        type: 'patient_unassigned',
+        severity: 'warning',
+        requiresAck: true,
+        title: 'Paciente sin enfermera asignada',
+        body: `Asigne una enfermera al paciente #${p.id} (${areaName}) en el turno «${coverage.shiftName ?? 'actual'}».`,
+        payload: {
+          patientId: p.id,
+          areaId,
+          shiftId,
+          date,
+          shiftName: coverage.shiftName,
+          deepLink: '/admin?tab=patients',
+        },
+        dedupeKey,
+      });
+    }
+  }
+
+  await dismissPatientUnassignedNotificationsExcept(date, shiftId, [...keysToKeep]);
+}
+
+async function syncOffDutyNurseNotificationCleanup(): Promise<void> {
+  const coverage = await buildAreasShiftCoverage();
+  if (!coverage.hasActiveShift) {
+    return;
+  }
+
+  const presentIds = new Set<number>();
+  for (const row of coverage.areas) {
+    for (const nurse of row.nurses) {
+      presentIds.add(nurse.id);
+    }
+  }
+
+  const userRepo = AppDataSource.getRepository(User);
+  const nurses = await userRepo.find({
+    where: { role: UserRole.NURSE, isActive: true },
+    select: ['id'],
+  });
+
+  for (const nurse of nurses) {
+    if (!presentIds.has(nurse.id)) {
+      await dismissOperationalNotificationsForNurse(nurse.id);
+    }
+  }
+}
+
+async function syncActiveShiftPatientAssignments(): Promise<void> {
+  await patientAssignmentService.syncAssignmentsForActiveShift();
+}
+
 type ScheduleRoutingContext = {
   coverage: AreasShiftCoveragePayload;
   presentNursesByArea: Map<number, Set<number>>;
   patientsById: Map<number, { areaId: number | null; assignedToId: number | null }>;
 };
 
-async function buildScheduleRoutingContext(): Promise<ScheduleRoutingContext> {
+export async function buildScheduleRoutingContext(): Promise<ScheduleRoutingContext> {
   const coverage = await buildAreasShiftCoverage();
   const presentNursesByArea = new Map<number, Set<number>>();
   for (const row of coverage.areas) {
@@ -523,9 +622,24 @@ let intervalHandle: ReturnType<typeof setInterval> | null = null;
 
 export async function runInAppNotificationJobs(): Promise<void> {
   try {
+    await syncActiveShiftPatientAssignments();
+  } catch (e) {
+    logger.error('Job sincronización asignación pacientes', { error: String(e) });
+  }
+  try {
+    await syncOffDutyNurseNotificationCleanup();
+  } catch (e) {
+    logger.error('Job limpieza notificaciones fuera de turno', { error: String(e) });
+  }
+  try {
     await syncAreaCoverageNotifications();
   } catch (e) {
     logger.error('Job cobertura áreas / notificaciones', { error: String(e) });
+  }
+  try {
+    await syncUnassignedPatientNotifications();
+  } catch (e) {
+    logger.error('Job pacientes sin enfermera', { error: String(e) });
   }
   try {
     await syncScheduleReminderNotifications();

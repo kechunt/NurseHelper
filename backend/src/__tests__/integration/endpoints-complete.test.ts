@@ -300,7 +300,7 @@ describe('Complete Endpoints Test', () => {
 
   describe('Health Endpoints', () => {
     const endpoints = [
-      { method: 'GET', path: '/health-basic' },
+      { method: 'GET', path: '/health' },
       { method: 'GET', path: '/health/detailed' },
       { method: 'GET', path: '/health/metrics' },
       { method: 'GET', path: '/health/ready' },
@@ -322,7 +322,7 @@ describe('Complete Endpoints Test', () => {
     ];
 
     endpoints.forEach(({ method, path }) => {
-      it(`${method} ${path} debería estar disponible (solo admin)`, async () => {
+      it(`${method} ${path} debería estar disponible (solo supervisor)`, async () => {
         const req = requestByMethod(app, method, path)
           .set('Authorization', `Bearer ${adminToken}`);
 

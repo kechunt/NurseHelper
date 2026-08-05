@@ -116,7 +116,7 @@
   text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8);
 }
 
-/* Rejilla alineada con Gestión de Camas (admin) */
+/* Rejilla de tarjetas de pacientes */
 .patients-assigned-grid.beds-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));

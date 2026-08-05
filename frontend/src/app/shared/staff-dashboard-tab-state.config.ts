@@ -7,7 +7,7 @@ export const ADMIN_DASHBOARD_TAB_STATE_CONFIG: DashboardTabStateConfig = {
 };
 
 export const SUPERVISOR_DASHBOARD_TAB_STATE_CONFIG: DashboardTabStateConfig = {
-  storageKey: 'supervisor-dashboard-active-tab-v1',
-  allowedTabs: ['overview', 'users', 'staff', 'areas', 'beds', 'patients', 'schedules'],
+  storageKey: 'supervisor-dashboard-active-tab-v2',
+  allowedTabs: ['overview', 'backups', 'health', 'audit', 'webhooks', 'platform'],
   defaultTab: 'overview',
 };

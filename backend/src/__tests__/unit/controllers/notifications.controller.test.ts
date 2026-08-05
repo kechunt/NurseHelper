@@ -7,6 +7,7 @@ const markAllNotificationsRead = jest.fn();
 const deleteNotificationForUser = jest.fn();
 const bulkDeleteNotificationsForUser = jest.fn();
 const deleteAllNotificationsForUser = jest.fn();
+const isNurseOnDutyMock = jest.fn();
 
 jest.mock('../../../services/user-notifications-persistence.service', () => ({
   listActiveNotificationsForUser: (...a: unknown[]) => listActiveNotificationsForUser(...a),
@@ -18,7 +19,12 @@ jest.mock('../../../services/user-notifications-persistence.service', () => ({
   deleteAllNotificationsForUser: (...a: unknown[]) => deleteAllNotificationsForUser(...a),
 }));
 
+jest.mock('../../../services/nurse-on-duty.service', () => ({
+  isNurseOnDuty: (...a: unknown[]) => isNurseOnDutyMock(...a),
+}));
+
 import type { AuthRequest } from '../../../middleware/auth.middleware';
+import { UserRole } from '../../../entities/User';
 import { NotificationsController } from '../../../controllers/notifications.controller';
 
 describe('NotificationsController', () => {
@@ -26,20 +32,54 @@ describe('NotificationsController', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    isNurseOnDutyMock.mockResolvedValue(true);
     ctrl = new NotificationsController();
   });
 
   function authReq(overrides: Partial<AuthRequest> = {}): AuthRequest {
-    return { user: { id: 7, email: 'n@test', role: 'nurse' as const }, ...overrides } as AuthRequest;
+    return {
+      user: { id: 7, email: 'n@test', role: UserRole.ADMIN },
+      ...overrides,
+    } as AuthRequest;
+  }
+
+  function jsonRes(): { res: Response; json: jest.Mock; whenJson: Promise<void> } {
+    let resolveJson!: () => void;
+    const whenJson = new Promise<void>((resolve) => {
+      resolveJson = resolve;
+    });
+    const json = jest.fn(() => {
+      resolveJson();
+    });
+    const res = { json } as unknown as Response;
+    return { res, json, whenJson };
   }
 
   it('getNotifications devuelve lista de persistencia', async () => {
-    listActiveNotificationsForUser.mockResolvedValueOnce([{ id: 1, type: 'x' }]);
-    const json = jest.fn();
-    const res = { json } as unknown as Response;
-    await ctrl.getNotifications(authReq(), res, jest.fn());
+    listActiveNotificationsForUser.mockResolvedValueOnce([
+      { id: 1, type: 'x', dedupeKey: 'info:1' },
+    ]);
+    const { res, json, whenJson } = jsonRes();
+    ctrl.getNotifications(authReq(), res, jest.fn());
+    await whenJson;
     expect(listActiveNotificationsForUser).toHaveBeenCalledWith(7);
-    expect(json).toHaveBeenCalledWith([{ id: 1, type: 'x' }]);
+    expect(json).toHaveBeenCalledWith([{ id: 1, type: 'x', dedupeKey: 'info:1' }]);
+  });
+
+  it('getNotifications oculta alertas operativas si enfermera fuera de turno', async () => {
+    isNurseOnDutyMock.mockResolvedValueOnce(false);
+    listActiveNotificationsForUser.mockResolvedValueOnce([
+      { id: 1, type: 'schedule_reminder_10', dedupeKey: 'sch:1:t10' },
+      { id: 2, type: 'info', dedupeKey: 'other:1' },
+    ]);
+    const { res, json, whenJson } = jsonRes();
+    const req = {
+      user: { id: 7, email: 'n@test', role: UserRole.NURSE },
+    } as AuthRequest;
+    ctrl.getNotifications(req, res, jest.fn());
+    await whenJson;
+    expect(isNurseOnDutyMock).toHaveBeenCalledWith(7);
+    expect(json).toHaveBeenCalledWith([{ id: 2, type: 'info', dedupeKey: 'other:1' }]);
   });
 
   it('markAsRead llama persistencia', async () => {

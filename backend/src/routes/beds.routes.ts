@@ -149,36 +149,6 @@ router.post('/:id/assign', authMiddleware, requireAdminOrSupervisor, bedsControl
 
 /**
  * @swagger
- * /api/beds/{id}/assign:
- *   put:
- *     summary: Asignar paciente a cama (alternativa)
- *     tags: [Beds]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               patientId:
- *                 type: integer
- *                 nullable: true
- *     responses:
- *       200:
- *         description: Paciente asignado exitosamente
- */
-router.put('/:id/assign', authMiddleware, requireAdminOrSupervisor, bedsController.assignPatient.bind(bedsController));
-
-/**
- * @swagger
  * /api/beds/{id}:
  *   delete:
  *     summary: Eliminar cama

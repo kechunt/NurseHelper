@@ -18,20 +18,31 @@ import { fetchMyBedsForNurse } from '../services/nurse-my-beds.service';
 import { fetchMyPatientsForNurse } from '../services/nurse-my-patients.service';
 import { buildNurseShiftContextPayload } from '../services/nurse-shift-context.service';
 import { claimUnassignedPatientForNurse } from '../services/nurse-patient-claim.service';
+import { checkoutNurseFromShift as performNurseCheckout } from '../services/nurse-checkout.service';
+import { nurseSelfCheckIn } from '../services/nurse-check-in.service';
+import { admitPatientForNurse } from '../services/nurse-admit-patient.service';
+import { findAdminHandoverNote } from '../services/admin-handover-note.service';
 import { fetchPatientDetailsForNurse } from '../services/nurse-patient-details.service';
 import {
-  recordNurseAdministration,
-  fetchNursePatientAdministrationHistoryFormatted,
   patchAdministrationHistoryForNurse,
   deleteAdministrationHistoryForNurse,
 } from '../services/nurse-administration.service';
 import {
   createNurseTreatmentSchedules,
-  quickAddNursePatientTreatment,
   patchPatientTreatmentScheduleAction,
   patchNursePatientScheduleForNurse,
   deletePendingNursePatientSchedule,
 } from '../services/nurse-treatments.service';
+import {
+  getNurseDashboardCached,
+  invalidateNurseDashboardCache,
+  nurseDashboardCacheKey,
+  wantsRefreshQuery,
+} from '../services/nurse-dashboard-cache.service';
+
+function nurseRefreshFromQuery(req: AuthRequest): boolean {
+  return wantsRefreshQuery(req.query as Record<string, unknown>);
+}
 
 export const getNurseStats = async (req: AuthRequest, res: Response) => {
   logger.info('🚀 getNurseStats - Iniciando ejecución');
@@ -53,7 +64,11 @@ export const getNurseStats = async (req: AuthRequest, res: Response) => {
       return res.status(401).json({ message: 'Usuario no autenticado' });
     }
 
-    const stats = await computeNurseStats(userId);
+    const stats = await getNurseDashboardCached(
+      nurseDashboardCacheKey('stats', userId),
+      () => computeNurseStats(userId),
+      { refresh: nurseRefreshFromQuery(req) },
+    );
     if (!stats) {
       logger.error(`❌ Usuario con ID ${userId} no encontrado`);
       return res.status(404).json({ message: 'Usuario no encontrado' });
@@ -105,7 +120,12 @@ export const getMyBeds = async (req: AuthRequest, res: Response) => {
       return res.status(401).json({ message: 'Usuario no autenticado' });
     }
 
-    const result = await fetchMyBedsForNurse(userId);
+    const refresh = nurseRefreshFromQuery(req);
+    const result = await getNurseDashboardCached(
+      nurseDashboardCacheKey('beds', userId),
+      () => fetchMyBedsForNurse(userId),
+      { refresh },
+    );
     if (!result.ok) {
       return res.status(result.status).json(result.body);
     }
@@ -155,7 +175,21 @@ export const getMyPatients = async (req: AuthRequest, res: Response) => {
     }
 
     const qRaw = typeof req.query.q === 'string' ? req.query.q : undefined;
-    const result = await fetchMyPatientsForNurse(userId, qRaw);
+    const refresh = nurseRefreshFromQuery(req);
+
+    if (qRaw?.trim()) {
+      const result = await fetchMyPatientsForNurse(userId, qRaw);
+      if (!result.ok) {
+        return res.status(result.status).json(result.body);
+      }
+      return res.json(result.patients);
+    }
+
+    const result = await getNurseDashboardCached(
+      nurseDashboardCacheKey('patients', userId),
+      () => fetchMyPatientsForNurse(userId, undefined),
+      { refresh },
+    );
     if (!result.ok) {
       return res.status(result.status).json(result.body);
     }
@@ -188,7 +222,11 @@ export const getMyPatients = async (req: AuthRequest, res: Response) => {
 export const getTodayTasks = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.id;
-    const result = await fetchNurseTodayTasksGrouped(userId);
+    const result = await getNurseDashboardCached(
+      nurseDashboardCacheKey('tasks', userId),
+      () => fetchNurseTodayTasksGrouped(userId),
+      { refresh: nurseRefreshFromQuery(req) },
+    );
     res.json(result);
   } catch (error) {
     logger.error('❌ Error en getTodayTasks:', error);
@@ -256,85 +294,22 @@ export const addTreatment = async (req: AuthRequest, res: Response) => {
 export const getMedicationsForPharmacy = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.id;
-    const medications = await fetchMedicationsForPharmacyGrouped(userId);
-    const d = new Date();
-    const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    const pharmacyContactsByShift = await fetchPharmacyContactsByShiftForDate(dateStr);
-    res.json({ medications, pharmacyContactsByShift });
+    const refresh = nurseRefreshFromQuery(req);
+    const payload = await getNurseDashboardCached(
+      nurseDashboardCacheKey('pharmacy', userId),
+      async () => {
+        const medications = await fetchMedicationsForPharmacyGrouped(userId);
+        const d = new Date();
+        const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        const pharmacyContactsByShift = await fetchPharmacyContactsByShiftForDate(dateStr);
+        return { medications, pharmacyContactsByShift };
+      },
+      { refresh },
+    );
+    res.json(payload);
   } catch (error) {
     logger.error('❌ Error en getMedicationsForPharmacy:', error);
     res.status(500).json({ message: 'Error al obtener medicamentos' });
-  }
-};
-
-// Registrar administración de medicamento/tratamiento
-export const recordAdministration = async (req: AuthRequest, res: Response) => {
-  try {
-    const nurse = req.user;
-    const { scheduleId, status, reasonNotAdministered, notes } = req.body;
-
-    if (!nurse || !nurse.id) {
-      return res.status(403).json({ message: 'Enfermera no autorizada' });
-    }
-
-    const result = await recordNurseAdministration({
-      nurseId: nurse.id,
-      assignedAreaId: nurse.assignedAreaId,
-      scheduleId,
-      status,
-      reasonNotAdministered,
-      notes,
-    });
-    if (!result.ok) {
-      return res.status(result.status).json(result.body);
-    }
-    res.json(result.body);
-  } catch (error) {
-    logger.error('Error al registrar administración:', error);
-    res.status(500).json({ message: 'Error interno del servidor al registrar administración' });
-  }
-};
-
-export const getPatientHistory = async (req: AuthRequest, res: Response) => {
-  try {
-    const nurse = req.user;
-    const { patientId } = req.params;
-
-    if (!nurse || !nurse.id) {
-      return res.status(403).json({ message: 'Enfermera no autorizada' });
-    }
-
-    const result = await fetchNursePatientAdministrationHistoryFormatted(
-      nurse.id,
-      nurse.assignedAreaId,
-      patientId
-    );
-    if (!result.ok) {
-      return res.status(result.status).json(result.body);
-    }
-    res.json(result.body);
-  } catch (error) {
-    logger.error('Error al obtener historial:', error);
-    res.status(500).json({ message: 'Error interno del servidor al obtener historial' });
-  }
-};
-
-/** Alta rápida: un tratamiento/chequeo con fecha-hora (tabla `schedules`, tipo tratamiento). */
-export const quickAddPatientTreatment = async (req: AuthRequest, res: Response) => {
-  try {
-    const nurse = req.user!;
-    const patientId = parseInt(req.params.patientId, 10);
-    if (isNaN(patientId)) {
-      return res.status(400).json({ message: 'ID de paciente inválido' });
-    }
-    const result = await quickAddNursePatientTreatment(nurse.id, nurse.assignedAreaId, patientId, req.body);
-    if (!result.ok) {
-      return res.status(result.status).json(result.body);
-    }
-    return res.status(result.status).json(result.body);
-  } catch (error) {
-    logger.error('quickAddPatientTreatment:', error);
-    res.status(500).json({ message: 'Error al crear tratamiento' });
   }
 };
 
@@ -456,7 +431,13 @@ export const getNurseShiftContext = async (req: AuthRequest, res: Response) => {
     if (me.role !== UserRole.NURSE) {
       return res.status(403).json({ message: 'Solo disponible para el rol enfermería' });
     }
-    return res.json(await buildNurseShiftContextPayload(me.id));
+    return res.json(
+      await getNurseDashboardCached(
+        nurseDashboardCacheKey('shift-context', me.id),
+        () => buildNurseShiftContextPayload(me.id),
+        { refresh: nurseRefreshFromQuery(req) },
+      ),
+    );
   } catch (error) {
     logger.error('getNurseShiftContext:', error);
     return res.status(500).json({ message: 'Error al obtener el contexto de turno' });
@@ -597,6 +578,126 @@ export const claimPatientForNurse = async (req: AuthRequest, res: Response) => {
   } catch (error) {
     logger.error('claimPatientForNurse:', error);
     return res.status(500).json({ message: 'Error al asignar paciente' });
+  }
+};
+
+export const checkoutNurseFromShift = async (req: AuthRequest, res: Response) => {
+  try {
+    const me = req.user;
+    if (!me?.id) {
+      return res.status(401).json({ message: 'Usuario no autenticado' });
+    }
+    if (me.role !== UserRole.NURSE) {
+      return res.status(403).json({ message: 'Solo disponible para el rol enfermería' });
+    }
+
+    const result = await performNurseCheckout(me.id);
+    if (!result.ok) {
+      return res.status(result.status).json({ message: result.message, code: result.code });
+    }
+
+    return res.json({
+      message: 'Turno cerrado correctamente',
+      releasedPatients: result.releasedPatients,
+      handoffProcessed: result.handoffProcessed,
+    });
+  } catch (error) {
+    logger.error('checkoutNurseFromShift:', error);
+    return res.status(500).json({ message: 'Error al cerrar turno' });
+  }
+};
+
+export const postNurseCheckIn = async (req: AuthRequest, res: Response) => {
+  try {
+    const me = req.user;
+    if (!me?.id) {
+      return res.status(401).json({ message: 'Usuario no autenticado' });
+    }
+    if (me.role !== UserRole.NURSE) {
+      return res.status(403).json({ message: 'Solo disponible para el rol enfermería' });
+    }
+
+    const result = await nurseSelfCheckIn(me.id);
+    if (!result.ok) {
+      return res.status(result.status).json({ message: result.message, code: result.code });
+    }
+
+    return res.json({
+      message: `Asistencia registrada (${result.punctualityLabel}). El administrador asignará tu área.`,
+      punctuality: result.punctuality,
+      punctualityLabel: result.punctualityLabel,
+      attendanceStatus: result.attendanceStatus,
+      notifiedAdmins: result.notifiedAdmins,
+      context: result.context,
+    });
+  } catch (error) {
+    logger.error('postNurseCheckIn:', error);
+    return res.status(500).json({ message: 'Error al registrar asistencia' });
+  }
+};
+
+export const getNurseCoordinationNote = async (req: AuthRequest, res: Response) => {
+  try {
+    const me = req.user;
+    if (!me?.id) {
+      return res.status(401).json({ message: 'Usuario no autenticado' });
+    }
+    if (me.role !== UserRole.NURSE) {
+      return res.status(403).json({ message: 'Solo disponible para el rol enfermería' });
+    }
+
+    const dateRaw = typeof req.query.date === 'string' ? req.query.date : new Date().toISOString().split('T')[0];
+    const shiftRaw = typeof req.query.shift === 'string' ? req.query.shift : ShiftType.MORNING;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateRaw)) {
+      return res.status(400).json({ message: 'date debe ser YYYY-MM-DD' });
+    }
+    const shiftSlot =
+      typeof shiftRaw === 'string' && isValidHandoverShiftSlot(shiftRaw) ? shiftRaw : ShiftType.MORNING;
+
+    const note = await findAdminHandoverNote(dateRaw, shiftSlot);
+    return res.json({ note });
+  } catch (error) {
+    logger.error('getNurseCoordinationNote:', error);
+    return res.status(500).json({ message: 'Error al obtener nota de coordinación' });
+  }
+};
+
+export const postNurseAdmitPatient = async (req: AuthRequest, res: Response) => {
+  try {
+    const me = req.user;
+    if (!me?.id) {
+      return res.status(401).json({ message: 'Usuario no autenticado' });
+    }
+    if (me.role !== UserRole.NURSE) {
+      return res.status(403).json({ message: 'Solo disponible para el rol enfermería' });
+    }
+
+    const body = req.body as Record<string, unknown>;
+    const result = await admitPatientForNurse(me.id, {
+      firstName: String(body.firstName ?? ''),
+      lastName: String(body.lastName ?? ''),
+      identificationNumber: body.identificationNumber != null ? String(body.identificationNumber) : null,
+      dateOfBirth: body.dateOfBirth != null ? String(body.dateOfBirth) : null,
+      gender: body.gender != null ? String(body.gender) : null,
+      medicalHistory: body.medicalHistory != null ? String(body.medicalHistory) : null,
+      allergies: body.allergies != null ? String(body.allergies) : null,
+      medicalObservations: body.medicalObservations != null ? String(body.medicalObservations) : null,
+      bedId: body.bedId != null ? parseInt(String(body.bedId), 10) : null,
+      assignToSelf: body.assignToSelf !== false,
+    });
+
+    if (!result.ok) {
+      return res.status(result.status).json({ message: result.message, code: result.code });
+    }
+
+    return res.status(201).json({
+      message: 'Paciente ingresado correctamente',
+      patient: result.patient,
+      bedNumber: result.bedNumber,
+    });
+  } catch (error) {
+    logger.error('postNurseAdmitPatient:', error);
+    return res.status(500).json({ message: 'Error al ingresar paciente' });
   }
 };
 

@@ -34,9 +34,19 @@ describe('NurseDashboardPrimaryLoadFacade', () => {
       expect(res.stats).toEqual(jasmine.objectContaining({ assignedArea: 'A' }));
       expect(res.beds).toEqual([]);
       expect(res.patients).toEqual([]);
-      expect(getNurseStats).toHaveBeenCalled();
-      expect(getMyBeds).toHaveBeenCalled();
-      expect(getMyPatients).toHaveBeenCalled();
+      expect(getNurseStats).toHaveBeenCalledWith(false);
+      expect(getMyBeds).toHaveBeenCalledWith(false);
+      expect(getMyPatients).toHaveBeenCalledWith(undefined, false);
+      done();
+    });
+  });
+
+  it('loadPrimaryBundle(true) propaga refresh a NurseService', (done) => {
+    const facade = TestBed.inject(NurseDashboardPrimaryLoadFacade);
+    facade.loadPrimaryBundle(true).subscribe(() => {
+      expect(getNurseStats).toHaveBeenCalledWith(true);
+      expect(getMyBeds).toHaveBeenCalledWith(true);
+      expect(getMyPatients).toHaveBeenCalledWith(undefined, true);
       done();
     });
   });

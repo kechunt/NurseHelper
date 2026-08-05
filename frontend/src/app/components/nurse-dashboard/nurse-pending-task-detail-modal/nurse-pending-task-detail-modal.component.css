@@ -1,4 +1,4 @@
-/* Sobre la base de nurse-postpone-task-modal (mismo shell que Posponer / No realizada). */
+/* Detalle de tarea pendiente (shell compartido con Posponer / No realizada). */
 
 .nurse-pending-task-detail-backdrop.modal-backdrop {
   z-index: 2310 !important;

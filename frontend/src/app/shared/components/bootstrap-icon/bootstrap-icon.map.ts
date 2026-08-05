@@ -1,4 +1,4 @@
-/** Alias legacy (nombres tipo Heroicons) → clase Bootstrap Icons sin `-fill`. */
+/** Nombres de icono antiguos → clase Bootstrap Icons (sin `-fill`). */
 export const LEGACY_ICON_TO_BOOTSTRAP: Readonly<Record<string, string>> = {
   'arrow-path': 'arrow-clockwise',
   'arrow-right-on-rectangle': 'box-arrow-right',

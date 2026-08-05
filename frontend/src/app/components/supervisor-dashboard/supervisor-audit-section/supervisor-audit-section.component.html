@@ -1,0 +1,37 @@
+<section class="section-card supervisor-audit-card" aria-labelledby="supervisor-audit-heading">
+  <div class="section-header">
+    <h2 id="supervisor-audit-heading" class="section-title">{{ title }}</h2>
+    <button type="button" class="neuro-btn" (click)="loadAudit()" [disabled]="loading">
+      {{ refreshLabel }}
+    </button>
+  </div>
+
+  <p class="supervisor-audit-hint">{{ hint }}</p>
+
+  <p *ngIf="loading" class="loading-state">{{ loadingLabel }}</p>
+
+  <div *ngIf="!loading && events.length > 0" class="table-container table-wrapper-neuro">
+    <table class="neuro-table supervisor-audit-table" [attr.aria-label]="title">
+      <thead>
+        <tr>
+          <th>{{ colDate }}</th>
+          <th>{{ colAction }}</th>
+          <th>{{ colResource }}</th>
+          <th>{{ colUser }}</th>
+          <th>{{ colIp }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let event of events; trackBy: trackByEvent">
+          <td>{{ formatDate(event.timestamp) }}</td>
+          <td><span class="supervisor-audit-action-pill">{{ event.action }}</span></td>
+          <td>{{ resourceLabel(event) }}</td>
+          <td>{{ event.userId ?? '—' }}</td>
+          <td>{{ event.ipAddress || '—' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p *ngIf="!loading && events.length === 0" class="empty-message">{{ emptyLabel }}</p>
+</section>

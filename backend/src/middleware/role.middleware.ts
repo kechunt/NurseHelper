@@ -21,10 +21,11 @@ export const requireRole = (roles: UserRole[]) => {
   };
 };
 
-// Alias para compatibilidad
+/** Exportación alternativa de `requireRole`. */
 export const roleMiddleware = requireRole;
 
 export const requireAdmin = requireRole([UserRole.ADMIN]);
+export const requireSupervisor = requireRole([UserRole.SUPERVISOR]);
 export const requireAdminOrSupervisor = requireRole([UserRole.ADMIN, UserRole.SUPERVISOR]);
 
 /** Admin, supervisor o usuario de farmacia (asistencia / turnos de trabajo). */

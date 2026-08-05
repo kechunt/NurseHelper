@@ -1,0 +1,64 @@
+@import '../../../shared/styles/admin-panel-responsive.css';
+@import '../../../shared/styles/dashboard-overview-stats.css';
+@import '../supervisor-section.shared.css';
+
+.overview-container {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.supervisor-overview .section-header .section-title {
+  margin-bottom: 0;
+}
+
+.supervisor-overview-value {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.overview-action-value {
+  font-size: 1.35rem;
+  font-weight: 500;
+  color: #4a5568;
+}
+
+.supervisor-status-pill {
+  display: inline-block;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  font-size: 1rem;
+  font-weight: 700;
+  text-transform: capitalize;
+  margin-bottom: 0.4rem;
+}
+
+.supervisor-status-pill--healthy {
+  color: #276749;
+  background: rgba(72, 187, 120, 0.16);
+}
+
+.supervisor-status-pill--degraded {
+  color: #9c4221;
+  background: rgba(237, 137, 54, 0.18);
+}
+
+.supervisor-status-pill--unhealthy {
+  color: #9b2c2c;
+  background: rgba(245, 101, 101, 0.18);
+}
+
+@media (max-width: 768px) {
+  .supervisor-overview-value,
+  .overview-action-value {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .supervisor-status-pill {
+    font-size: 0.85rem;
+    padding: 0.3rem 0.7rem;
+  }
+}

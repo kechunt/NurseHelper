@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { UsersController } from '../controllers/users.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
-import { requireAdmin, requireAdminOrSupervisor, requireAdminSupervisorOrNurseOwnAreaParam } from '../middleware/role.middleware';
+import { requireAdminOrSupervisor, requireAdminSupervisorOrNurseOwnAreaParam } from '../middleware/role.middleware';
 
 const router = Router();
 const usersController = new UsersController();

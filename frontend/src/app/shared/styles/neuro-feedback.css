@@ -1,7 +1,7 @@
 /**
  * Tokens y utilidades neuromórficas para feedback global:
- * panel de notificaciones in-app, toasts, modales de confirmación.
- * Alineado con dashboard-layout.css (superficie #e0e5ec, sombras #bebebe / #ffffff).
+ * panel de notificaciones in-app, toasts, modales de confirmación
+ * (superficie #e0e5ec, sombras #bebebe / #ffffff).
  */
 
 :root {

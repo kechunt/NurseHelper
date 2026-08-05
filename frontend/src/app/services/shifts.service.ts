@@ -69,6 +69,21 @@ export interface ShiftHandoffSummary {
   }>;
 }
 
+export interface ShiftAssignmentSuggestion {
+  patientId: number;
+  areaId: number | null;
+  currentNurseId: number | null;
+  suggestedNurseId: number | null;
+  status: 'assigned' | 'pending';
+  reason?: string;
+}
+
+export interface ShiftAssignmentSuggestionsResponse {
+  date: string;
+  shiftId: number;
+  suggestions: ShiftAssignmentSuggestion[];
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -90,10 +105,6 @@ export class ShiftsService {
       );
     }
     return this.shiftsCache$;
-  }
-
-  getShifts(): Observable<Shift[]> {
-    return this.getAllShifts();
   }
 
   updateShift(shiftId: number, startTime: string, endTime: string): Observable<any> {
@@ -147,15 +158,6 @@ export class ShiftsService {
     });
   }
 
-  getPresentNursesByShift(date: string, shiftId: number): Observable<ShiftAttendanceItem[]> {
-    return this.http.get<ShiftAttendanceItem[]>(`${this.apiUrl}/attendance/present`, {
-      params: {
-        date,
-        shiftId: String(shiftId),
-      },
-    });
-  }
-
   getShiftAttendanceHistory(params: {
     dateFrom?: string;
     dateTo?: string;
@@ -172,10 +174,15 @@ export class ShiftsService {
     });
   }
 
-  runShiftHandoff(payload?: { date?: string; shiftId?: number | null }): Observable<{ message: string } & ShiftHandoffSummary> {
-    return this.http.post<{ message: string } & ShiftHandoffSummary>(`${this.apiUrl}/handoff`, {
-      date: payload?.date,
-      shiftId: payload?.shiftId,
+  getAssignmentSuggestions(params?: {
+    date?: string;
+    shiftId?: number | null;
+  }): Observable<ShiftAssignmentSuggestionsResponse> {
+    const query: Record<string, string> = {};
+    if (params?.date) query['date'] = params.date;
+    if (params?.shiftId != null) query['shiftId'] = String(params.shiftId);
+    return this.http.get<ShiftAssignmentSuggestionsResponse>(`${this.apiUrl}/assignment-suggestions`, {
+      params: query,
     });
   }
 }

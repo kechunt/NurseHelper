@@ -9,5 +9,9 @@ frontend/.angular/
 **/.env
 .env.local
 **/.env.local
+.env.production
+**/.env.production
 backend/backups/
+*.sql
+*.sql.gz
 frontend/dist/

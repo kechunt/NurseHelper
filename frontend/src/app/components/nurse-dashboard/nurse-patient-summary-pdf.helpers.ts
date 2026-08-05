@@ -1,3 +1,4 @@
+import { labelScheduleType } from '../../shared/utils/report-export-labels.helpers';
 import { PdfMultiSectionDocumentOptions } from '../../shared/utils/pdf-table-export.util';
 
 export interface NursePatientSummarySource {
@@ -54,7 +55,6 @@ export function buildNursePatientSummaryPdfOptions(
         title: 'Datos generales',
         rows: [
           ['Nombre', patient.name || '—'],
-          ['ID', patient.id != null ? String(patient.id) : '—'],
           ['Cama', patient.bedNumber || '—'],
           ['Área', patient.areaName || '—'],
           ['Edad', patient.age != null ? `${patient.age} años` : '—'],
@@ -82,7 +82,7 @@ export function buildNursePatientSummaryPdfOptions(
         headers: ['Hora', 'Tipo', 'Descripción', 'Estado'],
         rows: (patient.todaySchedule || []).map((item) => [
           item.time || '—',
-          item.type === 'medication' ? 'Medicamento' : 'Tratamiento',
+          labelScheduleType(item.type),
           `${item.description || '—'}${item.dosage ? ` (${item.dosage})` : ''}`,
           scheduleStatus(item),
         ]),

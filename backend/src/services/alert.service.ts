@@ -5,8 +5,10 @@
 
 import { logger } from '../utils/logger';
 import { emailService } from './email.service';
-import { notificationService } from './notification.service';
 import { webhookService } from './webhook.service';
+import { AppDataSource } from '../data-source';
+import { User, UserRole } from '../entities/User';
+import { upsertUserNotification } from './user-notifications-persistence.service';
 
 export interface AlertConfig {
   type: 'health' | 'performance' | 'error' | 'security';
@@ -18,7 +20,6 @@ export interface AlertConfig {
 }
 
 export class AlertService {
-  private alertHistory: Array<AlertConfig & { timestamp: Date }> = [];
   private alertCooldown = new Map<string, number>(); // Evitar spam de alertas
   private readonly COOLDOWN_TIME = 5 * 60 * 1000; // 5 minutos
 
@@ -36,12 +37,6 @@ export class AlertService {
     }
 
     this.alertCooldown.set(alertKey, now);
-    this.alertHistory.push({ ...config, timestamp: new Date() });
-
-    // Mantener solo últimas 100 alertas
-    if (this.alertHistory.length > 100) {
-      this.alertHistory.shift();
-    }
 
     logger.warn('Alert triggered', config);
 
@@ -81,12 +76,32 @@ export class AlertService {
       logger.error('Error sending critical alert email', error);
     }
 
-    // Notificación push a administradores
-    await notificationService.createAdminAlert(
-      `Alerta Crítica: ${config.message}`,
-      `Tipo: ${config.type}. Severidad: ${config.severity}`,
-      'urgent'
-    );
+    // Notificación in-app a supervisores (sistema) y administradores
+    try {
+      const userRepository = AppDataSource.getRepository(User);
+      const recipients = await userRepository.find({
+        where: [
+          { role: UserRole.SUPERVISOR, isActive: true },
+          { role: UserRole.ADMIN, isActive: true },
+        ],
+        select: ['id'],
+      });
+      const dedupeKey = `sys-alert:${config.type}:${Date.now().toString().slice(0, -4)}`;
+      for (const user of recipients) {
+        await upsertUserNotification({
+          userId: user.id,
+          type: 'system_alert',
+          severity: 'critical',
+          requiresAck: true,
+          title: `Alerta crítica: ${config.message}`,
+          body: `Tipo: ${config.type}. Severidad: ${config.severity}`,
+          payload: { alertType: config.type, severity: config.severity },
+          dedupeKey: `${dedupeKey}:u${user.id}`,
+        });
+      }
+    } catch (error) {
+      logger.error('Error sending critical alert in-app notification', error);
+    }
   }
 
   /**
@@ -95,66 +110,6 @@ export class AlertService {
   private async sendStandardAlert(config: AlertConfig): Promise<void> {
     logger.warn('Standard alert', config);
     // Solo loggear, no enviar email para alertas no críticas
-  }
-
-  /**
-   * Verificar métricas y generar alertas automáticas
-   */
-  async checkMetrics(metrics: any): Promise<void> {
-    // Alerta de memoria alta
-    if (metrics.system?.memory?.percentage > 90) {
-      await this.sendAlert({
-        type: 'performance',
-        severity: 'high',
-        message: 'Uso de memoria muy alto',
-        threshold: 90,
-        currentValue: metrics.system.memory.percentage,
-        details: metrics.system.memory,
-      });
-    }
-
-    // Alerta de CPU alta
-    if (metrics.system?.cpu?.usage > 90) {
-      await this.sendAlert({
-        type: 'performance',
-        severity: 'high',
-        message: 'Uso de CPU muy alto',
-        threshold: 90,
-        currentValue: metrics.system.cpu.usage,
-        details: metrics.system.cpu,
-      });
-    }
-
-    // Alerta de tasa de errores alta
-    if (metrics.application?.requests?.errorRate > 10) {
-      await this.sendAlert({
-        type: 'error',
-        severity: 'medium',
-        message: 'Tasa de errores alta',
-        threshold: 10,
-        currentValue: metrics.application.requests.errorRate,
-        details: metrics.application.requests,
-      });
-    }
-
-    // Alerta de queries lentas
-    if (metrics.application?.database?.slowQueries > 10) {
-      await this.sendAlert({
-        type: 'performance',
-        severity: 'medium',
-        message: 'Muchas queries lentas detectadas',
-        threshold: 10,
-        currentValue: metrics.application.database.slowQueries,
-        details: metrics.application.database,
-      });
-    }
-  }
-
-  /**
-   * Obtener historial de alertas
-   */
-  getAlertHistory(limit: number = 50): Array<AlertConfig & { timestamp: Date }> {
-    return this.alertHistory.slice(-limit);
   }
 }
 

@@ -1,0 +1,82 @@
+<section class="overview-backups-card section-card" aria-labelledby="supervisor-backups-heading">
+  <div class="overview-backups-header section-header">
+    <h2 id="supervisor-backups-heading" class="overview-backups-title section-title">{{ title }}</h2>
+    <button type="button" class="neuro-btn" (click)="loadBackups()" [disabled]="loadingBackups">
+      {{ refreshLabel }}
+    </button>
+  </div>
+
+  <p class="overview-backups-note">{{ productionNote }}</p>
+
+  <div class="overview-backup-form">
+    <label class="overview-backup-label" for="supervisor-backup-name">{{ nameLabel }}</label>
+    <div class="overview-backup-form-row">
+      <input
+        id="supervisor-backup-name"
+        type="text"
+        class="overview-backup-input"
+        [(ngModel)]="backupName"
+        [disabled]="creatingBackup || loadingBackups"
+        maxlength="48"
+        placeholder="prod_mayo"
+        autocomplete="off"
+      />
+      <button
+        type="button"
+        class="overview-backup-btn neuro-btn"
+        (click)="createBackup()"
+        [disabled]="creatingBackup || loadingBackups"
+      >
+        {{ creatingBackup ? creatingLabel : createLabel }}
+      </button>
+    </div>
+    <p class="overview-backup-hint">{{ nameHint }}</p>
+  </div>
+
+  <p *ngIf="lastBackupFilename && !loadingBackups" class="overview-backup-last">
+    <strong>{{ lastLabel }}:</strong> {{ lastBackupFilename }}
+  </p>
+
+  <p *ngIf="loadingBackups" class="loading-state">{{ loadingLabel }}</p>
+
+  <ul *ngIf="!loadingBackups && backups.length > 0" class="overview-backups-list">
+    <li *ngFor="let backup of backups" class="overview-backup-item supervisor-backup-item">
+      <div class="supervisor-backup-item-info">
+        <span class="overview-backup-name">{{ backup.filename }}</span>
+        <span class="overview-backup-meta">
+          {{ formatBackupDate(backup.createdAt) }} · {{ formatBackupSize(backup.size) }}
+        </span>
+      </div>
+      <div class="supervisor-backup-item-actions">
+        <button
+          type="button"
+          class="neuro-btn neuro-btn-sm"
+          (click)="verifyBackup(backup)"
+          [disabled]="!!busyFilename"
+        >
+          {{ verifyLabel }}
+        </button>
+        <button
+          type="button"
+          class="neuro-btn neuro-btn-sm"
+          (click)="testRestore(backup)"
+          [disabled]="!!busyFilename"
+        >
+          {{ testRestoreLabel }}
+        </button>
+        <button
+          type="button"
+          class="neuro-btn neuro-btn-sm supervisor-backup-restore-btn"
+          (click)="restoreBackup(backup)"
+          [disabled]="!!busyFilename"
+        >
+          {{ restoreLabel }}
+        </button>
+      </div>
+    </li>
+  </ul>
+
+  <p *ngIf="!loadingBackups && backups.length === 0" class="overview-backups-empty empty-message">
+    {{ emptyLabel }}
+  </p>
+</section>

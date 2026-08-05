@@ -11,7 +11,7 @@ import { loadEnv } from './utils/env';
 import { setupSwagger } from './config/swagger';
 import { errorHandler } from './utils/error-handler';
 import { sanitizeMiddleware } from './utils/sanitizer';
-import { rateLimitMiddleware, authRateLimitMiddleware } from './middleware/rate-limit.middleware';
+import { rateLimitMiddleware } from './middleware/rate-limit.middleware';
 import { metricsMiddleware } from './middleware/metrics.middleware';
 import authRoutes from './routes/auth.routes';
 import usersRoutes from './routes/users.routes';
@@ -29,6 +29,7 @@ import webhooksRoutes from './routes/webhooks.routes';
 import notificationsRoutes from './routes/notifications.routes';
 import backupRoutes from './routes/backup.routes';
 import healthRoutes from './routes/health.routes';
+import supervisorRoutes from './routes/supervisor.routes';
 
 // Cargar variables de entorno
 loadEnv();
@@ -78,20 +79,9 @@ app.use('/api/handover', handoverRoutes);
 app.use('/api/webhooks', webhooksRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/backup', backupRoutes);
+app.use('/api/supervisor', supervisorRoutes);
 app.use('/health', healthRoutes);
-
-// Health check básico (deprecado; usar GET /health)
-app.get('/health-basic', (req, res) => {
-  res.setHeader('Deprecation', 'true');
-  res.setHeader('Link', '</health>; rel="successor-version"');
-  res.json({
-    status: 'ok',
-    message: 'Deprecated: use GET /health instead',
-    deprecated: true,
-    successor: '/health',
-    timestamp: new Date().toISOString(),
-  });
-});
+app.use('/api/health', healthRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {

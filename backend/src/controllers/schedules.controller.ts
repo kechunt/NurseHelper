@@ -2,7 +2,17 @@ import { Request, Response } from 'express';
 import { AppDataSource } from '../data-source';
 import { Schedule, ScheduleType, ScheduleStatus } from '../entities/Schedule';
 import { AdministrationHistory, AdministrationStatus } from '../entities/AdministrationHistory';
+import { resolveScheduleAssignedToId } from '../services/schedule-assignment.service';
+import { invalidateNurseDashboardCache } from '../services/nurse-dashboard-cache.service';
+import { UserRole } from '../entities/User';
 import { logger } from '../utils/logger';
+
+async function invalidateNursePanelCacheFromRequest(req: Request): Promise<void> {
+  const user = (req as { user?: { id?: number; role?: string } }).user;
+  if (user?.id && user.role === UserRole.NURSE) {
+    await invalidateNurseDashboardCache(user.id);
+  }
+}
 
 export class SchedulesController {
   async getAll(req: Request, res: Response): Promise<void> {
@@ -137,7 +147,12 @@ export class SchedulesController {
       const scheduleRepository = AppDataSource.getRepository(Schedule);
       const schedule = new Schedule();
       schedule.patientId = parseInt(patientId);
-      schedule.assignedToId = assignedToId ? parseInt(assignedToId) : null;
+      const parsedAssigned =
+        assignedToId != null && assignedToId !== '' ? parseInt(String(assignedToId), 10) : null;
+      schedule.assignedToId = await resolveScheduleAssignedToId({
+        patientId: schedule.patientId,
+        assignedToId: Number.isFinite(parsedAssigned as number) ? parsedAssigned : null,
+      });
       schedule.type = type || ScheduleType.OTHER;
       schedule.scheduledTime = new Date(scheduledTime);
       schedule.description = description;
@@ -202,7 +217,21 @@ export class SchedulesController {
         return;
       }
 
-      if (assignedToId !== undefined) schedule.assignedToId = assignedToId ? parseInt(assignedToId) : null;
+      if (assignedToId !== undefined) {
+        const parsed =
+          assignedToId != null && assignedToId !== ''
+            ? parseInt(String(assignedToId), 10)
+            : null;
+        schedule.assignedToId = await resolveScheduleAssignedToId({
+          patientId: schedule.patientId,
+          assignedToId: Number.isFinite(parsed as number) ? parsed : null,
+        });
+      } else {
+        schedule.assignedToId = await resolveScheduleAssignedToId({
+          patientId: schedule.patientId,
+          assignedToId: schedule.assignedToId,
+        });
+      }
       if (type) schedule.type = type;
       if (scheduledTime) schedule.scheduledTime = new Date(scheduledTime);
       if (description) schedule.description = description;
@@ -311,6 +340,8 @@ export class SchedulesController {
 
       const savedHistory = await adminHistoryRepo.save(adminHistory);
 
+      await invalidateNursePanelCacheFromRequest(req);
+
       res.json({ 
         message: 'Tarea completada exitosamente y guardada en historial', 
         schedule,
@@ -382,6 +413,8 @@ export class SchedulesController {
 
       const savedHistory = await adminHistoryRepo.save(adminHistory);
 
+      await invalidateNursePanelCacheFromRequest(req);
+
       res.json({ 
         message: 'Tarea marcada como no realizada y guardada en historial', 
         schedule,
@@ -425,35 +458,11 @@ export class SchedulesController {
       schedule.scheduledTime = newScheduledTime;
       await scheduleRepository.save(schedule);
 
+      await invalidateNursePanelCacheFromRequest(req);
+
       res.json({ message: 'Tarea pospuesta exitosamente', schedule });
     } catch (error) {
       logger.error('Error al posponer tarea:', error);
-      res.status(500).json({ message: 'Error interno del servidor' });
-    }
-  }
-
-  async markMedicationGiven(req: Request, res: Response): Promise<void> {
-    try {
-      const { id } = req.params;
-      const { notes } = req.body;
-
-      const scheduleRepository = AppDataSource.getRepository(Schedule);
-      const schedule = await scheduleRepository.findOne({ where: { id: parseInt(id) } });
-
-      if (!schedule) {
-        res.status(404).json({ message: 'Horario de medicamento no encontrado' });
-        return;
-      }
-
-      schedule.status = ScheduleStatus.COMPLETED;
-      if (notes) {
-        schedule.notes = notes;
-      }
-      await scheduleRepository.save(schedule);
-
-      res.json({ message: 'Medicamento marcado como administrado', schedule });
-    } catch (error) {
-      logger.error('Error al marcar medicamento:', error);
       res.status(500).json({ message: 'Error interno del servidor' });
     }
   }

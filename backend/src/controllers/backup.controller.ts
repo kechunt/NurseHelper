@@ -6,6 +6,7 @@ import { Response } from 'express';
 import { asyncHandler } from '../utils/error-handler';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { backupService } from '../services/backup.service';
+import { auditService, AuditAction, AuditService } from '../services/audit.service';
 
 function serializeBackup(backup: {
   filename: string;
@@ -39,6 +40,14 @@ export class BackupController {
         code: 'BACKUP_FAILED',
       });
     }
+
+    await auditService.log(AuditAction.BACKUP_CREATED, {
+      userId: req.user?.id,
+      resourceType: 'backup',
+      resourceId: backup.filename,
+      ipAddress: AuditService.getIpAddress(req),
+      userAgent: AuditService.getUserAgent(req),
+    });
 
     res.json({
       message: 'Backup creado exitosamente',
@@ -80,6 +89,14 @@ export class BackupController {
     }
 
     await backupService.restoreBackup(backup.path);
+
+    await auditService.log(AuditAction.BACKUP_RESTORED, {
+      userId: req.user?.id,
+      resourceType: 'backup',
+      resourceId: filename,
+      ipAddress: AuditService.getIpAddress(req),
+      userAgent: AuditService.getUserAgent(req),
+    });
 
     res.json({
       message: 'Backup restaurado exitosamente',

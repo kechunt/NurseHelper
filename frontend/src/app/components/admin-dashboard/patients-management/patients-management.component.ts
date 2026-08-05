@@ -1,4 +1,13 @@
-import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  OnDestroy,
+  OnInit,
+  OnChanges,
+  SimpleChanges,
+  Input,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Subject, forkJoin } from 'rxjs';
@@ -12,6 +21,7 @@ import {
   ADMIN_CONFIRM_REMOVE_MEDICATION_TITLE,
 } from '../admin-confirmation-copy.helpers';
 import { ExportService } from '../../../shared/services/export.service';
+import { labelGender } from '../../../shared/utils/report-export-labels.helpers';
 import { PaginationComponent, PaginationConfig } from '../../../shared/components/pagination/pagination.component';
 import { DebounceDirective } from '../../../shared/directives/debounce.directive';
 import { AdminTableRowActionsModalComponent } from '../../../shared/components/admin-table-row-actions-modal/admin-table-row-actions-modal.component';
@@ -71,7 +81,9 @@ interface PendingTask {
   styleUrl: './patients-management.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class PatientsManagementComponent implements OnInit, OnDestroy {
+export class PatientsManagementComponent implements OnInit, OnDestroy, OnChanges {
+  @Input() tabActive = false;
+
   readonly adminPatientsErrUnknown = $localize`:@@adminPatients.errUnknown:Error desconocido`;
   readonly adminPatientsNoArea = $localize`:@@adminPatients.noArea:Sin área`;
   readonly adminPatientsNoBed = $localize`:@@adminPatients.noBed:Sin cama`;
@@ -89,7 +101,7 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
   readonly adminPatientsPatientFallbackName = $localize`:@@adminPatients.patientFallbackName:Paciente`;
   readonly adminPatientsTreatmentTypeDefault = $localize`:@@adminPatients.treatmentTypeDefault:Tratamiento`;
   readonly adminPatientsNewTaskTitle = $localize`:@@adminPatients.newTaskTitle:Nueva Tarea`;
-  readonly adminPatientsExportColId = $localize`:@@adminPatients.exportColId:ID`;
+  readonly adminPatientsExportColId = $localize`:@@adminPatients.exportColId:Nº interno`;
   readonly adminPatientsExportColFullName = $localize`:@@adminPatients.exportColFullName:Nombre Completo`;
   readonly adminPatientsExportColNurse = $localize`:@@adminPatients.exportColNurse:Enfermera asignada`;
   readonly adminPatientsExportColIdNumber = $localize`:@@adminPatients.exportColIdNumber:Cédula`;
@@ -150,12 +162,7 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
   
   // Formulario de ingreso con Reactive Forms
   wizardFormGroup!: FormGroup;
-  
-  // Mantener compatibilidad con template
-  get wizardForm() {
-    return this.wizardFormGroup?.value || {};
-  }
-  
+
   // Datos para el wizard y modal
   areas: Area[] = [];
   availableBeds: Bed[] = [];
@@ -264,6 +271,18 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.loadInitialData();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if ('tabActive' in changes && this.tabActive && !changes['tabActive'].firstChange) {
+      this.adminService.clearPatientsCache();
+      this.loadPatientList(false);
+      this.cdr.markForCheck();
+    }
+  }
+
+  private loadInitialData(): void {
     forkJoin({
       areas: this.adminService.getAreas(),
       beds: this.adminService.getBeds(),
@@ -537,7 +556,7 @@ export class PatientsManagementComponent implements OnInit, OnDestroy {
       [this.adminPatientsExportColDob]: p.dateOfBirth
         ? new Date(p.dateOfBirth).toLocaleDateString('es-ES')
         : '',
-      [this.adminPatientsExportColGender]: p.gender || '',
+      [this.adminPatientsExportColGender]: labelGender(p.gender),
       [this.adminPatientsExportColPhone]: p.phone || '',
       [this.adminPatientsExportColArea]: p.areaName || this.adminPatientsNoArea,
       [this.adminPatientsExportColBed]: p.bedNumber || this.adminPatientsNoBed,

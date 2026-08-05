@@ -1,0 +1,64 @@
+<div
+  class="modal-backdrop modal-confirmation nurse-modal-backdrop-dim"
+  role="presentation"
+  (click)="onBackdropClick()"
+  style="z-index: 2290"
+>
+  <div
+    class="modal-content modal-small nurse-aux-modal"
+    appModalFocusTrap
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="nurse-admit-dialog-title"
+    (click)="$event.stopPropagation()"
+  >
+    <div class="modal-header">
+      <h3 id="nurse-admit-dialog-title">
+        <app-bootstrap-icon name="user-plus" />
+        {{ title }}
+      </h3>
+      <button type="button" class="close-btn" (click)="dismissed.emit()" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="modal-body medication-day-detail-body">
+      <p class="handover-modal-intro handover-modal-intro--muted">{{ intro }}</p>
+      <div class="input-group">
+        <label for="nurse-admit-first-name" i18n="@@nurseAdmitModal.firstName">Nombre *</label>
+        <input id="nurse-admit-first-name" class="neuro-input neuro-input-block" [(ngModel)]="firstName" />
+      </div>
+      <div class="input-group">
+        <label for="nurse-admit-last-name" i18n="@@nurseAdmitModal.lastName">Apellido *</label>
+        <input id="nurse-admit-last-name" class="neuro-input neuro-input-block" [(ngModel)]="lastName" />
+      </div>
+      <div class="input-group">
+        <label for="nurse-admit-id" i18n="@@nurseAdmitModal.identification">Identificación</label>
+        <input id="nurse-admit-id" class="neuro-input neuro-input-block" [(ngModel)]="identificationNumber" />
+      </div>
+      <div class="input-group">
+        <label for="nurse-admit-bed" i18n="@@nurseAdmitModal.bed">Cama (opcional)</label>
+        <select id="nurse-admit-bed" class="neuro-input neuro-input-block" [(ngModel)]="bedId">
+          <option [ngValue]="null" i18n="@@nurseAdmitModal.noBed">Sin cama por ahora</option>
+          <option *ngFor="let b of beds" [ngValue]="b.id" [disabled]="b.isOccupied">
+            {{ b.bedNumber }}{{ b.isOccupied ? ' (ocupada)' : '' }}
+          </option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label for="nurse-admit-history" i18n="@@nurseAdmitModal.diagnosis">Diagnóstico / historial</label>
+        <textarea id="nurse-admit-history" class="neuro-input neuro-textarea-block" rows="2" [(ngModel)]="medicalHistory"></textarea>
+      </div>
+      <div class="input-group">
+        <label for="nurse-admit-allergies" i18n="@@nurseAdmitModal.allergies">Alergias</label>
+        <textarea id="nurse-admit-allergies" class="neuro-input neuro-textarea-block" rows="2" [(ngModel)]="allergies"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer nurse-aux-modal__footer">
+      <button type="button" class="btn-primary-neuro" (click)="dismissed.emit()" [disabled]="saving" i18n="@@nurseAdmitModal.cancel">
+        Cancelar
+      </button>
+      <button type="button" class="btn-primary-neuro" (click)="onSubmit()" [disabled]="saving || !firstName.trim() || !lastName.trim()">
+        <span *ngIf="saving" i18n="@@nurseAdmitModal.saving">Guardando…</span>
+        <span *ngIf="!saving" i18n="@@nurseAdmitModal.save">Ingresar</span>
+      </button>
+    </div>
+  </div>
+</div>

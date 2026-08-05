@@ -9,18 +9,19 @@ import {
   getMedicationsForPharmacy,
   getPatientDetails,
   addTreatment,
-  recordAdministration,
-  getPatientHistory,
   patchAdministrationHistoryRecord,
   deleteAdministrationHistoryRecord,
   patchNursePatientSchedule,
   deleteNursePatientSchedule,
-  quickAddPatientTreatment,
   patchPatientTreatmentSchedule,
   getNurseShiftContext,
   getNurseHandoverNote,
   putNurseHandoverNote,
   claimPatientForNurse,
+  checkoutNurseFromShift,
+  postNurseCheckIn,
+  getNurseCoordinationNote,
+  postNurseAdmitPatient,
 } from '../controllers/nurses.controller';
 
 const router = Router();
@@ -129,6 +130,10 @@ router.get('/beds', getMyBeds);
 router.get('/patients', getMyPatients);
 
 router.post('/patients/:patientId/claim', claimPatientForNurse);
+router.post('/checkout', checkoutNurseFromShift);
+router.post('/check-in', postNurseCheckIn);
+router.get('/coordination-note', getNurseCoordinationNote);
+router.post('/patients/admit', postNurseAdmitPatient);
 
 /**
  * @swagger
@@ -269,36 +274,6 @@ router.patch('/patients/:patientId/schedules/:scheduleId', patchNursePatientSche
 router.delete('/patients/:patientId/schedules/:scheduleId', deleteNursePatientSchedule);
 /**
  * @swagger
- * /api/nurse/patients/{patientId}/treatments/quick:
- *   post:
- *     summary: Alta rápida de tratamiento para un paciente (una sola fecha/hora)
- *     tags: [Nurse]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: patientId
- *         required: true
- *         schema: { type: integer }
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [description, date, time]
- *             properties:
- *               description: { type: string }
- *               date: { type: string, format: date }
- *               time: { type: string, format: time }
- *               notes: { type: string }
- *     responses:
- *       201:
- *         description: Tratamiento creado
- */
-router.post('/patients/:patientId/treatments/quick', quickAddPatientTreatment);
-/**
- * @swagger
  * /api/nurse/patients/{patientId}/treatment-schedules/{scheduleId}:
  *   patch:
  *     summary: Acción sobre un tratamiento/chequeo (aceptar/posponer/cancelar)
@@ -433,62 +408,5 @@ router.get('/medications/pharmacy', getMedicationsForPharmacy);
  *         description: Tratamiento agregado exitosamente
  */
 router.post('/treatments', addTreatment);
-
-/**
- * @swagger
- * /api/nurse/administration:
- *   post:
- *     summary: Registrar administración de medicamento o tratamiento
- *     tags: [Nurse]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - scheduleId
- *               - status
- *             properties:
- *               scheduleId:
- *                 type: integer
- *                 description: ID del horario/tarea
- *               status:
- *                 type: string
- *                 enum: [administered, not_administered, missed]
- *                 description: Estado de la administración
- *               reasonNotAdministered:
- *                 type: string
- *                 description: Razón si no se administró (requerido si status es 'not_administered')
- *               notes:
- *                 type: string
- *                 description: Notas adicionales
- *     responses:
- *       201:
- *         description: Administración registrada exitosamente
- */
-router.post('/administration', recordAdministration);
-
-/**
- * @swagger
- * /api/nurse/patients/{patientId}/history:
- *   get:
- *     summary: Obtener historial de paciente
- *     tags: [Nurse]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: patientId
- *         required: true
- *         schema:
- *           type: integer
- *     responses:
- *       200:
- *         description: Historial del paciente
- */
-router.get('/patients/:patientId/history', getPatientHistory);
 
 export default router;

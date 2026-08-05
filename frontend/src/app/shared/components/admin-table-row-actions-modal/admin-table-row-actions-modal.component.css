@@ -198,7 +198,7 @@
   }
 }
 
-/* Misma familia visual que las tarjetas de camas/áreas (alcance solo este modal). */
+/* Tarjetas de resumen (alcance solo este modal). */
 .apm-status-pill {
   padding: 6px 12px;
   border-radius: 15px;

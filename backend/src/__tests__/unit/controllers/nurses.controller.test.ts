@@ -3,6 +3,7 @@ import type { Response } from 'express';
 jest.mock('../../../data-source', () => ({
   AppDataSource: {
     isInitialized: true,
+    getRepository: jest.fn(),
   },
 }));
 
@@ -56,23 +57,31 @@ jest.mock('../../../services/nurse-patient-claim.service', () => ({
   claimUnassignedPatientForNurse: jest.fn(),
 }));
 
+jest.mock('../../../services/nurse-checkout.service', () => ({
+  checkoutNurseFromShift: jest.fn(),
+}));
+
 jest.mock('../../../services/nurse-patient-details.service', () => ({
   fetchPatientDetailsForNurse: jest.fn(),
 }));
 
 jest.mock('../../../services/nurse-administration.service', () => ({
-  recordNurseAdministration: jest.fn(),
-  fetchNursePatientAdministrationHistoryFormatted: jest.fn(),
   patchAdministrationHistoryForNurse: jest.fn(),
   deleteAdministrationHistoryForNurse: jest.fn(),
 }));
 
 jest.mock('../../../services/nurse-treatments.service', () => ({
   createNurseTreatmentSchedules: jest.fn(),
-  quickAddNursePatientTreatment: jest.fn(),
   patchPatientTreatmentScheduleAction: jest.fn(),
   patchNursePatientScheduleForNurse: jest.fn(),
   deletePendingNursePatientSchedule: jest.fn(),
+}));
+
+jest.mock('../../../services/nurse-dashboard-cache.service', () => ({
+  getNurseDashboardCached: jest.fn((_key: string, fetcher: () => unknown) => fetcher()),
+  nurseDashboardCacheKey: jest.fn((part: string, id: number) => `nurse:${part}:${id}`),
+  wantsRefreshQuery: jest.fn(() => false),
+  invalidateNurseDashboardCache: jest.fn(),
 }));
 
 import { AppDataSource } from '../../../data-source';
@@ -85,14 +94,11 @@ import { fetchPatientDetailsForNurse } from '../../../services/nurse-patient-det
 import { fetchMedicationsForPharmacyGrouped } from '../../../services/nurse-pharmacy-medications.service';
 import { fetchPharmacyContactsByShiftForDate } from '../../../services/pharmacy-contact-by-shift.service';
 import {
-  recordNurseAdministration,
-  fetchNursePatientAdministrationHistoryFormatted,
   patchAdministrationHistoryForNurse,
   deleteAdministrationHistoryForNurse,
 } from '../../../services/nurse-administration.service';
 import {
   createNurseTreatmentSchedules,
-  quickAddNursePatientTreatment,
   patchPatientTreatmentScheduleAction,
   patchNursePatientScheduleForNurse,
   deletePendingNursePatientSchedule,
@@ -114,13 +120,10 @@ import {
   getPatientDetails,
   addTreatment,
   getMedicationsForPharmacy,
-  recordAdministration,
   getNurseShiftContext,
   getNurseHandoverNote,
   putNurseHandoverNote,
   patchPatientTreatmentSchedule,
-  getPatientHistory,
-  quickAddPatientTreatment,
   patchAdministrationHistoryRecord,
   deleteAdministrationHistoryRecord,
   patchNursePatientSchedule,
@@ -155,14 +158,8 @@ describe('nurses.controller', () => {
     (fetchNurseDayTasksHistory as jest.Mock).mockResolvedValue({ items: [] });
     (fetchPatientDetailsForNurse as jest.Mock).mockResolvedValue({ ok: true, detail: { id: 5 } });
     (fetchMedicationsForPharmacyGrouped as jest.Mock).mockResolvedValue({ groups: [] });
-    (recordNurseAdministration as jest.Mock).mockResolvedValue({ ok: true, body: { saved: true } });
-    (fetchNursePatientAdministrationHistoryFormatted as jest.Mock).mockResolvedValue({
-      ok: true,
-      body: { rows: [] },
-    });
     (patchAdministrationHistoryForNurse as jest.Mock).mockResolvedValue({ ok: true, body: { patched: true } });
     (deleteAdministrationHistoryForNurse as jest.Mock).mockResolvedValue({ ok: true, body: { deleted: true } });
-    (quickAddNursePatientTreatment as jest.Mock).mockResolvedValue({ ok: true, status: 201, body: { id: 9 } });
     (patchPatientTreatmentScheduleAction as jest.Mock).mockResolvedValue({ ok: true, body: { status: 'ok' } });
     (patchNursePatientScheduleForNurse as jest.Mock).mockResolvedValue({ ok: true, body: { saved: true } });
     (deletePendingNursePatientSchedule as jest.Mock).mockResolvedValue({ ok: true, body: { removed: true } });
@@ -298,17 +295,6 @@ describe('nurses.controller', () => {
         json,
       } as unknown as Response);
       expect(json).toHaveBeenCalledWith({ medications: [], pharmacyContactsByShift: [] });
-    });
-  });
-
-  describe('recordAdministration', () => {
-    it('403 sin enfermera', async () => {
-      const { status, json, res } = resMocks();
-      await recordAdministration(
-        { user: undefined, body: {} } as unknown as AuthRequest,
-        res
-      );
-      expect(status).toHaveBeenCalledWith(403);
     });
   });
 
@@ -476,62 +462,6 @@ describe('nurses.controller', () => {
     });
   });
 
-  describe('getPatientHistory', () => {
-    it('403 sin enfermera', async () => {
-      const { status, json, res } = resMocks();
-      await getPatientHistory({ user: undefined, params: { patientId: '1' } } as unknown as AuthRequest, res);
-      expect(status).toHaveBeenCalledWith(403);
-    });
-
-    it('200 devuelve cuerpo del servicio', async () => {
-      const json = jest.fn();
-      await getPatientHistory(
-        { user: nurseUser(), params: { patientId: '12' } } as unknown as AuthRequest,
-        { json } as unknown as Response
-      );
-      expect(fetchNursePatientAdministrationHistoryFormatted).toHaveBeenCalledWith(1, 10, '12');
-      expect(json).toHaveBeenCalledWith({ rows: [] });
-    });
-
-    it('404 vía servicio', async () => {
-      (fetchNursePatientAdministrationHistoryFormatted as jest.Mock).mockResolvedValueOnce({
-        ok: false,
-        status: 404,
-        body: { message: 'no' },
-      });
-      const { status, json, res } = resMocks();
-      await getPatientHistory({ user: nurseUser(), params: { patientId: '1' } } as unknown as AuthRequest, res);
-      expect(status).toHaveBeenCalledWith(404);
-    });
-  });
-
-  describe('quickAddPatientTreatment', () => {
-    it('400 patientId inválido', async () => {
-      const { status, json, res } = resMocks();
-      await quickAddPatientTreatment(
-        { user: nurseUser(), params: { patientId: 'x' }, body: {} } as unknown as AuthRequest,
-        res
-      );
-      expect(status).toHaveBeenCalledWith(400);
-    });
-
-    it('201 vía servicio', async () => {
-      const { status, json, res } = resMocks();
-      await quickAddPatientTreatment(
-        {
-          user: nurseUser(),
-          params: { patientId: '4' },
-          body: { scheduledTime: '2030-01-01T10:00' },
-        } as unknown as AuthRequest,
-        res
-      );
-      expect(quickAddNursePatientTreatment).toHaveBeenCalledWith(1, 10, 4, {
-        scheduledTime: '2030-01-01T10:00',
-      });
-      expect(status).toHaveBeenCalledWith(201);
-    });
-  });
-
   describe('patchAdministrationHistoryRecord', () => {
     it('400 IDs inválidos', async () => {
       const { status, json, res } = resMocks();
@@ -695,40 +625,6 @@ describe('nurses.controller', () => {
       await getMedicationsForPharmacy({ user: nurseUser() } as AuthRequest, res);
       expect(status).toHaveBeenCalledWith(500);
       expect(json).toHaveBeenCalledWith({ message: 'Error al obtener medicamentos' });
-    });
-
-    it('recordAdministration', async () => {
-      (recordNurseAdministration as jest.Mock).mockRejectedValueOnce(new Error('db'));
-      const { status, json, res } = resMocks();
-      await recordAdministration(
-        { user: nurseUser(), body: { scheduleId: 1, status: 'given' } } as unknown as AuthRequest,
-        res
-      );
-      expect(status).toHaveBeenCalledWith(500);
-      expect(json).toHaveBeenCalledWith({
-        message: 'Error interno del servidor al registrar administración',
-      });
-    });
-
-    it('getPatientHistory', async () => {
-      (fetchNursePatientAdministrationHistoryFormatted as jest.Mock).mockRejectedValueOnce(new Error('db'));
-      const { status, json, res } = resMocks();
-      await getPatientHistory({ user: nurseUser(), params: { patientId: '1' } } as unknown as AuthRequest, res);
-      expect(status).toHaveBeenCalledWith(500);
-      expect(json).toHaveBeenCalledWith({
-        message: 'Error interno del servidor al obtener historial',
-      });
-    });
-
-    it('quickAddPatientTreatment', async () => {
-      (quickAddNursePatientTreatment as jest.Mock).mockRejectedValueOnce(new Error('db'));
-      const { status, json, res } = resMocks();
-      await quickAddPatientTreatment(
-        { user: nurseUser(), params: { patientId: '1' }, body: {} } as unknown as AuthRequest,
-        res
-      );
-      expect(status).toHaveBeenCalledWith(500);
-      expect(json).toHaveBeenCalledWith({ message: 'Error al crear tratamiento' });
     });
 
     it('patchPatientTreatmentSchedule', async () => {

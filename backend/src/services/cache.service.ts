@@ -122,21 +122,6 @@ export class CacheService {
   }
 
   /**
-   * Verificar si existe en caché
-   */
-  async has(key: string): Promise<boolean> {
-    return this.cache.has(key);
-  }
-
-  /**
-   * Limpiar todo el caché
-   */
-  async clear(): Promise<void> {
-    this.cache.clear();
-    logger.info('Cache cleared');
-  }
-
-  /**
    * Generar clave de caché con prefijo
    */
   generateKey(prefix: string, ...parts: (string | number)[]): string {
@@ -146,30 +131,3 @@ export class CacheService {
 
 // Instancia singleton
 export const cacheService = new CacheService();
-
-/**
- * Decorador para cachear resultados de funciones
- */
-export function Cacheable(keyPrefix: string, ttlSeconds: number = 300) {
-  return function (target: any, propertyName: string, descriptor: PropertyDescriptor) {
-    const method = descriptor.value;
-
-    descriptor.value = async function (...args: any[]) {
-      const cacheKey = `${keyPrefix}:${propertyName}:${JSON.stringify(args)}`;
-      
-      // Intentar obtener del caché
-      const cached = await cacheService.get(cacheKey);
-      if (cached !== null) {
-        return cached;
-      }
-
-      // Ejecutar método y guardar resultado
-      const result = await method.apply(this, args);
-      await cacheService.set(cacheKey, result, ttlSeconds);
-      
-      return result;
-    };
-
-    return descriptor;
-  };
-}

@@ -9,11 +9,11 @@ import { NurseService } from '../../../services/nurse.service';
 export class NurseDashboardPrimaryLoadFacade {
   private readonly nurseService = inject(NurseService);
 
-  loadPrimaryBundle() {
+  loadPrimaryBundle(refresh = false) {
     return forkJoin({
-      stats: this.nurseService.getNurseStats(),
-      beds: this.nurseService.getMyBeds(),
-      patients: this.nurseService.getMyPatients(),
+      stats: this.nurseService.getNurseStats(refresh),
+      beds: this.nurseService.getMyBeds(refresh),
+      patients: this.nurseService.getMyPatients(undefined, refresh),
     });
   }
 }

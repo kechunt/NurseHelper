@@ -2,16 +2,14 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
-import { OverviewComponent } from '../admin-dashboard/overview/overview.component';
-import { UsersManagementComponent } from '../admin-dashboard/users-management/users-management.component';
-import { StaffManagementComponent } from '../admin-dashboard/staff-management/staff-management.component';
-import { AreasManagementComponent } from '../admin-dashboard/areas-management/areas-management.component';
-import { BedsManagementComponent } from '../admin-dashboard/beds-management/beds-management.component';
-import { PatientsManagementComponent } from '../admin-dashboard/patients-management/patients-management.component';
-import { SchedulesManagementComponent } from '../admin-dashboard/schedules-management/schedules-management.component';
-import { StaffDashboardQuickActionsComponent } from '../../shared/components/staff-dashboard-quick-actions/staff-dashboard-quick-actions.component';
-import { PharmacyCoverageSummaryCardComponent } from '../../shared/components/pharmacy-coverage-summary-card/pharmacy-coverage-summary-card.component';
+import { SupervisorSystemOverviewComponent } from './supervisor-system-overview/supervisor-system-overview.component';
+import { SupervisorBackupsSectionComponent } from './supervisor-backups-section/supervisor-backups-section.component';
+import { SupervisorHealthSectionComponent } from './supervisor-health-section/supervisor-health-section.component';
+import { SupervisorAuditSectionComponent } from './supervisor-audit-section/supervisor-audit-section.component';
+import { SupervisorWebhooksSectionComponent } from './supervisor-webhooks-section/supervisor-webhooks-section.component';
+import { SupervisorPlatformSectionComponent } from './supervisor-platform-section/supervisor-platform-section.component';
 import { StaffDashboardShellComponent } from '../../shared/components/staff-dashboard-shell/staff-dashboard-shell.component';
+import { SUPERVISOR_DASHBOARD_SHELL_TABS } from '../../shared/components/staff-dashboard-shell/supervisor-dashboard-shell-tabs';
 import {
   DASHBOARD_TAB_STATE_CONFIG,
   DashboardTabStateService,
@@ -29,15 +27,12 @@ import { SUPERVISOR_DASHBOARD_TAB_STATE_CONFIG } from '../../shared/staff-dashbo
     CommonModule,
     RouterModule,
     StaffDashboardShellComponent,
-    StaffDashboardQuickActionsComponent,
-    OverviewComponent,
-    UsersManagementComponent,
-    StaffManagementComponent,
-    AreasManagementComponent,
-    BedsManagementComponent,
-    PatientsManagementComponent,
-    SchedulesManagementComponent,
-    PharmacyCoverageSummaryCardComponent,
+    SupervisorSystemOverviewComponent,
+    SupervisorBackupsSectionComponent,
+    SupervisorHealthSectionComponent,
+    SupervisorAuditSectionComponent,
+    SupervisorWebhooksSectionComponent,
+    SupervisorPlatformSectionComponent,
   ],
   templateUrl: './supervisor-dashboard.component.html',
   styleUrl: './supervisor-dashboard.component.css',
@@ -47,10 +42,23 @@ export class SupervisorDashboardComponent implements OnInit {
   private readonly router = inject(Router);
   readonly tabState = inject(DashboardTabStateService);
 
-  readonly supervisorShellDashboardTitle = $localize`:@@supervisorShell.dashboardTitle:Panel de Supervisión`;
-  readonly supervisorShellRoleDisplayLabel = $localize`:@@supervisorShell.roleDisplay:Supervisor`;
+  readonly supervisorDashboardShellTabs = SUPERVISOR_DASHBOARD_SHELL_TABS;
+
+  private readonly hamburgerLabels: Record<string, string> = {
+    overview: $localize`:@@supervisorHamburger.overview:📊 Resumen`,
+    backups: $localize`:@@supervisorHamburger.backups:💾 Respaldos`,
+    health: $localize`:@@supervisorHamburger.health:🩺 Salud`,
+    audit: $localize`:@@supervisorHamburger.audit:📜 Auditoría`,
+    webhooks: $localize`:@@supervisorHamburger.webhooks:🔗 Webhooks`,
+    platform: $localize`:@@supervisorHamburger.platform:⚙️ Plataforma`,
+  };
+
+  readonly supervisorShellDashboardTitle = $localize`:@@supervisorShell.dashboardTitle:Panel de supervisión del sistema`;
+  readonly supervisorShellRoleDisplayLabel = $localize`:@@supervisorShell.roleDisplay:Supervisor del sistema`;
   readonly supervisorShellLogoAriaLabel = $localize`:@@supervisorShell.logoAria:Ir al resumen del panel de supervisión`;
   readonly supervisorShellNavAriaLabel = $localize`:@@supervisorShell.navAria:Secciones del panel de supervisión`;
+  readonly supervisorHamburgerOpenNavAriaLabel = $localize`:@@supervisorShell.hamburgerAria:Abrir menú de navegación`;
+  private readonly hamburgerMenuFallback = $localize`:@@supervisorHamburger.menu:Menú`;
 
   get currentUser() {
     return this.authService.currentUser;
@@ -59,6 +67,10 @@ export class SupervisorDashboardComponent implements OnInit {
   get headerUserDisplayName(): string {
     const u = this.currentUser();
     return `${u?.firstName || ''} ${u?.lastName || ''}`.trim();
+  }
+
+  get hamburgerSectionLabel(): string {
+    return this.hamburgerLabels[this.tabState.activeTab()] ?? this.hamburgerMenuFallback;
   }
 
   ngOnInit(): void {

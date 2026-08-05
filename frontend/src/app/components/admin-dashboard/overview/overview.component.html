@@ -17,6 +17,69 @@
     </div>
   </div>
 
+  <section class="overview-shift-center" aria-labelledby="overview-shift-center-heading">
+    <div class="overview-shift-center-header">
+      <h3 id="overview-shift-center-heading" i18n="@@adminOverview.shiftCenterTitle">Centro de turno</h3>
+      <button
+        type="button"
+        class="overview-shift-center-refresh"
+        (click)="refreshOperationalSummary()"
+        [disabled]="loadingOperational"
+        i18n="@@adminOverview.shiftCenterRefresh"
+      >
+        Actualizar
+      </button>
+    </div>
+
+    <p *ngIf="loadingOperational" class="loading-state" i18n="@@adminOverview.shiftCenterLoading">
+      Cargando estado operativo…
+    </p>
+
+    <ng-container *ngIf="!loadingOperational && operational">
+      <p *ngIf="operational.message" class="overview-shift-center-note">{{ operational.message }}</p>
+      <div class="overview-shift-center-grid">
+        <button type="button" class="overview-shift-kpi" (click)="navigate('schedules')">
+          <span class="overview-shift-kpi-value">{{ operational.presentNursesCount }}</span>
+          <span class="overview-shift-kpi-label" i18n="@@adminOverview.kpiPresentNurses">Enfermeras presentes/tarde</span>
+        </button>
+        <button
+          type="button"
+          class="overview-shift-kpi"
+          [class.overview-shift-kpi--warn]="operational.uncoveredAreasCount > 0"
+          (click)="navigate('schedules')"
+        >
+          <span class="overview-shift-kpi-value">{{ operational.uncoveredAreasCount }}</span>
+          <span class="overview-shift-kpi-label" i18n="@@adminOverview.kpiUncoveredAreas">Áreas sin cobertura</span>
+        </button>
+        <button
+          type="button"
+          class="overview-shift-kpi"
+          [class.overview-shift-kpi--warn]="operational.pendingPatientsCount > 0"
+          (click)="navigate('patients')"
+        >
+          <span class="overview-shift-kpi-value">{{ operational.pendingPatientsCount }}</span>
+          <span class="overview-shift-kpi-label" i18n="@@adminOverview.kpiPendingPatients">Pacientes sin enfermera</span>
+        </button>
+        <button type="button" class="overview-shift-kpi" (click)="navigate('schedules')">
+          <span class="overview-shift-kpi-value">{{ operational.assignedPatientsCount }}</span>
+          <span class="overview-shift-kpi-label" i18n="@@adminOverview.kpiAssignedPatients">Pacientes asignados en turno</span>
+        </button>
+      </div>
+      <ul *ngIf="operational.pendingSamples.length > 0" class="overview-shift-pending-list">
+        <li *ngFor="let row of operational.pendingSamples">
+          <button type="button" class="overview-shift-pending-link" (click)="navigate('patients')">
+            Paciente #{{ row.patientId }}
+            <span *ngIf="row.areaId != null"> · área {{ row.areaId }}</span>
+            <span *ngIf="row.reason"> — {{ row.reason }}</span>
+          </button>
+        </li>
+      </ul>
+      <p class="overview-shift-cache-hint" i18n="@@adminOverview.shiftCenterCacheHint">
+        Datos en caché (~{{ operational.cacheTtlSeconds }}s). Usa Actualizar tras guardar la lista.
+      </p>
+    </ng-container>
+  </section>
+
   <div *ngIf="!loading" class="stats-grid">
     <div class="stat-card" (click)="navigate('users')">
       <div class="stat-icon">👥</div>
@@ -90,56 +153,4 @@
       </div>
     </div>
   </div>
-
-  <section class="overview-backups-card" aria-labelledby="overview-backups-heading">
-    <div class="overview-backups-header">
-      <h3 id="overview-backups-heading" class="overview-backups-title">{{ adminOverviewBackupTitle }}</h3>
-    </div>
-
-    <p class="overview-backups-note">{{ adminOverviewBackupProductionNote }}</p>
-
-    <div class="overview-backup-form">
-      <label class="overview-backup-label" for="overview-backup-name">{{ adminOverviewBackupNameLabel }}</label>
-      <div class="overview-backup-form-row">
-        <input
-          id="overview-backup-name"
-          type="text"
-          class="overview-backup-input"
-          [(ngModel)]="backupName"
-          [disabled]="creatingBackup || loadingBackups"
-          maxlength="48"
-          placeholder="prod_mayo"
-          autocomplete="off"
-        />
-        <button
-          type="button"
-          class="overview-backup-btn"
-          (click)="createBackup()"
-          [disabled]="creatingBackup || loadingBackups"
-        >
-          {{ creatingBackup ? 'Creando…' : adminOverviewBackupCreate }}
-        </button>
-      </div>
-      <p class="overview-backup-hint">{{ adminOverviewBackupNameHint }}</p>
-    </div>
-
-    <p *ngIf="lastBackupFilename && !loadingBackups" class="overview-backup-last">
-      <strong>{{ adminOverviewBackupLast }}:</strong> {{ lastBackupFilename }}
-    </p>
-
-    <p *ngIf="loadingBackups" class="loading-state" i18n="@@adminOverview.backupLoading">Cargando respaldos...</p>
-
-    <ul *ngIf="!loadingBackups && backups.length > 0" class="overview-backups-list">
-      <li *ngFor="let backup of backups" class="overview-backup-item">
-        <span class="overview-backup-name">{{ backup.filename }}</span>
-        <span class="overview-backup-meta">
-          {{ formatBackupDate(backup.createdAt) }} · {{ formatBackupSize(backup.size) }}
-        </span>
-      </li>
-    </ul>
-
-    <p *ngIf="!loadingBackups && backups.length === 0" class="overview-backups-empty">
-      {{ adminOverviewBackupEmpty }}
-    </p>
-  </section>
 </div>

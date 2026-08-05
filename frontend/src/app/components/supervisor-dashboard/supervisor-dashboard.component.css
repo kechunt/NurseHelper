@@ -1,1 +1,23 @@
-/* Estilos de layout en `staff-dashboard-shell` (`dashboard-layout.css` + `admin-panel-responsive.css`). */
+@import '../../shared/styles/admin-panel-responsive.css';
+
+:host {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+}
+
+.tab-content {
+  width: 100%;
+  animation: supervisorTabFadeIn 0.3s ease;
+}
+
+@keyframes supervisorTabFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

@@ -28,7 +28,7 @@ export class ShiftHandoverNote {
   @Column({ type: 'date', name: 'note_date' })
   noteDate: Date;
 
-  /** Alineado con `ShiftType`: morning | afternoon | night */
+  /** Franja de turno: morning | afternoon | night (`ShiftType`). */
   @Column({ type: 'varchar', length: 16, name: 'shift_slot' })
   shiftSlot: string;
 

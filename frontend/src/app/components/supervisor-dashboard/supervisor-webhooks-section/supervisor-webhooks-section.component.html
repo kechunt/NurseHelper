@@ -1,0 +1,84 @@
+<section class="section-card supervisor-webhooks-card" aria-labelledby="supervisor-webhooks-heading">
+  <div class="section-header">
+    <h2 id="supervisor-webhooks-heading" class="section-title">{{ title }}</h2>
+    <button type="button" class="neuro-btn" (click)="loadWebhooks()" [disabled]="loading">
+      {{ refreshLabel }}
+    </button>
+  </div>
+
+  <div class="supervisor-webhooks-form">
+    <h3 class="supervisor-webhooks-form-title">{{ registerTitle }}</h3>
+    <div class="supervisor-webhooks-form-grid">
+      <div class="supervisor-webhooks-field">
+        <label for="supervisor-webhook-url">{{ urlLabel }}</label>
+        <input
+          id="supervisor-webhook-url"
+          type="url"
+          class="overview-backup-input"
+          [(ngModel)]="formUrl"
+          [disabled]="registering"
+          placeholder="https://ejemplo.com/webhook"
+          autocomplete="off"
+        />
+      </div>
+      <div class="supervisor-webhooks-field">
+        <label for="supervisor-webhook-events">{{ eventsLabel }}</label>
+        <input
+          id="supervisor-webhook-events"
+          type="text"
+          class="overview-backup-input"
+          [(ngModel)]="formEvents"
+          [disabled]="registering"
+          placeholder="patient.created, medication.administered"
+          autocomplete="off"
+        />
+        <span class="supervisor-webhooks-hint">{{ eventsHint }}</span>
+      </div>
+      <div class="supervisor-webhooks-field">
+        <label for="supervisor-webhook-secret">{{ secretLabel }}</label>
+        <input
+          id="supervisor-webhook-secret"
+          type="text"
+          class="overview-backup-input"
+          [(ngModel)]="formSecret"
+          [disabled]="registering"
+          autocomplete="off"
+        />
+      </div>
+    </div>
+    <button type="button" class="neuro-btn supervisor-webhooks-register-btn" (click)="registerWebhook()" [disabled]="registering">
+      {{ registering ? registeringBtn : registerBtn }}
+    </button>
+  </div>
+
+  <p *ngIf="loading" class="loading-state">{{ loadingLabel }}</p>
+
+  <ul *ngIf="!loading && webhooks.length > 0" class="supervisor-webhooks-list">
+    <li *ngFor="let webhook of webhooks" class="supervisor-webhook-item">
+      <div class="supervisor-webhook-item-info">
+        <span class="supervisor-webhook-url">{{ webhook.url }}</span>
+        <div class="supervisor-webhook-chips">
+          <span class="supervisor-webhook-chip" *ngFor="let evt of webhook.events">{{ evt }}</span>
+        </div>
+        <span class="supervisor-webhook-status" [class.supervisor-webhook-status--active]="webhook.active">
+          {{ webhook.active ? activeLabel : inactiveLabel }}
+        </span>
+      </div>
+      <div class="supervisor-webhook-item-actions">
+        <button type="button" class="neuro-btn neuro-btn-sm" (click)="testWebhook(webhook)" [disabled]="!!busyId">
+          {{ testLabel }}
+        </button>
+        <button
+          type="button"
+          class="neuro-btn neuro-btn-sm supervisor-webhook-delete-btn"
+          (click)="deleteWebhook(webhook)"
+          [disabled]="!!busyId"
+        >
+          {{ deleteLabel }}
+        </button>
+      </div>
+    </li>
+  </ul>
+
+  <p *ngIf="!loading && webhooks.length === 0" class="empty-message">{{ emptyLabel }}</p>
+</section>

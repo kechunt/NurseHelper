@@ -10,7 +10,7 @@ export const NURSE_DASHBOARD_COMPLETE_TASK_HTTP_ERROR_TOAST = $localize`:@@nurse
 
 export const NURSE_DASHBOARD_LOAD_PATIENT_INVALID_ID_ERROR_TOAST = $localize`:@@nurseDashboard.task.loadPatientInvalidId:Error: ID de paciente inválido`;
 
-/** Sin prefijo «Error:» — mismo texto que antes en `deleteScheduleItem`. */
+/** Error al eliminar horario: ID de paciente inválido. */
 export const NURSE_DASHBOARD_DELETE_SCHEDULE_INVALID_PATIENT_ID_ERROR_TOAST = $localize`:@@nurseDashboard.task.deleteScheduleInvalidPatientId:ID de paciente inválido`;
 
 /** Suspender medicamento / marcar tarea no completada: motivo corto. */

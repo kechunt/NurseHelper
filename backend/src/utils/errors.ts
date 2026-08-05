@@ -92,27 +92,9 @@ export class NotFoundError extends AppError {
   }
 }
 
-export class UnauthorizedError extends AppError {
-  constructor(message: string = 'No autorizado') {
-    super(message, 401, ErrorCode.UNAUTHORIZED, true);
-  }
-}
-
 export class ForbiddenError extends AppError {
   constructor(message: string = 'Acceso denegado') {
     super(message, 403, ErrorCode.FORBIDDEN, true);
-  }
-}
-
-export class ConflictError extends AppError {
-  constructor(message: string, code: ErrorCode = ErrorCode.DUPLICATE_RESOURCE) {
-    super(message, 409, code, true);
-  }
-}
-
-export class BusinessRuleError extends AppError {
-  constructor(message: string, details?: any) {
-    super(message, 422, ErrorCode.BUSINESS_RULE_VIOLATION, true, details);
   }
 }
 

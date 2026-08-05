@@ -20,7 +20,7 @@ export class ModalShellComponent {
   @Input() titleIcon: string | null = null;
   /** Clases extra en `.modal-content` (p. ej. `modal-large`). Solo tema `standard`. */
   @Input() contentClass: string | null = null;
-  /** `adminAssign`: mismo lenguaje visual que modales de asignación admin (z-index y tokens compartidos). */
+  /** `adminAssign`: z-index y tokens de modales de asignación admin. */
   @Input() theme: ModalShellTheme = 'standard';
   /** En tema `adminAssign`, aplica `modal-large-assign` al panel. */
   @Input() assignLarge = false;

@@ -1,8 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 import type { UserNotificationDto } from '../../../services/user-notifications.service';
 import { UserNotificationsService } from '../../../services/user-notifications.service';
+import { RealtimeService } from '../../../services/realtime.service';
 import { ToastService } from '../../../services/toast.service';
 import { InAppNotificationsBellComponent } from './in-app-notifications-bell.component';
 
@@ -31,11 +32,18 @@ describe('InAppNotificationsBellComponent', () => {
     delete: jasmine.createSpy('delete').and.returnValue(of({})),
   };
 
+  const notificationUpsert$ = new Subject<UserNotificationDto>();
+  const realtimeStub = {
+    isConnected: jasmine.createSpy('isConnected').and.returnValue(false),
+    onNotificationUpsert: jasmine.createSpy('onNotificationUpsert').and.returnValue(notificationUpsert$.asObservable()),
+  };
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [InAppNotificationsBellComponent],
       providers: [
         { provide: UserNotificationsService, useValue: notificationsStub },
+        { provide: RealtimeService, useValue: realtimeStub },
         { provide: ToastService, useValue: { error: jasmine.createSpy('toastError') } },
         {
           provide: Router,

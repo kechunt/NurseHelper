@@ -198,58 +198,6 @@ export async function createNurseTreatmentSchedules(
   };
 }
 
-export type QuickAddTreatmentResult =
-  | { ok: true; status: 201; body: { message: string; schedule: Schedule } }
-  | JsonErr;
-
-export async function quickAddNursePatientTreatment(
-  nurseId: number,
-  assignedAreaId: number | null | undefined,
-  patientId: number,
-  body: {
-    description?: unknown;
-    scheduledTime?: unknown;
-    date?: unknown;
-    time?: unknown;
-    notes?: unknown;
-  }
-): Promise<QuickAddTreatmentResult> {
-  const gate = await assertNurseCanAccessPatient(nurseId, assignedAreaId, patientId);
-  if (!gate.ok) {
-    return { ok: false, status: gate.status || 403, body: { message: gate.message || 'No autorizado' } };
-  }
-  const { description, scheduledTime, date, time, notes } = body;
-  if (!description || String(description).trim().length < 2) {
-    return { ok: false, status: 400, body: { message: 'Descripción requerida (mín. 2 caracteres)' } };
-  }
-  let when: Date;
-  if (scheduledTime) {
-    when = new Date(String(scheduledTime));
-  } else if (date && time) {
-    const t = String(time).trim();
-    const timeNorm = t.length === 5 ? `${t}:00` : t;
-    when = parseLocalDateTimeParts(String(date), timeNorm);
-  } else {
-    return { ok: false, status: 400, body: { message: 'Se requiere scheduledTime (ISO) o date y time' } };
-  }
-  if (isNaN(when.getTime())) {
-    return { ok: false, status: 400, body: { message: 'Fecha/hora inválida' } };
-  }
-  const scheduleRepo = AppDataSource.getRepository(Schedule);
-  const schedule = new Schedule();
-  schedule.patientId = patientId;
-  schedule.assignedToId = nurseId;
-  schedule.type = ScheduleType.TREATMENT;
-  schedule.status = ScheduleStatus.PENDING;
-  schedule.scheduledTime = when;
-  schedule.description = String(description).trim();
-  schedule.notes = notes != null ? String(notes) : '';
-  schedule.medication = '';
-  schedule.dosage = '';
-  await scheduleRepo.save(schedule);
-  return { ok: true, status: 201, body: { message: 'Tratamiento registrado', schedule } };
-}
-
 export type PatchTreatmentScheduleResult =
   | { ok: true; status: 200; body: { message: string; schedule: Schedule } }
   | JsonErr;

@@ -1,4 +1,4 @@
-/* Unified admin table style based on "Pacientes sin Área Asignada" */
+/* Estilo unificado de tablas del panel admin */
 
 .table-container,
 .patients-table-container,
@@ -119,7 +119,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* —— Acciones en fila: mismo lenguaje visual que panel admin —— */
+/* —— Acciones en fila —— */
 .unified-table-actions {
   display: flex;
   flex-wrap: wrap;

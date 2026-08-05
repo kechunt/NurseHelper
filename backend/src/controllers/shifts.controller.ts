@@ -6,6 +6,14 @@ import { ShiftAttendance, ShiftAttendanceStatus } from '../entities/ShiftAttenda
 import { User, UserRole } from '../entities/User';
 import { logger } from '../utils/logger';
 import { patientAssignmentService } from '../services/patient-assignment.service';
+import { dismissOperationalNotificationsForNurse } from '../services/user-notifications-persistence.service';
+import { invalidateShiftOperationalCaches } from '../services/admin-operational-summary.service';
+import { invalidateNurseDashboardCache } from '../services/nurse-dashboard-cache.service';
+import {
+  listShiftAssignmentSuggestions,
+  resolveCurrentShiftId,
+  todayDateIso,
+} from '../services/patient-shift-assignment.service';
 
 export const getShifts = async (req: Request, res: Response) => {
   try {
@@ -406,7 +414,7 @@ export const getShiftAttendance = async (req: Request, res: Response) => {
 
 export const saveShiftAttendance = async (req: Request, res: Response) => {
   try {
-    const { date, shiftId, attendance, autoHandoff } = req.body;
+    const { date, shiftId, attendance } = req.body;
     const authReq = req as any;
     const recordedBy = authReq.user?.id || null;
 
@@ -422,6 +430,12 @@ export const saveShiftAttendance = async (req: Request, res: Response) => {
     const validStatuses = new Set(Object.values(ShiftAttendanceStatus));
     const attendanceRepo = AppDataSource.getRepository(ShiftAttendance);
     const dateValue = new Date(`${date}T00:00:00`);
+
+    const offDutyStatuses = new Set<ShiftAttendanceStatus>([
+      ShiftAttendanceStatus.ABSENT,
+      ShiftAttendanceStatus.MISSING,
+      ShiftAttendanceStatus.JUSTIFIED,
+    ]);
 
     const savedRows: ShiftAttendance[] = [];
     for (const item of attendance) {
@@ -456,6 +470,10 @@ export const saveShiftAttendance = async (req: Request, res: Response) => {
       row.notes = item?.notes || null;
       row.recordedBy = recordedBy;
       savedRows.push(await attendanceRepo.save(row));
+
+      if (offDutyStatuses.has(status)) {
+        await dismissOperationalNotificationsForNurse(nurseId);
+      }
     }
 
     const response: any = {
@@ -463,11 +481,16 @@ export const saveShiftAttendance = async (req: Request, res: Response) => {
       saved: savedRows.length,
     };
 
-    if (autoHandoff === true) {
-      response.handoff = await patientAssignmentService.autoAssignForShift({
-        date: String(date),
-        shiftId: shiftIdNumber,
-      });
+    response.handoff = await patientAssignmentService.autoAssignForShift({
+      date: String(date),
+      shiftId: shiftIdNumber,
+    });
+
+    invalidateShiftOperationalCaches();
+
+    const affectedNurseIds = [...new Set(savedRows.map((row) => row.nurseId))];
+    for (const nurseId of affectedNurseIds) {
+      await invalidateNurseDashboardCache(nurseId, 'all');
     }
 
     void import('../services/notification-jobs.service').then(({ runInAppNotificationJobs }) =>
@@ -497,6 +520,7 @@ export const runShiftHandoff = async (req: Request, res: Response) => {
       date,
       shiftId: shiftId ?? undefined,
     });
+    invalidateShiftOperationalCaches();
     res.json({
       message: 'Handoff ejecutado correctamente',
       ...result,
@@ -504,6 +528,30 @@ export const runShiftHandoff = async (req: Request, res: Response) => {
   } catch (error) {
     logger.error('Error al ejecutar handoff de turno:', error);
     res.status(500).json({ message: 'Error al ejecutar handoff de turno' });
+  }
+};
+
+export const getShiftAssignmentSuggestions = async (req: Request, res: Response) => {
+  try {
+    const date =
+      typeof req.query.date === 'string' && req.query.date.trim().length > 0
+        ? req.query.date
+        : todayDateIso();
+    const shiftIdRaw = req.query.shiftId;
+    const shiftId =
+      shiftIdRaw != null && String(shiftIdRaw).trim() !== ''
+        ? parseInt(String(shiftIdRaw), 10)
+        : await resolveCurrentShiftId();
+
+    if (!shiftId || Number.isNaN(shiftId)) {
+      return res.status(400).json({ message: 'No hay turno activo o shiftId invalido' });
+    }
+
+    const suggestions = await listShiftAssignmentSuggestions({ date, shiftId });
+    res.json({ date, shiftId, suggestions });
+  } catch (error) {
+    logger.error('Error al obtener sugerencias de asignación:', error);
+    res.status(500).json({ message: 'Error al obtener sugerencias de asignación' });
   }
 };
 

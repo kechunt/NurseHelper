@@ -31,6 +31,13 @@ router.get(
   areasController.getShiftCoverage.bind(areasController)
 );
 
+router.get(
+  '/operational-summary',
+  authMiddleware,
+  requireAdminOrSupervisor,
+  areasController.getOperationalSummary.bind(areasController)
+);
+
 router.get('/', authMiddleware, areasController.getAll.bind(areasController));
 
 /**

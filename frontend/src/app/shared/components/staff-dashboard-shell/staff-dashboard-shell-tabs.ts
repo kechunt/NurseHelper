@@ -1,4 +1,4 @@
-/** Pestañas compartidas entre panel admin y supervisor (mismo orden que `allowedTabs`). */
+/** Pestañas del panel admin (gestión operativa del centro). */
 export const STAFF_DASHBOARD_SHELL_TABS: readonly { key: string; label: string }[] = [
   { key: 'overview', label: '📊 Resumen' },
   { key: 'users', label: '👤 Usuarios' },

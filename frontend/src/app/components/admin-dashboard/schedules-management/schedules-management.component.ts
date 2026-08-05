@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, OnChanges, SimpleChanges, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -13,6 +13,7 @@ import {
   ShiftAttendanceItem,
   ShiftAttendanceStatus,
   ShiftAttendanceHistoryItem,
+  ShiftAssignmentSuggestion,
 } from '../../../services/shifts.service';
 import { ShiftRealtimeService } from '../../../shared/services/shift-realtime.service';
 import { ConfirmationService } from '../../../services/confirmation.service';
@@ -61,7 +62,8 @@ type WeeklySchedule = WeeklyScheduleInterface;
   templateUrl: './schedules-management.component.html',
   styleUrl: './schedules-management.component.css',
 })
-export class SchedulesManagementComponent implements OnInit, OnDestroy {
+export class SchedulesManagementComponent implements OnInit, OnDestroy, OnChanges {
+  @Input() tabActive = false;
   private static readonly ATTENDANCE_STATUS_SORT_ORDER: Record<ShiftAttendanceStatus, number> = {
     present: 0,
     late: 1,
@@ -141,6 +143,8 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
   /** Deep link desde aviso de cobertura (Camas/Áreas): filtrar toma de lista por área. */
   private attendanceAreaRoutePending: number | null = null;
   private attendanceAreaRouteConsumed = false;
+  private attendanceNurseRoutePending: number | null = null;
+  private attendanceNurseRouteConsumed = false;
   private attendanceAreaRouteSub?: Subscription;
   showHistoryModal = false;
   attendanceHistory: ShiftAttendanceHistoryItem[] = [];
@@ -161,6 +165,15 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
   assignCoverageDefaultNurseIds = new Set<number>();
   assignCoverageSaving = false;
   assignCoverageLoadingDefaults = false;
+
+  /** Sugerencias de asignación paciente–enfermera por turno activo (Fase 2). */
+  shiftAssignmentSuggestions: ShiftAssignmentSuggestion[] = [];
+  loadingShiftAssignmentSuggestions = false;
+
+  /** Modal tras handoff con pacientes pendientes. */
+  showHandoffPendingModal = false;
+  handoffPendingRows: Array<{ patientId: number; reason?: string }> = [];
+  handoffSummaryLine = '';
   
   days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
   dayNames: { [key: string]: string } = {
@@ -214,6 +227,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
   readonly schedHtmlModalListFallback = $localize`:@@schedMgmtHtml.modalListFallback:Toma de lista`;
   readonly schedHtmlHistoryModalTitle = $localize`:@@schedMgmtHtml.historyModalTitle:Historial de turnos y asistencia`;
   readonly schedHtmlDayOffModalTitle = $localize`:@@schedMgmtHtml.dayOffModalTitle:Día de descanso`;
+  readonly schedHtmlHandoffPendingTitle = $localize`:@@schedMgmtHtml.handoffPendingTitle:Pacientes pendientes de asignación`;
   readonly schedHtmlSaving = $localize`:@@schedMgmtHtml.savingLabel:Guardando…`;
   readonly schedHtmlSaveCoverageAssign = $localize`:@@schedMgmtHtml.saveCoverageAssign:Asignar al área`;
   readonly schedHtmlAttendanceAssignIntro = $localize`:@@schedMgmtHtml.attendanceAssignIntro:¿Asignar a esta enfermera en el turno actual? Confirma el área y marca su asistencia.`;
@@ -278,6 +292,15 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
     this.loadNurses();
     this.generateNursesByAreaAndShift();
     this.startLiveClock();
+    this.loadShiftAssignmentSuggestions();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if ('tabActive' in changes && this.tabActive && !changes['tabActive'].firstChange) {
+      this.loadShiftAttendance({ silent: true });
+      this.loadShiftAssignmentSuggestions();
+      this.adminService.clearOperationalCaches();
+    }
   }
 
   ngOnDestroy(): void {
@@ -294,17 +317,60 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
   }
 
   private captureAttendanceAreaRouteIntent(): void {
-    const raw = this.route.snapshot.queryParamMap.get('attendanceAreaId');
-    if (!raw) {
-      return;
+    const rawArea = this.route.snapshot.queryParamMap.get('attendanceAreaId');
+    if (rawArea) {
+      const id = parseInt(rawArea, 10);
+      if (Number.isFinite(id)) {
+        this.attendanceAreaRoutePending = id;
+        this.attendanceAreaRouteConsumed = false;
+      }
     }
-    const id = parseInt(raw, 10);
-    if (!Number.isFinite(id)) {
-      return;
+
+    const rawNurse = this.route.snapshot.queryParamMap.get('attendanceNurseId');
+    if (rawNurse) {
+      const nurseId = parseInt(rawNurse, 10);
+      if (Number.isFinite(nurseId)) {
+        this.attendanceNurseRoutePending = nurseId;
+        this.attendanceNurseRouteConsumed = false;
+      }
     }
-    this.attendanceAreaRoutePending = id;
-    this.attendanceAreaRouteConsumed = false;
+
     this.tryApplyAttendanceAreaRouteIntent();
+    this.tryOpenAttendanceNurseFromRoute();
+  }
+
+  private stripAttendanceNurseQueryParam(): void {
+    if (!this.route.snapshot.queryParamMap.has('attendanceNurseId')) {
+      return;
+    }
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { attendanceNurseId: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  }
+
+  private tryOpenAttendanceNurseFromRoute(): void {
+    if (this.attendanceNurseRouteConsumed || this.attendanceNurseRoutePending == null) {
+      return;
+    }
+    if (!this.attendanceItems.length) {
+      return;
+    }
+    const nurseId = this.attendanceNurseRoutePending;
+    const item = this.attendanceItems.find((row) => row.nurseId === nurseId);
+    if (!item) {
+      return;
+    }
+    this.attendanceNurseRouteConsumed = true;
+    this.attendanceNurseRoutePending = null;
+    this.stripAttendanceNurseQueryParam();
+    this.showAttendanceNurseList = true;
+    this.openAttendanceAssignModal(item);
+    this.toastService.info(
+      $localize`:@@schedMgmt.nurseCheckInOpenHint:Enfermera registró asistencia. Asigna el área y confirma el estado.`,
+    );
   }
 
   private stripAttendanceAreaQueryParam(): void {
@@ -737,6 +803,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (items) => {
           this.attendanceItems = items;
+          this.tryOpenAttendanceNurseFromRoute();
           if (!silent) {
             this.loading = false;
           }
@@ -752,7 +819,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Actualiza estado en memoria y programa guardado en BD (mismo flujo para present, late, justified, missing, absent).
+   * Actualiza estado en memoria y programa guardado en BD (present, late, justified, missing, absent).
    */
   setAttendanceStatus(item: ShiftAttendanceItem, status: ShiftAttendanceStatus): void {
     const currentShiftId = this.resolveCurrentShiftId();
@@ -1121,7 +1188,7 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
     return this.attendanceAssignItem?.nurseName ?? this.schedHtmlModalListFallback;
   }
 
-  /** Agrupa cambios rápidos y persiste la lista completa en la BD (mismo endpoint que antes el botón Guardar). */
+  /** Agrupa cambios rápidos y persiste la lista completa en la BD. */
   private schedulePersistAttendance(): void {
     if (this.attendancePersistTimer) {
       clearTimeout(this.attendancePersistTimer);
@@ -1158,8 +1225,9 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
           const processed = handoff.processed ?? 0;
           const assigned = handoff.assigned ?? 0;
           const pending = handoff.pending ?? 0;
-          const reasonSamples = (handoff.details || [])
-            .filter((d) => d.status === 'pending' && d.reason)
+          const pendingDetails = (handoff.details || []).filter((d) => d.status === 'pending');
+          const reasonSamples = pendingDetails
+            .filter((d) => d.reason)
             .slice(0, 4)
             .map((d) => `#${d.patientId}: ${d.reason}`)
             .join(' · ');
@@ -1169,13 +1237,21 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
             : '';
           if (pending > 0) {
             this.toastService.warning(`${saveMsg} ${reparto}${detailSuffix}`);
+            this.handoffSummaryLine = reparto;
+            this.handoffPendingRows = pendingDetails.map((d) => ({
+              patientId: d.patientId,
+              reason: d.reason,
+            }));
+            this.showHandoffPendingModal = true;
           } else {
             this.toastService.success(`${saveMsg} ${reparto}`);
           }
         } else {
           this.toastService.success(saveMsg);
         }
+        this.adminService.clearOperationalCaches();
         this.loadShiftAttendance({ silent: true });
+        this.loadShiftAssignmentSuggestions();
         onComplete?.(true);
       },
       error: (error) => {
@@ -1192,6 +1268,21 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
 
   getAttendanceCount(status: ShiftAttendanceStatus): number {
     return this.attendanceItems.filter((item) => item.status === status).length;
+  }
+
+  closeHandoffPendingModal(): void {
+    this.showHandoffPendingModal = false;
+    this.handoffPendingRows = [];
+    this.handoffSummaryLine = '';
+  }
+
+  goToPatientsFromHandoffModal(): void {
+    this.closeHandoffPendingModal();
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { tab: 'patients' },
+      queryParamsHandling: 'merge',
+    });
   }
 
   setAttendanceSummaryFilter(status: ShiftAttendanceStatus): void {
@@ -1309,6 +1400,30 @@ export class SchedulesManagementComponent implements OnInit, OnDestroy {
     });
 
     return items;
+  }
+
+  get pendingShiftAssignmentSuggestions(): ShiftAssignmentSuggestion[] {
+    return this.shiftAssignmentSuggestions.filter((s) => s.status === 'pending');
+  }
+
+  loadShiftAssignmentSuggestions(): void {
+    const shiftId = this.resolveCurrentShiftId();
+    if (!shiftId) {
+      this.shiftAssignmentSuggestions = [];
+      return;
+    }
+    const date = this.attendanceDate || new Date().toISOString().split('T')[0];
+    this.loadingShiftAssignmentSuggestions = true;
+    this.shiftsService.getAssignmentSuggestions({ date, shiftId }).subscribe({
+      next: (res) => {
+        this.shiftAssignmentSuggestions = res.suggestions ?? [];
+        this.loadingShiftAssignmentSuggestions = false;
+      },
+      error: () => {
+        this.shiftAssignmentSuggestions = [];
+        this.loadingShiftAssignmentSuggestions = false;
+      },
+    });
   }
 
   get uncoveredAreasInCurrentShift(): Array<{ id: number; name: string }> {

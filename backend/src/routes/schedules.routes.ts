@@ -221,34 +221,4 @@ router.put('/:id/not-completed', authMiddleware, schedulesController.markAsNotCo
  */
 router.put('/:id/postpone', authMiddleware, schedulesController.postpone.bind(schedulesController));
 
-/**
- * @swagger
- * /api/schedules/{id}/medication-given:
- *   put:
- *     summary: Registrar administración de medicamento
- *     tags: [Schedules]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *     requestBody:
- *       required: false
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               notes:
- *                 type: string
- *                 description: Notas adicionales sobre la administración
- *     responses:
- *       200:
- *         description: Administración registrada exitosamente
- */
-router.put('/:id/medication-given', authMiddleware, schedulesController.markMedicationGiven.bind(schedulesController));
-
 export default router;

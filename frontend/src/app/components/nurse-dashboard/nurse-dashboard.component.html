@@ -16,6 +16,34 @@
   <div id="nurse-dashboard-shell-header-actions" appDashboardHeaderActions class="nurse-header-actions">
     <app-offline-status-banner />
     <app-in-app-notifications-bell dashboardKind="nurse" />
+    <span
+      *ngIf="nurseShiftContext?.shiftName"
+      class="nurse-shift-status-pill"
+      role="status"
+      [attr.title]="nurseShiftContext?.summary || ''"
+    >
+      {{ nurseShiftContext?.shiftName }} · {{ nurseShiftContext?.punctualityLabel || nurseShiftContext?.attendanceStatus || '—' }}
+    </span>
+    <button
+      *ngIf="nurseShiftContext?.canCheckIn"
+      type="button"
+      class="neuro-btn neuro-btn-sm nurse-check-in-btn"
+      [disabled]="checkInInProgress"
+      (click)="onCheckInShift()"
+      i18n="@@nurseDashboard.btnCheckIn"
+    >
+      Registrar asistencia
+    </button>
+    <button
+      *ngIf="nurseShiftContext?.onDuty"
+      type="button"
+      class="neuro-btn neuro-btn-sm nurse-checkout-btn"
+      [disabled]="checkoutInProgress"
+      (click)="onCheckoutShift()"
+      i18n="@@nurseDashboard.btnCheckoutShift"
+    >
+      Cerrar turno
+    </button>
     <app-nurse-dashboard-header-search (debounced)="onHeaderPatientSearch($event)" />
   </div>
 
@@ -29,7 +57,32 @@
     />
   </ng-container>
 
-  <main class="dashboard-content" id="nurse-dashboard-main" aria-labelledby="nurse-dashboard-heading">
+  <main class="dashboard-content" id="nurse-dashboard-main" aria-labelledby="nurse-dashboard-heading" [class.nurse-readonly-mode]="nurseShiftContext && !nurseShiftContext.onDuty">
+    <p
+      *ngIf="nurseShiftContext?.canCheckIn"
+      class="nurse-status-banner nurse-check-in-banner"
+      role="status"
+      i18n="@@nurseDashboard.checkInBanner"
+    >
+      Turno activo ({{ nurseShiftContext?.shiftName }}). Pulsa «Registrar asistencia» para avisar al administrador y que te asigne el área.
+    </p>
+    <p
+      *ngIf="nurseShiftContext?.pendingAreaAssignment"
+      class="nurse-status-banner nurse-pending-area-banner"
+      role="status"
+    >
+      <span i18n="@@nurseDashboard.pendingAreaBanner">Asistencia registrada</span>
+      <span *ngIf="nurseShiftContext?.punctualityLabel"> ({{ nurseShiftContext?.punctualityLabel }})</span>.
+      <span i18n="@@nurseDashboard.pendingAreaBannerTail"> El administrador te asignará el área en Horarios.</span>
+    </p>
+    <p
+      *ngIf="nurseShiftContext && !nurseShiftContext.onDuty && !nurseShiftContext.canCheckIn && !nurseShiftContext.pendingAreaAssignment"
+      class="nurse-status-banner nurse-off-duty-banner"
+      role="status"
+      i18n="@@nurseDashboard.offDutyBanner"
+    >
+      Fuera de turno: puedes consultar información, pero las acciones operativas están deshabilitadas.
+    </p>
       <div
         *ngIf="hasVisitedNurseView('summary')"
         [hidden]="nurseMainView !== 'summary'"
@@ -151,6 +204,11 @@
   >
     <div class="section-card nurse-module">
     <div id="patients-section" class="nurse-module-stack">
+      <div class="nurse-patients-toolbar" *ngIf="nurseShiftContext?.onDuty">
+        <button type="button" class="neuro-btn neuro-btn-sm" (click)="openAdmitPatientModal()" i18n="@@nurseDashboard.btnAdmitPatient">
+          Ingresar paciente
+        </button>
+      </div>
       <app-nurse-patients-assigned-section
         [patients]="filteredPatients"
         [searchTerm]="searchTerm"
@@ -164,6 +222,7 @@
         (openPatientMedicationSchedule)="openPatientModal($event, 'schedule')"
         (claimPatient)="onClaimPatientRequested($event)"
         [claimingPatientId]="claimingPatientId"
+        [nurseOnDuty]="nurseShiftContext?.onDuty ?? false"
       />
     </div>
     </div>
@@ -257,6 +316,13 @@
       (editBedDismissed)="closeEditBedModal()"
       (editBedSaved)="onEditBedSaved()"
       (editBedReloadRequested)="loadNurseData()"
+    />
+    <app-nurse-admit-patient-modal
+      *ngIf="showAdmitPatientModal"
+      [beds]="admitBedOptions"
+      [saving]="admitPatientSaving"
+      (dismissed)="closeAdmitPatientModal()"
+      (submitForm)="onAdmitPatientSubmit($event)"
     />
   </div>
 </app-dashboard-shell>

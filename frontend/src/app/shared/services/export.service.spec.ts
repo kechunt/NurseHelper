@@ -82,16 +82,6 @@ describe('ExportService', () => {
     expect(document.createElement).toHaveBeenCalled();
   });
 
-  it('debería formatear fechas correctamente', () => {
-    const data = [{ name: 'Juan', birthDate: new Date(1990, 0, 15) }];
-    const dateFields = ['birthDate'];
-
-    const prepared = service.prepareDataForExport(data, dateFields);
-
-    expect(prepared[0].birthDate).toContain('15');
-    expect(prepared[0].birthDate).toContain('1990');
-  });
-
   it('debería manejar valores nulos y undefined', () => {
     const data = [
       { name: 'Juan', age: null, city: undefined }

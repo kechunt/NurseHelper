@@ -105,39 +105,3 @@ export function asyncHandler(
     Promise.resolve(fn(req, res, next)).catch(next);
   };
 }
-
-/**
- * Helper para enviar respuestas de error desde controladores
- */
-export function sendError(
-  res: Response,
-  error: AppError | Error,
-  req?: Request
-): void {
-  if (error instanceof AppError) {
-    const response: ErrorResponse = {
-      message: error.message,
-      code: error.code,
-      statusCode: error.statusCode,
-      timestamp: new Date().toISOString(),
-      path: req?.originalUrl,
-    };
-
-    if (error.details && (process.env.NODE_ENV !== 'production' || error.isOperational)) {
-      response.details = error.details;
-    }
-
-    logApiError(error, req || {} as Request);
-    res.status(error.statusCode).json(response);
-  } else {
-    logApiError(error, req || {} as Request);
-    const response: ErrorResponse = {
-      message: 'Error interno del servidor',
-      code: ErrorCode.SERVER_ERROR,
-      statusCode: 500,
-      timestamp: new Date().toISOString(),
-      path: req?.originalUrl,
-    };
-    res.status(500).json(response);
-  }
-}

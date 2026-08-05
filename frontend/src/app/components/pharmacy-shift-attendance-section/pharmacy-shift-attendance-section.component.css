@@ -1,6 +1,5 @@
 /**
- * Misma herencia visual que horarios/asistencia (`schedules-management`) y
- * `pharmacy-coverage-summary-card`: module-section-neuro, contenedor hundido y tarjetas elevadas.
+ * Asistencia de farmacia: module-section-neuro, contenedor hundido y tarjetas elevadas.
  */
 
 :host {
@@ -271,7 +270,7 @@
   border-radius: 999px;
 }
 
-/* Botones del modal de asistencia (misma familia que schedules-management) */
+/* Botones del modal de asistencia */
 .btn-attendance {
   border: none;
   border-radius: 999px;

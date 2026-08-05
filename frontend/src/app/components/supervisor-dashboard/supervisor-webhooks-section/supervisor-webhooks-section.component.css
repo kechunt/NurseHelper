@@ -1,0 +1,181 @@
+@import '../../../shared/styles/admin-panel-responsive.css';
+@import '../supervisor-section.shared.css';
+
+.supervisor-webhooks-card {
+  padding: 1.5rem 1.75rem 2rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.supervisor-webhooks-form {
+  margin-bottom: 1.5rem;
+  padding: 1.1rem 1.25rem;
+  border-radius: 16px;
+  background: rgba(237, 242, 247, 0.55);
+}
+
+.supervisor-webhooks-form-title {
+  margin: 0 0 0.85rem;
+  color: #4a5568;
+  font-size: 0.98rem;
+  font-weight: 600;
+}
+
+.supervisor-webhooks-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.supervisor-webhooks-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.supervisor-webhooks-field label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.supervisor-webhooks-hint {
+  font-size: 0.78rem;
+  color: #718096;
+}
+
+.overview-backup-input {
+  width: 100%;
+  box-sizing: border-box;
+  border: none;
+  border-radius: 12px;
+  padding: 0.55rem 0.85rem;
+  background: #e0e5ec;
+  box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
+  color: #4a5568;
+}
+
+.overview-backup-input:disabled {
+  opacity: 0.65;
+}
+
+.supervisor-webhooks-register-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.supervisor-webhooks-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.supervisor-webhook-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  padding: 0.9rem 0;
+  border-bottom: 1px solid rgba(113, 128, 150, 0.15);
+}
+
+.supervisor-webhook-item:last-child {
+  border-bottom: none;
+}
+
+.supervisor-webhook-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+  flex: 1 1 260px;
+}
+
+.supervisor-webhook-url {
+  font-weight: 600;
+  color: #4a5568;
+  word-break: break-all;
+}
+
+.supervisor-webhook-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.supervisor-webhook-chip {
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(66, 153, 225, 0.14);
+  color: #2b6cb0;
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+
+.supervisor-webhook-status {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #718096;
+  width: fit-content;
+}
+
+.supervisor-webhook-status--active {
+  color: #276749;
+}
+
+.supervisor-webhook-item-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.supervisor-webhook-delete-btn {
+  color: #9b2c2c;
+}
+
+.empty-message {
+  text-align: center;
+  padding: 3rem;
+  color: #a0aec0;
+  font-style: italic;
+  font-size: 1rem;
+}
+
+@media (max-width: 768px) {
+  .supervisor-webhooks-card {
+    padding: 1.1rem 1.15rem 1.5rem;
+  }
+
+  .supervisor-webhooks-form {
+    padding: 0.95rem 1rem;
+  }
+
+  .supervisor-webhook-item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .supervisor-webhook-item-actions {
+    width: 100%;
+  }
+
+  .supervisor-webhook-item-actions .neuro-btn {
+    flex: 1 1 auto;
+  }
+
+  .supervisor-webhooks-register-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 576px) {
+  .supervisor-webhooks-card {
+    padding: 0.95rem 0.9rem 1.25rem;
+  }
+
+  .empty-message {
+    padding: 2rem 1rem;
+  }
+}

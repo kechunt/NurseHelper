@@ -101,33 +101,6 @@
   margin: 0;
 }
 
-.nurse-bed-clinical-preview {
-  min-height: 0;
-}
-
-.nurse-bed-clinical-preview-line {
-  margin: 0 0 0.3rem;
-  padding: 0.45rem 0.55rem;
-  border-radius: 10px;
-  background: #e0e5ec;
-  box-shadow: inset 2px 2px 5px #cbccd1, inset -2px -2px 5px #fafbff;
-  font-size: 0.8rem;
-  line-height: 1.35;
-  color: #2d3748;
-  word-break: break-word;
-}
-
-.nurse-bed-clinical-preview-line:last-child {
-  margin-bottom: 0;
-}
-
-.nurse-bed-clinical-preview-empty {
-  margin: 0;
-  font-size: 0.78rem;
-  font-style: italic;
-  color: #a0aec0;
-}
-
 .nurse-bed-clinical-row .nurse-bed-expand-btn {
   align-self: flex-start;
   margin-top: 0.15rem;

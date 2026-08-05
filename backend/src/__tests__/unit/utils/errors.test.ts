@@ -1,12 +1,9 @@
 import {
   AppError,
-  BusinessRuleError,
-  ConflictError,
   ErrorCode,
   ForbiddenError,
   NotFoundError,
   TooManyRequestsError,
-  UnauthorizedError,
   ValidationError,
 } from '../../../utils/errors';
 
@@ -34,23 +31,9 @@ describe('errors', () => {
     expect(new NotFoundError('X').code).toBe(ErrorCode.NOT_FOUND);
   });
 
-  it('UnauthorizedError y ForbiddenError usan códigos y mensajes por defecto', () => {
-    expect(new UnauthorizedError().statusCode).toBe(401);
+  it('ForbiddenError usa código y mensaje por defecto', () => {
     expect(new ForbiddenError().statusCode).toBe(403);
-    expect(new UnauthorizedError('x').message).toBe('x');
-  });
-
-  it('ConflictError permite código distinto', () => {
-    const e = new ConflictError('dup', ErrorCode.USERNAME_EXISTS);
-    expect(e.statusCode).toBe(409);
-    expect(e.code).toBe(ErrorCode.USERNAME_EXISTS);
-  });
-
-  it('BusinessRuleError es 422', () => {
-    const e = new BusinessRuleError('regla', { a: 1 });
-    expect(e.statusCode).toBe(422);
-    expect(e.code).toBe(ErrorCode.BUSINESS_RULE_VIOLATION);
-    expect(e.details).toEqual({ a: 1 });
+    expect(new ForbiddenError('x').message).toBe('x');
   });
 
   it('TooManyRequestsError es 429', () => {

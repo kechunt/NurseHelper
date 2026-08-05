@@ -155,10 +155,3 @@ export function authRateLimitMiddleware() {
   }
   return rateLimitMiddleware(15 * 60 * 1000, 5);
 }
-
-/**
- * Rate limiting estricto para endpoints sensibles
- */
-export function strictRateLimitMiddleware() {
-  return rateLimitMiddleware(60 * 1000, 10);
-}

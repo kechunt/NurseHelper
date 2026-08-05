@@ -36,6 +36,16 @@
         <p class="handover-modal-intro handover-modal-intro--muted" i18n="@@nurseHandoverModal.introMuted">
           Se guarda <strong>una nota por área, por día y por turno</strong> (mañana / tarde / noche). Las enfermeras del mismo área eligen fecha y franja para leer o actualizar. No aparece en otra pantalla; es un registro compartido al paso de turno.
         </p>
+        <div class="nurse-coordination-note-block">
+          <h4 class="nurse-coordination-note-title">{{ coordinationTitle }}</h4>
+          <p *ngIf="coordinationNoteLoading" class="handover-modal-intro handover-modal-intro--muted" i18n="@@nurseHandoverModal.coordinationLoading">
+            Cargando nota de coordinación…
+          </p>
+          <p *ngIf="!coordinationNoteLoading && !coordinationNoteBody" class="handover-modal-intro handover-modal-intro--muted">
+            {{ coordinationEmpty }}
+          </p>
+          <div *ngIf="!coordinationNoteLoading && coordinationNoteBody" class="nurse-coordination-note-body">{{ coordinationNoteBody }}</div>
+        </div>
         <div class="input-group">
           <label for="handover-date" i18n="@@nurseHandoverModal.dateLabel">Fecha</label>
           <input

@@ -19,6 +19,10 @@ import {
   buildPharmacyHistoryExportRows,
   buildPharmacyInventoryExportRows,
 } from './pharmacy-export.helpers';
+import {
+  labelExpiryClassification,
+  labelPharmacyHistoryRef,
+} from '../../shared/utils/report-export-labels.helpers';
 
 interface MedicationRequest {
   id: number;
@@ -91,7 +95,7 @@ interface InventoryItem {
   expiryDate: string;
   expiryDateRaw?: string | null;
   status: 'available' | 'low_stock' | 'expired' | 'out_of_stock';
-  /** Alineado con backend (`medications.expiryDate`). */
+  /** Clasificación de caducidad según `medications.expiryDate`. */
   expiryClassification: ExpiryClassification;
   daysToExpiry: number | null;
   expiringSoonDays: number;
@@ -375,7 +379,7 @@ export class PharmacyDashboardComponent implements OnInit {
   readonly pharmacyExportKindReject = $localize`:@@pharmacyModule.exportKindReject:Rechazo`;
 
   readonly pharmacyExpColType = $localize`:@@pharmacyModule.expColType:Tipo`;
-  readonly pharmacyExpColId = $localize`:@@pharmacyModule.expColId:ID`;
+  readonly pharmacyExpColId = $localize`:@@pharmacyModule.expColId:Referencia`;
   readonly pharmacyExpColDate = $localize`:@@pharmacyModule.expColDate:Fecha`;
   readonly pharmacyExpColMedication = $localize`:@@pharmacyModule.expColMedication:Medicamento`;
   readonly pharmacyExpColDosage = $localize`:@@pharmacyModule.expColDosage:Dosis`;
@@ -390,7 +394,7 @@ export class PharmacyDashboardComponent implements OnInit {
   readonly pharmacyExpColLocation = $localize`:@@pharmacyModule.expColLocation:Ubicación`;
   readonly pharmacyExpColExpiry = $localize`:@@pharmacyModule.expColExpiry:Caducidad`;
   readonly pharmacyExpColStatus = $localize`:@@pharmacyModule.expColStatus:Estado`;
-  readonly pharmacyExpColExpiryClass = $localize`:@@pharmacyModule.expColExpiryClass:Clasificación caducidad`;
+  readonly pharmacyExpColExpiryClass = $localize`:@@pharmacyModule.expColExpiryClass:Alerta de caducidad`;
   readonly pharmacyExpColDaysToExpiry = $localize`:@@pharmacyModule.expColDaysToExpiry:Días a caducidad`;
 
   private readonly pharmacyRequestStatusLabels: Record<string, string> = {
@@ -720,7 +724,6 @@ export class PharmacyDashboardComponent implements OnInit {
           (a, b) => b.sortDate.getTime() - a.sortDate.getTime()
         );
         
-        // Mantener compatibilidad con código existente
         this.deliveryHistory = deliveries;
         this.filteredHistory = this.fullHistory;
         this.filterHistory();
@@ -1422,7 +1425,11 @@ export class PharmacyDashboardComponent implements OnInit {
   private buildHistoryExportRows(): Record<string, string | number>[] {
     const rows = this.filteredHistory.map((item) => ({
       type: this.historyExportKindLabel(item),
-      id: item.deliveryId || item.requestId || '',
+      id: labelPharmacyHistoryRef({
+        type: item.type,
+        deliveryId: item.deliveryId,
+        requestId: item.requestId,
+      }),
       date: this.getHistoryDate(item),
       medication: item.medication,
       dosage: item.dosage,
@@ -1471,7 +1478,7 @@ export class PharmacyDashboardComponent implements OnInit {
       location: item.location,
       expiry: item.expiryDateRaw ? String(item.expiryDateRaw).slice(0, 10) : '',
       statusLabel: this.getInventoryStatusLabel(item),
-      expiryClassification: item.expiryClassification,
+      expiryClassification: labelExpiryClassification(item.expiryClassification),
       daysToExpiry: item.daysToExpiry ?? '',
     }));
     return buildPharmacyInventoryExportRows(rows, {

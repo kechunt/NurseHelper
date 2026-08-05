@@ -18,9 +18,9 @@ import { requestByMethod } from '../supertest-request';
 
 describe('Simple Endpoints Test', () => {
   describe('Health Endpoints', () => {
-    it('GET /health-basic debería responder', async () => {
-      const response = await request(app).get('/health-basic');
-      logger.info(`\n✅ GET /health-basic: ${response.status}`);
+    it('GET /health debería responder', async () => {
+      const response = await request(app).get('/health');
+      logger.info(`\n✅ GET /health: ${response.status}`);
       expect([200, 503]).toContain(response.status);
       if (response.status === 200) {
         expect(response.body).toHaveProperty('status');
@@ -65,7 +65,7 @@ describe('Simple Endpoints Test', () => {
 
   describe('API Routes - Verificar Disponibilidad', () => {
     const publicRoutes = [
-      { method: 'GET', path: '/health-basic' },
+      { method: 'GET', path: '/health' },
       { method: 'GET', path: '/health/live' },
       { method: 'GET', path: '/health/ready' },
       { method: 'GET', path: '/' },

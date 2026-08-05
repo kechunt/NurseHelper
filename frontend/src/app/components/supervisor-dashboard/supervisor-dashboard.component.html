@@ -1,4 +1,5 @@
 <app-staff-dashboard-shell
+  #staffShell
   idPrefix="supervisor"
   [dashboardTitle]="supervisorShellDashboardTitle"
   panelHeadingId="supervisor-dashboard-heading"
@@ -7,23 +8,30 @@
   [logoAriaLabel]="supervisorShellLogoAriaLabel"
   [navAriaLabel]="supervisorShellNavAriaLabel"
   [activeTab]="tabState.activeTab()"
+  [tabs]="supervisorDashboardShellTabs"
   [userDisplayName]="headerUserDisplayName"
-  [mobileDrawer]="false"
+  [mobileDrawer]="true"
   (logoClick)="goToOverviewFromLogo()"
   (tabSelected)="setActiveTab($event)"
   (logoutClick)="logout()"
 >
-  <div staffShellAfterHeader>
-    <app-staff-dashboard-quick-actions />
-  </div>
-
   <main
     staffShellMain
     class="dashboard-content"
     id="supervisor-dashboard-main"
     aria-labelledby="supervisor-dashboard-heading"
   >
-    <app-pharmacy-coverage-summary-card />
+    <button
+      id="supervisor-shell-nav-hamburger-btn"
+      type="button"
+      class="nav-hamburger"
+      (click)="staffShell.toggleNav()"
+      [attr.aria-expanded]="staffShell.navOpen"
+      [attr.aria-label]="supervisorHamburgerOpenNavAriaLabel"
+    >
+      <span class="hamburger-label">{{ hamburgerSectionLabel }}</span>
+      <span class="hamburger-icon">☰</span>
+    </button>
 
     <div
       *ngIf="hasVisitedTab('overview')"
@@ -33,73 +41,62 @@
       id="supervisor-panel-overview"
       aria-labelledby="supervisor-tab-overview"
     >
-      <app-overview [onNavigate]="setActiveTab.bind(this)"></app-overview>
+      <app-supervisor-system-overview [onNavigate]="setActiveTab.bind(this)"></app-supervisor-system-overview>
     </div>
 
     <div
-      *ngIf="hasVisitedTab('users')"
-      [hidden]="tabState.activeTab() !== 'users'"
+      *ngIf="hasVisitedTab('backups')"
+      [hidden]="tabState.activeTab() !== 'backups'"
       class="tab-content"
       role="tabpanel"
-      id="supervisor-panel-users"
-      aria-labelledby="supervisor-tab-users"
+      id="supervisor-panel-backups"
+      aria-labelledby="supervisor-tab-backups"
     >
-      <app-users-management></app-users-management>
+      <app-supervisor-backups-section></app-supervisor-backups-section>
     </div>
 
     <div
-      *ngIf="hasVisitedTab('staff')"
-      [hidden]="tabState.activeTab() !== 'staff'"
+      *ngIf="hasVisitedTab('health')"
+      [hidden]="tabState.activeTab() !== 'health'"
       class="tab-content"
       role="tabpanel"
-      id="supervisor-panel-staff"
-      aria-labelledby="supervisor-tab-staff"
+      id="supervisor-panel-health"
+      aria-labelledby="supervisor-tab-health"
     >
-      <app-staff-management></app-staff-management>
+      <app-supervisor-health-section></app-supervisor-health-section>
     </div>
 
     <div
-      *ngIf="hasVisitedTab('areas')"
-      [hidden]="tabState.activeTab() !== 'areas'"
+      *ngIf="hasVisitedTab('audit')"
+      [hidden]="tabState.activeTab() !== 'audit'"
       class="tab-content"
       role="tabpanel"
-      id="supervisor-panel-areas"
-      aria-labelledby="supervisor-tab-areas"
+      id="supervisor-panel-audit"
+      aria-labelledby="supervisor-tab-audit"
     >
-      <app-areas-management></app-areas-management>
+      <app-supervisor-audit-section></app-supervisor-audit-section>
     </div>
 
     <div
-      *ngIf="hasVisitedTab('beds')"
-      [hidden]="tabState.activeTab() !== 'beds'"
+      *ngIf="hasVisitedTab('webhooks')"
+      [hidden]="tabState.activeTab() !== 'webhooks'"
       class="tab-content"
       role="tabpanel"
-      id="supervisor-panel-beds"
-      aria-labelledby="supervisor-tab-beds"
+      id="supervisor-panel-webhooks"
+      aria-labelledby="supervisor-tab-webhooks"
     >
-      <app-beds-management></app-beds-management>
+      <app-supervisor-webhooks-section></app-supervisor-webhooks-section>
     </div>
 
     <div
-      *ngIf="hasVisitedTab('patients')"
-      [hidden]="tabState.activeTab() !== 'patients'"
+      *ngIf="hasVisitedTab('platform')"
+      [hidden]="tabState.activeTab() !== 'platform'"
       class="tab-content"
       role="tabpanel"
-      id="supervisor-panel-patients"
-      aria-labelledby="supervisor-tab-patients"
+      id="supervisor-panel-platform"
+      aria-labelledby="supervisor-tab-platform"
     >
-      <app-patients-management></app-patients-management>
-    </div>
-
-    <div
-      *ngIf="hasVisitedTab('schedules')"
-      [hidden]="tabState.activeTab() !== 'schedules'"
-      class="tab-content"
-      role="tabpanel"
-      id="supervisor-panel-schedules"
-      aria-labelledby="supervisor-tab-schedules"
-    >
-      <app-schedules-management></app-schedules-management>
+      <app-supervisor-platform-section></app-supervisor-platform-section>
     </div>
   </main>
 </app-staff-dashboard-shell>

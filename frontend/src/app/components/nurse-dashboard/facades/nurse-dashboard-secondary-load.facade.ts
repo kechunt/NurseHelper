@@ -10,11 +10,11 @@ import { NurseService } from '../../../services/nurse.service';
 export class NurseDashboardSecondaryLoadFacade {
   private readonly nurseService = inject(NurseService);
 
-  loadBundle() {
+  loadBundle(refresh = false) {
     return forkJoin({
-      tasks: this.nurseService.getTodayTasks(),
-      medications: this.nurseService.getMedicationsForPharmacy(),
-      shiftContext: this.nurseService.getShiftContext().pipe(catchError(() => of(null))),
+      tasks: this.nurseService.getTodayTasks(refresh),
+      medications: this.nurseService.getMedicationsForPharmacy(refresh),
+      shiftContext: this.nurseService.getShiftContext(refresh).pipe(catchError(() => of(null))),
     });
   }
 }

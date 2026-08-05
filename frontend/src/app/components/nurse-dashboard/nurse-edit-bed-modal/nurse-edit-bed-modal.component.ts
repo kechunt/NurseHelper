@@ -67,7 +67,7 @@ export class NurseEditBedModalComponent implements OnChanges {
 
   @Output() readonly dismissed = new EventEmitter<void>();
   @Output() readonly saved = new EventEmitter<void>();
-  /** Tras error de guardado: el padre puede refrescar listas sin cerrar el modal (mismo criterio que antes). */
+  /** Tras error de guardado: el padre puede refrescar listas sin cerrar el modal. */
   @Output() readonly reloadRequested = new EventEmitter<void>();
 
   editBedForm: {

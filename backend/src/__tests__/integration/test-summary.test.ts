@@ -9,10 +9,10 @@ import { logger } from '../../utils/logger';
 
 describe('Endpoints Summary Test', () => {
   describe('Health Endpoints (No requieren BD)', () => {
-    it('GET /health-basic debería responder', async () => {
-      const response = await request(app).get('/health-basic');
+    it('GET /health debería responder', async () => {
+      const response = await request(app).get('/health');
       expect([200, 503]).toContain(response.status);
-      logger.info(`✅ /health-basic: ${response.status}`);
+      logger.info(`✅ /health: ${response.status}`);
     });
 
     it('GET /health/live debería responder', async () => {
@@ -86,7 +86,7 @@ describe('Endpoints Summary Test', () => {
 
   describe('Verificar Estructura de Respuestas', () => {
     it('Health check debería tener estructura correcta', async () => {
-      const response = await request(app).get('/health-basic');
+      const response = await request(app).get('/health');
       if (response.status === 200) {
         expect(response.body).toHaveProperty('status');
         expect(response.body).toHaveProperty('timestamp');

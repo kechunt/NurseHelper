@@ -1,7 +1,6 @@
 /*
- * Modales del panel enfermería (subcomponentes del overlays stack): mismo lenguaje visual
- * que admin — fondo semitransparente sin blur (#e0e5ec en contenido, radio 30px, sombras).
- * Encapsulación Angular: no hereda reglas de `nurse-dashboard.component.css`.
+ * Modales del panel enfermería (overlays stack): fondo semitransparente sin blur
+ * (#e0e5ec en contenido, radio 30px, sombras). Encapsulación Angular propia.
  */
 
 @keyframes nurse-modal-backdrop-fade-in {

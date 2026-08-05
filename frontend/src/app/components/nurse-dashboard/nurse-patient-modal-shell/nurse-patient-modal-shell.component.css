@@ -1,4 +1,4 @@
-/* Estilos del modal de ficha (antes en `nurse-dashboard.component.css`); ámbito bajo `.nurse-patient-modal-shell`. */
+/* Modal de ficha del paciente (ámbito `.nurse-patient-modal-shell`). */
 
 .nurse-patient-modal-shell .modal-backdrop {
   position: fixed;

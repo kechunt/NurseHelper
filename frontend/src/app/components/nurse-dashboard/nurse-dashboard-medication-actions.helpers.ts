@@ -1,9 +1,8 @@
 import type { SuspendMedicationConfirmedPayload } from './nurse-suspend-medication-modal/nurse-suspend-medication-modal.component';
+import { normalizeNotCompletedReason } from './nurse-dashboard-task-actions.helpers';
 
-export function normalizeMedicationActionReason(raw: string | null | undefined): string | null {
-  const reason = (raw || '').trim();
-  return reason.length >= 10 ? reason : null;
-}
+/** Normaliza el motivo de una acción de medicación (mínimo 10 caracteres). */
+export const normalizeMedicationActionReason = normalizeNotCompletedReason;
 
 export function resolveSuspendUntilDate(
   payload: SuspendMedicationConfirmedPayload,

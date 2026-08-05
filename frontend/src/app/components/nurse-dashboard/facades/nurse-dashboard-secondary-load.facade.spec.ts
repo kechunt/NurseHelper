@@ -35,9 +35,19 @@ describe('NurseDashboardSecondaryLoadFacade', () => {
     facade.loadBundle().subscribe((res) => {
       expect(res.tasks).toEqual([]);
       expect(res.medications).toEqual(jasmine.objectContaining({ medications: [] }));
-      expect(getTodayTasks).toHaveBeenCalled();
-      expect(getMedicationsForPharmacy).toHaveBeenCalled();
-      expect(getShiftContext).toHaveBeenCalled();
+      expect(getTodayTasks).toHaveBeenCalledWith(false);
+      expect(getMedicationsForPharmacy).toHaveBeenCalledWith(false);
+      expect(getShiftContext).toHaveBeenCalledWith(false);
+      done();
+    });
+  });
+
+  it('loadBundle(true) propaga refresh a NurseService', (done) => {
+    const facade = TestBed.inject(NurseDashboardSecondaryLoadFacade);
+    facade.loadBundle(true).subscribe(() => {
+      expect(getTodayTasks).toHaveBeenCalledWith(true);
+      expect(getMedicationsForPharmacy).toHaveBeenCalledWith(true);
+      expect(getShiftContext).toHaveBeenCalledWith(true);
       done();
     });
   });

@@ -1,6 +1,6 @@
 import type { PatientClinicalNoteDto } from '../../services/nurse.service';
 
-/** Ámbitos alineados con `clinicalNotes` del paciente y localStorage de destacadas. */
+/** Ámbitos de notas clínicas y localStorage de destacadas. */
 export type ClinicalNotesPinScope =
   | 'diagnosis'
   | 'medical'

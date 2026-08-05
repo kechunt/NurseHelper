@@ -14,6 +14,7 @@ import {
   ADMIN_CONFIRM_REMOVE_PATIENT_ASSIGNMENT_YES,
 } from '../admin-confirmation-copy.helpers';
 import { ToastService } from '../../../services/toast.service';
+import { RealtimeService } from '../../../services/realtime.service';
 import { AdminTableRowActionsModalComponent } from '../../../shared/components/admin-table-row-actions-modal/admin-table-row-actions-modal.component';
 import { AdminToggleButtonComponent } from '../../../shared/components/admin-toggle-button/admin-toggle-button.component';
 import { BootstrapIconComponent } from '../../../shared/components/bootstrap-icon/bootstrap-icon.component';
@@ -84,6 +85,7 @@ export class StaffManagementComponent implements OnInit, OnDestroy, OnChanges {
   selectedArea: number | null | 'unassigned' = null;
   selectedShiftPresenceFilter: 'all' | 'onShift' | 'offShift' = 'all';
   private operationalStatusTimer: ReturnType<typeof setInterval> | null = null;
+  private adminRealtimeSub?: Subscription;
   /** Detalle expandido solo para enfermeras en turno actual (mapa id → visible). */
   nurseDetailExpanded: Record<number, boolean> = {};
 
@@ -146,7 +148,8 @@ export class StaffManagementComponent implements OnInit, OnDestroy, OnChanges {
     private router: Router,
     private route: ActivatedRoute,
     private confirmationService: ConfirmationService,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private realtime: RealtimeService,
   ) {}
 
   /**
@@ -206,12 +209,21 @@ export class StaffManagementComponent implements OnInit, OnDestroy, OnChanges {
     if (this.tabActive) {
       this.startOperationalStatusPolling();
     }
+
+    this.adminRealtimeSub = this.realtime.onAdminOperationalInvalidate().subscribe(() => {
+      if (this.tabActive && !this.loading && this.nurses.length > 0) {
+        this.loadOperationalShiftStatus();
+      }
+    });
   }
 
   ngOnChanges(changes: SimpleChanges): void {
     if ('tabActive' in changes) {
       if (this.tabActive) {
         this.startOperationalStatusPolling();
+        if (!changes['tabActive'].firstChange) {
+          this.loadData();
+        }
       } else {
         this.stopOperationalStatusPolling();
       }
@@ -219,6 +231,8 @@ export class StaffManagementComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   ngOnDestroy(): void {
+    this.adminRealtimeSub?.unsubscribe();
+    this.adminRealtimeSub = undefined;
     this.assignAreaRouteSub?.unsubscribe();
     this.assignAreaRouteSub = undefined;
     this.stopOperationalStatusPolling();
@@ -374,7 +388,7 @@ export class StaffManagementComponent implements OnInit, OnDestroy, OnChanges {
             );
           });
 
-          // Compatibilidad: pacientes en camas del área de la enfermera (sin assignedToId previo)
+          // Pacientes en camas del área de la enfermera (sin assignedToId)
           let byArea: Patient[] = [];
           if (nurseAreaId && !isNaN(nurseAreaId)) {
             const bedsInNurseArea = this.beds.filter((bed: any) => {
@@ -597,7 +611,7 @@ export class StaffManagementComponent implements OnInit, OnDestroy, OnChanges {
     return this.staffMgmtOpUnknown;
   }
 
-  /** Texto corto para la pastilla (mismo rol visual que antes “Activo/Inactivo”). */
+  /** Texto corto para la pastilla de estado. */
   getShiftPresenceBadgeLabel(nurse: NurseWithPatients): string {
     return this.getOperationalStatusLabel(nurse);
   }

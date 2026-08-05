@@ -19,6 +19,7 @@ import {
   type HandoverShiftSlot,
 } from '../../services/nurse.service';
 import { AuthService } from '../../services/auth.service';
+import { RealtimeService } from '../../services/realtime.service';
 import { PharmacyService, type MedicationRequest } from '../../services/pharmacy.service';
 import { ToastService } from '../../services/toast.service';
 import { ConfirmationService } from '../../services/confirmation.service';
@@ -67,10 +68,7 @@ import {
   type ScheduleSlotsModalViewPayload,
 } from './nurse-dashboard-schedule-slots.helpers';
 import { filterNurseDashboardPatients } from './nurse-dashboard-patients-filter.helpers';
-import {
-  filterPatientsByDashboardSearchTerm,
-  findSinglePatientByDashboardSearchTerm,
-} from './nurse-dashboard-patient-search.helpers';
+import { findSinglePatientByDashboardSearchTerm } from './nurse-dashboard-patient-search.helpers';
 import { countPatientMedicationListDoses, countPatientTreatmentsToday } from './nurse-dashboard-medication-doses.helpers';
 import {
   countPendingTasksInHourGroups,
@@ -150,6 +148,12 @@ import {
   mapNurseDayHistoryItemsToCsvRows,
   tasksDayHistoryCsvFilename,
 } from './nurse-dashboard-day-history-csv.helpers';
+import {
+  mapPatientHistoryRowsForExport,
+  mapPatientMedicationsTodayForExport,
+  mapPatientObservationsForExport,
+  mapPatientTreatmentsTodayForExport,
+} from './nurse-patient-tab-export.helpers';
 import { buildNursePatientSummaryPdfOptions } from './nurse-patient-summary-pdf.helpers';
 import {
   NURSE_DASHBOARD_DAY_HISTORY_EXPORT_EMPTY_WARNING,
@@ -295,6 +299,7 @@ import { NurseSummarySectionComponent } from './nurse-summary-section/nurse-summ
 import { NursePharmacySectionComponent } from './nurse-pharmacy-section/nurse-pharmacy-section.component';
 import { NurseTasksSectionComponent } from './nurse-tasks-section/nurse-tasks-section.component';
 import { NurseBedsSectionComponent } from './nurse-beds-section/nurse-beds-section.component';
+import { NurseAdmitPatientModalComponent } from './nurse-admit-patient-modal/nurse-admit-patient-modal.component';
 import { NurseDashboardSecondaryLoadFacade } from './facades/nurse-dashboard-secondary-load.facade';
 import { NurseDashboardPrimaryLoadFacade } from './facades/nurse-dashboard-primary-load.facade';
 import { NurseDashboardNurseReportsLoadFacade } from './facades/nurse-dashboard-nurse-reports-load.facade';
@@ -345,6 +350,7 @@ import { NurseDashboardMedicationMutationFacade } from './facades/nurse-dashboar
     NursePharmacySectionComponent,
     NurseTasksSectionComponent,
     NurseBedsSectionComponent,
+    NurseAdmitPatientModalComponent,
   ],
   templateUrl: './nurse-dashboard.component.html',
   styleUrls: [
@@ -364,6 +370,7 @@ export class NurseDashboardComponent implements OnInit {
   private readonly tasksDayHistoryLoad = inject(NurseDashboardTasksDayHistoryFacade);
   private readonly myPatientsSearch = inject(NurseDashboardMyPatientsSearchFacade);
   private readonly patientDetailsLoad = inject(NurseDashboardPatientDetailsLoadFacade);
+  private readonly realtime = inject(RealtimeService);
   private readonly completeTaskFacade = inject(NurseDashboardCompleteTaskFacade);
   private readonly taskLifecycleFacade = inject(NurseDashboardTaskLifecycleFacade);
   private readonly patientScheduleWriteFacade = inject(NurseDashboardPatientScheduleWriteFacade);
@@ -579,9 +586,13 @@ export class NurseDashboardComponent implements OnInit {
 
   /** Contexto de turno (API enfermería; solo lectura). */
   nurseShiftContext: NurseShiftContext | null = null;
+  checkoutInProgress = false;
+  checkInInProgress = false;
+  showAdmitPatientModal = false;
+  admitPatientSaving = false;
 
   /** Evita solapar varias cargas completas si el usuario dispara refrescos muy seguido. */
-  private readonly reloadDashboard$ = new Subject<void>();
+  private readonly reloadDashboard$ = new Subject<{ refresh?: boolean }>();
 
   /** Deep link desde notificaciones: `?highlightSchedule=` */
   private highlightScheduleAfterLoad: number | null = null;
@@ -598,40 +609,45 @@ export class NurseDashboardComponent implements OnInit {
   ) {
     this.reloadDashboard$
       .pipe(
-        switchMap(() => this.primaryLoad.loadPrimaryBundle()),
+        switchMap(({ refresh }) => this.primaryLoad.loadPrimaryBundle(refresh === true)),
         takeUntilDestroyed()
       )
       .subscribe({
         next: ({ stats, beds, patients }) => {
           this.applyPrimaryDashboardData(stats, beds, patients);
-          this.loadSecondaryData();
+          this.loadSecondaryData(false);
         },
-        error: (error) => {
-          this.myBeds = [];
-          this.patients = [];
-          this.filteredPatients = [];
-          this.assignedPatientsCount = 0;
-          this.pendingTasksCount = 0;
-          this.medicationsToday = 0;
-
-          const decision = nurseDashboardReloadFailureDecision(error, readNurseDashboardHttpErrorMessage);
-          switch (decision.kind) {
-            case 'network-unavailable':
-              this.toastService.error(NURSE_DASHBOARD_RELOAD_NETWORK_MESSAGE);
-              break;
-            case 'session-expired':
-              this.toastService.error(NURSE_DASHBOARD_RELOAD_SESSION_EXPIRED_MESSAGE);
-              this.logout();
-              break;
-            case 'forbidden':
-              this.toastService.error(NURSE_DASHBOARD_RELOAD_FORBIDDEN_MESSAGE);
-              break;
-            case 'generic-load-error':
-              this.toastService.error(decision.message);
-              break;
-          }
-        },
+        error: (error) => this.handleDashboardPrimaryLoadError(error),
       });
+  }
+
+  private handleDashboardPrimaryLoadError(error: unknown): void {
+    this.myBeds = [];
+    this.patients = [];
+    this.filteredPatients = [];
+    this.assignedPatientsCount = 0;
+    this.pendingTasksCount = 0;
+    this.medicationsToday = 0;
+
+    const decision = nurseDashboardReloadFailureDecision(
+      error as { status?: number },
+      readNurseDashboardHttpErrorMessage,
+    );
+    switch (decision.kind) {
+      case 'network-unavailable':
+        this.toastService.error(NURSE_DASHBOARD_RELOAD_NETWORK_MESSAGE);
+        break;
+      case 'session-expired':
+        this.toastService.error(NURSE_DASHBOARD_RELOAD_SESSION_EXPIRED_MESSAGE);
+        this.logout();
+        break;
+      case 'forbidden':
+        this.toastService.error(NURSE_DASHBOARD_RELOAD_FORBIDDEN_MESSAGE);
+        break;
+      case 'generic-load-error':
+        this.toastService.error(decision.message);
+        break;
+    }
   }
 
   ngOnInit(): void {
@@ -650,12 +666,20 @@ export class NurseDashboardComponent implements OnInit {
           this.tryOpenHighlightedScheduleIfReady();
         }
       }
+      if (view === 'handover') {
+        queueMicrotask(() => this.openHandoverModal());
+      }
     });
     this.visitedNurseViews.add(this.nurseMainView);
     this.loadNurseData();
     if (nurseDashboardShouldLoadTasksDayHistory(this.nurseMainView)) {
       this.loadTasksDayHistory();
     }
+
+    this.realtime
+      .onNurseDashboardInvalidate()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(({ scope }) => this.refreshAfterMutation(scope));
   }
 
   currentUser() {
@@ -667,12 +691,30 @@ export class NurseDashboardComponent implements OnInit {
     this.router.navigate(['/login']);
   }
 
-  loadNurseData(): void {
+  loadNurseData(options?: { scope?: 'all' | 'primary' | 'secondary'; refresh?: boolean }): void {
+    const scope = options?.scope ?? 'all';
+    const refresh = options?.refresh ?? false;
     const currentUser = this.authService.currentUser();
     if (currentUser) {
       this.nurseName = `${currentUser.firstName} ${currentUser.lastName}`;
     }
-    this.reloadDashboard$.next();
+    if (scope === 'secondary') {
+      this.loadSecondaryData(refresh);
+      return;
+    }
+    if (scope === 'primary') {
+      this.primaryLoad.loadPrimaryBundle(refresh).subscribe({
+        next: ({ stats, beds, patients }) => this.applyPrimaryDashboardData(stats, beds, patients),
+        error: (error) => this.handleDashboardPrimaryLoadError(error),
+      });
+      return;
+    }
+    this.reloadDashboard$.next({ refresh });
+  }
+
+  /** Tras mutación: recarga acotada forzando miss de caché cliente/servidor. */
+  refreshAfterMutation(scope: 'all' | 'primary' | 'secondary' = 'all'): void {
+    this.loadNurseData({ scope, refresh: true });
   }
 
   private persistNurseMainView(): void {
@@ -730,8 +772,8 @@ export class NurseDashboardComponent implements OnInit {
     this.medicationsToday = sumMedicationListDosesAcrossPatients(this.patients);
   }
 
-  private loadSecondaryData(): void {
-    this.secondaryLoad.loadBundle().subscribe({
+  private loadSecondaryData(refresh = false): void {
+    this.secondaryLoad.loadBundle(refresh).subscribe({
       next: ({ tasks, medications, shiftContext }) => {
         this.nurseShiftContext = shiftContext;
         this.refreshHandoverPendingNotice();
@@ -907,23 +949,7 @@ export class NurseDashboardComponent implements OnInit {
       return;
     }
 
-    const data = rows.map((r) => ({
-      fecha: r.date,
-      hora: r.time,
-      tipo: r.type,
-      descripcion: r.description,
-      estado: r.status ?? '',
-      profesional: r.nurseName ?? '',
-      medicamento: r.medication ?? '',
-      dosis: r.dosage ?? '',
-      notas: r.notes ?? '',
-      motivo: r.reasonNotAdministered ?? '',
-      realizado_en: r.administeredAt ?? '',
-      planificado_en: r.scheduledTimePlanned ?? '',
-      fuente: r.source ?? '',
-      history_id: r.historyId ?? '',
-      schedule_id: r.scheduleId ?? '',
-    }));
+    const data = mapPatientHistoryRowsForExport(rows);
 
     try {
       this.exportService.exportToCSV(data, { filename: `${filenameBase}.csv` });
@@ -955,15 +981,7 @@ export class NurseDashboardComponent implements OnInit {
     try {
       if (t === 'medications') {
         const rows = (this.selectedPatient as any).medicationsToday || [];
-        const data = rows.map((s: any) => ({
-          hora: s.time,
-          medicamento: s.name || s.medication || '',
-          dosis: s.dosage || '',
-          estado: s.status || '',
-          notas: s.notes || '',
-          schedule_id: s.scheduleId || '',
-          programado_en: s.scheduledTime || '',
-        }));
+        const data = mapPatientMedicationsTodayForExport(rows);
         if (!data.length) {
           this.toastService.warning('No hay medicamentos del día para exportar.');
           return;
@@ -975,15 +993,7 @@ export class NurseDashboardComponent implements OnInit {
 
       if (t === 'schedule') {
         const rows = (this.selectedPatient as any).treatmentsToday || [];
-        const data = rows.map((s: any) => ({
-          hora: s.time,
-          tipo: s.type || s.scheduleType || '',
-          descripcion: s.description || '',
-          estado: s.status || '',
-          notas: s.notes || '',
-          schedule_id: s.scheduleId || '',
-          programado_en: s.scheduledTime || '',
-        }));
+        const data = mapPatientTreatmentsTodayForExport(rows);
         if (!data.length) {
           this.toastService.warning('No hay tratamientos del día para exportar.');
           return;
@@ -995,17 +1005,7 @@ export class NurseDashboardComponent implements OnInit {
 
       if (t === 'observations') {
         const p: any = this.selectedPatient;
-        const data = [
-          {
-            paciente: p.name || '',
-            cama: p.bedNumber || '',
-            diagnostico: p.diagnosis || '',
-            observaciones_medicas: p.medicalObservations || '',
-            alergias: p.allergies || '',
-            necesidades_especiales: p.specialNeeds || '',
-            observaciones_generales: p.generalObservations || '',
-          },
-        ];
+        const data = mapPatientObservationsForExport(p);
         this.exportService.exportToCSV(data, { filename: `${filenameBase}.csv` });
         this.toastService.success(`Exportación lista (${t}).`);
         return;
@@ -1043,6 +1043,9 @@ export class NurseDashboardComponent implements OnInit {
   }
 
   async onClaimPatientRequested(patient: Patient): Promise<void> {
+    if (!this.guardNurseWriteAction()) {
+      return;
+    }
     if (patient.isAssignedToMe || patient.assignedToName) {
       return;
     }
@@ -1075,7 +1078,7 @@ export class NurseDashboardComponent implements OnInit {
         this.toastService.success(
           $localize`:@@nurseDashboard.claimPatientSuccess:Paciente asignado correctamente.`,
         );
-        this.reloadDashboard$.next();
+        this.refreshAfterMutation('primary');
       },
       error: (err) => {
         this.claimingPatientId = null;
@@ -1084,6 +1087,136 @@ export class NurseDashboardComponent implements OnInit {
         );
       },
     });
+  }
+
+  async onCheckoutShift(): Promise<void> {
+    if (!this.nurseShiftContext?.onDuty || this.checkoutInProgress) {
+      return;
+    }
+    const confirmed = await this.confirmationService.confirm({
+      title: $localize`:@@nurseDashboard.checkoutConfirmTitle:Cerrar turno`,
+      message: $localize`:@@nurseDashboard.checkoutConfirmMessage:Se liberarán tus pacientes y se repartirán entre las enfermeras presentes. ¿Continuar?`,
+      confirmText: $localize`:@@nurseDashboard.checkoutConfirmYes:Cerrar turno`,
+      cancelText: $localize`:@@nurseDashboard.checkoutConfirmNo:Cancelar`,
+      type: 'warning',
+    });
+    if (!confirmed) {
+      return;
+    }
+    this.checkoutInProgress = true;
+    this.nurseService.checkoutShift().subscribe({
+      next: (res) => {
+        this.checkoutInProgress = false;
+        this.toastService.success(
+          $localize`:@@nurseDashboard.checkoutSuccess:Turno cerrado. ${String(res.releasedPatients)}:released: paciente(s) liberados.`,
+        );
+        this.refreshAfterMutation('all');
+      },
+      error: (err) => {
+        this.checkoutInProgress = false;
+        this.toastService.error(
+          readNurseDashboardHttpErrorMessage(err, 'Error al cerrar turno'),
+        );
+      },
+    });
+  }
+
+  /** Bloquea acciones operativas si la enfermera no está en turno con área asignada. */
+  guardNurseWriteAction(): boolean {
+    if (this.nurseShiftContext?.onDuty) {
+      return true;
+    }
+    if (this.nurseShiftContext?.canCheckIn) {
+      this.toastService.warning(
+        $localize`:@@nurseDashboard.writeBlockedCheckIn:Registra tu asistencia para realizar esta acción.`,
+      );
+    } else if (this.nurseShiftContext?.pendingAreaAssignment) {
+      this.toastService.warning(
+        $localize`:@@nurseDashboard.writeBlockedPendingArea:Espera a que el administrador te asigne un área.`,
+      );
+    } else {
+      this.toastService.warning(
+        $localize`:@@nurseDashboard.writeBlockedOffDuty:Fuera de turno: acción no disponible.`,
+      );
+    }
+    return false;
+  }
+
+  onCheckInShift(): void {
+    if (!this.nurseShiftContext?.canCheckIn || this.checkInInProgress) {
+      return;
+    }
+    this.checkInInProgress = true;
+    this.nurseService.checkInShift().subscribe({
+      next: (res) => {
+        this.checkInInProgress = false;
+        this.nurseShiftContext = res.context;
+        this.toastService.success(res.message);
+        this.refreshAfterMutation('all');
+      },
+      error: (err) => {
+        this.checkInInProgress = false;
+        this.toastService.error(readNurseDashboardHttpErrorMessage(err, 'No se pudo registrar asistencia'));
+        this.loadSecondaryData();
+      },
+    });
+  }
+
+  openAdmitPatientModal(): void {
+    if (!this.guardNurseWriteAction()) {
+      return;
+    }
+    this.showAdmitPatientModal = true;
+  }
+
+  closeAdmitPatientModal(): void {
+    this.showAdmitPatientModal = false;
+    this.admitPatientSaving = false;
+  }
+
+  get admitBedOptions(): { id: number; bedNumber: string; isOccupied?: boolean }[] {
+    return (this.myBeds || []).map((b) => ({
+      id: Number(b.id),
+      bedNumber: b.bedNumber || String(b.id),
+      isOccupied: !!b.patientId,
+    }));
+  }
+
+  onAdmitPatientSubmit(payload: {
+    firstName: string;
+    lastName: string;
+    identificationNumber: string;
+    bedId: number | null;
+    medicalHistory: string;
+    allergies: string;
+  }): void {
+    if (!this.guardNurseWriteAction()) {
+      return;
+    }
+    this.admitPatientSaving = true;
+    this.nurseService
+      .admitPatient({
+        firstName: payload.firstName,
+        lastName: payload.lastName,
+        identificationNumber: payload.identificationNumber || null,
+        bedId: payload.bedId,
+        medicalHistory: payload.medicalHistory || null,
+        allergies: payload.allergies || null,
+        assignToSelf: true,
+      })
+      .subscribe({
+        next: (res) => {
+          this.admitPatientSaving = false;
+          this.showAdmitPatientModal = false;
+          const bedHint = res.bedNumber ? ` · cama ${res.bedNumber}` : '';
+          this.toastService.success(`${res.message}${bedHint}`);
+          this.refreshAfterMutation('primary');
+        },
+        error: (err) => {
+          this.admitPatientSaving = false;
+          this.toastService.error(readNurseDashboardHttpErrorMessage(err, 'Error al ingresar paciente'));
+        },
+      });
   }
 
   /** Referencia estable para `app-nurse-patients-assigned-section` (`medicationDosesToday`). */
@@ -1609,8 +1742,7 @@ export class NurseDashboardComponent implements OnInit {
   }
 
   openMedicationDayDetailModal(slot: MedicationTodaySlot): void {
-    // Reutiliza el modal de "Horarios" (mismo diseño que tratamientos) para mostrar
-    // la pauta completa (hoy + otras fechas) del medicamento.
+    // Muestra la pauta completa (hoy + otras fechas) del medicamento.
     const grp = this.getMedicationDetailGroupForSlot(slot) as any;
     const scheduleSlots = Array.isArray(grp?.scheduleSlots) ? grp.scheduleSlots : [];
     if (scheduleSlots.length > 0) {
@@ -1682,7 +1814,7 @@ export class NurseDashboardComponent implements OnInit {
         if (this.selectedPatient?.id) {
           this.loadPatientDetails(this.selectedPatient.id);
         }
-        this.loadNurseData();
+        this.refreshAfterMutation('secondary');
       },
       error: (err) => {
         this.toastService.error(
@@ -1735,7 +1867,7 @@ export class NurseDashboardComponent implements OnInit {
       next: () => {
         this.toastService.success(NURSE_DASHBOARD_DELETE_MEDICATION_SLOT_SUCCESS_TOAST);
         this.loadPatientDetails(pid);
-        this.loadNurseData();
+        this.refreshAfterMutation('secondary');
       },
       error: (err) =>
         this.toastService.error(readNurseDashboardHttpErrorMessage(err, NURSE_DASHBOARD_HTTP_FALLBACK_DELETE_GENERIC)),
@@ -1765,7 +1897,7 @@ export class NurseDashboardComponent implements OnInit {
         if (this.selectedPatient && this.selectedPatient.id) {
           this.loadPatientDetails(this.selectedPatient.id);
         }
-        this.loadNurseData();
+        this.refreshAfterMutation('secondary');
       },
       error: (error) => {
         const errorMsg = readNurseDashboardHttpErrorMessage(error, NURSE_DASHBOARD_HTTP_FALLBACK_UNKNOWN);
@@ -1827,7 +1959,7 @@ export class NurseDashboardComponent implements OnInit {
         this.toastService.success(NURSE_DASHBOARD_TREATMENT_ACCEPT_SUCCESS_TOAST);
         this.closeScheduleSlotsModal();
         this.loadPatientDetails(pid);
-        this.loadNurseData();
+        this.refreshAfterMutation('secondary');
       },
       error: (err) => {
         const msg = readNurseDashboardHttpErrorMessage(err, NURSE_DASHBOARD_HTTP_FALLBACK_TREATMENT_ACCEPT);
@@ -1855,7 +1987,7 @@ export class NurseDashboardComponent implements OnInit {
         this.toastService.success(NURSE_DASHBOARD_TREATMENT_CANCEL_SUCCESS_TOAST);
         this.closeScheduleSlotsModal();
         this.loadPatientDetails(pid);
-        this.loadNurseData();
+        this.refreshAfterMutation('secondary');
       },
       error: (err) => {
         const msg = readNurseDashboardHttpErrorMessage(err, NURSE_DASHBOARD_HTTP_FALLBACK_TREATMENT_CANCEL);
@@ -1889,7 +2021,7 @@ export class NurseDashboardComponent implements OnInit {
           this.closeTreatmentPostponeModal();
           this.closeScheduleSlotsModal();
           this.loadPatientDetails(pid);
-          this.loadNurseData();
+          this.refreshAfterMutation('secondary');
         },
         error: (err) => {
           const msg = readNurseDashboardHttpErrorMessage(err, NURSE_DASHBOARD_HTTP_FALLBACK_TREATMENT_POSTPONE);
@@ -1923,7 +2055,7 @@ export class NurseDashboardComponent implements OnInit {
         if (this.selectedPatient && this.selectedPatient.id) {
           this.loadPatientDetails(this.selectedPatient.id);
         }
-        this.loadNurseData();
+        this.refreshAfterMutation('secondary');
       },
       error: (error) => {
         const errorMsg = readNurseDashboardHttpErrorMessage(error, NURSE_DASHBOARD_HTTP_FALLBACK_UNKNOWN);
@@ -2177,7 +2309,7 @@ export class NurseDashboardComponent implements OnInit {
           this.toastService.success(NURSE_DASHBOARD_PENDING_TREATMENT_DELETED_SUCCESS_TOAST);
           this.closeScheduleSlotsModal();
           this.loadPatientDetails(pid);
-          this.loadNurseData();
+          this.refreshAfterMutation('secondary');
         },
         error: (err) =>
         this.toastService.error(readNurseDashboardHttpErrorMessage(err, NURSE_DASHBOARD_HTTP_FALLBACK_DELETE_GENERIC)),
@@ -2258,6 +2390,9 @@ export class NurseDashboardComponent implements OnInit {
   }
 
   sendPharmacyRequest(): void {
+    if (!this.guardNurseWriteAction()) {
+      return;
+    }
     const requestedMeds = pickRequestedPharmacyMedications(this.medicationsForPharmacy);
     
     if (requestedMeds.length === 0) {
@@ -2281,7 +2416,7 @@ export class NurseDashboardComponent implements OnInit {
         this.totalDosesToday = sumTotalDosesFromPharmacyMedications(this.medicationsForPharmacy);
         this.medicationsToday = this.totalDosesToday;
 
-        this.loadNurseData();
+        this.refreshAfterMutation('secondary');
         if (this.pharmacyRequestsHistoryOpen) {
           this.loadPharmacyRequestsHistory();
         }
@@ -2458,12 +2593,10 @@ export class NurseDashboardComponent implements OnInit {
     });
   }
 
-  // Mantener compatibilidad con código anterior
-  filterTasksByHour(): void {
-    this.applyTasksFilters();
-  }
-
   openAddTaskModal(): void {
+    if (!this.guardNurseWriteAction()) {
+      return;
+    }
     if (this.patients.length === 0) {
       this.toastService.warning(NURSE_DASHBOARD_NO_PATIENTS_FOR_TASK_MODAL_WARNING);
       return;
@@ -2486,7 +2619,7 @@ export class NurseDashboardComponent implements OnInit {
 
   onAddTreatmentSaved(ev: { patientId: number }): void {
     this.closeAddTreatmentModal();
-    this.loadNurseData();
+    this.refreshAfterMutation('secondary');
     if (
       shouldRefreshSelectedPatientAfterSave({
         showPatientModal: this.showPatientModal,
@@ -2530,7 +2663,7 @@ export class NurseDashboardComponent implements OnInit {
           this.loadPatientDetails(this.selectedPatient.id);
         }
         // Recargar tareas para actualizar la vista
-        this.loadNurseData();
+        this.refreshAfterMutation('secondary');
         if (taskMutationsShouldReloadHistory({ reloadDayHistory: true })) {
           this.loadTasksDayHistory();
         }
@@ -2612,7 +2745,7 @@ export class NurseDashboardComponent implements OnInit {
         }
         
         this.pendingTasksCount = Math.max(0, this.pendingTasksCount - 1);
-        this.loadNurseData();
+        this.refreshAfterMutation('secondary');
         if (taskMutationsShouldReloadHistory({ reloadDayHistory: true })) {
           this.loadTasksDayHistory();
         }
@@ -2656,7 +2789,7 @@ export class NurseDashboardComponent implements OnInit {
 
   onAddMedicationSaved(ev: { patientId: number }): void {
     this.closeAddMedicationModal();
-    this.loadNurseData();
+    this.refreshAfterMutation('secondary');
     if (
       shouldRefreshSelectedPatientAfterSave({
         showPatientModal: this.showPatientModal,
@@ -2702,7 +2835,7 @@ export class NurseDashboardComponent implements OnInit {
           if (this.selectedPatient) {
             this.loadPatientDetails(this.selectedPatient.id);
           }
-          this.loadNurseData();
+          this.refreshAfterMutation('secondary');
         },
         error: (error) => {
           const errorMessage =
@@ -2739,7 +2872,7 @@ export class NurseDashboardComponent implements OnInit {
         if (this.selectedPatient && this.selectedPatient.id) {
           this.loadPatientDetails(this.selectedPatient.id);
         }
-        this.loadNurseData();
+        this.refreshAfterMutation('secondary');
       },
       error: (error) => {
         const errorMsg = readNurseDashboardHttpErrorMessage(error, NURSE_DASHBOARD_HTTP_FALLBACK_UNKNOWN);
@@ -2750,7 +2883,7 @@ export class NurseDashboardComponent implements OnInit {
 
   filterTasksByCurrentTime(): void {
     this.tasksHourFilter = DEFAULT_NURSE_TASKS_HOUR_FILTER;
-    this.filterTasksByHour();
+    this.applyTasksFilters();
   }
 
   // ========== FUNCIONES DE REACTIVAR MEDICAMENTO ==========
@@ -2779,7 +2912,7 @@ export class NurseDashboardComponent implements OnInit {
         if (this.selectedPatient) {
           this.loadPatientDetails(this.selectedPatient.id);
         }
-        this.loadNurseData();
+        this.refreshAfterMutation('secondary');
       },
       error: (error) => {
         const errorMessage = readNurseDashboardHttpErrorMessage(
@@ -2819,7 +2952,7 @@ export class NurseDashboardComponent implements OnInit {
         );
 
         this.closePostponeTaskModal();
-        this.loadNurseData();
+        this.refreshAfterMutation('secondary');
         if (taskMutationsShouldReloadHistory({ reloadDayHistory: true })) {
           this.loadTasksDayHistory();
         }
@@ -2852,7 +2985,7 @@ export class NurseDashboardComponent implements OnInit {
 
   onEditBedSaved(): void {
     this.editBedModalBed = null;
-    setTimeout(() => this.loadNurseData(), 500);
+    setTimeout(() => this.refreshAfterMutation('primary'), 500);
   }
 
   exportPatientPdf(): void {

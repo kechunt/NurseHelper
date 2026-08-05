@@ -56,63 +56,6 @@ export function sanitizeObject<T>(obj: T): T {
 }
 
 /**
- * Sanitiza un número (previene inyección SQL)
- */
-export function sanitizeNumber(input: any): number | null {
-  if (input === null || input === undefined) {
-    return null;
-  }
-
-  const num = typeof input === 'string' ? parseFloat(input) : Number(input);
-  
-  if (isNaN(num)) {
-    return null;
-  }
-
-  return num;
-}
-
-/**
- * Sanitiza un ID (debe ser número positivo)
- */
-export function sanitizeId(input: any): number | null {
-  const num = sanitizeNumber(input);
-  
-  if (num === null || num <= 0 || !Number.isInteger(num)) {
-    return null;
-  }
-
-  return num;
-}
-
-/**
- * Sanitiza un email
- */
-export function sanitizeEmail(input: string | null | undefined): string {
-  if (!input) return '';
-  
-  const sanitized = sanitizeString(input);
-  
-  // Validar formato básico de email
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(sanitized)) {
-    return '';
-  }
-
-  return sanitized.toLowerCase();
-}
-
-/**
- * Sanitiza un teléfono (solo números y caracteres permitidos)
- */
-export function sanitizePhone(input: string | null | undefined): string {
-  if (!input) return '';
-  
-  // Remover todo excepto números, espacios, guiones y paréntesis
-  return input.replace(/[^\d\s\-\(\)]/g, '').trim();
-}
-
-/**
  * Middleware para sanitizar body del request
  */
 export function sanitizeMiddleware(req: any, res: any, next: any): void {

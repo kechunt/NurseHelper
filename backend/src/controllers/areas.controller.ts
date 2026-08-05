@@ -3,6 +3,7 @@ import { AppDataSource } from '../data-source';
 import { Area } from '../entities/Area';
 import { logger } from '../utils/logger';
 import { buildAreasShiftCoverage } from '../services/area-shift-coverage.service';
+import { buildAdminOperationalSummary } from '../services/admin-operational-summary.service';
 
 export class AreasController {
   /** Enfermeras marcadas presentes en el turno actual, agrupadas por área asignada (solo lectura, admin). */
@@ -12,6 +13,18 @@ export class AreasController {
       res.json(payload);
     } catch (error) {
       logger.error('Error al obtener cobertura de turno por área:', error);
+      res.status(500).json({ message: 'Error interno del servidor' });
+    }
+  }
+
+  /** Resumen operativo del turno (cobertura + pacientes pendientes). Cache ~45s en servidor. */
+  async getOperationalSummary(req: Request, res: Response): Promise<void> {
+    try {
+      const bypass = req.query.refresh === '1' || req.query.refresh === 'true';
+      const payload = await buildAdminOperationalSummary({ bypassCache: bypass });
+      res.json(payload);
+    } catch (error) {
+      logger.error('Error al obtener resumen operativo admin:', error);
       res.status(500).json({ message: 'Error interno del servidor' });
     }
   }

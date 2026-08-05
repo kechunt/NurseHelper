@@ -13,6 +13,12 @@ jest.mock('../../../utils/logger', () => ({
   },
 }));
 
+jest.mock('../../../services/schedule-assignment.service', () => ({
+  resolveScheduleAssignedToId: jest.fn(async ({ assignedToId }: { assignedToId?: number | null }) =>
+    assignedToId ?? null,
+  ),
+}));
+
 import { AppDataSource } from '../../../data-source';
 import { logger } from '../../../utils/logger';
 import { SchedulesController } from '../../../controllers/schedules.controller';
@@ -542,35 +548,6 @@ describe('SchedulesController', () => {
       );
       expect(status).toHaveBeenCalledWith(500);
       expect(json).toHaveBeenCalledWith({ message: 'Error interno del servidor' });
-    });
-  });
-
-  describe('markMedicationGiven', () => {
-    it('404 si no hay horario de medicación', async () => {
-      scheduleRepo.findOne.mockResolvedValueOnce(null);
-      const { status, json, res } = resMocks();
-      await ctrl.markMedicationGiven({ params: { id: '1' }, body: {} } as unknown as Request, res);
-      expect(status).toHaveBeenCalledWith(404);
-    });
-
-    it('200 marca como administrado', async () => {
-      const sched = {
-        id: 13,
-        status: ScheduleStatus.PENDING,
-        notes: '',
-      } as Schedule;
-      scheduleRepo.findOne.mockResolvedValueOnce(sched);
-      const json = jest.fn();
-      await ctrl.markMedicationGiven(
-        { params: { id: '13' }, body: { notes: 'vía oral' } } as unknown as Request,
-        { json } as unknown as Response
-      );
-      expect(sched.status).toBe(ScheduleStatus.COMPLETED);
-      expect(sched.notes).toBe('vía oral');
-      expect(json).toHaveBeenCalledWith({
-        message: 'Medicamento marcado como administrado',
-        schedule: sched,
-      });
     });
   });
 });

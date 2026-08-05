@@ -81,21 +81,6 @@ export class ExportService {
     downloadPdfMultiSectionDocument(options);
   }
 
-  /**
-   * Prepara datos para exportación formateando fechas y valores complejos
-   */
-  prepareDataForExport(data: any[], dateFields: string[] = []): any[] {
-    return data.map(item => {
-      const prepared = { ...item };
-      dateFields.forEach(field => {
-        if (prepared[field]) {
-          prepared[field] = new Date(prepared[field]).toLocaleDateString('es-ES');
-        }
-      });
-      return prepared;
-    });
-  }
-
   private getNestedValue(obj: any, path: string): any {
     return path.split('.').reduce((current, prop) => current?.[prop], obj);
   }

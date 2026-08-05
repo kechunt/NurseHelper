@@ -14,6 +14,23 @@ jest.mock('../../../utils/logger', () => ({
   },
 }));
 
+jest.mock('../../../services/patient-assignment.service', () => ({
+  patientAssignmentService: {
+    autoAssignForShift: jest.fn().mockResolvedValue({
+      date: '2026-06-01',
+      shiftId: 2,
+      processed: 0,
+      assigned: 0,
+      pending: 0,
+      details: [],
+    }),
+  },
+}));
+
+jest.mock('../../../services/user-notifications-persistence.service', () => ({
+  dismissOperationalNotificationsForNurse: jest.fn().mockResolvedValue(undefined),
+}));
+
 import { Shift } from '../../../entities/Shift';
 import { NurseShift } from '../../../entities/NurseShift';
 import { User, UserRole } from '../../../entities/User';
@@ -580,6 +597,7 @@ describe(
       expect(json).toHaveBeenCalledWith({
         message: 'Asistencia guardada exitosamente',
         saved: 0,
+        handoff: expect.any(Object),
       });
     });
 

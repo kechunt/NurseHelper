@@ -1,5 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { of } from 'rxjs';
 import type { MedicationForPharmacy, TaskItem } from '../../../services/nurse.service';
+import { NurseService } from '../../../services/nurse.service';
 import type { TreatmentRecord } from '../nurse-treatment-record.model';
 import { NurseDashboardOverlaysStackComponent } from './nurse-dashboard-overlays-stack.component';
 import { nurseDashboardOverlaysStackVmForTesting } from './nurse-dashboard-overlays-stack.vm';
@@ -10,6 +12,16 @@ describe('NurseDashboardOverlaysStackComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [NurseDashboardOverlaysStackComponent],
+      providers: [
+        {
+          provide: NurseService,
+          useValue: {
+            getCoordinationNote: jasmine
+              .createSpy('getCoordinationNote')
+              .and.returnValue(of({ note: null })),
+          },
+        },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(NurseDashboardOverlaysStackComponent);

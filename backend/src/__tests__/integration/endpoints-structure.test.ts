@@ -115,7 +115,8 @@ describe('Endpoints Structure Tests', () => {
         require('../../services/shift-handover-note.service');
         require('../../services/cache.service');
         require('../../services/audit.service');
-        require('../../services/notification.service');
+        require('../../services/user-notifications-persistence.service');
+        require('../../services/patient-shift-assignment.service');
         require('../../services/report.service');
         require('../../services/webhook.service');
         require('../../services/backup.service');
@@ -147,7 +148,6 @@ describe('Endpoints Structure Tests', () => {
         require('../../utils/error-handler');
         require('../../utils/jwt');
         require('../../utils/logger');
-        require('../../utils/pagination.helper');
         // sanitizer tiene problemas con ES modules en tests, pero existe
         const fs = require('fs');
         const path = require('path');

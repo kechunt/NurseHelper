@@ -1,4 +1,4 @@
-/* Base modal (el hijo no hereda estilos encapsulados del dashboard). Alineado con nurse-pending-task-detail-modal. */
+/* Base modal (el hijo no hereda estilos encapsulados del dashboard). */
 .modal-backdrop {
   position: fixed;
   top: 0;

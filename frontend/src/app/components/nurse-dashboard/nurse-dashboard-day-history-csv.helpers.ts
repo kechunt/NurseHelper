@@ -1,7 +1,9 @@
-/**
- * Filas en forma de objeto plano para `ExportService.exportToCSV`
- * (claves en español, alineadas con la exportación del historial del día).
- */
+/** Filas en forma de objeto plano para `ExportService.exportToCSV` (claves en español). */
+import {
+  labelScheduleStatus,
+  labelScheduleType,
+} from '../../shared/utils/report-export-labels.helpers';
+
 export type TasksDayHistoryCsvRow = {
   Fecha: string;
   Hora: string;
@@ -31,13 +33,10 @@ export type NurseDayHistoryItemForCsv = {
 };
 
 function resultadoLabel(row: NurseDayHistoryItemForCsv): string {
-  if (row.completed) {
-    return $localize`:@@nurseDayHistoryCsv.result.completed:Completada`;
-  }
-  if (row.missed) {
-    return $localize`:@@nurseDayHistoryCsv.result.notDone:No realizada`;
-  }
-  return row.status;
+  return labelScheduleStatus(row.status, {
+    completed: row.completed,
+    missed: row.missed,
+  });
 }
 
 export function mapNurseDayHistoryItemsToCsvRows(
@@ -47,7 +46,7 @@ export function mapNurseDayHistoryItemsToCsvRows(
   return (items || []).map((row) => ({
     Fecha: historyDateYmd,
     Hora: row.time,
-    Tipo: row.type,
+    Tipo: labelScheduleType(row.type),
     Paciente: row.patientName,
     Cama: row.bedNumber,
     Descripcion: row.description,

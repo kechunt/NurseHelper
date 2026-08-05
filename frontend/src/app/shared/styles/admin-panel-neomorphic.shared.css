@@ -1,6 +1,6 @@
 /*
- * Tokens neumórficos alineados con «Gestión de Áreas» (panel admin).
- * Importar desde componentes (p. ej. gestión de camas) para modales, botones y tarjetas.
+ * Tokens neumórficos del panel admin (modales, botones, tarjetas).
+ * Importar desde componentes (p. ej. gestión de camas).
  */
 
 .apm-backdrop {
@@ -232,7 +232,7 @@ textarea.apm-input {
   font-size: 0.85rem;
 }
 
-/* Activo = mismo lenguaje que :active del botón base (hundido neumórfico), sin bloque oscuro */
+/* Activo = hundido neumórfico (:active del botón base), sin bloque oscuro */
 .apm-btn--filter.active {
   background: #e0e5ec;
   color: #4a5568;
@@ -251,7 +251,7 @@ textarea.apm-input {
   margin-top: 1rem;
 }
 
-/* Cobertura de turno — tarjeta elevada (paridad con nurse-card / area-card) */
+/* Cobertura de turno — tarjeta elevada */
 .apm-shift-block {
   margin-bottom: 1.25rem;
   padding: 1rem 1.15rem;

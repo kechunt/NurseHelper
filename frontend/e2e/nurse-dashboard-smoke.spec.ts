@@ -84,12 +84,14 @@ async function installNurseDashboardApiMocks(page: Page): Promise<void> {
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        hasActiveShiftWindow: false,
-        shiftName: null,
-        shiftTime: null,
-        attendanceStatus: null,
-        onDuty: false,
-        summary: '',
+        hasActiveShiftWindow: true,
+        shiftName: 'Mañana',
+        shiftTime: '07:00-15:00',
+        attendanceStatus: 'present',
+        onDuty: true,
+        canCheckIn: false,
+        pendingAreaAssignment: false,
+        summary: 'En turno',
       }),
     });
   });

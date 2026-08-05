@@ -38,6 +38,22 @@ export interface AreasShiftCoveragePayload {
   areas: AreasShiftCoverageRow[];
 }
 
+export interface AdminOperationalSummary {
+  date: string;
+  hasActiveShift: boolean;
+  shiftId: number | null;
+  shiftName: string | null;
+  shiftTime: string | null;
+  message?: string;
+  presentNursesCount: number;
+  uncoveredAreasCount: number;
+  pendingPatientsCount: number;
+  assignedPatientsCount: number;
+  pendingSamples: Array<{ patientId: number; areaId: number | null; reason?: string }>;
+  cachedAt: string;
+  cacheTtlSeconds: number;
+}
+
 export interface Bed {
   id?: number;
   bedNumber: string;

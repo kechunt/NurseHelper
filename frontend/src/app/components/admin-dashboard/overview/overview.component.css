@@ -5,7 +5,7 @@
   width: 100%;
 }
 
-/* ===== Tarjeta del reloj — mismo diseño que en Horarios ===== */
+/* ===== Tarjeta del reloj ===== */
 .overview-realtime-card {
   margin-bottom: 1.5rem;
   padding: 1.2rem 1.4rem;
@@ -56,6 +56,99 @@
   color: #4a5568;
   font-size: 0.95rem;
   font-weight: 600;
+}
+
+.overview-shift-center {
+  margin-bottom: 1.5rem;
+  padding: 1.1rem 1.25rem;
+  border-radius: 18px;
+  background: #e0e5ec;
+  box-shadow: 12px 12px 24px #bebebe, -12px -12px 24px #ffffff;
+}
+
+.overview-shift-center-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.overview-shift-center-header h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  color: #4a5568;
+}
+
+.overview-shift-center-refresh {
+  border: none;
+  border-radius: 12px;
+  padding: 0.35rem 0.75rem;
+  background: #e0e5ec;
+  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.overview-shift-center-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+}
+
+.overview-shift-kpi {
+  border: none;
+  border-radius: 14px;
+  padding: 0.75rem;
+  background: #e0e5ec;
+  box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
+  cursor: pointer;
+  text-align: left;
+}
+
+.overview-shift-kpi--warn .overview-shift-kpi-value {
+  color: #c05621;
+}
+
+.overview-shift-kpi-value {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #4a5568;
+}
+
+.overview-shift-kpi-label {
+  display: block;
+  font-size: 0.78rem;
+  color: #718096;
+  margin-top: 0.25rem;
+}
+
+.overview-shift-pending-list {
+  margin: 0.75rem 0 0;
+  padding-left: 1rem;
+}
+
+.overview-shift-pending-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #2b6cb0;
+  cursor: pointer;
+  text-align: left;
+  font-size: 0.88rem;
+}
+
+.overview-shift-cache-hint {
+  margin: 0.65rem 0 0;
+  font-size: 0.75rem;
+  color: #718096;
+}
+
+.overview-shift-center-note {
+  margin: 0 0 0.65rem;
+  color: #718096;
+  font-size: 0.88rem;
 }
 
 /* ===== Tarjetas de acción (texto en vez de número) ===== */
@@ -142,133 +235,3 @@
   }
 }
 
-.overview-backups-card {
-  margin-top: 1.5rem;
-  padding: 1.2rem 1.4rem;
-  border-radius: 20px;
-  background: #e0e5ec;
-  box-shadow: 15px 15px 30px #bebebe, -15px -15px 30px #ffffff;
-}
-
-.overview-backups-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 0.75rem;
-}
-
-.overview-backups-note {
-  margin: 0 0 1rem;
-  padding: 0.75rem 0.9rem;
-  border-radius: 12px;
-  background: rgba(237, 242, 247, 0.85);
-  color: #4a5568;
-  font-size: 0.88rem;
-  line-height: 1.45;
-}
-
-.overview-backup-form {
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-  margin-bottom: 1rem;
-}
-
-.overview-backup-label {
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: #4a5568;
-}
-
-.overview-backup-form-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.65rem;
-}
-
-.overview-backup-input {
-  flex: 1 1 220px;
-  min-width: 0;
-  border: none;
-  border-radius: 12px;
-  padding: 0.55rem 0.85rem;
-  background: #e0e5ec;
-  box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
-  color: #4a5568;
-}
-
-.overview-backup-input:disabled {
-  opacity: 0.65;
-}
-
-.overview-backup-hint {
-  margin: 0;
-  font-size: 0.82rem;
-  color: #718096;
-}
-
-.overview-backup-last {
-  margin: 0 0 0.85rem;
-  font-size: 0.9rem;
-  color: #4a5568;
-  word-break: break-all;
-}
-
-.overview-backups-title {
-  margin: 0;
-  color: #4a5568;
-  font-size: 1rem;
-  font-weight: 700;
-}
-
-.overview-backup-btn {
-  border: none;
-  border-radius: 12px;
-  padding: 0.5rem 1rem;
-  background: #e0e5ec;
-  box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
-  color: #4a5568;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.overview-backup-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.overview-backups-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.overview-backup-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  padding: 0.65rem 0;
-  border-bottom: 1px solid rgba(113, 128, 150, 0.15);
-}
-
-.overview-backup-item:last-child {
-  border-bottom: none;
-}
-
-.overview-backup-name {
-  font-weight: 600;
-  color: #4a5568;
-  word-break: break-all;
-}
-
-.overview-backup-meta {
-  font-size: 0.85rem;
-  color: #718096;
-}
-
-.overview-backups-empty {
-  margin: 0;
-  color: #718096;
-  font-size: 0.9rem;
-}

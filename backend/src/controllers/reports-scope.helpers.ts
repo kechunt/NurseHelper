@@ -8,7 +8,7 @@ export type ResolvedReportScope =
   | { ok: false; status: number; body: Record<string, unknown> };
 
 /**
- * Enfermera: mismo ámbito que hoy (`getPatientIdsVisibleToNurse`).
+ * Enfermera: pacientes visibles (`getPatientIdsVisibleToNurse`).
  * Admin/supervisor: sin `nurseUserId`, todo el centro; con `nurseUserId`, solo pacientes visibles para esa enfermera.
  */
 export async function resolveReportPatientScope(

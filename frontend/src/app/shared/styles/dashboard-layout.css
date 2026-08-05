@@ -17,7 +17,7 @@
   box-sizing: border-box;
 }
 
-/* —— Cabecera (misma estructura que admin: logo + título + usuario + logout) —— */
+/* —— Cabecera: logo + título + usuario + logout —— */
 .admin-dashboard .dashboard-header,
 .pharmacy-dashboard .dashboard-header,
 .nurse-dashboard .dashboard-header {
@@ -193,7 +193,7 @@
   box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
 }
 
-/* Botones de acción principal (misma neumorfía que pestañas admin) */
+/* Botones de acción principal (neumorfía) */
 .admin-dashboard .neuro-btn,
 .pharmacy-dashboard .neuro-btn,
 .nurse-dashboard .neuro-btn {

@@ -39,6 +39,7 @@ describe('report.service export helpers', () => {
     it('traduce roles conocidos', () => {
       expect(formatGeneratedByRole('admin')).toBe('Administrador');
       expect(formatGeneratedByRole('nurse')).toBe('Enfermera');
+      expect(formatGeneratedByRole('supervisor')).toBe('Supervisor del sistema');
     });
   });
 

@@ -165,33 +165,4 @@ export class ReportService {
     const match = /filename="([^"]+)"/i.exec(header);
     return match?.[1] ?? fallback;
   }
-
-  /**
-   * Descargar reporte
-   */
-  downloadReport(
-    type: 'medication' | 'compliance',
-    format: 'pdf' | 'csv',
-    startDate: Date,
-    endDate: Date,
-    patientId?: number,
-    nurseUserId?: number | null,
-    complianceFilter?: ComplianceExportFilter,
-  ): void {
-    this.exportReport(type, format, startDate, endDate, patientId, nurseUserId, complianceFilter).subscribe({
-      next: ({ blob, filename }) => {
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-      },
-      error: (error) => {
-        console.error('Error exporting report:', error);
-      },
-    });
-  }
 }

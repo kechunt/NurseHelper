@@ -166,6 +166,8 @@ describe('NursePatientsAssignedSectionComponent', () => {
   });
 
   it('muestra botón Asignarme solo en pacientes sin enfermera', () => {
+    fixture.componentRef.setInput('nurseOnDuty', true);
+    fixture.detectChanges();
     const cards = Array.from(
       fixture.nativeElement.querySelectorAll('.patient-assigned-card')
     ) as HTMLElement[];
@@ -175,12 +177,20 @@ describe('NursePatientsAssignedSectionComponent', () => {
   });
 
   it('emite claimPatient al pulsar Asignarme', () => {
+    fixture.componentRef.setInput('nurseOnDuty', true);
+    fixture.detectChanges();
     spyOn(fixture.componentInstance.claimPatient, 'emit');
     const btn = fixture.nativeElement.querySelector(
       '#nurse-patients-assigned-section-claim-2'
     ) as HTMLButtonElement;
     btn.click();
     expect(fixture.componentInstance.claimPatient.emit).toHaveBeenCalledWith(patients[2]);
+  });
+
+  it('oculta Asignarme si la enfermera no está en turno', () => {
+    fixture.componentRef.setInput('nurseOnDuty', false);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.nurse-claim-pill-btn')).toBeFalsy();
   });
 
   it('plantilla: id limpiar filtros y Ver detalles por fila', () => {

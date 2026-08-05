@@ -5,8 +5,8 @@ import { InAppNotificationsBellComponent } from '../in-app-notifications-bell/in
 import { STAFF_DASHBOARD_SHELL_TABS } from './staff-dashboard-shell-tabs';
 
 /**
- * Envoltorio compartido admin/supervisor: cabecera, pestañas laterales y ranuras para
- * contenido (alineado con `dashboard-layout.css` y clase raíz `.admin-dashboard`).
+ * Envoltorio compartido admin/supervisor: cabecera, pestañas laterales y ranuras para contenido.
+ * Clase raíz `.admin-dashboard` + `dashboard-layout.css`.
  */
 @Component({
   selector: 'app-staff-dashboard-shell',

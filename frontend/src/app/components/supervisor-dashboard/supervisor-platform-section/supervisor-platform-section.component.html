@@ -1,0 +1,55 @@
+<section class="section-card supervisor-platform-card" aria-labelledby="supervisor-platform-heading">
+  <div class="section-header">
+    <h2 id="supervisor-platform-heading" class="section-title">{{ title }}</h2>
+    <button type="button" class="neuro-btn" (click)="loadPlatform()" [disabled]="loading">
+      {{ refreshLabel }}
+    </button>
+  </div>
+
+  <p *ngIf="loading" class="loading-state">{{ loadingLabel }}</p>
+
+  <dl *ngIf="!loading && platform" class="supervisor-platform-list">
+    <div class="supervisor-platform-row">
+      <dt>{{ environmentLabel }}</dt>
+      <dd>{{ platform.environment }}</dd>
+    </div>
+    <div class="supervisor-platform-row">
+      <dt>{{ publicOriginLabel }}</dt>
+      <dd>{{ platform.publicOrigin || notConfiguredLabel }}</dd>
+    </div>
+    <div class="supervisor-platform-row">
+      <dt>{{ smtpLabel }}</dt>
+      <dd>
+        <span
+          class="supervisor-platform-pill"
+          [class.supervisor-platform-pill--ok]="platform.smtpConfigured"
+        >
+          {{ platform.smtpConfigured ? smtpOkLabel : smtpMissingLabel }}
+        </span>
+      </dd>
+    </div>
+    <div class="supervisor-platform-row">
+      <dt>{{ emailFromLabel }}</dt>
+      <dd>{{ platform.emailFrom || notConfiguredLabel }}</dd>
+    </div>
+    <div class="supervisor-platform-row">
+      <dt>{{ timezoneLabel }}</dt>
+      <dd>{{ platform.timezone }}</dd>
+    </div>
+    <div class="supervisor-platform-row">
+      <dt>{{ backupEnabledLabel }}</dt>
+      <dd>
+        <span
+          class="supervisor-platform-pill"
+          [class.supervisor-platform-pill--ok]="platform.backupEnabled"
+        >
+          {{ platform.backupEnabled ? enabledLabel : disabledLabel }}
+        </span>
+      </dd>
+    </div>
+    <div class="supervisor-platform-row">
+      <dt>{{ backupRetentionLabel }}</dt>
+      <dd>{{ platform.backupRetentionDays }} {{ daysSuffix }}</dd>
+    </div>
+  </dl>
+</section>

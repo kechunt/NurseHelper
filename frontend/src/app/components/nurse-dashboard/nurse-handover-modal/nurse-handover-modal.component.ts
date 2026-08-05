@@ -1,8 +1,8 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ModalFocusTrapDirective } from '../../../shared/directives/modal-focus-trap.directive';
-import { type HandoverShiftSlot } from '../../../services/nurse.service';
+import { type HandoverShiftSlot, NurseService } from '../../../services/nurse.service';
 import { BootstrapIconComponent } from '../../../shared/components/bootstrap-icon/bootstrap-icon.component';
 
 @Component({
@@ -12,7 +12,9 @@ import { BootstrapIconComponent } from '../../../shared/components/bootstrap-ico
   templateUrl: './nurse-handover-modal.component.html',
   styleUrls: ['../nurse-neomorphic-modal.shared.css', './nurse-handover-modal.component.css'],
 })
-export class NurseHandoverModalComponent {
+export class NurseHandoverModalComponent implements OnChanges {
+  private readonly nurseService = inject(NurseService);
+
   readonly shiftChoices: { value: HandoverShiftSlot; label: string }[] = [
     { value: 'morning', label: $localize`:@@nurseHandoverModal.shiftChoiceMorning:Mañana` },
     { value: 'afternoon', label: $localize`:@@nurseHandoverModal.shiftChoiceAfternoon:Tarde` },
@@ -35,6 +37,36 @@ export class NurseHandoverModalComponent {
   @Output() readonly dismissed = new EventEmitter<void>();
   @Output() readonly acknowledgeRequested = new EventEmitter<void>();
   @Output() readonly saveRequested = new EventEmitter<void>();
+
+  coordinationNoteBody: string | null = null;
+  coordinationNoteLoading = false;
+
+  readonly coordinationTitle = $localize`:@@nurseHandoverModal.coordinationTitle:Nota de coordinación (administración)`;
+  readonly coordinationEmpty = $localize`:@@nurseHandoverModal.coordinationEmpty:No hay nota de coordinación para esta fecha y turno.`;
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if ('handoverDate' in changes || 'handoverShift' in changes) {
+      this.loadCoordinationNote();
+    }
+  }
+
+  private loadCoordinationNote(): void {
+    if (!this.handoverDate) {
+      this.coordinationNoteBody = null;
+      return;
+    }
+    this.coordinationNoteLoading = true;
+    this.nurseService.getCoordinationNote(this.handoverDate, this.handoverShift).subscribe({
+      next: ({ note }) => {
+        this.coordinationNoteBody = note?.body?.trim() ? note.body : null;
+        this.coordinationNoteLoading = false;
+      },
+      error: () => {
+        this.coordinationNoteBody = null;
+        this.coordinationNoteLoading = false;
+      },
+    });
+  }
 
   onBackdropClick(): void {
     this.dismissed.emit();

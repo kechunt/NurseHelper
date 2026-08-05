@@ -143,7 +143,7 @@ describe('Full System Integration Tests', () => {
   describe('1. Health Checks', () => {
     it('debería responder en health check básico', async () => {
       const response = await request(app)
-        .get('/health-basic');
+        .get('/health');
 
       expect([200, 503]).toContain(response.status);
       if (response.status === 200) {
@@ -572,7 +572,7 @@ describe('Full System Integration Tests', () => {
   describe('17. CORS', () => {
     it('debería incluir headers CORS', async () => {
       const response = await request(app)
-        .get('/health-basic')
+        .get('/health')
         .expect(200);
 
       expect(response.headers['access-control-allow-origin']).toBeDefined();

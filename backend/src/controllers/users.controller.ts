@@ -6,6 +6,8 @@ import { NurseShift } from '../entities/NurseShift';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { logger, logUserAction, logApiError } from '../utils/logger';
 import { sendPaginatedResponse, sendErrorResponse, handleControllerError, parseId, parsePagination } from '../utils/response.helper';
+import { invalidateNurseDashboardCache } from '../services/nurse-dashboard-cache.service';
+import { invalidateShiftOperationalCaches } from '../services/admin-operational-summary.service';
 
 export class UsersController {
   /**
@@ -136,6 +138,8 @@ export class UsersController {
         return;
       }
 
+      const previousAssignedAreaId = user.assignedAreaId;
+
       // Validaciones
       if (maxPatients !== undefined) {
         if (maxPatients < 0 || maxPatients > 50) {
@@ -248,6 +252,15 @@ export class UsersController {
       }
 
       await userRepository.save(user);
+
+      if (
+        user.role === UserRole.NURSE &&
+        assignedAreaId !== undefined &&
+        previousAssignedAreaId !== user.assignedAreaId
+      ) {
+        await invalidateNurseDashboardCache(user.id, 'all');
+        invalidateShiftOperationalCaches();
+      }
 
       logUserAction(
         (req as AuthRequest).user!.id,

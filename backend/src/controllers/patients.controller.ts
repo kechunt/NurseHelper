@@ -400,7 +400,7 @@ export class PatientsController {
         return;
       }
 
-      // Enfermería: mismo criterio de acceso que saveObservation (enfermera asignada o cama en su área)
+      // Enfermería: acceso si es enfermera asignada o la cama está en su área
       const authReq = req as AuthRequest;
       const user = authReq.user;
       if (user && user.role === UserRole.NURSE) {

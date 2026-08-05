@@ -5,6 +5,7 @@ import { AdminService } from '../../../services/admin.service';
 import { ToastService } from '../../../services/toast.service';
 import { ShiftsService } from '../../../services/shifts.service';
 import { ShiftRealtimeService } from '../../../shared/services/shift-realtime.service';
+import { RealtimeService } from '../../../services/realtime.service';
 
 function ensureLocalizeShim(): void {
   const g = globalThis as any;
@@ -26,8 +27,6 @@ describe('OverviewComponent', () => {
     getAreas: jasmine.createSpy('getAreas').and.returnValue(of([{ id: 1 }])),
     getBeds: jasmine.createSpy('getBeds').and.returnValue(of([{ id: 1, patientId: null }])),
     getPatientsTotal: jasmine.createSpy('getPatientsTotal').and.returnValue(of(3)),
-    listBackups: jasmine.createSpy('listBackups').and.returnValue(of({ backups: [], lastBackup: null })),
-    createBackup: jasmine.createSpy('createBackup').and.returnValue(of({ filename: 'test.sql' })),
   };
 
   const toastMock = {
@@ -44,6 +43,11 @@ describe('OverviewComponent', () => {
     formatShiftLabel: jasmine.createSpy('formatShiftLabel').and.returnValue('Sin turno activo'),
   };
 
+  const realtimeMock = {
+    isConnected: jasmine.createSpy('isConnected').and.returnValue(false),
+    onAdminOperationalInvalidate: jasmine.createSpy('onAdminOperationalInvalidate').and.returnValue(of(undefined)),
+  };
+
   beforeEach(async () => {
     TestBed.resetTestingModule();
     ensureLocalizeShim();
@@ -54,6 +58,7 @@ describe('OverviewComponent', () => {
         { provide: ToastService, useValue: toastMock },
         { provide: ShiftsService, useValue: shiftsServiceMock },
         { provide: ShiftRealtimeService, useValue: shiftRealtimeMock },
+        { provide: RealtimeService, useValue: realtimeMock },
       ],
     }).compileComponents();
 
@@ -87,12 +92,6 @@ describe('OverviewComponent', () => {
   it('expone mensaje localizado de error al cargar estadísticas', () => {
     expect(fixture.componentInstance.adminOverviewErrLoadStats).toContain('estadísticas');
   });
-
-  it('carga respaldos al iniciar', () => {
-    expect(adminServiceMock.listBackups).toHaveBeenCalled();
-    expect(fixture.componentInstance.loadingBackups).toBe(false);
-    expect(fixture.componentInstance.backups).toEqual([]);
-  });
 });
 
 describe('OverviewComponent (fallo loadStats)', () => {
@@ -110,6 +109,11 @@ describe('OverviewComponent (fallo loadStats)', () => {
     formatShiftLabel: jasmine.createSpy('formatShiftLabel').and.returnValue(''),
   };
 
+  const realtimeMock = {
+    isConnected: jasmine.createSpy('isConnected').and.returnValue(false),
+    onAdminOperationalInvalidate: jasmine.createSpy('onAdminOperationalInvalidate').and.returnValue(of(undefined)),
+  };
+
   beforeEach(async () => {
     TestBed.resetTestingModule();
     ensureLocalizeShim();
@@ -118,8 +122,6 @@ describe('OverviewComponent (fallo loadStats)', () => {
       getAreas: jasmine.createSpy('getAreas').and.returnValue(of([])),
       getBeds: jasmine.createSpy('getBeds').and.returnValue(of([])),
       getPatientsTotal: jasmine.createSpy('getPatientsTotal').and.returnValue(of(0)),
-      listBackups: jasmine.createSpy('listBackups').and.returnValue(of({ backups: [], lastBackup: null })),
-      createBackup: jasmine.createSpy('createBackup').and.returnValue(of({ filename: 'test.sql' })),
     };
     await TestBed.configureTestingModule({
       imports: [OverviewComponent],
@@ -128,6 +130,7 @@ describe('OverviewComponent (fallo loadStats)', () => {
         { provide: ToastService, useValue: toastMock },
         { provide: ShiftsService, useValue: shiftsServiceMock },
         { provide: ShiftRealtimeService, useValue: shiftRealtimeMock },
+        { provide: RealtimeService, useValue: realtimeMock },
       ],
     }).compileComponents();
   });

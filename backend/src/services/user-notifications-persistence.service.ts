@@ -65,7 +65,11 @@ export async function upsertUserNotification(params: {
     existing.body = params.body;
     existing.payload = params.payload;
     existing.dismissedAt = null;
-    return repo.save(existing);
+    const saved = await repo.save(existing);
+    void import('./realtime.service').then(({ emitNotificationUpsert }) => {
+      emitNotificationUpsert(params.userId, toDto(saved));
+    });
+    return saved;
   }
   const n = repo.create({
     userId: params.userId,
@@ -80,7 +84,11 @@ export async function upsertUserNotification(params: {
     acknowledgedAt: null,
     dismissedAt: null,
   });
-  return repo.save(n);
+  const saved = await repo.save(n);
+  void import('./realtime.service').then(({ emitNotificationUpsert }) => {
+    emitNotificationUpsert(params.userId, toDto(saved));
+  });
+  return saved;
 }
 
 export async function dismissNotificationForUser(userId: number, id: number): Promise<boolean> {
@@ -232,6 +240,51 @@ export async function countUnreadForUser(userId: number): Promise<number> {
       readAt: IsNull(),
     },
   });
+}
+
+export async function dismissOperationalNotificationsForNurse(userId: number): Promise<void> {
+  const repo = AppDataSource.getRepository(UserNotification);
+  await repo
+    .createQueryBuilder()
+    .update(UserNotification)
+    .set({ dismissedAt: new Date() })
+    .where('userId = :userId', { userId })
+    .andWhere('(dedupeKey LIKE :sch OR dedupeKey LIKE :handover)', {
+      sch: 'sch:%',
+      handover: 'handover:%',
+    })
+    .andWhere('dismissedAt IS NULL')
+    .execute();
+}
+
+export async function dismissAllPatientUnassignedNotifications(): Promise<void> {
+  const repo = AppDataSource.getRepository(UserNotification);
+  await repo
+    .createQueryBuilder()
+    .update(UserNotification)
+    .set({ dismissedAt: new Date() })
+    .where('dedupeKey LIKE :p', { p: 'patient-unassigned:%' })
+    .andWhere('dismissedAt IS NULL')
+    .execute();
+}
+
+export async function dismissPatientUnassignedNotificationsExcept(
+  date: string,
+  shiftId: number,
+  keepDedupeKeys: string[],
+): Promise<void> {
+  const repo = AppDataSource.getRepository(UserNotification);
+  const prefix = `patient-unassigned:${date}:${shiftId}:`;
+  const qb = repo
+    .createQueryBuilder()
+    .update(UserNotification)
+    .set({ dismissedAt: new Date() })
+    .where('dedupeKey LIKE :p', { p: `${prefix}%` })
+    .andWhere('dismissedAt IS NULL');
+  if (keepDedupeKeys.length > 0) {
+    qb.andWhere('dedupeKey NOT IN (:...keys)', { keys: keepDedupeKeys });
+  }
+  await qb.execute();
 }
 
 export async function countPendingAckForUser(userId: number): Promise<number> {

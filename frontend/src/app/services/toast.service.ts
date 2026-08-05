@@ -78,13 +78,6 @@ export class ToastService {
     this.toasts.update((toasts) => toasts.filter((t) => t.id !== id));
   }
 
-  /**
-   * Limpiar todos los toasts
-   */
-  clear(): void {
-    this.toasts.set([]);
-  }
-
   private generateId(): string {
     return `toast-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }
