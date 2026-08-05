@@ -29,6 +29,16 @@ jest.mock('../../../services/email.service', () => ({
   },
 }));
 
+jest.mock('../../../services/auth-session.service', () => ({
+  authSessionService: {
+    issue: jest.fn().mockResolvedValue(undefined),
+    rotate: jest.fn(),
+    revoke: jest.fn().mockResolvedValue(undefined),
+    clearCookie: jest.fn(),
+  },
+  readRefreshCookie: jest.fn(),
+}));
+
 jest.mock('../../../utils/logger', () => ({
   logger: {
     error: jest.fn(),

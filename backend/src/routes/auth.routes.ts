@@ -53,6 +53,8 @@ const authController = new AuthController();
  *               $ref: '#/components/schemas/Error'
  */
 router.post('/login', authRateLimitMiddleware(), validateDto(LoginDto), authController.login.bind(authController));
+router.post('/refresh', authController.refresh.bind(authController));
+router.post('/logout', authController.logout.bind(authController));
 
 /**
  * @swagger
@@ -178,4 +180,3 @@ router.get('/me', authMiddleware, authController.me.bind(authController));
 router.patch('/me', authMiddleware, authController.updateMe.bind(authController));
 
 export default router;
-

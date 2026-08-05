@@ -10,6 +10,8 @@ import {
   ElementRef,
   Inject,
   ChangeDetectorRef,
+  HostListener,
+  OnDestroy,
 } from '@angular/core';
 import { CommonModule, DOCUMENT } from '@angular/common';
 import type { PatientClinicalNoteDto } from '../../../services/nurse.service';
@@ -36,7 +38,7 @@ import { nurseUiEmDash } from '../nurse-dashboard-ui-i18n.helpers';
     './nurse-clinical-notes-scope-block.component.css',
   ],
 })
-export class NurseClinicalNotesScopeBlockComponent implements OnChanges {
+export class NurseClinicalNotesScopeBlockComponent implements OnChanges, OnDestroy {
   private readonly localeId = inject(LOCALE_ID);
   private readonly host = inject(ElementRef<HTMLElement>);
   private readonly cdr = inject(ChangeDetectorRef);
@@ -72,6 +74,8 @@ export class NurseClinicalNotesScopeBlockComponent implements OnChanges {
 
   listModalOpen = false;
   detailNote: PatientClinicalNoteDto | null = null;
+  private listOverlay: { element: HTMLElement; placeholder: Comment } | null = null;
+  private detailOverlay: { element: HTMLElement; placeholder: Comment } | null = null;
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['patientId']) {
@@ -80,8 +84,25 @@ export class NurseClinicalNotesScopeBlockComponent implements OnChanges {
   }
 
   dismissOverlays(): void {
+    this.restoreOverlay('detail');
+    this.restoreOverlay('list');
     this.listModalOpen = false;
     this.detailNote = null;
+  }
+
+  ngOnDestroy(): void {
+    this.dismissOverlays();
+  }
+
+  @HostListener('document:keydown.escape', ['$event'])
+  onEscape(event: Event): void {
+    if (this.detailNote) {
+      event.preventDefault();
+      this.closeDetail();
+    } else if (this.listModalOpen) {
+      event.preventDefault();
+      this.closeList();
+    }
   }
 
   effectiveNotes(): PatientClinicalNoteDto[] {
@@ -132,7 +153,7 @@ export class NurseClinicalNotesScopeBlockComponent implements OnChanges {
   openList(): void {
     this.listModalOpen = true;
     this.cdr.detectChanges();
-    queueMicrotask(() => this.teleportOverlay('.ncnsb-notes-list-backdrop'));
+    queueMicrotask(() => this.teleportOverlay('.ncnsb-notes-list-backdrop', 'list'));
   }
 
   onExpandClick(event: MouseEvent): void {
@@ -145,25 +166,47 @@ export class NurseClinicalNotesScopeBlockComponent implements OnChanges {
     this.openList();
   }
 
-  private teleportOverlay(selector: string): void {
+  private teleportOverlay(selector: string, kind: 'list' | 'detail'): void {
     const overlay = this.host.nativeElement.querySelector(selector) as HTMLElement | null;
     if (overlay?.parentElement && overlay.parentElement !== this.document.body) {
+      const placeholder = this.document.createComment(`ncnsb-${kind}-overlay`);
+      overlay.parentElement.insertBefore(placeholder, overlay);
       this.document.body.appendChild(overlay);
+      const reference = { element: overlay, placeholder };
+      if (kind === 'list') this.listOverlay = reference;
+      else this.detailOverlay = reference;
     }
   }
 
+  private restoreOverlay(kind: 'list' | 'detail'): void {
+    const reference = kind === 'list' ? this.listOverlay : this.detailOverlay;
+    if (!reference) return;
+    if (reference.placeholder.parentNode) {
+      reference.placeholder.parentNode.replaceChild(reference.element, reference.placeholder);
+    } else {
+      reference.element.remove();
+    }
+    if (kind === 'list') this.listOverlay = null;
+    else this.detailOverlay = null;
+  }
+
   closeList(): void {
+    if (this.detailNote) this.closeDetail();
+    this.restoreOverlay('list');
     this.listModalOpen = false;
+    this.cdr.detectChanges();
   }
 
   openDetail(note: PatientClinicalNoteDto): void {
     this.detailNote = note;
     this.cdr.detectChanges();
-    queueMicrotask(() => this.teleportOverlay('.ncnsb-notes-detail-backdrop'));
+    queueMicrotask(() => this.teleportOverlay('.ncnsb-notes-detail-backdrop', 'detail'));
   }
 
   closeDetail(): void {
+    this.restoreOverlay('detail');
     this.detailNote = null;
+    this.cdr.detectChanges();
   }
 
   expandAllLabel(count: number): string {

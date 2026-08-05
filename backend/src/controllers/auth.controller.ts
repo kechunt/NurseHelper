@@ -8,11 +8,12 @@ import { generateToken } from '../utils/jwt';
 import { auditService, AuditService } from '../services/audit.service';
 import { emailService } from '../services/email.service';
 import { logger } from '../utils/logger';
+import { authSessionService, readRefreshCookie } from '../services/auth-session.service';
 
 export class AuthController {
   async login(req: Request, res: Response): Promise<void> {
     try {
-      const { usernameOrEmail, password } = req.body;
+      const { usernameOrEmail, password, rememberMe = true } = req.body;
 
       if (!usernameOrEmail || !password) {
         res.status(400).json({
@@ -79,6 +80,7 @@ export class AuthController {
       }
 
       const token = generateToken(user.id, user.role);
+      await authSessionService.issue(user, Boolean(rememberMe), res);
 
       // Registrar login exitoso en auditoría
       await auditService.logLoginSuccess(
@@ -292,6 +294,7 @@ export class AuthController {
         });
 
         const token = generateToken(savedUser.id, savedUser.role);
+        await authSessionService.issue(savedUser, true, res);
 
         res.json({
           message: 'Correo electrónico verificado exitosamente',
@@ -348,6 +351,7 @@ export class AuthController {
       await userRepository.save(user);
 
       const token = generateToken(user.id, user.role);
+      await authSessionService.issue(user, true, res);
 
       res.json({
         message: 'Correo electrónico verificado exitosamente',
@@ -611,5 +615,46 @@ export class AuthController {
       res.status(500).json({ message: 'Error interno del servidor' });
     }
   }
-}
 
+  async refresh(req: Request, res: Response): Promise<void> {
+    const origin = req.get('origin');
+    const allowedOrigins = (process.env.CORS_ORIGIN || '').split(',').map((item) => item.trim());
+    if (origin && !allowedOrigins.includes(origin) && origin !== 'http://localhost:4200') {
+      res.status(403).json({ message: 'Origen no permitido' });
+      return;
+    }
+
+    const refreshToken = readRefreshCookie(req.headers.cookie);
+    if (!refreshToken) {
+      res.status(401).json({ message: 'Sesión no disponible' });
+      return;
+    }
+
+    const user = await authSessionService.rotate(refreshToken, res);
+    if (!user) {
+      authSessionService.clearCookie(res);
+      res.status(401).json({ message: 'Sesión expirada o revocada' });
+      return;
+    }
+
+    res.json({
+      token: generateToken(user.id, user.role),
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        phone: user.phone ?? null,
+      },
+    });
+  }
+
+  async logout(req: Request, res: Response): Promise<void> {
+    const refreshToken = readRefreshCookie(req.headers.cookie);
+    await authSessionService.revoke(refreshToken);
+    authSessionService.clearCookie(res);
+    res.json({ message: 'Sesión cerrada' });
+  }
+}

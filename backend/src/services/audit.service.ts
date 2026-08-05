@@ -4,6 +4,8 @@
  */
 
 import { logger } from '../utils/logger';
+import { webhookService } from './webhook.service';
+import { AUDIT_ACTION_WEBHOOK_EVENTS } from './webhook-events';
 
 export enum AuditAction {
   LOGIN_SUCCESS = 'LOGIN_SUCCESS',
@@ -73,6 +75,17 @@ export class AuditService {
       type: 'audit',
       ...auditLog,
     });
+
+    const webhookEvent = AUDIT_ACTION_WEBHOOK_EVENTS[action];
+    if (webhookEvent) {
+      void webhookService.triggerEvent(webhookEvent, {
+        action,
+        resourceType: auditLog.resourceType,
+        resourceId: auditLog.resourceId,
+        actorUserId: auditLog.userId,
+        occurredAt: auditLog.timestamp.toISOString(),
+      });
+    }
   }
 
   getRecent(limit: number = 50): AuditLog[] {

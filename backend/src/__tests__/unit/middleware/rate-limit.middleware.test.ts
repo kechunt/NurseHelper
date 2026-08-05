@@ -3,7 +3,6 @@ import {
   authRateLimitMiddleware,
   rateLimitMiddleware,
 } from '../../../middleware/rate-limit.middleware';
-import { TooManyRequestsError } from '../../../utils/errors';
 import { logger } from '../../../utils/logger';
 
 jest.mock('../../../utils/logger', () => ({
@@ -31,7 +30,7 @@ describe('rateLimitMiddleware', () => {
     process.env.NODE_ENV = originalNodeEnv;
   });
 
-  it('tras exceder maxRequests lanza TooManyRequestsError y registra warn', () => {
+  it('tras exceder maxRequests solo registra telemetría y permite continuar', () => {
     const mw = rateLimitMiddleware(60_000, 2);
     const res = { setHeader: jest.fn() } as unknown as Response;
     const next = jest.fn() as NextFunction;
@@ -44,7 +43,9 @@ describe('rateLimitMiddleware', () => {
     mw(req, res, next);
     expect(next).toHaveBeenCalledTimes(2);
 
-    expect(() => mw(req, res, next)).toThrow(TooManyRequestsError);
+    expect(() => mw(req, res, next)).not.toThrow();
+    expect(next).toHaveBeenCalledTimes(3);
+    expect(res.setHeader).toHaveBeenCalledWith('X-RateLimit-Observed', 'true');
     expect(logger.warn).toHaveBeenCalledWith(
       'Rate limit exceeded',
       expect.objectContaining({ ip: req.ip, path: req.path })

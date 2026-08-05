@@ -7,8 +7,13 @@ import { Request, Response } from 'express';
 import { webhookService } from '../services/webhook.service';
 import { asyncHandler } from '../utils/error-handler';
 import { AuthRequest } from '../middleware/auth.middleware';
+import { WEBHOOK_EVENT_CATALOG } from '../services/webhook-events';
 
 export class WebhookController {
+  catalog = asyncHandler(async (_req: AuthRequest, res: Response) => {
+    res.json({ events: WEBHOOK_EVENT_CATALOG });
+  });
+
   /**
    * Registrar nuevo webhook
    */

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -13,11 +13,12 @@ import { BootstrapIconComponent } from '../../shared/components/bootstrap-icon/b
   templateUrl: './login.component.html',
   styleUrls: ['../../shared/styles/auth-pages.css', './login.component.css'],
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   usernameOrEmail: string = '';
   password: string = '';
   showPassword: boolean = false;
   loading: boolean = false;
+  rememberMe: boolean = true;
   error: string = '';
 
   constructor(
@@ -25,6 +26,13 @@ export class LoginComponent {
     private router: Router,
     private toastService: ToastService
   ) {}
+
+  ngOnInit(): void {
+    const user = this.authService.currentUser();
+    if (user && this.authService.isAuthenticated()) {
+      void this.router.navigate([defaultDashboardPath(user.role)]);
+    }
+  }
 
   onSubmit(): void {
     if (!this.usernameOrEmail || !this.password) {
@@ -35,7 +43,7 @@ export class LoginComponent {
     this.loading = true;
     this.error = '';
 
-    this.authService.login(this.usernameOrEmail, this.password).subscribe({
+    this.authService.login(this.usernameOrEmail, this.password, this.rememberMe).subscribe({
       next: (response) => {
         this.loading = false;
         const user = response.user;
@@ -86,4 +94,3 @@ export class LoginComponent {
     this.showPassword = !this.showPassword;
   }
 }
-

@@ -5,6 +5,7 @@ import {
   IsString,
   Length,
   MaxLength,
+  IsBoolean,
 } from 'class-validator';
 
 export class LoginDto {
@@ -16,6 +17,10 @@ export class LoginDto {
   @IsNotEmpty()
   @Length(6, 128)
   password: string;
+
+  @IsOptional()
+  @IsBoolean()
+  rememberMe?: boolean;
 }
 
 export class RegisterDto {

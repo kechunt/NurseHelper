@@ -75,15 +75,36 @@ describe('NurseClinicalNotesScopeBlockComponent', () => {
     expect(body).not.toContain('21:36');
   });
 
-  it('openList muestra el modal en document.body', () => {
+  it('openList muestra el modal en document.body y closeList lo elimina', async () => {
     fixture.componentRef.setInput('legacySingleFieldText', '[1/1/2026 10:00:00] Nota A');
     fixture.detectChanges();
     fixture.componentInstance.openList();
     fixture.detectChanges();
+    await fixture.whenStable();
     const backdrop = document.body.querySelector('.ncnsb-notes-list-backdrop');
     expect(backdrop).toBeTruthy();
     fixture.componentInstance.closeList();
     fixture.detectChanges();
+    expect(document.body.querySelector('.ncnsb-notes-list-backdrop')).toBeNull();
+  });
+
+  it('botón Cerrar y Escape retiran el backdrop teletransportado', async () => {
+    fixture.componentRef.setInput('legacySingleFieldText', '[1/1/2026 10:00:00] Nota A');
+    fixture.detectChanges();
+    fixture.componentInstance.openList();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const closeButton = document.body.querySelector('.ncnsb-notes-list-dialog .close-btn') as HTMLButtonElement;
+    closeButton.click();
+    fixture.detectChanges();
+    expect(document.body.querySelector('.ncnsb-notes-list-backdrop')).toBeNull();
+
+    fixture.componentInstance.openList();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    fixture.detectChanges();
+    expect(document.body.querySelector('.ncnsb-notes-list-backdrop')).toBeNull();
   });
 
   it('emite expandRequest cuando externalExpand está activo', () => {

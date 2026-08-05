@@ -9,6 +9,8 @@ const router = Router();
 router.use(authMiddleware);
 router.use(roleMiddleware([UserRole.SUPERVISOR]));
 
+router.get('/events', webhookController.catalog);
+
 /**
  * @swagger
  * /api/webhooks/register:

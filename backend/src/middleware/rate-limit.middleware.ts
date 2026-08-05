@@ -4,7 +4,6 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
-import { TooManyRequestsError } from '../utils/errors';
 import { logger } from '../utils/logger';
 
 interface RateLimitStore {
@@ -137,9 +136,7 @@ export function rateLimitMiddleware(
         userId: (req as any).user?.id,
       });
 
-      throw new TooManyRequestsError(
-        `Demasiadas solicitudes. Intenta nuevamente después de ${new Date(result.resetTime).toLocaleString('es-ES')}`
-      );
+      res.setHeader('X-RateLimit-Observed', 'true');
     }
 
     next();

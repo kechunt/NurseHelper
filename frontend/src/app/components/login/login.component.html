@@ -50,6 +50,11 @@
         </div>
       </div>
 
+      <label class="auth-remember-session">
+        <input type="checkbox" name="rememberMe" [(ngModel)]="rememberMe" />
+        <span>Mantener sesiÃ³n iniciada en este dispositivo</span>
+      </label>
+
       <div *ngIf="error" class="auth-error">{{ error }}</div>
 
       <button

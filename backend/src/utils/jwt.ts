@@ -14,7 +14,7 @@ export function generateToken(userId: number, role: string): string {
     throw new Error('JWT_SECRET no está configurado en las variables de entorno');
   }
 
-  const expiresIn = process.env.JWT_EXPIRES_IN || '24h';
+  const expiresIn = process.env.JWT_EXPIRES_IN || '15m';
   const payload = { userId, role };
   const options = { expiresIn };
   
@@ -36,4 +36,3 @@ export function verifyToken(token: string): JwtPayload {
     throw new Error('Token inválido o expirado');
   }
 }
-

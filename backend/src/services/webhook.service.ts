@@ -5,6 +5,7 @@
 
 import { logger } from '../utils/logger';
 import crypto from 'crypto';
+import { WEBHOOK_EVENT_CATALOG } from './webhook-events';
 
 export interface Webhook {
   id: number;
@@ -36,10 +37,21 @@ export class WebhookService {
     secret?: string;
     userId: number;
   }): Promise<Webhook> {
+    const allowedEvents = new Set(WEBHOOK_EVENT_CATALOG.map(({ event }) => event));
+    const events = [...new Set(data.events.map((event) => event.trim()).filter(Boolean))];
+    const invalidEvents = events.filter((event) => !allowedEvents.has(event as any));
+    if (events.length === 0 || invalidEvents.length > 0) {
+      throw new Error(
+        invalidEvents.length > 0
+          ? `Eventos no soportados: ${invalidEvents.join(', ')}`
+          : 'Se requiere al menos un evento válido'
+      );
+    }
+
     const webhook: Webhook = {
       id: this.nextId++,
       url: data.url,
-      events: data.events,
+      events,
       secret: data.secret,
       active: true,
       userId: data.userId,
@@ -88,7 +100,7 @@ export class WebhookService {
     }
 
     try {
-      await this.trigger(webhook, 'test', { message: 'Test webhook' });
+      await this.trigger(webhook, 'test', { message: 'Test webhook' }, true);
       return { success: true, message: 'Webhook probado exitosamente' };
     } catch (error) {
       return { success: false, message: `Error: ${(error as Error).message}` };
@@ -98,8 +110,8 @@ export class WebhookService {
   /**
    * Disparar webhook para un evento
    */
-  async trigger(webhook: Webhook, event: string, data: any): Promise<void> {
-    if (!webhook.active || !webhook.events.includes(event)) {
+  async trigger(webhook: Webhook, event: string, data: any, force = false): Promise<void> {
+    if (!webhook.active || (!force && !webhook.events.includes(event))) {
       return;
     }
 

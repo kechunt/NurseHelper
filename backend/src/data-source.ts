@@ -20,6 +20,7 @@ import { PatientClinicalNote } from './entities/PatientClinicalNote';
 import { UserNotification } from './entities/UserNotification';
 import { PatientShiftAssignment } from './entities/PatientShiftAssignment';
 import { PatientShiftAssignmentLog } from './entities/PatientShiftAssignmentLog';
+import { AuthSession } from './entities/AuthSession';
 import { loadEnv } from './utils/env';
 import path from 'path';
 
@@ -60,6 +61,7 @@ export const AppDataSource = new DataSource({
     UserNotification,
     PatientShiftAssignment,
     PatientShiftAssignmentLog,
+    AuthSession,
   ],
   migrations: [path.join(__dirname, 'migrations', '*.{ts,js}')],
   subscribers: [],

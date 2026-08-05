@@ -17,6 +17,11 @@ export interface SupervisorWebhook {
   active: boolean;
 }
 
+export interface SupervisorWebhookEvent {
+  event: string;
+  label: string;
+}
+
 export interface SupervisorPlatformInfo {
   environment: string;
   publicOrigin: string | null;
@@ -115,6 +120,10 @@ export class SupervisorService {
 
   listWebhooks(): Observable<{ webhooks: SupervisorWebhook[] }> {
     return this.http.get<{ webhooks: SupervisorWebhook[] }>(`${environment.apiUrl}/webhooks`);
+  }
+
+  listWebhookEvents(): Observable<{ events: SupervisorWebhookEvent[] }> {
+    return this.http.get<{ events: SupervisorWebhookEvent[] }>(`${environment.apiUrl}/webhooks/events`);
   }
 
   registerWebhook(

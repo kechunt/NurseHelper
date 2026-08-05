@@ -1,6 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { Observable, catchError, finalize, firstValueFrom, shareReplay, tap, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 export interface User {
@@ -77,27 +77,33 @@ export function defaultDashboardPath(role: User['role']): string {
 })
 export class AuthService {
   private apiUrl = `${environment.apiUrl}/auth`;
-  private tokenKey = 'nursehelper_token';
-  private userKey = 'nursehelper_user';
+  private accessToken: string | null = null;
+  private refreshInFlight: Observable<LoginResponse> | null = null;
 
   currentUser = signal<User | null>(null);
 
-  constructor(private http: HttpClient) {
-    this.loadUserFromStorage();
+  constructor(private http: HttpClient) {}
+
+  async initialize(): Promise<void> {
+    try {
+      await firstValueFrom(this.refreshSession());
+    } catch {
+      this.clearSession();
+    }
   }
 
-  login(usernameOrEmail: string, password: string): Observable<LoginResponse> {
+  login(usernameOrEmail: string, password: string, rememberMe = true): Observable<LoginResponse> {
     const loginUrl = `${this.apiUrl}/login`;
 
     return this.http
       .post<LoginResponse>(loginUrl, {
         usernameOrEmail,
         password,
-      })
+        rememberMe,
+      }, { withCredentials: true })
       .pipe(
         tap((response) => {
-          this.setToken(response.token);
-          this.setUser(response.user);
+          this.applySession(response);
         })
       );
   }
@@ -111,8 +117,7 @@ export class AuthService {
       .post<VerifyEmailResponse>(`${this.apiUrl}/verify-email`, data)
       .pipe(
         tap((response) => {
-          this.setToken(response.token);
-          this.setUser(response.user);
+          this.applySession(response);
         })
       );
   }
@@ -127,37 +132,46 @@ export class AuthService {
   }
 
   logout(): void {
-    localStorage.removeItem(this.tokenKey);
-    localStorage.removeItem(this.userKey);
-    this.currentUser.set(null);
+    this.http.post(`${this.apiUrl}/logout`, {}, { withCredentials: true }).subscribe({ error: () => undefined });
+    this.clearSession();
   }
 
   getToken(): string | null {
-    return localStorage.getItem(this.tokenKey);
+    return this.accessToken;
   }
 
   isAuthenticated(): boolean {
     return !!this.getToken();
   }
 
-  private setToken(token: string): void {
-    localStorage.setItem(this.tokenKey, token);
-  }
-
   private setUser(user: User): void {
-    localStorage.setItem(this.userKey, JSON.stringify(user));
     this.currentUser.set(user);
   }
 
-  private loadUserFromStorage(): void {
-    const userStr = localStorage.getItem(this.userKey);
-    if (userStr) {
-      try {
-        this.currentUser.set(JSON.parse(userStr));
-      } catch (e) {
-        console.error('Error loading user from storage', e);
-      }
-    }
+  private applySession(response: LoginResponse): void {
+    this.accessToken = response.token;
+    this.setUser(response.user);
+  }
+
+  clearSession(): void {
+    this.accessToken = null;
+    this.currentUser.set(null);
+  }
+
+  refreshSession(): Observable<LoginResponse> {
+    if (this.refreshInFlight) return this.refreshInFlight;
+    this.refreshInFlight = this.http
+      .post<LoginResponse>(`${this.apiUrl}/refresh`, {}, { withCredentials: true })
+      .pipe(
+        tap((response) => this.applySession(response)),
+        catchError((error) => {
+          this.clearSession();
+          return throwError(() => error);
+        }),
+        finalize(() => (this.refreshInFlight = null)),
+        shareReplay({ bufferSize: 1, refCount: false })
+      );
+    return this.refreshInFlight;
   }
 
   /** Actualizar nombre, apellido, usuario y email del usuario autenticado (cualquier rol). */
@@ -179,4 +193,3 @@ export class AuthService {
     );
   }
 }
-

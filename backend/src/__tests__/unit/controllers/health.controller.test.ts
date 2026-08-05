@@ -4,9 +4,11 @@ jest.mock('os', () => {
   const actual = jest.requireActual<typeof import('os')>('os');
   return {
     __esModule: true,
+    release: actual.release,
     default: Object.assign({}, actual, {
       totalmem: () => 1_000_000,
       freemem: () => 600_000,
+      release: actual.release,
     }),
   };
 });
@@ -81,6 +83,14 @@ describe('HealthController', () => {
             queries: 2,
             slowQueries: 1,
             connections: 2,
+          }),
+        }),
+        system: expect.objectContaining({
+          memory: expect.objectContaining({
+            used: 400_000,
+            total: 1_000_000,
+            free: 600_000,
+            percentage: 40,
           }),
         }),
       })

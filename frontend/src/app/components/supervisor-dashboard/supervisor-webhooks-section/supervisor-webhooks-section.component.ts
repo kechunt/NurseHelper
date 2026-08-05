@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { SupervisorService, SupervisorWebhook } from '../../../services/supervisor.service';
+import { SupervisorService, SupervisorWebhook, SupervisorWebhookEvent } from '../../../services/supervisor.service';
+import { forkJoin } from 'rxjs';
 import { ToastService } from '../../../services/toast.service';
 
 /** Registro y prueba de webhooks salientes del sistema. */
@@ -15,11 +16,12 @@ import { ToastService } from '../../../services/toast.service';
 export class SupervisorWebhooksSectionComponent implements OnInit {
   loading = true;
   webhooks: SupervisorWebhook[] = [];
+  availableEvents: SupervisorWebhookEvent[] = [];
   registering = false;
   busyId: number | null = null;
 
   formUrl = '';
-  formEvents = '';
+  selectedEvents = new Set<string>();
   formSecret = '';
 
   readonly title = $localize`:@@supervisorWebhooks.title:Webhooks`;
@@ -29,8 +31,8 @@ export class SupervisorWebhooksSectionComponent implements OnInit {
   readonly errLoad = $localize`:@@supervisorWebhooks.errLoad:Error al cargar los webhooks`;
   readonly registerTitle = $localize`:@@supervisorWebhooks.registerTitle:Registrar nuevo webhook`;
   readonly urlLabel = $localize`:@@supervisorWebhooks.urlLabel:URL de destino`;
-  readonly eventsLabel = $localize`:@@supervisorWebhooks.eventsLabel:Eventos (separados por coma)`;
-  readonly eventsHint = $localize`:@@supervisorWebhooks.eventsHint:Ej: patient.created, medication.administered`;
+  readonly eventsLabel = $localize`:@@supervisorWebhooks.eventsLabel:Eventos que enviará este webhook`;
+  readonly eventsHint = $localize`:@@supervisorWebhooks.eventsHint:Selecciona uno o varios eventos del sistema.`;
   readonly secretLabel = $localize`:@@supervisorWebhooks.secretLabel:Secreto (opcional)`;
   readonly registerBtn = $localize`:@@supervisorWebhooks.registerBtn:Registrar webhook`;
   readonly registeringBtn = $localize`:@@supervisorWebhooks.registeringBtn:Registrando…`;
@@ -59,9 +61,14 @@ export class SupervisorWebhooksSectionComponent implements OnInit {
 
   loadWebhooks(): void {
     this.loading = true;
-    this.supervisorService.listWebhooks().subscribe({
-      next: ({ webhooks }) => {
+    forkJoin({
+      hooks: this.supervisorService.listWebhooks(),
+      catalog: this.supervisorService.listWebhookEvents(),
+    }).subscribe({
+      next: ({ hooks, catalog }) => {
+        const { webhooks } = hooks;
         this.webhooks = webhooks ?? [];
+        this.availableEvents = catalog.events ?? [];
         this.loading = false;
       },
       error: (error) => {
@@ -73,11 +80,9 @@ export class SupervisorWebhooksSectionComponent implements OnInit {
     });
   }
 
-  private parseEvents(): string[] {
-    return this.formEvents
-      .split(',')
-      .map((e) => e.trim())
-      .filter((e) => e.length > 0);
+  toggleEvent(event: string, checked: boolean): void {
+    if (checked) this.selectedEvents.add(event);
+    else this.selectedEvents.delete(event);
   }
 
   registerWebhook(): void {
@@ -89,7 +94,7 @@ export class SupervisorWebhooksSectionComponent implements OnInit {
       return;
     }
 
-    const events = this.parseEvents();
+    const events = [...this.selectedEvents];
     if (events.length === 0) {
       this.toastService.warning(this.warnEventsRequired);
       return;
@@ -101,7 +106,7 @@ export class SupervisorWebhooksSectionComponent implements OnInit {
         this.toastService.success(this.registerOk);
         this.registering = false;
         this.formUrl = '';
-        this.formEvents = '';
+        this.selectedEvents.clear();
         this.formSecret = '';
         this.loadWebhooks();
       },

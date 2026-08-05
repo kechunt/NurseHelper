@@ -23,15 +23,18 @@
       </div>
       <div class="supervisor-webhooks-field">
         <label for="supervisor-webhook-events">{{ eventsLabel }}</label>
-        <input
-          id="supervisor-webhook-events"
-          type="text"
-          class="overview-backup-input"
-          [(ngModel)]="formEvents"
-          [disabled]="registering"
-          placeholder="patient.created, medication.administered"
-          autocomplete="off"
-        />
+        <div id="supervisor-webhook-events" class="supervisor-webhook-event-options">
+          <label *ngFor="let item of availableEvents" class="supervisor-webhook-event-option">
+            <input
+              type="checkbox"
+              [checked]="selectedEvents.has(item.event)"
+              [disabled]="registering"
+              (change)="toggleEvent(item.event, $any($event.target).checked)"
+            />
+            <span>{{ item.label }}</span>
+            <code>{{ item.event }}</code>
+          </label>
+        </div>
         <span class="supervisor-webhooks-hint">{{ eventsHint }}</span>
       </div>
       <div class="supervisor-webhooks-field">
